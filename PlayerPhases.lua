@@ -1,5 +1,5 @@
--- Experimental, open-world layer evidence. GUID routing keys are heuristics,
--- not authoritative phase IDs. Absence of visible units is NEVER a mismatch.
+-- Open-world phase evidence. Explicit native results take precedence over the
+-- experimental NPC routing-key heuristic. Absence of units is NEVER a mismatch.
 local QT = _G.QuestTogether
 local TTL, TRANSIT, MAX_PEERS = 30, 5, 128
 local function Now(a)
@@ -63,7 +63,7 @@ function QT:GetPlayerPhaseObservation()
 	if not map or not self:CanAccessValue(guid) or not PlayerGUID(guid) then
 		return
 	end
-	local result = { map = map, guid = guid, players = {}, npcs = {} }
+	local result = { map = map, guid = guid, players = {}, npcs = {}, nativePlayers = {} }
 	local tokens = { "target", "mouseover", "focus" }
 	for _, frame in ipairs(self.API.GetNamePlates()) do
 		if #tokens >= 131 then
@@ -74,12 +74,32 @@ function QT:GetPlayerPhaseObservation()
 			tokens[#tokens + 1] = token
 		end
 	end
+	-- Group tokens can expose explicit phase information even when the player
+	-- is not rendered. Unknown group state never expands the scan.
+	local groupOK, grouped = false, nil
+	if type(self.API.IsInGroup) == "function" then groupOK, grouped = pcall(self.API.IsInGroup) end
+	if groupOK and self:CanAccessValue(grouped) and grouped == true then
+		local raidOK, raid = false, nil
+		if type(self.API.IsInRaid) == "function" then raidOK, raid = pcall(self.API.IsInRaid) end
+		if raidOK and self:CanAccessValue(raid) and type(raid) == "boolean" then
+			for index = 1, raid and 40 or 4 do
+				tokens[#tokens + 1] = (raid and "raid" or "party") .. index
+			end
+		end
+	end
 	for _, token in ipairs(tokens) do
 		local unit = self.API.GetLayerObservationUnit(token)
 		if unit then
 			if PlayerGUID(unit.guid) then
-				result.players[unit.guid] = true
-			elseif not unit.controlled and Key(unit.guid) then
+				if not unit.phaseMismatch then result.players[unit.guid] = true end
+				local name = self:GetUnitFullName(token)
+				if name and not self:IsSelfSender(name) and not self:IsIgnoredPlayerName(name) then
+					-- Readable local identity needs no network confirmation. Keep
+					-- phase mismatches out of the shared visibility evidence.
+					local status = unit.phaseMismatch and "different" or "visible"
+					if result.nativePlayers[name] ~= "visible" then result.nativePlayers[name] = status end
+				end
+			elseif not unit.phaseMismatch and not unit.controlled and Key(unit.guid) then
 				result.npcs[unit.guid] = true
 			end
 		end
@@ -179,7 +199,8 @@ function QT:UpdatePlayerPhaseObservations()
 	-- Walk past cooling-down/older clients. The global limiter still permits
 	-- at most one outgoing probe every two seconds.
 	for index = 1, #candidates do
-		if self:RequestPlayerPhaseComparison(candidates[index].name) then
+		local name = candidates[index].name
+		if not (observation.nativePlayers and observation.nativePlayers[name]) and self:RequestPlayerPhaseComparison(name) then
 			break
 		end
 	end
@@ -229,6 +250,7 @@ function QT:RequestPlayerPhaseComparison(sender)
 		return false
 	end
 	local s, now = State(self), Now(self)
+	if s.observation.nativePlayers and s.observation.nativePlayers[name] then return false end
 	local previous = s.attempts[name]
 	if Fresh(now, s.lastRequest, 2) or (previous and Fresh(now, previous.at, previous.success and 30 or 120)) then
 		return false
@@ -342,6 +364,8 @@ function QT:GetPlayerPhaseStatus(name)
 	end
 	local s, now = State(self), Now(self)
 	local peer, own = s.peers[name], s.observation
+	local native = own.nativePlayers and own.nativePlayers[name]
+	if native then return native, "native" end
 	if not peer or not Fresh(now, peer.at, TTL) or peer.map ~= own.map or peer.localKey ~= own.key then
 		return
 	end

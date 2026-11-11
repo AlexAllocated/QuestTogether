@@ -561,6 +561,30 @@ function QT:HandleMeshHello(record, sender, context)
 end
 local function StartHandshake(a, s, candidate)
 	local name, now = candidate.name, Now(a)
+	local reservation = Reserved(a, s, name)
+	if not (reservation and reservation.reciprocal) then
+		-- Directory/chat spellings can arrive after a failed address was retired.
+		-- Share its remaining backoff before attempting a native probe. This is
+		-- one bounded candidate scan per probe opportunity, not per queued packet
+		-- or per candidate during selection, and creates no second identity store.
+		local key, blocked, reachable = name:lower(), nil, false
+		for otherName, other in pairs(s.candidates) do
+			if otherName ~= name and otherName:lower() == key then
+				if Neighbor(a, s, otherName) then
+					reachable = true
+				end
+				if other.delay and other.retryAt > now and (not blocked or other.retryAt > blocked.retryAt) then
+					blocked = other
+				end
+			end
+		end
+		if blocked and not reachable then
+			candidate.retryAt = blocked.retryAt
+			candidate.delay = math.max(candidate.delay or 0, blocked.delay)
+			s.nextHandshake = now + 0.2
+			return
+		end
+	end
 	if not Reserve(a, s, name) then
 		-- Local occupancy says nothing about this peer. Wait for a slot instead
 		-- of imposing an unreachable-peer cooldown before any packet is sent.
@@ -682,6 +706,7 @@ local function StartHandshake(a, s, candidate)
 	end
 	s.nextHandshake = now + delay
 end
+
 function QT:EnsureMeshDirectoryJoined(channelName)
 	local s = self:InitializeMeshNetwork()
 	if not Current(self, s) or not Allowed(self) or type(channelName) ~= "string" or #channelName > 120 then
@@ -1985,38 +2010,56 @@ function QT:RetireMeshPeer(value, reason)
 	if not s or not name then
 		return
 	end
-	local pending, peer = s.pending[name], s.neighbors[name]
-	s.admissionIntents[name] = nil
-	s.pendingInterests[name] = nil
-	s.pending[name], s.neighbors[name], s.reservations[name] = nil, nil, nil
-	if pending then
-		self:CancelCommunicationOwner(pending, "cancelled")
-	end
-	if peer then
-		self:CancelCommunicationOwner(peer, "cancelled")
-	end
-	RetirePeerRoutes(self, s, name)
-	local candidate = s.candidates[name]
-	if candidate then
-		local now = Now(self)
-		local retirement = self:CanAccessValue(reason)
-				and type(reason) == "string"
-				and ({ unavailable = true, rotated = true, expired = true, ignored = true })[reason]
-				and reason
-			or "retired"
-		candidate.lastRetirementReason, candidate.lastRetiredAt = retirement, now
-		if pending and retirement == "unavailable" then
-			candidate.lastHandshakeOutcome, candidate.lastHandshakeReason = "unavailable", "unavailable"
-			candidate.lastHandshakeAt, candidate.lastHandshakeCode = now, nil
-			Metric(s, "handshakeUnavailable")
+	local retirement = self:CanAccessValue(reason)
+			and type(reason) == "string"
+			and ({ unavailable = true, rotated = true, expired = true, ignored = true })[reason]
+			and reason
+		or "retired"
+	local names = { name }
+	if retirement == "unavailable" then
+		-- Native failure correlation compares complete addresses without case.
+		-- Directory/chat spellings can differ from the confirmed peer's spelling;
+		-- retire those aliases too, retaining the realm or Forever surname.
+		-- Every admitted routing peer has a bounded candidate entry.
+		local key = name:lower()
+		for candidate in pairs(s.candidates) do
+			if candidate ~= name and candidate:lower() == key then
+				names[#names + 1] = candidate
+			end
 		end
-		RetryCandidate(candidate, now)
 	end
-	if self:IsIgnoredPlayerName(name) then
-		s.candidates[name] = nil
-		local seeds = SeedStore(self)
-		if seeds then
-			seeds[name] = nil
+	for _, retiredName in ipairs(names) do
+		if rawget(self, "meshNetworkState") ~= s then
+			return
+		end
+		local pending, peer = s.pending[retiredName], s.neighbors[retiredName]
+		s.admissionIntents[retiredName] = nil
+		s.pendingInterests[retiredName] = nil
+		s.pending[retiredName], s.neighbors[retiredName], s.reservations[retiredName] = nil, nil, nil
+		if pending then
+			self:CancelCommunicationOwner(pending, "cancelled")
+		end
+		if peer then
+			self:CancelCommunicationOwner(peer, "cancelled")
+		end
+		RetirePeerRoutes(self, s, retiredName)
+		local candidate = s.candidates[retiredName]
+		if candidate then
+			local now = Now(self)
+			candidate.lastRetirementReason, candidate.lastRetiredAt = retirement, now
+			if pending and retirement == "unavailable" then
+				candidate.lastHandshakeOutcome, candidate.lastHandshakeReason = "unavailable", "unavailable"
+				candidate.lastHandshakeAt, candidate.lastHandshakeCode = now, nil
+				Metric(s, "handshakeUnavailable")
+			end
+			RetryCandidate(candidate, now)
+		end
+		if self:IsIgnoredPlayerName(retiredName) then
+			s.candidates[retiredName] = nil
+			local seeds = SeedStore(self)
+			if seeds then
+				seeds[retiredName] = nil
+			end
 		end
 	end
 end

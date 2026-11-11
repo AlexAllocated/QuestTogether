@@ -243,14 +243,15 @@ local function FinishAnnouncements(addon, cache, key, waiting)
 	local events = waiting.events
 	cache.waiting[key], cache.waitingCount, waiting.events = nil, cache.waitingCount - #events, nil
 	addon:CancelRuntimeWorkOwner(waiting.owner)
-	if not addon.isEnabled or addon.isLoggingOut then return end
+	if not addon.isEnabled or addon.isLoggingOut or waiting.profile ~= (addon.db and addon.db.profile) then return end
 	-- The miss cache normally lasts five seconds. Re-read once at completion so
 	-- tooltip data loaded without a quest-load event can satisfy the two-second wait.
 	addon:InvalidateLocalizedQuestTitle(waiting.questID)
 	-- Recheck current display options, ignores, group/scope and nearby frames.
 	-- Never retain a nameplate or repeat network acceptance/forwarding here.
 	for _, event in ipairs(events) do
-		if rawget(addon, "localizedQuestTitles") ~= cache or not addon.isEnabled or addon.isLoggingOut then return end
+		if rawget(addon, "localizedQuestTitles") ~= cache or not addon.isEnabled or addon.isLoggingOut
+			or waiting.profile ~= (addon.db and addon.db.profile) then return end
 		addon:HandleAnnouncementEvent(event, false, true)
 	end
 end
@@ -264,6 +265,11 @@ function QT:QueueLocalizedAnnouncement(event, waitingForTitle)
 	local key = sender .. "\000" .. id
 	local waiting = cache.waiting and cache.waiting[key]
 	local now = self:SafeToNumber(self.API.GetTime()) or 0
+	if waiting and waiting.profile ~= (self.db and self.db.profile) then
+		-- Retire old presentation without resetting the shared title-load budget.
+		FinishAnnouncements(self, cache, key, waiting)
+		waiting = nil
+	end
 	if waiting then
 		-- Keep progress and newly resolved titles behind this sender's earlier
 		-- event. Appending never moves the original deadline or adds a timer.
@@ -289,6 +295,7 @@ function QT:QueueLocalizedAnnouncement(event, waitingForTitle)
 	cache.waitingSerial = (cache.waitingSerial or 0) + 1
 	waiting = {
 		events = { event }, questID = id, owner = self:NewRuntimeWorkOwner(), sequence = cache.waitingSerial,
+		profile = self.db and self.db.profile,
 		startedAt = entry.requestedAt, deadline = entry.requestedAt + TITLE_WAIT_SECONDS,
 		workKey = "localized_announcement:" .. cache.waitingSerial,
 	}

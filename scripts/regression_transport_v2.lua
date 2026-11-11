@@ -26,6 +26,9 @@ local function Fixture()
 	}
 	function a:RecordCommsTraffic() end
 	function a:RecordCommsDiagnostic() end
+	function a:IsRuntimeRestrictionTypeActive(kind)
+		return kind == "chat" and self.chatRestricted == true
+	end
 	function a:RecordDiagnosticError(_, detail)
 		self.errors[#self.errors + 1] = detail
 	end
@@ -40,6 +43,143 @@ local function Fixture()
 	return a
 end
 
+local function WhisperReceiptFixture()
+	local a = Fixture()
+	a.retired = 0
+	a.API.GetPlayerNotFoundMessageFormat = function()
+		return "No player named '%s' is currently playing."
+	end
+	a.API.SetOrdinaryWhisperObserver = function()
+		return true
+	end
+	a.API.AddMessageEventFilter = function(_, callback)
+		a.systemFilter = callback
+		return true
+	end
+	function a:RetireMeshPeer()
+		self.retired = self.retired + 1
+	end
+	a:InitializeTransport()
+	a:Advance(1)
+	return a
+end
+
+QT:RegisterTest(
+	"transport unsent throttling preserves reply evidence while possible sends retain fresh correlation",
+	function()
+		local route = { distribution = "WHISPER", target = "Peer-Realm" }
+		for _, outcome in ipairs({ 3, 0, 8, 9, "no-result", "exception" }) do
+			local a = WhisperReceiptFixture()
+			assert(a:SendTransportNow("earlier", "MHEL", route))
+			a:ClearAddonWhisperFailure(route.target)
+			a.now = a.now + 10
+			a.native = function()
+				if outcome == "exception" then
+					error("unknown native outcome")
+				end
+				if outcome ~= "no-result" then
+					return outcome
+				end
+			end
+			a:SendTransportNow("later", "MHEL", route)
+			assert(a.systemFilter({}, "CHAT_MSG_SYSTEM", "No player named 'Peer-Realm' is currently playing."))
+			if outcome == 3 then
+				assert(
+					not a:IsAddonWhisperTargetUnavailable(route.target) and a.retired == 0,
+					"an unsent throttle attempt must not erase the newer reply to a previous send"
+				)
+			else
+				assert(
+					a:IsAddonWhisperTargetUnavailable(route.target) and a.retired == 1,
+					"accepted, ambiguous, and unknown outcomes may produce their own later failure"
+				)
+			end
+		end
+		local a = WhisperReceiptFixture()
+		a.native = function()
+			return 3
+		end
+		assert(not a:SendTransportNow("never-sent", "MHEL", route))
+		assert(
+			not a.systemFilter({}, "CHAT_MSG_SYSTEM", "No player named 'Peer-Realm' is currently playing."),
+			"a throttle-only attempt must not claim another sender's later error"
+		)
+	end
+)
+
+QT:RegisterTest(
+	"transport unsent rollback preserves synchronous notices replies and newer reentrant attempts",
+	function()
+		local route = { distribution = "WHISPER", target = "Peer-Realm" }
+		local notice = "No player named 'Peer-Realm' is currently playing."
+		for _, reentry in ipairs({ "notice", "reply", "newer-attempt" }) do
+			local a = WhisperReceiptFixture()
+			assert(a:SendTransportNow("earlier", "MHEL", route))
+			a:ClearAddonWhisperFailure(route.target)
+			a.now = a.now + 110
+			a.native = function()
+				if reentry == "notice" then
+					assert(a.systemFilter({}, "CHAT_MSG_SYSTEM", notice))
+				elseif reentry == "reply" then
+					a:ClearAddonWhisperFailure(route.target)
+				else
+					a.native = nil
+					assert(a:SendTransportNow("inner-accepted", "MHEL", route))
+				end
+				return 3
+			end
+			a:SendTransportNow("outer-throttled", "MHEL", route)
+			-- The original receipt has now expired. Rolling it over the synchronous
+			-- observation or the newer send would leak this later native notice.
+			a.now = a.now + 20
+			assert(a.systemFilter({}, "CHAT_MSG_SYSTEM", notice), "rollback must preserve newer native evidence")
+			if reentry == "reply" then
+				assert(a.retired == 0 and not a:IsAddonWhisperTargetUnavailable(route.target))
+			else
+				assert(a.retired == 1 and a:IsAddonWhisperTargetUnavailable(route.target))
+			end
+		end
+	end
+)
+
+QT:RegisterTest("transport offline native outcomes stop subsequent sends without needing a system notice", function()
+	local a, completed = WhisperReceiptFixture(), 0
+	local route = { distribution = "WHISPER", target = "Peer-Realm" }
+	a.native = function()
+		return 12
+	end
+	assert(a:QueueTransportWire("first", "MHEL", route))
+	assert(a:QueueTransportWire("next", "MPUB", route, {
+		onComplete = function(sent, reason)
+			assert(not sent and reason == "unavailable")
+			completed = completed + 1
+		end,
+	}))
+	a:DrainTransport()
+	assert(
+		#a.sent == 1 and a.retired == 1 and completed == 1,
+		"TargetOffline must install its send hold before the next queued packet"
+	)
+	assert(a:IsAddonWhisperTargetUnavailable(route.target))
+	local sent, reason = a:SendTransportNow("producer-retry", "MHEL", route)
+	assert(not sent and reason == "unavailable" and #a.sent == 1)
+	assert(a.systemFilter({}, "CHAT_MSG_SYSTEM", "No player named 'Peer-Realm' is currently playing."))
+	assert(a.retired == 1, "a later server notice cannot repeat native-outcome retirement")
+end)
+
+QT:RegisterTest("transport refuses untrackable whisper addresses before spending native budget", function()
+	local a = WhisperReceiptFixture()
+	local s = a:GetTransportState()
+	local tokens, bytes = s.tokens, s.byteTokens
+	for _, target in ipairs({ false, "", "|Hplayer:Peer-Realm|hPeer|h", string.rep("x", 121) }) do
+		local route = { distribution = "WHISPER", target = target }
+		local queued, queueReason = a:QueueTransportWire("bad-target", "MHEL", route)
+		local sent, reason = a:SendTransportNow("bad-target", "MHEL", route)
+		assert(not queued and queueReason == "invalid" and not sent and reason == "invalid")
+	end
+	assert(#a.sent == 0 and s.tokens == tokens and s.byteTokens == bytes)
+end)
+
 QT:RegisterTest("transport refuses channel delivery without spending budget or invoking native APIs", function()
 	local a = Fixture()
 	a.now = a.now + 1
@@ -50,6 +190,103 @@ QT:RegisterTest("transport refuses channel delivery without spending budget or i
 	Equal(a:GetTransportMetrics().attempts or 0, 0)
 end)
 
+QT:RegisterTest("transport chat restriction holds all native routes while expiring stale work and preserving budgets", function()
+	local a, completed = Fixture(), {}
+	local routes = {
+		{ distribution = "WHISPER", target = "Peer-Realm", meshTraffic = true },
+		{ distribution = "PARTY" },
+		{ distribution = "RAID" },
+		{ distribution = "INSTANCE_CHAT" },
+	}
+	a:Advance(1)
+	local s = a:GetTransportState()
+	local credits = { s.tokens, s.byteTokens, s.meshTokens, s.meshByteTokens }
+	for index, route in ipairs(routes) do
+		assert(a:QueueTransportWire("held-" .. index, "test", route, {
+			expires = a.now + 30,
+			onComplete = function(sent, reason)
+				assert(not completed[index], "a held packet must complete once")
+				completed[index] = { sent, reason }
+			end,
+		}))
+	end
+	local expiryCount, currentCount = 0, 0
+	assert(a:QueueTransportWire("expires", "test", routes[1], {
+		expires = a.now + 1,
+		onComplete = function(sent, reason)
+			assert(not sent and reason == "expired")
+			expiryCount = expiryCount + 1
+		end,
+	}))
+	local current = true
+	assert(a:QueueTransportWire("retired", "test", routes[1], {
+		isCurrent = function() return current end,
+		onComplete = function(sent, reason)
+			assert(not sent and reason == "cancelled")
+			currentCount = currentCount + 1
+		end,
+	}))
+	a.chatRestricted, current = true, false
+	for _, route in ipairs(routes) do
+		local sent, reason = a:SendTransportNow("direct", "test", route)
+		assert(not sent and reason == "restricted")
+	end
+	a:Advance(2)
+	a:DrainTransport()
+	Equal(#a.sent, 0)
+	Equal(a:GetTransportMetrics().attempts or 0, 0)
+	Equal(a:GetTransportMetrics().queuedPackets, #routes)
+	Equal(expiryCount, 1)
+	Equal(currentCount, 1)
+	Equal(#a.errors, 0)
+	assert(s.tokens >= credits[1] and s.byteTokens >= credits[2]
+		and s.meshTokens >= credits[3] and s.meshByteTokens >= credits[4], "paused sends spend no budget")
+	a.chatRestricted = false
+	-- Ordinary combat alone must not delay otherwise permitted party traffic.
+	function a:IsRuntimeRestricted() return true end
+	for _ = 1, 4 do a:Advance(1) end
+	Equal(#a.sent, #routes)
+	Equal(a:GetTransportMetrics().queuedPackets, 0)
+	for index = 1, #routes do assert(completed[index][1] and completed[index][2] == "accepted") end
+end)
+
+QT:RegisterTest("transport revalidates chat restriction after currentness and between native sends including departure", function()
+	local a, checks, completions = Fixture(), 0, 0
+	assert(a:Queue("boundary", {
+		isCurrent = function()
+			checks = checks + 1
+			if checks == 2 then a.chatRestricted = true end
+			return true
+		end,
+		onComplete = function(sent) assert(sent); completions = completions + 1 end,
+	}))
+	a:Advance(1)
+	Equal(#a.sent, 0)
+	Equal(completions, 0)
+	Equal(a:GetTransportMetrics().queuedPackets, 1)
+	Equal(a:GetTransportState().tokens, 4)
+	Equal(a:GetTransportState().byteTokens, 800)
+	a.chatRestricted = false
+	assert(a:Queue("next"))
+	a.native = function() a.chatRestricted = true; return 0 end
+	a:DrainTransport()
+	Equal(#a.sent, 1)
+	Equal(completions, 1)
+	Equal(a:GetTransportMetrics().queuedPackets, 1)
+	local bye = assert(a:BuildCommFrames("BYE", { reason = "departure" }, {
+		session = "test", messageId = "1", stamp = 0,
+	}))[1]
+	a:EndTransportSession()
+	local s = a:GetTransportState()
+	local tokens, bytes = s.tokens, s.byteTokens
+	local sent, reason = a:SendTransportNow(bye, "departure", { distribution = "PARTY" }, "departure")
+	assert(not sent and reason == "restricted", "best-effort departure cannot bypass chat restriction")
+	Equal(s.tokens, tokens)
+	Equal(s.byteTokens, bytes)
+	Equal(#a.sent, 1)
+	Equal(#a.errors, 0)
+end)
+
 QT:RegisterTest("transport unavailable whispers conserve budget and record only native attempts", function()
 	local a, blocked, attempts, callbacks = Fixture(), true, {}, 0
 	local route = { distribution = "WHISPER", target = "Peer-Realm" }
@@ -58,6 +295,7 @@ QT:RegisterTest("transport unavailable whispers conserve budget and record only 
 	end
 	function a:RecordAddonWhisperAttempt(target)
 		attempts[#attempts + 1] = target
+		return true
 	end
 	a.native = function(_, _, distribution, target)
 		if distribution == "WHISPER" then
@@ -414,6 +652,9 @@ QT:RegisterTest("transport v3 native outcome diagnostics retain rejection codes 
 			return value
 		end
 		a.now = a.now + 2
+		-- These are independent native-outcome samples; model a new reply so
+		-- TargetOffline's send hold does not suppress later samples.
+		a:ClearAddonWhisperFailure("Peer-Realm")
 		a:SendTransportNow("private payload", "PING", { distribution = "WHISPER", target = "Peer-Realm" })
 	end
 	for code = 0, 12 do

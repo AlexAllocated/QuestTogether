@@ -287,6 +287,30 @@ function QT:CreateTestNetwork(options)
 			}
 		end
 	end
+	function network:DeliverSystemMessage(peer, message)
+		local function Event()
+			if self:Emit(peer, "CHAT_MSG_SYSTEM", message) == 0 then
+				peer:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", message)
+			end
+		end
+		if options.systemEventFirst then Event() end
+		for _, window in ipairs(peer.chatWindows) do
+			local filter = peer.chatFilters.CHAT_MSG_SYSTEM
+			-- Native chat does not invoke addon filters for inaccessible text.
+			local hidden = peer:CanAccessValue(message) and filter and filter(window, "CHAT_MSG_SYSTEM", message)
+			if not hidden then window.visibleMessages = window.visibleMessages + 1 end
+		end
+		if not options.systemEventFirst then Event() end
+	end
+	function network:QueueWhisperFailure(peer, packet)
+		if not options.whisperNotices or packet.failureNoticeQueued then return end
+		packet.failureNoticeQueued = true
+		self:After(peer, options.whisperNoticeDelay or self.latency, function()
+			if peer.connected then
+				self:DeliverSystemMessage(peer, string.format(peer.API.GetPlayerNotFoundMessageFormat(), packet.target))
+			end
+		end)
+	end
 	function network:NativeSend(peer, prefix, wire, route, target)
 		assert(type(prefix) == "string" and #prefix <= 16, "native addon prefix limit")
 		assert(type(wire) == "string" and #wire <= 255 and not wire:find("\0", 1, true), "native wire limit")
@@ -356,12 +380,15 @@ function QT:CreateTestNetwork(options)
 			end)
 			return result
 		end
+		local recipients = 0
 		for _, receiver in ipairs(self.peers) do
 			if self:IsRecipient(packet, receiver) then
+				recipients = recipients + 1
 				local policy = self.deliveryRule and self.deliveryRule(packet, receiver) or nil
 				self:QueueDelivery(packet, receiver, policy)
 			end
 		end
+		if route == "WHISPER" and recipients == 0 then self:QueueWhisperFailure(peer, packet) end
 		return result
 	end
 	function network:Inject(receiver, prefix, wire, route, sender, options)
@@ -414,6 +441,9 @@ function QT:CreateTestNetwork(options)
 					)
 				else
 					self:Record("dropped", packet, receiver)
+					if packet.route == "WHISPER" and not packet.injected then
+						self:QueueWhisperFailure(self.byName[packet.sender], packet)
+					end
 				end
 			else
 				self.pending[#self.pending + 1] = row
@@ -631,6 +661,16 @@ function QT:CreateTestNetwork(options)
 		end
 		peer.API.SendAddonMessage = function(...)
 			return self:NativeSend(peer, ...)
+		end
+		if options.whisperNotices then
+			peer.chatFilters, peer.chatWindows = {}, { { visibleMessages = 0 }, { visibleMessages = 0 } }
+			peer.API.GetPlayerNotFoundMessageFormat = function() return "No player named '%s' is currently playing." end
+			peer.API.SetOrdinaryWhisperObserver = function(callback) peer.ordinaryWhisperObserver = callback; return true end
+			peer.API.AddMessageEventFilter = function(event, callback) peer.chatFilters[event] = callback; return true end
+			peer.API.RemoveMessageEventFilter = function(event, callback)
+				if peer.chatFilters[event] == callback then peer.chatFilters[event] = nil end
+				return true
+			end
 		end
 		function peer:GetPlayerFullName()
 			return self.name

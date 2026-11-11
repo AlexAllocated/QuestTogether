@@ -1,5 +1,7 @@
 local QT = _G.QuestTogether
 local L = QT.Translate
+local STRATA = { BACKGROUND = true, LOW = true, MEDIUM = true, HIGH = true, DIALOG = true,
+	FULLSCREEN = true, FULLSCREEN_DIALOG = true, TOOLTIP = true }
 
 -- One QT-owned secure button follows the hovered dot/menu row in screen space.
 -- Never parent or anchor it to a map or a pooled Blizzard menu frame: doing so
@@ -10,10 +12,29 @@ function QT:CreateLocationTargetButton()
 	button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	button:SetAttribute("useOnKeyDown", false)
 	button:SetAttribute("type1", "macro")
-	button:SetFrameStrata("TOOLTIP")
 	-- No 'show' branch: ending combat must not resurrect a stale hover target.
 	RegisterStateDriver(button, "visibility", "[combat] hide")
 	return button
+end
+
+function QT:GetLocationTargetButtonLayer(owner)
+	local strataGetter = self:GetAccessibleFrameMember(owner, "GetFrameStrata")
+	local levelGetter = self:GetAccessibleFrameMember(owner, "GetFrameLevel")
+	if type(strataGetter) ~= "function" or type(levelGetter) ~= "function" then return end
+	local ok, strata = pcall(strataGetter, owner)
+	if not ok or not self:CanAccessValue(strata) or type(strata) ~= "string" or not STRATA[strata] then return end
+	local levelOK, level = pcall(levelGetter, owner)
+	level = levelOK and self:SafeToNumber(level) or nil
+	if not level then return end
+	return strata, math.min(10000, math.max(0, math.floor(level))) + 1
+end
+
+local function SetLayer(state, strata, level)
+	-- A secure child would protect foreign map/menu frames, so the overlay is
+	-- independent. Mirror its owner's layer explicitly: a tooltip-layer button
+	-- over a minimap marker can otherwise steal clicks from windows above it.
+	if state.strata ~= strata then state.button:SetFrameStrata(strata); state.strata = strata end
+	if state.level ~= level then state.button:SetFrameLevel(level); state.level = level end
 end
 
 function QT:GetLocationTargetButtonRect(owner)
@@ -71,7 +92,8 @@ function QT:ShowLocationTargetButton(owner, name, isCurrent, onEnter, onLeave, o
 	local record = { owner = owner, name = name, isCurrent = isCurrent, onEnter = onEnter, onLeave = onLeave, onClick = onClick }
 	if not macro or not Current(self, record) then return false end
 	local left, bottom, width, height = self:GetLocationTargetButtonRect(owner)
-	if not left then return false end
+	local strata, level = self:GetLocationTargetButtonLayer(owner)
+	if not left or not strata then return false end
 	local state = rawget(self, "locationTargetState")
 	if not state then
 		state = { button = self:CreateLocationTargetButton() }
@@ -106,12 +128,15 @@ function QT:ShowLocationTargetButton(owner, name, isCurrent, onEnter, onLeave, o
 			local current = state.current
 			if not Current(self, current) then self:HideLocationTargetButton(); return end
 			local x, y, w, h = self:GetLocationTargetButtonRect(current.owner)
-			if not x then self:HideLocationTargetButton(); return end
+			local currentStrata, currentLevel = self:GetLocationTargetButtonLayer(current.owner)
+			if not x or not currentStrata then self:HideLocationTargetButton(); return end
+			SetLayer(state, currentStrata, currentLevel)
 			self:PositionLocationTargetButton(button, x, y, w, h)
 		end)
 	end
 	if not self:CanAccessForeignFrame(state.button) then return false end
 	state.current = record
+	SetLayer(state, strata, level)
 	self:PositionLocationTargetButton(state.button, left, bottom, width, height)
 	state.button:SetAttribute("macrotext1", macro)
 	state.button:Show()

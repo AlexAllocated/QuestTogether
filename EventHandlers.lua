@@ -48,7 +48,9 @@ end
 function QuestTogether:CHAT_MSG_SYSTEM(_, message, ...)
 	if self.isEnabled and not self.isLoggingOut then
 		if self.HandleAddonWhisperSystemMessage then
-			self:HandleAddonWhisperSystemMessage(message, ...)
+			local _, decision = self:HandleAddonWhisperSystemMessage(message, ...)
+			-- Count the native event once, rather than once per chat-frame filter.
+			if self.RecordAddonWhisperNoticeDecision then self:RecordAddonWhisperNoticeDecision(decision) end
 		end
 		if self.HandleQuestShareSystemMessage then
 			self:HandleQuestShareSystemMessage(message)

@@ -8,7 +8,9 @@ local function SafeAddonString(a, v, fallback)
 	return a:SafeToString(v, fallback)
 end
 local function Current(a, request)
-	return a.isEnabled
+	local db = rawget(a, "db")
+	return request.profile == (db and db.profile)
+		and a.isEnabled
 		and not a.isLoggingOut
 		and not a:IsIgnoredPlayerName(request.targetName)
 		and (not request.requiresGroup or a:IsGroupedSender(request.targetName))
@@ -302,7 +304,9 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 	end
 	local id = self:BuildChannelRequestId("qcmp")
 	local routes = receiver and receiver.routes or self:GetQuestCompareRoutes(target, false)
+	local db = rawget(self, "db")
 	local pending = {
+		profile = db and db.profile,
 		targetName = target,
 		receiver = receiver,
 		startedAt = self.API.GetTime(),
@@ -345,6 +349,8 @@ function QuestTogether:RequestQuestCompare(speakerName, receiver)
 			return
 		end
 		self.pendingQuestCompareRequests[id] = nil
+		local currentDB = rawget(self, "db")
+		if pending.profile ~= (currentDB and currentDB.profile) then return end
 		if receiver then
 			receiver.onTimeout()
 		elseif self.isEnabled then
@@ -412,7 +418,9 @@ function QuestTogether:HandleQuestCompareRequest(data)
 	if count >= 16 then
 		return false
 	end
+	local db = rawget(self, "db")
 	local job = {
+		profile = db and db.profile,
 		data = data,
 		targetName = sender,
 		requiresGroup = data.partyOnly == true,
@@ -495,7 +503,10 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 						"ERROR",
 						{ requestId = job.data.requestId, operation = "QCMP", code = status },
 						self:GetQuestCompareRoutes(job.targetName, job.requiresGroup),
-						{ owner = job }
+						{ owner = job, isCurrent = function()
+							return self.questCompareResponseCache == cache and Current(self, job)
+								and job.generation == (rawget(self, "commsWorldGeneration") or 0)
+						end }
 					)
 					cache[key] = nil
 				end
@@ -508,7 +519,10 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 						"ERROR",
 						{ requestId = job.data.requestId, operation = "QCMP", code = job.result },
 						self:GetQuestCompareRoutes(job.targetName, job.requiresGroup),
-						{ owner = job }
+						{ owner = job, isCurrent = function()
+							return self.questCompareResponseCache == cache and Current(self, job)
+								and job.generation == (rawget(self, "commsWorldGeneration") or 0)
+						end }
 					)
 					cache[key] = nil
 				end

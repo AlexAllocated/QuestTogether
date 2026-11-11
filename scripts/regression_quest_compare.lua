@@ -2053,6 +2053,68 @@ QuestTogether:RegisterTest(
 	end
 )
 
+QuestTogether:RegisterTest("quest comparison work cannot cross a profile replacement", function()
+	local a, b = Fixture("Me-Realm"), Fixture("Friend-Realm", { Quest(1, "Shared quest", true) })
+	a.db, b.db = { profile = {} }, { profile = {} }
+	-- A restricted read has not reached the coordinator yet. Replacing the
+	-- profile must retire this preparation job before it can submit later.
+	b.blocked = true
+	assert(b:HandleQuestCompareRequest({ requesterName = a.name, targetName = b.name, requestId = "old-profile" }))
+	assert(next(b.questCompareResponseCache))
+	b.db.profile, b.blocked = {}, false
+	b:Advance(1)
+	Equal(#b.wire, 0)
+	Equal(next(b.questCompareResponseCache), nil)
+	assert(b:HandleQuestCompareRequest({ requesterName = a.name, targetName = b.name, requestId = "new-profile" }))
+	Equal(#b.wire, 1)
+
+	-- Explicitly execute both late-response and expiry paths from a pending
+	-- read after switching profiles. Neither may reach the old receiver.
+	local callbacks = 0
+	local function Received() callbacks = callbacks + 1 end
+	local sent, id = a:RequestQuestCompare(b.name, {
+		onEntry = Received, onDone = Received, onTimeout = Received,
+	})
+	assert(sent)
+	local expired = assert(a.requests[id]).onExpire
+	a.db.profile = {}
+	Equal(a:HandleQuestCompareResponse({ requestId = id, snapshotId = "late", count = 1,
+		entries = { Quest(1, "Shared quest", true) } }, b.name), false)
+	expired()
+	Equal(callbacks, 0)
+	Equal(a:GetPendingQuestCompare(id), nil)
+
+	-- Failure replies leave the preparation cache immediately but may still
+	-- wait in transport. Keep their lifetime fence after that cache removal.
+	for _, failure in ipairs({ "oversize", "invalid", "unavailable" }) do
+		for _, boundary in ipairs({ "current", "profile", "world", "ignore", "party" }) do
+			local peer = Fixture("Responder-Realm", { Quest(1, "Shared quest", true) })
+			peer.db, peer.member = { profile = {} }, true
+			function peer:IsGroupedSender() return self.member end
+			local queued
+			function peer:Respond(operation, record, routes, options)
+				if operation == "QCRS" then return false, failure end
+				queued = { operation, record, routes, options }
+				return true
+			end
+			if failure == "unavailable" then
+				peer.BuildRevisionedQuestCompareEntries = function() return nil, "unavailable" end
+			end
+			assert(peer:HandleQuestCompareRequest({ requesterName = a.name, targetName = peer.name,
+				requestId = "failure", partyOnly = true }))
+			for _ = 1, 5 do peer:Advance(1) end
+			assert(queued and queued[1] == "ERROR")
+			Equal(next(peer.questCompareResponseCache), nil)
+			if boundary == "profile" then peer.db.profile = {}
+			elseif boundary == "world" then peer.commsWorldGeneration = 1
+			elseif boundary == "ignore" then peer.ignored = a.name
+			elseif boundary == "party" then peer.member = false end
+			peer:SubmitRecord(unpack(queued))
+			Equal(#peer.wire, boundary == "current" and 1 or 0)
+		end
+	end
+end)
+
 QuestTogether:RegisterTest("target compare response queue stops when requester becomes ignored", function()
 	for _, unreadable in ipairs({ false, true }) do
 		local net = QuestTogether:CreateTestNetwork({ fps = 30 })

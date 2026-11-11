@@ -235,9 +235,13 @@ QuestTogether:RegisterTest(
 		Equal(#a.retired, 1)
 		Equal(a.retired[1], name)
 		Equal(a:GetCommsDiagnostics().whisperUnavailable, 1)
+		Equal(a:GetAddonWhisperMetrics().matched, 1, "native events are counted once despite multiple chat frames")
 		Equal(a.shareMessages[1], message)
 		Equal(a:Filter(a:Notice("Other Person")), false)
 		Equal(a:Filter("You loot 18 Copper."), false)
+		a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", a:Notice("Other Person"))
+		a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", "You loot 18 Copper.")
+		Equal(a:GetAddonWhisperMetrics().untracked, 1, "unrelated system text is not a failed-whisper diagnostic")
 		local report = a:GetCommsDiagnostics()
 		assert(not tostring(report.lastFailure):find(name, 1, true), "routine diagnostics must omit identities")
 	end
@@ -255,9 +259,22 @@ QuestTogether:RegisterTest(
 			if not before then
 				a.ordinaryObserver("WHISPER", "Peer")
 			end
+			local completed = 0
+			assert(a:QueueTransportWire("next-fragment", "MPUB", { distribution = "WHISPER", target = "Peer-Realm" }, {
+				onComplete = function(sent, reason)
+					assert(not sent and reason == "unavailable")
+					completed = completed + 1
+				end,
+			}))
 			Equal(a:Filter(a:Notice("Peer")), false)
-			Equal(a:IsAddonWhisperTargetUnavailable("Peer-Realm"), false)
-			Equal(#a.retired, 0)
+			a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", a:Notice("Peer"))
+			Equal(a:Filter(a:Notice("Peer")), false, "keep the human whisper failure visible in every chat frame")
+			assert(a:IsAddonWhisperTargetUnavailable("Peer-Realm"), "visible errors still stop QT's own retries")
+			Equal(#a.retired, 1)
+			Equal(completed, 1)
+			Equal(a:GetAddonWhisperMetrics().ordinary, 1)
+			local sent, reason = a:SendTransportNow("retry", "MHEL", { distribution = "WHISPER", target = "Peer-Realm" })
+			assert(not sent and reason == "unavailable")
 		end
 		local a = WhisperFailureFixture()
 		a:Attempt("Peer-Elsewhere")
@@ -270,7 +287,14 @@ QuestTogether:RegisterTest(
 		end
 		b.ordinaryObserver("WHISPER", "secret-target")
 		Equal(b:Filter(b:Notice("Peer")), false)
+		assert(b:IsAddonWhisperTargetUnavailable("Peer-Realm"), "unreadable human intent must not permit a QT retry flood")
+		b:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", b:Notice("Peer"))
 		Equal(b:Filter("secret-target"), false)
+		b:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", "secret-target")
+		Equal(b:GetAddonWhisperMetrics().ordinaryUnknown, 1)
+		Equal(b:GetAddonWhisperMetrics().systemMessagesInaccessible, 1)
+		assert(b:GetAddonWhisperMetrics().ordinaryUnknownSeconds > 0)
+		Equal(#b.retired, 1, "an inaccessible message itself cannot be interpreted as a failure")
 	end
 )
 
@@ -312,6 +336,8 @@ QuestTogether:RegisterTest(
 		assert(a:IsAddonWhisperTargetUnavailable(name))
 		a.now = sentAt + 121
 		Equal(a:Filter(a:Notice(name)), false, "notice correlation still has a finite lifetime")
+		a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", a:Notice(name))
+		Equal(a:GetAddonWhisperMetrics().expired, 1)
 		assert(a:IsAddonWhisperTargetUnavailable(name), "notice expiry must not truncate the separate send hold")
 		a.now = sentAt + 151
 		assert(not a:IsAddonWhisperTargetUnavailable(name))
@@ -421,9 +447,12 @@ QuestTogether:RegisterTest(
 		a = WhisperFailureFixture()
 		a:Attempt(name)
 		a.isLoggingOut = true
-		Equal(a:Filter(a:Notice(name)), false, "filter cannot outlive ordinary-whisper observation")
+		assert(a:Filter(a:Notice(name)), "loading screens retain receipts and ordinary observation")
 		a.isLoggingOut, a.isEnabled = false, false
-		Equal(a:Filter(a:Notice(name)), false)
+		assert(a:Filter(a:Notice(name)), "disable does not retract a native attempt")
+		a.ordinaryObserver("WHISPER", name)
+		Equal(a:Filter(a:Notice(name)), false, "ordinary intent remains protected while disabled")
+		Equal(#a.retired, 0)
 	end
 )
 
@@ -450,17 +479,23 @@ QuestTogether:RegisterTest(
 		assert(a:Filter(a:Notice("Chronic Exhaustion")))
 		a:ResetTransport()
 		a:InitializeTransport()
-		Equal(a:Filter(a:Notice("Chronic Exhaustion")), false)
+		assert(a:Filter(a:Notice("Chronic Exhaustion")), "transport replacement does not erase native receipts")
+		a:ClearAddonWhisperFailure("Chronic Exhaustion")
 		a:Attempt("Chronic Exhaustion")
-		local oldFilter = a.filters.CHAT_MSG_SYSTEM
+		local oldFilter, oldObserver = a.filters.CHAT_MSG_SYSTEM, a.ordinaryObserver
 		a:ResetAddonWhisperFailures()
 		assert(not a.filters.CHAT_MSG_SYSTEM and not a.ordinaryObserver)
 		Equal(oldFilter({}, "CHAT_MSG_SYSTEM", a:Notice("Chronic Exhaustion")), false)
+		a:Attempt("Chronic Exhaustion")
+		oldObserver("WHISPER", "Chronic Exhaustion")
+		Equal(oldFilter({}, "CHAT_MSG_SYSTEM", a:Notice("Chronic Exhaustion")), false)
+		assert(a:Filter(a:Notice("Chronic Exhaustion")), "disposed callbacks cannot suppress or modify a new ledger")
 		a = WhisperFailureFixture(true)
 		a:Attempt("Chronic Exhaustion")
 		function a:RetireMeshPeer(name)
 			self:ResetTransport()
 			self:InitializeTransport()
+			self:ClearAddonWhisperFailure(name)
 			assert(self:QueueTransportWire("new-lifetime", "MHEL", { distribution = "WHISPER", target = name }))
 		end
 		assert(a:Filter(a:Notice("Chronic Exhaustion")))
@@ -469,15 +504,148 @@ QuestTogether:RegisterTest(
 )
 
 QuestTogether:RegisterTest(
+	"whisper receipts and ordinary intent survive real world and enable lifecycles without retiring new work",
+	function()
+		for _, lifecycle in ipairs({ "world", "disable", "transport" }) do
+			local net = QuestTogether:CreateTestNetwork({ whisperNotices = true })
+			local a = net:AddPeer("Self-Realm")
+			-- Native event/nameplate installation is unrelated to receipt ownership.
+			a.RegisterRuntimeEvents = function() end
+			a.EnableNameplateAugmentation = function() end
+			a.TryInstallPersonalBubbleEditModeHooks = function() end
+			a:InitializeTransport()
+			a.now = a.now + 2
+			for _, name in ipairs({ "Absent-Realm", "Manual-Realm" }) do
+				assert(a:SendTransportNow("wire", "MHEL", { distribution = "WHISPER", target = name }))
+			end
+			local ledger, filter, observer = a.addonWhisperState, a.chatFilters.CHAT_MSG_SYSTEM, a.ordinaryWhisperObserver
+			local function Notice(name) return "No player named '" .. name .. "' is currently playing." end
+			if lifecycle == "world" then
+				a:PLAYER_LEAVING_WORLD()
+				assert(a.isLoggingOut)
+			elseif lifecycle == "disable" then
+				a:Disable()
+				assert(not a.isEnabled and not a:GetTransportState())
+			else
+				a:ResetTransport()
+			end
+			Equal(a.addonWhisperState, ledger)
+			Equal(a.chatFilters.CHAT_MSG_SYSTEM, filter)
+			Equal(a.ordinaryWhisperObserver, observer)
+			observer("WHISPER", "Manual-Realm")
+			assert(filter({}, "CHAT_MSG_SYSTEM", Notice("Absent-Realm")))
+			Equal(filter({}, "CHAT_MSG_SYSTEM", Notice("Manual-Realm")), false)
+			assert(not a:IsAddonWhisperTargetUnavailable("Absent-Realm"))
+			if lifecycle == "world" then a:PLAYER_ENTERING_WORLD()
+			elseif lifecycle == "disable" then a:Enable()
+			else a:InitializeTransport() end
+			local queued, _, ticket = a:QueueTransportWire("new-work", "MHEL", { distribution = "WHISPER", target = "Absent-Realm" })
+			assert(queued)
+			assert(filter({}, "CHAT_MSG_SYSTEM", Notice("Absent-Realm")))
+			Equal(ticket.status, "queued", "an old receipt cannot cancel work in the resumed lifetime")
+			Equal(filter({}, "CHAT_MSG_SYSTEM", Notice("Manual-Realm")), false)
+			-- Even after a new attempt, a target-only notice may refer to the old
+			-- generation. An exact native outcome can identify the current call.
+			a.now = a.now + 2
+			assert(a:SendTransportNow("new-attempt", "MHEL", { distribution = "WHISPER", target = "Absent-Realm" }))
+			assert(filter({}, "CHAT_MSG_SYSTEM", Notice("Absent-Realm")))
+			Equal(ticket.status, "queued")
+			assert(not a:IsAddonWhisperTargetUnavailable("Absent-Realm"))
+			a.now = a.now + 121
+			Equal(filter({}, "CHAT_MSG_SYSTEM", "Unrelated system text"), false)
+			Equal(next(ledger.targets), nil, "post-disable activity releases expired transport references")
+		end
+	end
+)
+
+QuestTogether:RegisterTest(
+	"initially disabled login observes ordinary whispers before later enabling native sends",
+	function()
+		local net = QuestTogether:CreateTestNetwork({ whisperNotices = true })
+		local a = net:AddPeer("Self-Realm")
+		a.isEnabled, a.hasLoggedIn, a.db.profile.enabled = false, false, false
+		-- Keep the actual login/enable lifecycle; omit native UI installation.
+		for _, method in ipairs({ "InitializeMinimapLauncher", "InitializeReleaseNotes", "NotifyAddonUpdate",
+			"ScheduleStartupHint", "RegisterRuntimeEvents", "EnableNameplateAugmentation",
+			"TryInstallPersonalBubbleEditModeHooks" }) do a[method] = function() end end
+		a:OnLogin()
+		assert(not a.isEnabled and not a:GetTransportState() and not rawget(a, "communicationState"))
+		Equal(net.metrics.attempts, 0, "passive observation must not start communication")
+		Equal(next(a.joined), nil)
+		Equal(next(a.joining), nil)
+		assert(a.ordinaryWhisperObserver and a.chatFilters.CHAT_MSG_SYSTEM,
+			"ordinary intent must be observed even before the first enabled lifetime")
+		a.ordinaryWhisperObserver("WHISPER", "Manual-Realm")
+		Equal(next(a.addonWhisperState.targets), nil, "ordinary intent never manufactures an addon receipt")
+		a:Enable()
+		a.now = a.now + 1
+		for _, name in ipairs({ "Manual-Realm", "Hidden-Realm" }) do
+			assert(a:SendTransportNow("probe", "MHEL", { distribution = "WHISPER", target = name }))
+		end
+		local filter = a.chatFilters.CHAT_MSG_SYSTEM
+		Equal(filter({}, "CHAT_MSG_SYSTEM", "No player named 'Manual-Realm' is currently playing."), false)
+		assert(filter({}, "CHAT_MSG_SYSTEM", "No player named 'Hidden-Realm' is currently playing."))
+	end
+)
+
+QuestTogether:RegisterTest(
+	"exact native offline outcomes cannot mutate replaced expired or retired whisper attempts",
+	function()
+		for _, change in ipairs({ "none", "new-attempt", "new-generation", "new-transport", "disposed", "replied", "expired", "disabled" }) do
+			local a, name = WhisperFailureFixture(), "Absent-Realm"
+			local token = assert(a:RecordAddonWhisperAttempt(name))
+			a:FinalizeAddonWhisperAttempt(token, false)
+			if change == "new-attempt" then a:RecordAddonWhisperAttempt(name)
+			elseif change == "new-generation" then a:EndTransportSession(); a:ResumeTransportSession()
+			elseif change == "new-transport" then a:ResetTransport(); a:InitializeTransport()
+			elseif change == "disposed" then a:ResetAddonWhisperFailures(); a:RecordAddonWhisperAttempt(name)
+			elseif change == "replied" then a:ClearAddonWhisperFailure(name)
+			elseif change == "expired" then a.now = a.now + 121
+			elseif change == "disabled" then a.isEnabled = false end
+			a:MarkAddonWhisperAttemptUnavailable(token)
+			Equal(#a.retired, change == "none" and 1 or 0)
+			Equal(a:IsAddonWhisperTargetUnavailable(name), change == "none")
+			Equal(a:GetAddonWhisperMetrics().matched, 0, "a native return value is not a synthetic system event")
+			if change == "none" then
+				assert(a:Filter(a:Notice(name)))
+				Equal(#a.retired, 1)
+				Equal(a:GetCommsDiagnostics().whisperUnavailable, 1)
+			end
+		end
+		local a, name = WhisperFailureFixture(), "Absent-Realm"
+		a:RecordAddonWhisperAttempt(name)
+		a:EndTransportSession()
+		a:ResumeTransportSession()
+		local token = assert(a:RecordAddonWhisperAttempt(name))
+		a:FinalizeAddonWhisperAttempt(token, false)
+		assert(a:Filter(a:Notice(name)))
+		Equal(#a.retired, 0, "a target-only notice could refer to the older generation")
+		a:MarkAddonWhisperAttemptUnavailable(token)
+		Equal(#a.retired, 1, "the native TargetOffline result identifies the current attempt")
+		assert(a:IsAddonWhisperTargetUnavailable(name))
+	end
+)
+
+QuestTogether:RegisterTest(
 	"whisper filtering fails open without observation and remains bounded during target floods",
 	function()
 		local a = WhisperFailureFixture()
+		local allowed, reason = a:RecordAddonWhisperAttempt(string.rep("x", 118))
+		assert(not allowed and reason == "invalid", "realm normalization must not exceed the address bound")
+		a:ResetTransport()
+		allowed, reason = a:RecordAddonWhisperAttempt("Peer-Realm")
+		assert(not allowed and reason == "invalid", "no receipt can be installed without a native transport lifetime")
+		a:InitializeTransport()
 		a:ResetAddonWhisperFailures()
 		a.API.SetOrdinaryWhisperObserver = function()
 			return false
 		end
 		a:Attempt("Peer-Realm")
 		Equal(a:HandleAddonWhisperSystemMessage(a:Notice("Peer")), false)
+		a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", a:Notice("Peer"))
+		assert(a:IsAddonWhisperTargetUnavailable("Peer-Realm"), "missing filtering support still permits routing feedback")
+		Equal(a:GetAddonWhisperMetrics().filterRegistered, false)
+		Equal(a:GetAddonWhisperMetrics().unavailableFilter, 1)
 		a = WhisperFailureFixture()
 		assert(a:QueueTransportWire("not-sent", "MHEL", { distribution = "WHISPER", target = "Queued-Realm" }))
 		Equal(a:Filter(a:Notice("Queued")), false, "queue admission is not a native attempt")

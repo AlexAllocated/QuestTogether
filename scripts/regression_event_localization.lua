@@ -42,6 +42,7 @@ end
 
 local function PresentationFixture()
 	local a, clock = Fixture(), QT:CreateTestClock(100)
+	a.db = { profile = {} }
 	a.isEnabled, a.chat, a.bubbles, a.emotes = true, {}, {}, 0
 	a.work = { entries = {}, generations = {} }
 	a.API.GetTime = function() return clock:GetTime() end
@@ -192,7 +193,7 @@ QT:RegisterTest("quest announcement timeout checks newly cached tooltip data and
 end)
 
 QT:RegisterTest("pending localized announcements recheck consent scope and lifetime before presentation", function()
-	for _, change in ipairs({ "ignored", "suppressed", "scope", "disabled", "logout", "reset", "zoning" }) do
+	for _, change in ipairs({ "ignored", "suppressed", "scope", "disabled", "logout", "reset", "zoning", "profile" }) do
 		local a, clock = PresentationFixture()
 		a:HandleAnnouncementEvent(KoreanQuest(), false)
 		local stale = clock.timers[1].callback
@@ -200,6 +201,7 @@ QT:RegisterTest("pending localized announcements recheck consent scope and lifet
 		elseif change == "scope" then a.inScope = false
 		elseif change == "disabled" then a.isEnabled = false
 		elseif change == "logout" then a.isLoggingOut = true
+		elseif change == "profile" then a.db.profile = {}
 		elseif change == "zoning" then
 			function a:EndCommunicationSession() end
 			a:EndCommsWorldSession()
@@ -210,6 +212,22 @@ QT:RegisterTest("pending localized announcements recheck consent scope and lifet
 		stale()
 		assert(#a.chat == 0 and #a.bubbles == 0 and a.emotes == 0, change)
 	end
+end)
+
+QT:RegisterTest("new profile announcements do not inherit an old profile's pending presentation", function()
+	local a, clock = PresentationFixture()
+	a:HandleAnnouncementEvent(KoreanQuest("QUEST_ACCEPTED"), false)
+	local stale = clock.timers[1].callback
+	a.db.profile = {}
+	a:HandleAnnouncementEvent(KoreanQuest(), false)
+	a.titles[12345] = "The Binding"
+	a:QUEST_DATA_LOAD_RESULT(nil, 12345, true)
+	clock:Advance(2)
+	stale()
+	assert(#a.chat == 1 and a.chat[1] == "Quest Completed: The Binding",
+		"the new profile must present its event without replaying the old profile's acceptance")
+	assert(#a.bubbles == 1 and a.emotes == 1 and a.localizedQuestTitles.waitingCount == 0)
+	assert(a.loads == 1, "profile changes must preserve the native title request budget")
 end)
 
 QT:RegisterTest("local title waiting is bounded and does not delay same-language progress or restricted display", function()

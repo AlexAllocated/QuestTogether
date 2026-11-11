@@ -2344,3 +2344,130 @@ QT:RegisterTest(
 	end,
 	{ offline = true }
 )
+
+QT:RegisterTest("mesh whisper failures retire casing aliases without conflating surnames or realms", function()
+	for _, regional in ipairs({ false, true }) do
+		local net = QT:CreateTestNetwork({ now = 10000 })
+		local peer = Peer(net, regional and "Local Tester" or "Local-Realm", { regional = regional })
+		peer.API.GetPlayerNotFoundMessageFormat = function()
+			return "No player named '%s' is currently playing."
+		end
+		peer.API.SetOrdinaryWhisperObserver = function()
+			return true
+		end
+		peer.API.AddMessageEventFilter = function(_, callback)
+			peer.systemFilter = callback
+			return true
+		end
+		net:StartPeer(peer)
+		local state = peer:InitializeMeshNetwork()
+		local canonical = regional and "Meaty Secrets" or "Meaty-Realm"
+		local alias = canonical:lower()
+		local unrelated = regional and "Meaty Stranger" or "Meaty-Elsewhere"
+		for _, name in ipairs({ canonical, alias, unrelated }) do
+			assert(peer:RememberMeshCandidate(name, "directory"))
+		end
+		for _, name in ipairs({ canonical, unrelated }) do
+			state.neighbors[name] = { name = name, expires = peer.now + 1000, at = peer.now, connectedAt = peer.now }
+		end
+		local lease = {
+			id = "live-route",
+			destination = regional and "Remote Viewer" or "Viewer-Realm",
+			zone = 12,
+			upstream = canonical,
+			expiresAt = peer:GetAnnouncementServerTime() + 100,
+			downstreams = {},
+			alternates = {},
+		}
+		state.interests["live-route"] = lease
+		-- The native API accepts differently cased full addresses. Its failure
+		-- ledger already matches those spellings; routing cleanup must agree.
+		net.now, peer.now = net.now + 1, peer.now + 1
+		assert(peer:SendTransportNow("private-wire", "MHEL", { distribution = "WHISPER", target = alias }))
+		local notice = "No player named '" .. canonical .. "' is currently playing."
+		assert(peer.systemFilter({}, "CHAT_MSG_SYSTEM", notice))
+		assert(not peer:IsConfirmedMeshNeighbor(canonical), "a casing alias must retire the existing native peer")
+		assert(not state.interests["live-route"], "a failed native peer must not retain a differently cased route")
+		for _, name in ipairs({ canonical, alias }) do
+			local candidate = state.candidates[name]
+			assert(
+				candidate.lastRetirementReason == "unavailable" and candidate.retryAt >= peer.now + 300,
+				"all known spellings of the same full address must share the failed-peer backoff"
+			)
+		end
+		assert(peer:IsAddonWhisperTargetUnavailable(canonical))
+		assert(
+			peer:IsConfirmedMeshNeighbor(unrelated) and state.candidates[unrelated].delay == nil,
+			"a shared first name must not retire a different surname or realm"
+		)
+	end
+end, { offline = true })
+
+QT:RegisterTest(
+	"mesh newly discovered casing aliases inherit failed address backoff but native recovery remains eligible",
+	function()
+		for _, regional in ipairs({ false, true }) do
+			local net = QT:CreateTestNetwork({ now = 10000, fps = 5 })
+			local peer = Peer(net, regional and "Local Tester" or "Local-Realm", { regional = regional })
+			peer.API.GetPlayerNotFoundMessageFormat = function()
+				return "No player named '%s' is currently playing."
+			end
+			peer.API.SetOrdinaryWhisperObserver = function()
+				return true
+			end
+			peer.API.AddMessageEventFilter = function(_, callback)
+				peer.systemFilter = callback
+				return true
+			end
+			peer.API.GetNumDisplayChannels = function()
+				return 0
+			end
+			peer.API.GetChannelRosterInfo = function() end
+			peer.UpdatePlayerCommunications = function() end
+			net:StartPeer(peer)
+			local state = peer:InitializeMeshNetwork()
+			local canonical = regional and "Meaty Secrets" or "Meaty-Realm"
+			local alias = canonical:lower()
+			local unrelated = regional and "Meaty Stranger" or "Meaty-Elsewhere"
+			assert(peer:RememberMeshCandidate(canonical, "directory"))
+			net.now, peer.now = net.now + 1, peer.now + 1
+			assert(peer:SendTransportNow("first", "MHEL", { distribution = "WHISPER", target = canonical }))
+			assert(
+				peer.systemFilter({}, "CHAT_MSG_SYSTEM", "No player named '" .. canonical .. "' is currently playing.")
+			)
+			local retryAt = state.candidates[canonical].retryAt
+			-- The short native send hold has ended, but failed discovery has a
+			-- longer backoff. A later directory spelling must not reopen that probe.
+			net.now, peer.now = net.now + 61, peer.now + 61
+			assert(peer:RememberMeshCandidate(alias, "directory"))
+			local before = #peer.attempts
+			peer:UpdateMeshNetwork(peer.now)
+			peer:DrainTransport()
+			assert(
+				#peer.attempts == before and not state.pending[alias],
+				"new spellings cannot bypass failed-peer backoff"
+			)
+			assert(state.candidates[alias].retryAt == retryAt and state.candidates[alias].delay == 300)
+			assert(peer:RememberMeshCandidate(unrelated, "directory"))
+			net.now, peer.now = net.now + 1, peer.now + 1
+			peer:UpdateMeshNetwork(peer.now)
+			assert(state.pending[unrelated], "a different surname or realm must remain eligible")
+			-- A direct native hello can arrange a reciprocal challenge before the
+			-- old timeout. It is still only an address hint, not a confirmed edge.
+			assert(
+				peer:HandleMeshHello(
+					{ requestId = "recovery", version = "test", protocol = 3, capabilities = "mesh1" },
+					alias,
+					{ distribution = "WHISPER" }
+				)
+			)
+			net.now, peer.now = net.now + 1, peer.now + 1
+			peer:UpdateMeshNetwork(peer.now)
+			assert(
+				state.pending[alias] and not peer:IsConfirmedMeshNeighbor(alias),
+				"native recovery must permit a fresh challenge without granting unauthenticated membership"
+			)
+		end
+	end,
+	{ offline = true }
+)

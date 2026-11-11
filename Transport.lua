@@ -121,16 +121,27 @@ local function Valid(a, wire, route)
 		and a.API
 		and type(a.API.SendAddonMessage) == "function"
 end
+local function ChatRestricted(a)
+	-- This native restriction covers addon chat communication, not ordinary
+	-- open-world combat. Producers can pause while already-owned packets remain
+	-- queued, so revalidate here immediately before any transport budget is used.
+	return a.IsRuntimeRestrictionTypeActive and a:IsRuntimeRestrictionTypeActive("chat") == true
+end
 local function WhisperUnavailable(a, route)
 	return route.distribution == "WHISPER"
 		and a.IsAddonWhisperTargetUnavailable
 		and a:IsAddonWhisperTargetUnavailable(route.target) == true
 end
 local function WhisperTrackable(a, route)
-	return route.distribution ~= "WHISPER"
-		or not a.CanRecordAddonWhisperAttempt
-		or a:CanRecordAddonWhisperAttempt(route.target, route.meshTraffic) ~= false
+	if route.distribution ~= "WHISPER" then
+		return true
+	end
+	if not a.CanRecordAddonWhisperAttempt or not a.RecordAddonWhisperAttempt then
+		return false, "invalid"
+	end
+	return a:CanRecordAddonWhisperAttempt(route.target, route.meshTraffic)
 end
+
 local function Take(s, now, cost, mesh)
 	Refill(s, now)
 	if s.departing or (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
@@ -181,22 +192,37 @@ local function ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel)
 	a:RecordDiagnosticError("communication send", detail)
 end
 local function NativeSend(a, s, wire, context, route)
-	local target, generation = route.target, s.generation
+	local target, receipt = route.target, nil
 	-- A failed destination is suppressed before cancellation callbacks run.
 	-- Keep this final guard for direct sends and reentrant cleanup controls.
 	if WhisperUnavailable(a, route) then
 		Count(s, "whisperUnavailable")
 		return false, "unavailable"
 	end
-	if route.distribution == "WHISPER" and a.RecordAddonWhisperAttempt then
-		if a:RecordAddonWhisperAttempt(target, route.meshTraffic) == false then
-			Count(s, "whisperCorrelationFull")
-			return false, "capacity"
+	if route.distribution == "WHISPER" then
+		local reason
+		if a.RecordAddonWhisperAttempt then
+			receipt, reason = a:RecordAddonWhisperAttempt(target, route.meshTraffic)
+		end
+		if not receipt then
+			if reason == "capacity" then
+				Count(s, "whisperCorrelationFull")
+			end
+			return false, reason == "capacity" and "capacity" or "invalid"
 		end
 	end
 	Count(s, "attempts")
 	local ok, result = pcall(a.API.SendAddonMessage, a.commPrefix, wire, route.distribution, target)
 	local code = ok and a:SafeToNumber(result) or nil
+	-- Install correlation before native entry for synchronous notices. Only a
+	-- definite unsent throttle rolls it back; accepted, ambiguous and unknown
+	-- outcomes can still generate a later server notice.
+	if receipt and a.FinalizeAddonWhisperAttempt then
+		a:FinalizeAddonWhisperAttempt(receipt, code == 3)
+	end
+	if receipt and code == 12 and a.MarkAddonWhisperAttemptUnavailable then
+		a:MarkAddonWhisperAttemptUnavailable(receipt)
+	end
 	local nativeKey, nativeLabel = "nativeUnknown", "unknown"
 	if not ok then
 		nativeKey, nativeLabel = "nativeException", "exception"
@@ -351,13 +377,19 @@ function QT:SendTransportNow(wire, context, route, mode)
 			return false, "invalid"
 		end
 	end
+	if ChatRestricted(self) then
+		return false, "restricted"
+	end
 	if WhisperUnavailable(self, route) then
 		Count(s, "whisperUnavailable")
 		return false, "unavailable"
 	end
-	if not WhisperTrackable(self, route) then
-		Count(s, "whisperCorrelationFull")
-		return false, "capacity"
+	local trackable, trackingReason = WhisperTrackable(self, route)
+	if not trackable then
+		if trackingReason == "capacity" then
+			Count(s, "whisperCorrelationFull")
+		end
+		return false, trackingReason == "capacity" and "capacity" or "invalid"
 	end
 	if s.departing then
 		if (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
@@ -388,6 +420,12 @@ function QT:QueueTransportWire(wire, context, route, options)
 		return false, "cancelled"
 	end
 	if not Valid(self, wire, route) or (options ~= nil and type(options) ~= "table") then
+		return false, "invalid"
+	end
+	-- A full receipt ledger may recover before this packet expires, but an
+	-- invalid address can never be safely sent or correlated.
+	local trackable, trackingReason = WhisperTrackable(self, route)
+	if not trackable and trackingReason ~= "capacity" then
 		return false, "invalid"
 	end
 	options = options or {}
@@ -567,7 +605,8 @@ function QT:DrainTransport()
 		end
 	end
 	for _ = 1, 2 do
-		if self:GetTransportState() ~= s or s.departing or not self.isEnabled or self.isLoggingOut then
+		if self:GetTransportState() ~= s or s.departing or not self.isEnabled or self.isLoggingOut
+			or ChatRestricted(self) then
 			break
 		end
 		now = Now(self)
@@ -582,7 +621,8 @@ function QT:DrainTransport()
 			end
 			break
 		end
-		if self:GetTransportState() ~= s or s.departing or not self.isEnabled or self.isLoggingOut then
+		if self:GetTransportState() ~= s or s.departing or not self.isEnabled or self.isLoggingOut
+			or ChatRestricted(self) then
 			break
 		end
 		if now < row.createdAt or now >= row.expires then

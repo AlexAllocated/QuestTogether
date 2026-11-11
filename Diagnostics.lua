@@ -94,6 +94,11 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	}) do
 		Add("comms." .. key, comms[key] or 0)
 	end
+	local whisperMetrics = self.GetAddonWhisperMetrics and self:GetAddonWhisperMetrics() or {}
+	local whisperKeys = {}
+	for key in pairs(whisperMetrics) do whisperKeys[#whisperKeys + 1] = key end
+	table.sort(whisperKeys)
+	for _, key in ipairs(whisperKeys) do Add("comms.whisperFilter." .. key, whisperMetrics[key]) end
 	Add("comms.trafficSeconds", math.max(0, (comms.trafficObservedAt or 0) - (comms.trafficStartedAt or 0)))
 	local trafficCommands = {}
 	for command in pairs(comms.traffic or {}) do

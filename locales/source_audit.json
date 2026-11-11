@@ -83,6 +83,7 @@
       "local=%s sender=%s event=%s quest=%s bubbles=%s ownBubbleMode=%s text=%s",
       "option event=",
       "route=WHISPER notice=PLAYER_NOT_FOUND",
+      "route=WHISPER result=12 TargetOffline",
       "scope sender="
     ],
     "CommsProtocol.lua": [
@@ -362,7 +363,6 @@
       "/targetexact [nocombat] ",
       "BOTTOMLEFT",
       "Button",
-      "TOOLTIP",
       "[combat] hide"
     ],
     "MapOverlayControls.lua": [

@@ -263,9 +263,36 @@ return pushable end or nil,
 				end }
 				assert(addon.API.SetOrdinaryWhisperObserver(Observer))
 				assert(addon.API.SetOrdinaryWhisperObserver(Observer) and hooks == 2 and registrations == 1)
+				C_ChatInfo.SendChatMessage("public text")
+				C_ChatInfo.SendChatMessage("public text", nil, nil, "Peer-Realm")
+				assert(#observations == 2 and observations[1][1] == "SAY" and observations[2][1] == "SAY",
+					"an omitted native chat type means SAY, not an unreadable whisper destination")
+				preSend(preSendOwner, { GetNumLetters = function() return 4 end,
+					GetChatType = function() return nil end, GetTellTarget = function() return "Peer-Realm" end,
+					GetText = function() error("must not read private chat text") end })
+				assert(#observations == 3 and observations[3][1] == nil,
+					"unreadable edit-box metadata must remain unknown rather than defaulting to SAY")
+				C_ChatInfo.SendChatMessage("private text", secret, nil, "Peer-Realm")
+				assert(#observations == 4 and observations[4][1] == secret,
+					"inaccessible native chat types must remain unknown to the observer")
+				observations = {}
+				local letters = 0
 				local box = { GetChatType = function() return "WHISPER" end,
 					GetTellTarget = function() return "Chronic Exhaustion" end,
+					GetNumLetters = function() return letters end,
 					GetText = function() error("must not read private chat text") end }
+				-- Native SendText fires OnPreSendText even after ParseText has
+				-- executed a slash command and cleared its text. A sticky whisper
+				-- target alone is not an ordinary whisper attempt.
+				preSend(preSendOwner, box)
+				assert(#observations == 0, "an empty sticky whisper must not create ordinary intent")
+				for _, unreadable in ipairs({ secret, inaccessible, false }) do
+					letters = unreadable
+					preSend(preSendOwner, box)
+				end
+				assert(#observations == 3, "unavailable text length must preserve ordinary whisper feedback")
+				observations = {}
+				letters = 4
 				preSend(preSendOwner, box)
 				assert(#observations == 1 and observations[1][1] == "WHISPER"
 					and observations[1][2] == "Chronic Exhaustion")
@@ -283,12 +310,19 @@ return pushable end or nil,
 				assert(#observations == 5, "live tests must not retire or replace the live observer")
 				addon.isEnabled = false
 				preSend(preSendOwner, box); C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
+				assert(#observations == 7, "the callback owns protection for in-flight notices after disable")
 				addon.isEnabled, addon.isLoggingOut = true, true
 				preSend(preSendOwner, box); C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
+				assert(#observations == 9, "the callback owns protection for in-flight notices while departing")
 				addon.isLoggingOut = false
 				assert(addon.API.SetOrdinaryWhisperObserver(nil))
 				preSend(preSendOwner, box); C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
-				assert(#observations == 5, "disabled, departing, and retired observers must stay inert")
+				assert(#observations == 9, "retiring the callback must make retained native hooks inert")
+				addon.isEnabled = false
+				preSend(preSendOwner, box); C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
+				addon.isEnabled = true
+				preSend(preSendOwner, box); C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
+				assert(#observations == 9, "changing runtime state must not reactivate a retired observer")
 				assert(addon.API.SetOrdinaryWhisperObserver(function() error("bad observer") end))
 				assert(C_ChatInfo.SendChatMessage("private text", "WHISPER", nil, "Peer-Realm") == "native result")
 				-- A hook failure must not leave a partially installed active observer.
@@ -296,7 +330,7 @@ return pushable end or nil,
 				C_ChatInfo = { SendChatMessage = function() return "new native result" end }
 				assert(not addon.API.SetOrdinaryWhisperObserver(Observer))
 				SendChatMessage("private text", "WHISPER", nil, "Peer-Realm")
-				assert(#observations == 5)
+				assert(#observations == 9)
 			end)
 			addon.API.SetOrdinaryWhisperObserver(nil)
 			for _, key in ipairs(keys) do _G[key] = saved[key] end
@@ -435,6 +469,96 @@ return pushable end or nil,
 			for _, key in ipairs({ "UnitExists", "UnitIsVisible", "UnitPlayerControlled", "UnitGUID", "UnitPhaseReason" }) do
 				_G[key] = saved[key]
 			end
+		end
+		do
+			-- Explicit native phase evidence is separate from absent/hidden units.
+			local keys = { "UnitExists", "UnitIsVisible", "UnitIsPlayer", "UnitPlayerControlled",
+				"UnitGUID", "UnitPhaseReason", "UnitInPhase", "Enum" }
+			local saved = {}
+			for _, key in ipairs(keys) do saved[key] = _G[key] end
+			local exists, visible, player, controlled, guid, reason = true, true, true, true, "Player-1-ABC", nil
+			UnitExists = function() return exists end
+			UnitIsVisible = function() return visible end
+			UnitIsPlayer = function() return player end
+			UnitPlayerControlled = function() return controlled end
+			UnitGUID = function() return guid end
+			UnitPhaseReason = function() return reason end
+			UnitInPhase = nil
+			Enum = { PhaseReason = { Phasing = 0, Sharding = 1 } }
+			local observation = addon.API.GetLayerObservationUnit("nameplate1")
+			assert(observation and observation.guid == guid and not observation.phaseMismatch)
+			exists, visible, reason = false, false, 0
+			observation = addon.API.GetLayerObservationUnit("nameplate1")
+			assert(observation and observation.guid == guid and observation.phaseMismatch == true,
+				"a readable native phase reason must survive absent visibility")
+			for _, token in ipairs({ "target", "focus", "mouseover", "party1", "raid1" }) do
+				assert(addon.API.GetLayerObservationUnit(token).phaseMismatch == true)
+			end
+			for _, token in ipairs({ "Friend-Realm", "", secret, inaccessible }) do
+				assert(addon.API.GetLayerObservationUnit(token) == nil)
+			end
+			for _, invalid in ipairs({ false, "1", 0.5, 999, secret, inaccessible }) do
+				reason = invalid
+				assert(addon.API.GetLayerObservationUnit("nameplate1") == nil)
+			end
+			reason = nil
+			assert(addon.API.GetLayerObservationUnit("nameplate1") == nil, "missing visibility is unknown, not another phase")
+			exists, visible, reason = true, true, 1
+			-- A native Player GUID already establishes identity. The explicit
+			-- phase path must not depend on unrelated loaded-unit flag queries.
+			local flagKeys = { "UnitExists", "UnitIsVisible", "UnitIsPlayer", "UnitPlayerControlled" }
+			local flags, flagCalls = {}, 0
+			for _, key in ipairs(flagKeys) do flags[key], _G[key] = _G[key], nil end
+			assert(addon.API.GetLayerObservationUnit("party1").phaseMismatch == true)
+			for _, key in ipairs(flagKeys) do
+				_G[key] = function() flagCalls = flagCalls + 1; error("unavailable unit flags") end
+			end
+			assert(addon.API.GetLayerObservationUnit("party1").phaseMismatch == true and flagCalls == 0)
+			for _, key in ipairs(flagKeys) do _G[key] = flags[key] end
+			for _, invalid in ipairs({ "Creature-0-1-0-100-123-ABC", "", secret, inaccessible }) do
+				guid = invalid
+				assert(addon.API.GetLayerObservationUnit("nameplate1") == nil)
+			end
+			guid = "Player-1-ABC"
+			UnitGUID = nil
+			assert(addon.API.GetLayerObservationUnit("party1") == nil)
+			UnitGUID = function() error("unavailable unit identity") end
+			assert(addon.API.GetLayerObservationUnit("party1") == nil)
+			UnitGUID = function() return guid end
+			Enum.PhaseReason = inaccessible
+			local before = inaccessibleReads
+			assert(addon.API.GetLayerObservationUnit("nameplate1") == nil and inaccessibleReads == before)
+			Enum = inaccessible
+			assert(addon.API.GetLayerObservationUnit("nameplate1") == nil and inaccessibleReads == before)
+			UnitPhaseReason = function() error("unavailable phase information") end
+			assert(addon.API.GetLayerObservationUnit("nameplate1") == nil)
+			UnitPhaseReason = nil
+			UnitInPhase = function() return false end
+			assert(addon.API.GetLayerObservationUnit("party1").phaseMismatch == true)
+			for _, invalid in ipairs({ false, secret, inaccessible }) do
+				player = invalid
+				assert(addon.API.GetLayerObservationUnit("party1") == nil)
+			end
+			player = true
+			for _, invalid in ipairs({ false, secret, inaccessible }) do
+				controlled = invalid
+				assert(addon.API.GetLayerObservationUnit("party1") == nil)
+			end
+			controlled = true
+			exists = false
+			assert(addon.API.GetLayerObservationUnit("party1") == nil)
+			exists, visible = true, false
+			assert(addon.API.GetLayerObservationUnit("party1") == nil)
+			visible = true
+			for _, invalid in ipairs({ secret, inaccessible, 1 }) do
+				UnitInPhase = function() return invalid end
+				assert(addon.API.GetLayerObservationUnit("party1") == nil)
+			end
+			UnitInPhase = function() return true end
+			assert(not addon.API.GetLayerObservationUnit("party1").phaseMismatch)
+			UnitInPhase = function() error("unavailable phase information") end
+			assert(addon.API.GetLayerObservationUnit("party1") == nil)
+			for _, key in ipairs(keys) do _G[key] = saved[key] end
 		end
 		do
 			-- Offline only: exercise native visibility/phase access failures without

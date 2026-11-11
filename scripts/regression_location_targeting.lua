@@ -23,9 +23,13 @@ local function Fixture()
 		end
 		function b:Hide() assert(not a.blocked); self.shown = false end
 		function b:Show() assert(not a.blocked); self.shown = true end
+		function b:SetFrameStrata(value) assert(not a.blocked); self.strata = value end
+		function b:SetFrameLevel(value) assert(not a.blocked); self.level = value end
 		return b
 	end
-	a.owner = { shown = true }
+	a.owner = { shown = true, strata = "LOW", level = 12 }
+	function a.owner:GetFrameStrata() return self.strata end
+	function a.owner:GetFrameLevel() return self.level end
 	function a:Open(name)
 		return self:ShowLocationTargetButton(self.owner, name or "Friend-Realm", function() return self.valid end,
 			nil, nil, function(button) self.clicked = button end)
@@ -52,6 +56,28 @@ QT:RegisterTest("minimap target buttons keep hardware actions separate and inval
 	b.scripts.PreClick()
 	b.scripts.PostClick(nil, "RightButton")
 	Equal(a.clicked, "RightButton")
+	Equal(b.attrs.macrotext1, nil)
+end)
+
+QT:RegisterTest("target overlays follow minimap and menu layers without covering unrelated windows", function()
+	local a = Fixture()
+	assert(a:Open())
+	local b = a.locationTargetState.button
+	Equal(b.strata, "LOW")
+	Equal(b.level, 13)
+	-- Menu rows still need a clickable overlay above their own layer. The
+	-- same pooled secure button must return to the minimap's layer afterward.
+	a.owner.strata, a.owner.level = "FULLSCREEN_DIALOG", 50
+	assert(a:Open())
+	Equal(b.strata, "FULLSCREEN_DIALOG")
+	Equal(b.level, 51)
+	a.owner.strata, a.owner.level = "MEDIUM", 20
+	b.scripts.OnUpdate(nil, 0.1)
+	Equal(b.strata, "MEDIUM")
+	Equal(b.level, 21)
+	a.owner.strata = nil
+	b.scripts.OnUpdate(nil, 0.1)
+	Equal(b.shown, false)
 	Equal(b.attrs.macrotext1, nil)
 end)
 

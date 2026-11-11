@@ -2151,6 +2151,26 @@ Register("experimental phase decoration clears when a pooled pin changes occupan
 	Equal(pin.phaseIcon.shown, false)
 end)
 
+Register("player tooltip distinguishes native phase reports from experimental NPC evidence", function()
+	local a = Fixture()
+	function a:GetPlayerPhaseStatus() return self.phaseStatus, self.phaseSource end
+	local row = Row("Other-Realm")
+	a.phaseStatus, a.phaseSource = "different", "native"
+	local native = a:BuildPlayerTooltipModel(row)
+	assert(native.text:find("Different phase", 1, true))
+	assert(native.text:find("WoW reports that this player is in a different phase.", 1, true))
+	assert(not native.text:find("Nearby NPC observations differ.", 1, true))
+	a.phaseSource = nil
+	local inferred = a:BuildPlayerTooltipModel(row)
+	assert(inferred.text:find("Likely different layer (experimental)", 1, true))
+	assert(inferred.text:find("Nearby NPC observations differ. This is an estimate, not a confirmed phase.", 1, true))
+	assert(not inferred.text:find("WoW reports", 1, true))
+	a.phaseStatus, a.phaseSource = nil, nil
+	local cleared = a:BuildPlayerTooltipModel(row)
+	assert(not cleared.text:find("phase", 1, true))
+	assert(not cleared.text:find("experimental", 1, true))
+end)
+
 Register("hover interests follow visible owners across Alt Z recycled pins chat switches and leaves", function()
 	local a = Fixture()
 	a.requests = {}

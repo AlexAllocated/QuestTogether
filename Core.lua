@@ -854,21 +854,38 @@ local function MeshSocialName(value)
 end
 
 local ordinaryWhisperObserver = { hooks = {} }
-local function ObserveOrdinaryChatSend(_, distribution, language, target)
+local function NotifyOrdinaryWhisperObserver(distribution, target)
 	-- Never retain or forward the message text. Secure post-hooks cannot be
-	-- removed, so a disabled addon or cleared observer makes them inert.
+	-- removed. The consumer owns bounded notice receipts across disable/world
+	-- transitions; clearing its callback is what makes these hooks inert.
 	local callback = ordinaryWhisperObserver.callback
-	if callback and QuestTogether.isEnabled and not QuestTogether.isLoggingOut then
+	if callback then
 		pcall(callback, distribution, target)
 	end
 end
 
+local function ObserveOrdinaryChatSend(_, distribution, language, target)
+	-- SendChatMessage documents an omitted type as SAY. Unlike unreadable
+	-- edit-box metadata, that native default cannot be a human whisper.
+	if CanAccessForeignValue(distribution) and distribution == nil then
+		distribution = "SAY"
+	end
+	NotifyOrdinaryWhisperObserver(distribution, target)
+end
+
 local function ObserveOrdinaryEditBox(_, editBox)
-	if not ordinaryWhisperObserver.callback or not QuestTogether.isEnabled or QuestTogether.isLoggingOut then
+	if not ordinaryWhisperObserver.callback then
 		return
 	end
 	local distribution, target
 	if QuestTogether:CanAccessForeignFrame(editBox) then
+		-- Blizzard fires this notification even after slash parsing clears the
+		-- box, or Enter submits an empty sticky whisper. Zero length proves no
+		-- ordinary message will be sent without reading any private chat text.
+		local lengthOK, length = pcall(function() return editBox:GetNumLetters() end)
+		if lengthOK and CanAccessForeignValue(length) and type(length) == "number" and length == 0 then
+			return
+		end
 		local ok, value = pcall(function()
 			return editBox:GetChatType()
 		end)
@@ -880,7 +897,7 @@ local function ObserveOrdinaryEditBox(_, editBox)
 	end
 	-- Unreadable type/target is deliberately forwarded so the consumer can
 	-- fail open. No chat text or extra state on Blizzard's edit box is needed.
-	ObserveOrdinaryChatSend(nil, distribution, nil, target)
+	NotifyOrdinaryWhisperObserver(distribution, target)
 end
 
 local function SetOrdinaryWhisperObserver(callback)
@@ -1620,36 +1637,65 @@ QuestTogether.API = QuestTogether.API
 		end,
 		GetLayerObservationUnit = function(unitToken)
 			-- All results are checked before use; observations never mutate native units.
-			for _, query in ipairs({ "UnitExists", "UnitIsVisible" }) do
-				local fn = _G[query]
-				if type(fn) ~= "function" then
-					return nil
-				end
-				local ok, value = pcall(fn, unitToken)
-				if not ok or not CanAccessForeignValue(value) or value ~= true then
-					return nil
-				end
-			end
-			if type(UnitPlayerControlled) ~= "function" then
+			if not CanAccessForeignValue(unitToken) or type(unitToken) ~= "string"
+				or (unitToken ~= "target" and unitToken ~= "mouseover" and unitToken ~= "focus"
+					and not unitToken:match("^nameplate%d+$") and not unitToken:match("^party%d+$")
+					and not unitToken:match("^raid%d+$")) then
 				return nil
 			end
-			local okControlled, controlled = pcall(UnitPlayerControlled, unitToken)
+			if type(UnitGUID) ~= "function" then
+				return nil
+			end
 			local okGUID, guid = pcall(UnitGUID, unitToken)
 			if
-				not okControlled
-				or not CanAccessForeignValue(controlled)
-				or type(controlled) ~= "boolean"
-				or not okGUID
+				not okGUID
 				or not CanAccessForeignValue(guid)
 				or type(guid) ~= "string"
 			then
 				return nil
 			end
+			local phaseMismatch = false
 			if type(UnitPhaseReason) == "function" then
 				local ok, reason = pcall(UnitPhaseReason, unitToken)
-				if not ok or not CanAccessForeignValue(reason) or reason ~= nil then
+				if not ok or not CanAccessForeignValue(reason) then
 					return nil
 				end
+				if reason ~= nil then
+					local reasons = CanAccessForeignTable(Enum) and Enum.PhaseReason
+					if type(reason) ~= "number" or not CanAccessForeignTable(reasons) then return nil end
+					for _, value in pairs(reasons) do
+						if CanAccessForeignValue(value) and type(value) == "number" and reason == value then
+							phaseMismatch = true
+							break
+						end
+					end
+					if not phaseMismatch or #guid > 48 or not guid:match("^Player%-%d+%-%x+$") then return nil end
+					-- A readable native Player GUID supplies identity. Explicit phase
+					-- evidence needs no additional loaded-unit or visibility flags.
+					return { guid = guid, controlled = true, phaseMismatch = true }
+				end
+			elseif type(UnitInPhase) == "function" then
+				local ok, inPhase = pcall(UnitInPhase, unitToken)
+				if not ok or not CanAccessForeignValue(inPhase) or type(inPhase) ~= "boolean" then return nil end
+				phaseMismatch = not inPhase
+			end
+			-- Legacy UnitInPhase(false) also needs native presence: it supplies
+			-- no reason that distinguishes an absent unit from another phase.
+			for _, query in ipairs({ "UnitExists", "UnitIsVisible" }) do
+				local fn = _G[query]
+				if type(fn) ~= "function" then return nil end
+				local ok, value = pcall(fn, unitToken)
+				if not ok or not CanAccessForeignValue(value) or value ~= true then return nil end
+			end
+			if type(UnitPlayerControlled) ~= "function" then return nil end
+			local okControlled, controlled = pcall(UnitPlayerControlled, unitToken)
+			if not okControlled or not CanAccessForeignValue(controlled) or type(controlled) ~= "boolean" then return nil end
+			if phaseMismatch then
+				if not controlled or #guid > 48 or not guid:match("^Player%-%d+%-%x+$")
+					or type(UnitIsPlayer) ~= "function" then return nil end
+				local ok, player = pcall(UnitIsPlayer, unitToken)
+				if not ok or not CanAccessForeignValue(player) or player ~= true then return nil end
+				return { guid = guid, controlled = true, phaseMismatch = true }
 			end
 			return { guid = guid, controlled = controlled }
 		end,
@@ -7186,6 +7232,9 @@ end
 function QuestTogether:OnLogin()
 	self.hasLoggedIn = true
 	self.isLoggingOut = false
+	-- Preserve ordinary whisper intent before a disabled profile is enabled.
+	-- This passive observer/filter does not initialize transport or send data.
+	self:RegisterAddonWhisperChatFilter()
 	self:ReconcileQuestLogChatDestination()
 	if self.db.profile.enabled then
 		self:Enable()

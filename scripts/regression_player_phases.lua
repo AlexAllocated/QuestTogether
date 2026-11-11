@@ -15,6 +15,7 @@ local function Peer(name, guid, key)
 		guid = guid,
 		key = key,
 		players = {},
+		nativePlayers = {},
 		geographicCommsState = { session = "100-123" },
 	}, { __index = QT })
 	a.API = {
@@ -67,7 +68,8 @@ local function Peer(name, guid, key)
 				npcs["Creature-0-1-0-999-125-AAA"] = true
 			end
 		end
-		return { map = self.map, guid = self.guid, npcs = npcs, players = self:DeepCopy(self.players) }
+		return { map = self.map, guid = self.guid, npcs = npcs, players = self:DeepCopy(self.players),
+			nativePlayers = self:DeepCopy(self.nativePlayers) }
 	end
 	function a:GetCommunicationSession()
 		return "100-123"
@@ -148,6 +150,50 @@ QT:RegisterTest("experimental phases never infer layers from absent players or m
 		Exchange(a, b)
 		Eq(a:GetPlayerPhaseStatus("B"), nil)
 	end
+end)
+
+QT:RegisterTest("native phase evidence updates nearby dots without waiting for a peer comparison", function()
+	local a = Peer("A", "Player-1-ABC")
+	a.nearby = { { name = "B" } }
+	a.nativePlayers.B = "different"
+	a:UpdatePlayerPhaseObservations()
+	local status, source = a:GetPlayerPhaseStatus("B")
+	Eq(status, "different")
+	Eq(source, "native")
+	Eq(#a.sent, 0)
+	Eq(a:RequestPlayerPhaseComparison("B"), false)
+	-- Every scan replaces the evidence. Unknown or inaccessible native data
+	-- must not prolong a mismatch, and visibility clears it immediately.
+	a.now, a.nativePlayers.B = 101, "visible"
+	a:UpdatePlayerPhaseObservations()
+	Eq(a:GetPlayerPhaseStatus("B"), "visible")
+	a.now, a.nativePlayers.B = 102, nil
+	a:UpdatePlayerPhaseObservations()
+	Eq(a:GetPlayerPhaseStatus("B"), nil)
+	Eq(#a.sent, 1, "unknown players may still use the existing peer comparison")
+	a.now, a.nativePlayers.B = 103, "different"
+	a:UpdatePlayerPhaseObservations()
+	Eq(a:GetPlayerPhaseStatus("B"), "different")
+	a.now = 106
+	Eq(a:GetPlayerPhaseStatus("B"), nil)
+	a.now = 103
+	a.ignored = "B"
+	Eq(a:GetPlayerPhaseStatus("B"), nil)
+	a.ignored, a.private = nil, true
+	Eq(a:GetPlayerPhaseStatus("B"), nil)
+end)
+
+QT:RegisterTest("explicit local phase evidence overrides older peer visibility without changing wire evidence", function()
+	local a, b = Pair()
+	Exchange(a, b)
+	a.playerPhaseState.peers.B.players[a.guid] = true
+	a.nativePlayers.B, a.now = "different", 104
+	a:UpdatePlayerPhaseObservations()
+	Eq(a:GetPlayerPhaseStatus("B"), "different")
+	Eq(a.playerPhaseState.observation.players[b.guid], nil)
+	a.nativePlayers.B, a.now = "visible", 105
+	a:UpdatePlayerPhaseObservations()
+	Eq(a:GetPlayerPhaseStatus("B"), "visible")
 end)
 QT:RegisterTest("experimental phases prefer direct visibility and shared players over NPC mismatch", function()
 	local a, b = Pair()
@@ -283,7 +329,7 @@ QT:RegisterTest("experimental phases discard old evidence when local NPC routing
 	Eq(a:GetPlayerPhaseStatus("B"), nil)
 end)
 QT:RegisterTest(
-	"experimental observation scans readable visible units without targeting or retaining frames",
+	"phase observation scans native players and NPCs without targeting or retaining frames",
 	function()
 		local a = Peer("A", "Player-1-ABC", "1:0:100")
 		a.GetPlayerPhaseObservation = QT.GetPlayerPhaseObservation
@@ -293,6 +339,13 @@ QT:RegisterTest(
 		a.API.UnitGUID = function()
 			return a.guid
 		end
+		function a:GetUnitFullName(token)
+			if token == "nameplate2" then return "Visible Friend" end
+			if token == "focus" then return "Phased Friend" end
+			if token == "party1" then return "Party Friend" end
+		end
+		a.API.IsInGroup = function() return true end
+		a.API.IsInRaid = function() return false end
 		local frames = { { namePlateUnitToken = "nameplate1" }, { namePlateUnitToken = "nameplate2" } }
 		a.API.GetNamePlates = function()
 			return frames
@@ -309,11 +362,22 @@ QT:RegisterTest(
 			if token == "nameplate2" then
 				return { guid = "Player-1-FFF", controlled = true }
 			end
+			if token == "focus" then
+				return { guid = "Player-1-EEE", controlled = true, phaseMismatch = true }
+			end
+			if token == "party1" then
+				return { guid = "Player-1-DDD", controlled = true, phaseMismatch = true }
+			end
 		end
 		local o = a:GetPlayerPhaseObservation()
 		Eq(o.players["Player-1-FFF"], true)
 		Eq(o.npcs["Creature-0-1-0-100-123-AAA"], nil)
 		Eq(o.npcs["Creature-0-1-0-100-124-BBB"], true)
+		Eq(o.players["Player-1-EEE"], nil)
+		Eq(o.nativePlayers["Visible Friend"], "visible")
+		Eq(o.nativePlayers["Phased Friend"], "different")
+		Eq(o.nativePlayers["Party Friend"], "different")
+		Eq(reads.party1, true)
 		Eq(reads.mouseover, true)
 		Eq(reads.focus, true)
 		Eq(QT.DEFAULTS.profile.experimentalLayerDetection, true)

@@ -426,22 +426,43 @@ local function WhisperName(a, value)
 	if not a:CanAccessValue(value) or type(value) ~= "string" or #value > 120 or value:find("[%c|,:]") then
 		return nil
 	end
-	return a:NormalizeMemberName(value)
+	local name = a:NormalizeMemberName(value)
+	if not a:CanAccessValue(name) or type(name) ~= "string" or name == "" or #name > 120
+		or name:find("[%c|,:]") then return nil end
+	return name
 end
-local function WhisperState(a, create, allowDeparture)
-	local transport = rawget(a, "transportState")
-	if not transport or (not allowDeparture and (transport.departing or not a.isEnabled or a.isLoggingOut)) then
-		return nil
-	end
+local function WhisperState(a, create)
+	-- Native notices and ordinary whisper intent belong to the UI lifetime,
+	-- not a transport generation. Loading screens/disable cannot retract sends
+	-- already accepted by the engine or retire the observer protecting humans.
 	local s = rawget(a, "addonWhisperState")
-	if s and s.transport ~= transport then
-		s = nil
-	end
 	if not s and create then
-		s = { transport = transport, targets = {}, ordinary = {} }
+		s = { targets = {}, ordinary = {} }
 		a.addonWhisperState = s
 	end
 	return s
+end
+local function WhisperRoutingCurrent(a, s, row, now, exactAttempt)
+	local transport = rawget(a, "transportState")
+	return WhisperState(a) == s and transport ~= nil and a.isEnabled and not a.isLoggingOut
+		and not transport.departing and row.transport == transport and row.generation == transport.generation
+		and s.targets[row.name:lower()] == row and now >= row.at and now < row.at + WHISPER_NOTICE_SECONDS
+		and (exactAttempt or not (row.olderLifetimeUntil and now < row.olderLifetimeUntil))
+end
+local function ApplyWhisperUnavailable(a, s, row, key, now, exactAttempt)
+	if not WhisperRoutingCurrent(a, s, row, now, exactAttempt) or row.replied or row.unavailableUntil then return end
+	-- Install the barrier before cancelling transfers: their cleanup and
+	-- completion callbacks can themselves try to send more packets.
+	row.unavailableUntil = now + WHISPER_UNAVAILABLE_SECONDS
+	row.expires = math.max(row.expires, row.unavailableUntil)
+	if a.RetireMeshPeer then a:RetireMeshPeer(row.name, "unavailable") end
+	if not WhisperRoutingCurrent(a, s, row, now, exactAttempt) then return end
+	a:CancelCommunicationWhere(function(work)
+		if not WhisperRoutingCurrent(a, s, row, now, exactAttempt) then return false end
+		local route = work.route
+		local recipient = route and route.distribution == "WHISPER" and WhisperName(a, route.target)
+		return recipient ~= nil and recipient:lower() == key
+	end, "unavailable")
 end
 local function PruneWhisperTargets(rows, now)
 	local count = 0
@@ -461,6 +482,12 @@ local function WhisperTargetCount(s, now)
 		s.targetCount, s.targetsPrunedAt = PruneWhisperTargets(s.targets, now), now
 	end
 	return s.targetCount or 0
+end
+local function WhisperNoticeResult(s, now, suppress, decision)
+	-- Even unrelated system traffic releases expired receipts after disable.
+	-- Call after matching so the current event can still report an expiry.
+	if s then WhisperTargetCount(s, now) end
+	return suppress, decision
 end
 local function PlayerNotFoundPattern(format)
 	local parts, index, captures = { "^" }, 1, 0
@@ -489,12 +516,12 @@ local function PlayerNotFoundPattern(format)
 end
 
 function QuestTogether:RecordOrdinaryWhisperAttempt(distribution, target)
-	if not self.isEnabled or self.isLoggingOut then return end
-	local s = WhisperState(self, true, true)
+	local s = WhisperState(self)
 	if not s then
 		return
 	end
 	local now = WhisperNow(self)
+	WhisperTargetCount(s, now)
 	if not self:CanAccessValue(distribution) or type(distribution) ~= "string" then
 		s.ordinaryUnknownUntil = now + WHISPER_NOTICE_SECONDS
 		return
@@ -522,47 +549,82 @@ function QuestTogether:RegisterAddonWhisperChatFilter()
 	then
 		return
 	end
+	local s = WhisperState(self, true)
 	local ok, observing = pcall(self.API.SetOrdinaryWhisperObserver, function(distribution, target)
-		self:RecordOrdinaryWhisperAttempt(distribution, target)
+		if WhisperState(self) == s then self:RecordOrdinaryWhisperAttempt(distribution, target) end
 	end)
 	if not ok or observing ~= true then
 		return
 	end
-	self.addonWhisperChatFilterFunc = rawget(self, "addonWhisperChatFilterFunc")
-		or function(_, event, message)
-			return event == "CHAT_MSG_SYSTEM" and self:HandleAddonWhisperSystemMessage(message) or false
-		end
+	self.addonWhisperChatFilterFunc = function(_, event, message)
+		return WhisperState(self) == s and event == "CHAT_MSG_SYSTEM" and self:HandleAddonWhisperSystemMessage(message) or false
+	end
 	local added, result = pcall(self.API.AddMessageEventFilter, "CHAT_MSG_SYSTEM", self.addonWhisperChatFilterFunc)
 	self.addonWhisperChatFilterRegistered = added and result == true or nil
 end
 
 function QuestTogether:CanRecordAddonWhisperAttempt(target, meshTraffic)
-	local s, name = WhisperState(self, true, true), WhisperName(self, target)
-	if not s or not name then return true end
+	local name, transport = WhisperName(self, target), rawget(self, "transportState")
+	if not name or not transport then return false, "invalid" end
+	local s = WhisperState(self, true)
 	local count = WhisperTargetCount(s, WhisperNow(self))
 	local limit = meshTraffic and WHISPER_TARGET_LIMIT - WHISPER_PRIVATE_RESERVE or WHISPER_TARGET_LIMIT
-	return s.targets[name:lower()] ~= nil or count < limit
+	if s.targets[name:lower()] == nil and count >= limit then return false, "capacity" end
+	return true
 end
 
 function QuestTogether:RecordAddonWhisperAttempt(target, meshTraffic)
-	local s, name = WhisperState(self, true, true), WhisperName(self, target)
-	if not s or not name then
-		return
-	end
+	local allowed, reason = self:CanRecordAddonWhisperAttempt(target, meshTraffic)
+	if not allowed then return false, reason end
+	local s, name = WhisperState(self), WhisperName(self, target)
+	local transport = rawget(self, "transportState")
+	if not s or not name or not transport then return false, "invalid" end
 	self:RegisterAddonWhisperChatFilter()
 	local now, key = WhisperNow(self), name:lower()
 	local count = WhisperTargetCount(s, now)
 	local limit = meshTraffic and WHISPER_TARGET_LIMIT - WHISPER_PRIVATE_RESERVE or WHISPER_TARGET_LIMIT
 	if count >= limit and not s.targets[key] then
-		return false
+		return false, "capacity"
+	end
+	local prior = s.targets[key]
+	local olderUntil = prior and prior.olderLifetimeUntil
+	if prior and (prior.transport ~= transport or prior.generation ~= transport.generation) then
+		olderUntil = math.max(olderUntil or 0, prior.at + WHISPER_NOTICE_SECONDS)
 	end
 	if not s.targets[key] then s.targetCount = count + 1 end
-	s.targets[key] = { name = name, at = now, expires = now + WHISPER_NOTICE_SECONDS }
-	return true
+	local row = { name = name, at = now, expires = now + WHISPER_NOTICE_SECONDS,
+		transport = transport, generation = transport.generation, olderLifetimeUntil = olderUntil }
+	s.targets[key] = row
+	return { state = s, key = key, row = row, prior = prior, transport = transport, generation = transport.generation }
+end
+
+function QuestTogether:FinalizeAddonWhisperAttempt(token, definitelyUnsent)
+	if type(token) ~= "table" or token.finalized then return end
+	token.finalized = true
+	if not definitelyUnsent then return end
+	local s, transport = WhisperState(self), rawget(self, "transportState")
+	if s ~= token.state or not transport or transport ~= token.transport or transport.generation ~= token.generation
+		or s.targets[token.key] ~= token.row or token.row.noticeRecorded or token.row.replied then return end
+	local prior, now = token.prior, WhisperNow(self)
+	if prior and (now < prior.at or now >= prior.expires) then prior = nil end
+	s.targets[token.key], s.targetsPrunedAt = prior, nil
+end
+
+function QuestTogether:MarkAddonWhisperAttemptUnavailable(token)
+	if type(token) ~= "table" then return end
+	local s, row, now = WhisperState(self), token.row, WhisperNow(self)
+	if s ~= token.state or not row or not WhisperRoutingCurrent(self, s, row, now, true) or row.replied then return end
+	-- TargetOffline identifies this exact native call, unlike a target-only
+	-- system notice. It can safely stop current work despite an older receipt.
+	if not row.noticeRecorded then
+		row.noticeRecorded = true
+		self:RecordCommsDiagnostic("whisperUnavailable", "route=WHISPER result=12 TargetOffline")
+	end
+	ApplyWhisperUnavailable(self, s, row, token.key, now, true)
 end
 
 function QuestTogether:IsAddonWhisperTargetUnavailable(target)
-	local s, name = WhisperState(self, false, true), WhisperName(self, target)
+	local s, name = WhisperState(self), WhisperName(self, target)
 	local row = s and name and s.targets[name:lower()]
 	local now = WhisperNow(self)
 	return row ~= nil and now >= row.at and row.unavailableUntil ~= nil and now < row.unavailableUntil
@@ -570,7 +632,8 @@ end
 
 function QuestTogether:ClearAddonWhisperFailure(target)
 	local s, name = WhisperState(self), WhisperName(self, target)
-	if s and name then
+	local transport = rawget(self, "transportState")
+	if s and name and transport and not transport.departing and self.isEnabled and not self.isLoggingOut then
 		local row = s.targets[name:lower()]
 		if row then
 			-- A reply proves the address is reachable, but cannot acknowledge every
@@ -581,79 +644,103 @@ function QuestTogether:ClearAddonWhisperFailure(target)
 	end
 end
 
-function QuestTogether:HandleAddonWhisperSystemMessage(message)
-	local s = WhisperState(self, false, true)
-	if
-		not s
-		or not self.isEnabled
-		or self.isLoggingOut
-		or not rawget(self, "addonWhisperChatFilterRegistered")
-		or not self:CanAccessValue(message)
-		or type(message) ~= "string"
-		or #message > 1024
-	then
-		return false
+local WHISPER_NOTICE_METRICS = {
+	matched = "matched", ordinary = "ordinary", ordinaryUnknown = "ordinaryUnknown",
+	untracked = "untracked", expired = "expired", unavailableFilter = "unavailableFilter",
+	inaccessible = "systemMessagesInaccessible", unsupportedFormat = "unsupportedFormat",
+}
+
+function QuestTogether:RecordAddonWhisperNoticeDecision(reason)
+	local key = WHISPER_NOTICE_METRICS[reason]
+	if not key then return end
+	local diagnostics = self:GetCommsDiagnostics()
+	diagnostics.whisperNotices = diagnostics.whisperNotices or {}
+	diagnostics.whisperNotices[key] = (diagnostics.whisperNotices[key] or 0) + 1
+end
+
+function QuestTogether:GetAddonWhisperMetrics()
+	local metrics = {}
+	local diagnostics = self:GetCommsDiagnostics().whisperNotices or {}
+	for _, key in pairs(WHISPER_NOTICE_METRICS) do metrics[key] = diagnostics[key] or 0 end
+	metrics.filterRegistered = rawget(self, "addonWhisperChatFilterRegistered") == true
+	metrics.trackedTargets, metrics.ordinaryTargets, metrics.ordinaryUnknownSeconds = 0, 0, 0
+	local s = WhisperState(self)
+	if s then
+		local now = WhisperNow(self)
+		WhisperTargetCount(s, now)
+		PruneWhisperTargets(s.ordinary, now)
+		for _, row in pairs(s.targets) do
+			if now >= row.at and now < row.expires then metrics.trackedTargets = metrics.trackedTargets + 1 end
+		end
+		for _, row in pairs(s.ordinary) do
+			if now >= row.at and now < row.expires then metrics.ordinaryTargets = metrics.ordinaryTargets + 1 end
+		end
+		metrics.ordinaryUnknownSeconds = math.max(0, (s.ordinaryUnknownUntil or now) - now)
 	end
+	return metrics
+end
+
+function QuestTogether:HandleAddonWhisperSystemMessage(message)
+	local s, now = WhisperState(self), WhisperNow(self)
+	if not self:CanAccessValue(message) then return WhisperNoticeResult(s, now, false, "inaccessible") end
+	if type(message) ~= "string" or #message > 1024 then return WhisperNoticeResult(s, now, false) end
 	local getter = self.API.GetPlayerNotFoundMessageFormat
 	if type(getter) ~= "function" then
-		return false
+		return WhisperNoticeResult(s, now, false, "unsupportedFormat")
 	end
 	local ok, format = pcall(getter)
 	if not ok or not self:CanAccessValue(format) or type(format) ~= "string" or #format > 512 then
-		return false
+		return WhisperNoticeResult(s, now, false, "unsupportedFormat")
 	end
 	local pattern = PlayerNotFoundPattern(format)
-	local name = pattern and WhisperName(self, message:match(pattern))
-	local key, now = name and name:lower(), WhisperNow(self)
-	local row = key and s.targets[key]
-	if not row or now < row.at or now >= row.at + WHISPER_NOTICE_SECONDS then
-		return false
+	if not pattern then return WhisperNoticeResult(s, now, false, "unsupportedFormat") end
+	local name = WhisperName(self, message:match(pattern))
+	local key = name and name:lower()
+	if not key then return WhisperNoticeResult(s, now, false) end
+	local row = s and s.targets[key]
+	if not row then return WhisperNoticeResult(s, now, false, "untracked") end
+	if now < row.at or now >= row.at + WHISPER_NOTICE_SECONDS then
+		return WhisperNoticeResult(s, now, false, "expired")
 	end
 	PruneWhisperTargets(s.ordinary, now)
-	if (s.ordinaryUnknownUntil and now < s.ordinaryUnknownUntil) or s.ordinary[key] then
-		return false
+	local suppress, decision = true, "matched"
+	if not rawget(self, "addonWhisperChatFilterRegistered") then
+		suppress, decision = false, "unavailableFilter"
+	elseif s.ordinaryUnknownUntil and now < s.ordinaryUnknownUntil then
+		suppress, decision = false, "ordinaryUnknown"
+	elseif s.ordinary[key] then
+		suppress, decision = false, "ordinary"
 	end
+	-- A human whisper makes the notice ambiguous for display, not evidence
+	-- that QT should keep sending to an address just reported unavailable.
+	-- Keep that feedback visible while applying the same bounded send hold.
 	if not row.noticeRecorded then
 		row.noticeRecorded = true
 		self:RecordCommsDiagnostic("whisperUnavailable", "route=WHISPER notice=PLAYER_NOT_FOUND")
 	end
-	if WhisperState(self) ~= s then
-		-- Best-effort departure packets also use the native adapter. Their late
-		-- notices need filtering, but cannot mutate the retired routing lifetime.
-		return true
-	end
-	if row.replied then
-		-- A reply since the last attempt supersedes an older failure's routing
-		-- consequence. Hide that delayed notice without retiring a live peer.
-		return true
-	end
-	if not row.unavailableUntil then
-		-- Install the barrier before cancelling transfers: their cleanup and
-		-- completion callbacks can themselves try to send more packets.
-		row.unavailableUntil = now + WHISPER_UNAVAILABLE_SECONDS
-		row.expires = math.max(row.expires, row.unavailableUntil)
-		if self.RetireMeshPeer then
-			self:RetireMeshPeer(row.name, "unavailable")
-		end
-		if WhisperState(self) ~= s then return true end
-		self:CancelCommunicationWhere(function(work)
-			if WhisperState(self) ~= s then return false end
-			local route = work.route
-			local recipient = route and route.distribution == "WHISPER" and WhisperName(self, route.target)
-			return recipient ~= nil and recipient:lower() == key
-		end, "unavailable")
-	end
-	return true
+	-- Delayed notices still filter after retirement, but cannot affect a new
+	-- transport lifetime or a peer that has replied since the attempt.
+	ApplyWhisperUnavailable(self, s, row, key, now)
+	return WhisperNoticeResult(s, now, suppress, decision)
 end
 
-function QuestTogether:ResetAddonWhisperFailures()
+function QuestTogether:ResetAddonWhisperFailures(preserveReceipts)
+	if preserveReceipts then
+		local s = WhisperState(self)
+		if s then
+			local now = WhisperNow(self)
+			s.targetCount, s.targetsPrunedAt = PruneWhisperTargets(s.targets, now), now
+			PruneWhisperTargets(s.ordinary, now)
+		end
+		return
+	end
 	if rawget(self, "addonWhisperChatFilterRegistered") and self.API.RemoveMessageEventFilter then
 		pcall(self.API.RemoveMessageEventFilter, "CHAT_MSG_SYSTEM", self.addonWhisperChatFilterFunc)
 	end
 	if self.API.SetOrdinaryWhisperObserver then
 		pcall(self.API.SetOrdinaryWhisperObserver, nil)
 	end
-	self.addonWhisperChatFilterRegistered, self.addonWhisperState = nil, nil
+	self.addonWhisperChatFilterRegistered, self.addonWhisperChatFilterFunc, self.addonWhisperState = nil, nil, nil
 end
 
 function QuestTogether:HideAnnouncementChannelFromChatWindows(channelName)
@@ -870,7 +957,7 @@ function QuestTogether:ResetCommsState()
 	self:EndCommunicationSession()
 	self.communicationState = nil
 	self:ResetTransport()
-	self:ResetAddonWhisperFailures()
+	self:ResetAddonWhisperFailures(true)
 	self:ClosePartyChatReminderPreview()
 	self:ResetPartyChatReminder()
 	if self.ResetGeographicComms then

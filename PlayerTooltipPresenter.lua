@@ -295,10 +295,15 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 			classColor .. Text(addon, className, Text(addon, row.classFile)) .. "|r"
 		)
 		text = ""
-		if addon:GetPlayerPhaseStatus(row.name) == "different" then
-			text = L("Likely different layer (experimental)")
-				.. "\n"
-				.. L("Nearby NPC observations differ. This is an estimate, not a confirmed phase.")
+		local phaseStatus, phaseSource = addon:GetPlayerPhaseStatus(row.name)
+		if phaseStatus == "different" then
+			if phaseSource == "native" then
+				text = L("Different phase") .. "\n" .. L("WoW reports that this player is in a different phase.")
+			else
+				text = L("Likely different layer (experimental)")
+					.. "\n"
+					.. L("Nearby NPC observations differ. This is an estimate, not a confirmed phase.")
+			end
 		end
 		if addon:SupportsWarMode() == true and type(row.warMode) == "boolean" then
 			text = text .. L("\nWar Mode: ") .. (row.warMode and L("On") or L("Off"))

@@ -4,6 +4,55 @@ local function Equal(actual, expected, detail)
 	assert(actual == expected, (detail or "values differ") .. ": " .. tostring(actual) .. " ~= " .. tostring(expected))
 end
 
+QT:RegisterTest("asynchronous offline mesh whispers preserve ordinary feedback across chat windows and world departure", function()
+	for _, eventFirst in ipairs({ false, true }) do
+		for _, ordinary in ipairs({ false, true }) do
+			for _, departing in ipairs({ false, true }) do
+				local net = QT:CreateTestNetwork({ fps = 5, now = 10000, whisperNotices = true,
+					whisperNoticeDelay = 3, systemEventFirst = eventFirst })
+				local peer = net:AddPeer("Local Tester", { regional = true })
+				net:StartPeer(peer)
+				peer:InitializeMeshNetwork()
+				assert(peer:RememberMeshCandidate("Absent Peer", "directory", 12))
+				local function Attempts()
+					local count = 0
+					for _, packet in ipairs(peer.attempts) do
+						if packet.target == "Absent Peer" then
+							Equal(packet.result, 0, "native acceptance is separate from the later server error")
+							count = count + 1
+						end
+					end
+					return count
+				end
+				for _ = 1, 20 do
+					if Attempts() > 0 then break end
+					net:Advance(0.2)
+				end
+				Equal(Attempts(), 1, "actual discovery must attempt the offline native address")
+				if departing then
+					peer:EndCommunicationSession()
+					peer.isLoggingOut = true
+				end
+				if ordinary then peer.ordinaryWhisperObserver("WHISPER", "Absent Peer") end
+				net:Advance(4)
+				for _, window in ipairs(peer.chatWindows) do
+					Equal(window.visibleMessages, ordinary and 1 or 0, "each chat window preserves only ordinary feedback")
+				end
+				if departing then
+					assert(rawget(peer, "meshNetworkState") == nil, "a delayed notice cannot restart a departed mesh")
+				else
+					assert(peer:IsAddonWhisperTargetUnavailable("Absent Peer"))
+					local candidate = peer.meshNetworkState.candidates["Absent Peer"]
+					Equal(candidate.lastRetirementReason, "unavailable")
+					assert(candidate.retryAt > peer.now + 290)
+				end
+				net:Advance(65)
+				Equal(Attempts(), 1, "the server notice must stop rediscovery even after the short send hold expires")
+			end
+		end
+	end
+end, { offline = true })
+
 QT:RegisterTest("party quest snapshots repair over native group and targeted private routes", function()
 	for _, mode in ipairs({ "PARTY", "RAID", "INSTANCE_CHAT", "private" }) do
 		local net = QT:CreateTestNetwork({ fps = 20 })

@@ -5649,7 +5649,7 @@ end)
 QuestTogether:RegisterTest("atomic quest compare response prints entries then clears its pending request", function()
 	local _, a, b = AnnouncementPeers()
 	local printed = {}
-	a.pendingQuestCompareRequests = { ["qcmp-123"] = { targetName = b.name } }
+	a.pendingQuestCompareRequests = { ["qcmp-123"] = { targetName = b.name, profile = a.db.profile } }
 	a.API.IsOnQuest = function()
 		return false
 	end

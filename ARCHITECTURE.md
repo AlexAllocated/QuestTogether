@@ -40,6 +40,7 @@ private `.local` notes are historical context, not the source of truth.
 | RecentCompanions | Bounded private history from actual group membership and its owned list | Nearby discovery, online status, profile copies or network payloads |
 | ObjectiveAnnouncements | Bounded local objective burst aggregation before publication | Remote-event rewriting, native quest reads or a separate timer |
 | PlayerDetails | Active hover interests, metadata refresh and roster fetch coordination | Tooltip drawing or an independent timer |
+| PlayerPhases | Short-lived native phase evidence and bounded experimental nearby comparisons | Target mutation, arbitrary-name targetability guesses or inferred mismatches from absent units |
 | PartyVisuals | Shared party identity, validated rosters, partial membership evidence and freshness-aware member lookup | Tooltip-specific membership inference or manufacturing peer presence |
 | Keybindings | Fixed player actions delegated to existing feature operations | Key assignment, binding overrides, native input state |
 | OwnedUI | Guarded owned-region access and a durable cleanup queue | Permission to modify Blizzard-owned frames |
@@ -89,6 +90,8 @@ private `.local` notes are historical context, not the source of truth.
   objective storage is capped at 128 records per peer. Detached extra records
   expire after 120 idle seconds once any pending request has settled. Raids and
   comparisons outside the small party retain on-demand fetching.
+  Comparison requests, deferred response preparation and receiver callbacks
+  retain their originating profile and cannot resume under a replacement profile.
   Refresh failures retain accepted data rather than reverting to Loading.
   Incoming announcements update cached rows before chat
   filters or delayed title rendering. Ordering is per sender/objective with quest
@@ -177,7 +180,8 @@ private `.local` notes are historical context, not the source of truth.
   Focus dots, follow rings and badges track the native row's strata and frame
   level so ordinary windows can cover them. Their separate hover tooltips and
   focus confirmation dialogs remain on their appropriate overlay layers.
-  POT renders above native quest-hover tooltips outside Edit Mode.
+  POT stays on the LOW strata behind ordinary windows and tooltips. Quest-hover
+  docking avoids overlap through placement rather than raising its display layer.
 
 - Recent companions are recorded only from the sanitized current group roster,
   including non-QT members. The private `db.global.recentCompanions` store is
@@ -217,6 +221,16 @@ private `.local` notes are historical context, not the source of truth.
   pointer away, closing/changing the map or losing visibility ends the hover.
   Secure minimap targeting still requires the actual marker under the pointer;
   a retained tooltip never preserves an old click target or cluster click hint.
+  Its independent secure button mirrors the marker or menu row's display layer
+  so an overlying window also covers the invisible click target.
+  Nearby phase decoration first uses readable native identity and explicit phase
+  evidence from target, mouseover, focus, nameplate and current-group units. Each
+  one-second scan replaces this local evidence; it expires after two seconds and
+  does not require a peer reply. Known native results avoid redundant comparison
+  requests and take precedence over older peer observations. Only actual visible
+  players enter shared visibility samples. Missing or restricted native units do
+  not imply a different phase. The existing experimental NPC comparison remains
+  the fallback, with its uncertainty distinguished in the player tooltip.
   A navigation click automatically expands an identical cluster on the destination
   map. Its two-second intent is consumed once and is cancelled by membership,
   map, profile or enabled-lifetime changes; split clusters remain individual dots.
@@ -523,25 +537,61 @@ timed-out and failed submissions; a candidate retains its last bounded outcome
 for explicit local troubleshooting.
 
 Native whispers can be accepted locally and later produce a player-not-found
-system notice. A bounded, transport-lifetime ledger correlates the localized
+system notice. A bounded, UI-lifetime receipt ledger correlates the localized
 notice with actual QT whisper attempts for 120 seconds. Ordinary whisper intent
-keeps ambiguous notices visible for that same interval. Correlated failures retire only routing state,
-cancel that target's queued whispers, and hold further sends for 60 seconds;
+keeps ambiguous notices visible for that same interval. Visibility does not
+disable failure handling: a correlated unavailable address still receives the
+send hold even when an ordinary whisper or missing filter hook keeps its notice
+visible. Correlated failures retire only routing state, cancel that target's
+queued whispers, and hold further sends for 60 seconds;
 discovery retains its existing candidate backoff. An eligible native-origin
 packet clears the send hold before replies, without renewing domain data or
 discarding notice correlation. A failure arriving after a reply but before any
-new attempt is logged and hidden without retiring the recovered address. The
+new attempt is logged and hidden without retiring the recovered address.
+Native attempts reserve a receipt before calling the engine so synchronous
+feedback can be matched. A definite unsent throttle restores the previous
+receipt unless reentrant feedback superseded it; accepted, ambiguous and unknown
+outcomes retain correlation. A native `TargetOffline` outcome applies the same
+send hold directly, without depending on a later text notice. The
+unavailable-peer cleanup matches known casing aliases of the complete native
+address, retaining the realm or Forever surname when comparing identities. A
+newly discovered casing alias inherits an existing candidate's backoff before
+probing; direct reciprocal recovery can still establish reachability. The
 128-target ledger never evicts a live receipt to send to another address: new
 targets wait within the existing bounded queue until capacity returns or their
 work expires. Sixteen receipt slots are reserved for non-mesh whispers so public
 fanout cannot exhaust admission for targeted private requests. Existing targets
 and party routes continue using the shared budget.
 Best-effort world-departure whispers are recorded too; their notices can be
-hidden without mutating retired routing while ordinary-whisper observation
-remains active. Disable/reset unregisters the filter rather than preserving it
-past its ordinary-whisper observer.
+hidden without mutating retired routing. Receipts include transport identity and
+generation; a late error from an earlier lifetime cannot cancel newly resumed
+work. A new attempt to the same address retains the old lifetime's ambiguity
+deadline without extending it, since text errors carry no packet ID.
+World transitions, profile changes and disable retain recent receipts alongside
+their passive ordinary-whisper observer. Receipts stop matching at their original
+deadline and are pruned lazily; the observer schedules no new network work or
+pump. Login installs this passive observer even for a disabled profile, preserving
+ordinary whisper feedback if QT is enabled later without starting networking.
+Explicit disposal invalidates old callback closures. Empty
+chat boxes after slash-command parsing do not count as ordinary whisper intent.
+The native send observer treats an omitted chat type as SAY, matching Blizzard's
+API default; unreadable edit-box metadata remains unknown and fails open.
 Chat filters suppress only correlated notices; failures remain counted in QT's
 diagnostics. Missing hooks, unreadable values, and uncertain matches fail open.
+Fixed `comms.whisperFilter` counters count native system events once, separately
+from per-chat-frame filtering. They distinguish matched notices, ordinary-whisper
+exemptions, untracked/expired addresses, missing filter support, and inaccessible
+system messages; the latter cannot be classified as whisper failures. Reports
+include only counts, filter registration and guard duration, never names or
+message contents. Blizzard can bypass addon filters for secret system messages
+during chat lockdown, so correlation cannot guarantee suppression of a delayed
+notice crossing that boundary.
+The transport revalidates the native Chat restriction before spending send
+budget, after currentness callbacks, and between packets. Queued work still
+expires or cancels while paused and resumes under normal pacing when allowed;
+direct/departure attempts return `restricted` without spending budget or recording
+a native failure.
+Ordinary combat alone does not block party or whisper traffic at this boundary.
 
 Interests have 120-second leases renewed every 40 seconds with new immutable query
 identities. Each query forwards once, to at most 3 neighbors with an 8-hop limit;
@@ -852,7 +902,9 @@ EventLocalization owns the shared local quest-title cache and native load budget
 Core reads local quest titles, links and structured tooltip headers without
 opening or selecting native UI. Foreign-language announcements may wait at most
 two seconds for an already-requested title, with at most 32 pending messages;
-runtime owners cancel them on reset or world exit. Completion rechecks current
+runtime owners cancel them on reset or world exit. Pending presentation is tied
+to its original profile; switching profiles retires those events while preserving
+the shared title cache and native request budget. Completion rechecks current
 display eligibility and prints once, preserving the sender's title if no local
 title becomes available. Subsequent events for the same player and quest retain
 arrival order and the original deadline; unrelated announcements remain independent.
