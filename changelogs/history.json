@@ -3,6 +3,140 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.0.10",
+        "welcome": "Smoother world-map tooltips.",
+        "sections": [
+          {
+            "title": "World-map performance",
+            "items": [
+              "Reduced FPS drops when hovering player markers on the world map, especially clusters and tooltips showing several party members. Player information continues to update while the tooltip is open."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.0.10",
+        "welcome": "Flüssigere Tooltips auf der Weltkarte.",
+        "sections": [
+          {
+            "title": "Leistung auf der Weltkarte",
+            "items": [
+              "Weniger FPS-Einbrüche beim Überfahren von Spielermarkierungen auf der Weltkarte, besonders bei zusammengefassten Markierungen und Tooltips mit mehreren Gruppenmitgliedern. Die angezeigten Spielerinformationen werden weiterhin aktualisiert, solange der Tooltip geöffnet ist."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.0.10",
+        "welcome": "Des infobulles plus fluides sur la carte du monde.",
+        "sections": [
+          {
+            "title": "Performances sur la carte du monde",
+            "items": [
+              "Consulter les marqueurs de joueurs sur la carte du monde entraîne moins de baisses de FPS, notamment pour les marqueurs regroupés et les infobulles affichant plusieurs membres d’un groupe. Les informations continuent de s’actualiser pendant la consultation."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.0.10",
+        "welcome": "Mejor rendimiento al consultar jugadores en el mapa del mundo.",
+        "sections": [
+          {
+            "title": "Rendimiento del mapa del mundo",
+            "items": [
+              "Se han reducido las caídas de FPS al pasar el cursor sobre los marcadores de jugadores del mapa del mundo, especialmente los marcadores agrupados y las descripciones emergentes con varios miembros de un grupo. Los datos siguen actualizándose mientras se muestran."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.0.10",
+        "welcome": "Consulta a los jugadores en el mapa del mundo con mayor fluidez.",
+        "sections": [
+          {
+            "title": "Rendimiento en el mapa del mundo",
+            "items": [
+              "Pasar el cursor sobre los marcadores de jugadores ahora provoca menos caídas de FPS, sobre todo en los marcadores agrupados y los recuadros que muestran a varios miembros de un grupo. La información continúa actualizándose mientras el recuadro está abierto."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.0.10",
+        "welcome": "Melhor desempenho ao consultar jogadores no mapa-múndi.",
+        "sections": [
+          {
+            "title": "Desempenho no mapa-múndi",
+            "items": [
+              "Reduzidas as quedas de FPS ao passar o cursor sobre os marcadores de jogadores, principalmente os marcadores agrupados e as dicas com vários membros de um grupo. As informações continuam sendo atualizadas enquanto a dica está aberta."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.0.10",
+        "welcome": "Подсказки на карте мира работают плавнее.",
+        "sections": [
+          {
+            "title": "Производительность карты мира",
+            "items": [
+              "Уменьшены просадки FPS при наведении на метки игроков на карте мира. Особенно заметно улучшение у объединённых меток и в подсказках с несколькими участниками группы. Сведения об игроках продолжают обновляться, пока подсказка открыта."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.0.10",
+        "welcome": "Prestazioni migliori consultando i giocatori sulla mappa.",
+        "sections": [
+          {
+            "title": "Prestazioni sulla mappa del mondo",
+            "items": [
+              "Ridotti i cali di FPS quando si passa il puntatore sui segnalini dei giocatori nella mappa del mondo, soprattutto quelli raggruppati e i tooltip con più membri del gruppo. Le informazioni continuano ad aggiornarsi mentre il tooltip è aperto."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.0.10",
+        "welcome": "세계 지도에서 플레이어 정보를 더 부드럽게 확인할 수 있습니다.",
+        "sections": [
+          {
+            "title": "세계 지도 성능",
+            "items": [
+              "세계 지도의 플레이어 표시에 마우스를 올렸을 때 발생하는 FPS 저하를 줄였습니다. 여러 플레이어가 합쳐진 표시나 파티원 여러 명의 정보를 담은 툴팁에서 특히 효과가 있습니다. 툴팁을 열어 둔 동안에도 정보는 계속 갱신됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.0.10",
+        "welcome": "查看世界地图上的玩家信息更加流畅。",
+        "sections": [
+          {
+            "title": "世界地图性能",
+            "items": [
+              "改善了鼠标悬停在世界地图玩家标记上时的掉帧问题，尤其是合并标记和显示多名队友的提示。提示打开期间，玩家信息仍会持续更新。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.0.10",
+        "welcome": "查看世界地圖上的玩家資訊更加流暢。",
+        "sections": [
+          {
+            "title": "世界地圖效能",
+            "items": [
+              "改善滑鼠停留在世界地圖玩家標記上時的掉幀問題，尤其是合併標記和顯示多名隊友的提示。提示開啟期間，玩家資訊仍會持續更新。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.0.9",
         "welcome": "More reliable background connections and quieter handling of unavailable players.",
         "sections": [

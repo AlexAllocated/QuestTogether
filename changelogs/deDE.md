@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.11
+
+Dieser Patch verbessert den Questvergleich deiner Gruppe, behebt ein Kartenproblem und verringert den laufenden Aufwand des Addons.
+
+### Korrekturen für Gruppe und Karte
+
+- „Teilen anfordern“ prüft jetzt das ausgewählte Gruppenmitglied korrekt, auch wenn mehrere Spieler dieselbe Quest haben oder Filter im Gruppenquestlog aktiv sind.
+- Eingeklappte Spielerspalten bleiben beim Aktualisieren und bei Änderungen an der Gruppe eingeklappt, solange die jeweiligen Spieler weiterhin zur Gruppe gehören.
+- Gruppenquestlog und Gruppen-Zielverfolgung bereinigen die Darstellung empfangener Questnamen und Zieltexte, ohne die empfangenen Daten zu verändern.
+- Veraltete Schaltflächen zum Anvisieren auf der Karte werden bei wechselnden Oberflächenbeschränkungen entfernt, sobald WoW dies erlaubt. Das geschützte Ausblenden im Kampf bleibt erhalten.
+
+### Leistung
+
+- Die Spielermarkierungen auf der Minikarte benötigen weniger wiederholte Prüfungen und Anzeigeänderungen. Unveränderte Positionsdaten naher Spieler und ihre Koordinatenumrechnungen werden wiederverwendet.
+- Beim Austausch der Gruppenquestlisten werden kurzzeitig gemeinsame Zwischenergebnisse genutzt und bei Queständerungen verworfen. Manuelles Aktualisieren liest den aktuellen Stand neu ein; Questziele werden weiterhin frisch abgefragt.
+
+### Tests im Spiel
+
+- Die Tests werden erst bei Bedarf über das mitgelieferte optionale Addon QuestTogether Tests geladen. Dadurch belegt QuestTogether beim normalen Spielen weniger Arbeitsspeicher. Für /qt test muss QuestTogether Tests aktiviert sein; zum Spielen wird es nicht benötigt.
+
 ## 9.0.10
 
 Flüssigere Tooltips auf der Weltkarte.

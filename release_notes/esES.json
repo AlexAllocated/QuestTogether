@@ -1,13 +1,29 @@
 {
-  "source_sha256": "187e123cc68b18100e9fed552142760e5ad1bfade425b8ae82168c219ab4fa99",
+  "source_sha256": "8d4663118c8c793c673f5631230e5b390e8ac74f03bcc5c03d0be55e792f1dfa",
   "notes": {
-    "version": "9.0.10",
-    "welcome": "Mejor rendimiento al consultar jugadores en el mapa del mundo.",
+    "version": "9.0.11",
+    "welcome": "Correcciones en las misiones del grupo y el mapa, menos trabajo repetido y pruebas que solo se cargan cuando las necesitas.",
     "sections": [
       {
-        "title": "Rendimiento del mapa del mundo",
+        "title": "Correcciones del grupo y el mapa",
         "items": [
-          "Se han reducido las caídas de FPS al pasar el cursor sobre los marcadores de jugadores del mapa del mundo, especialmente los marcadores agrupados y las descripciones emergentes con varios miembros de un grupo. Los datos siguen actualizándose mientras se muestran."
+          "Solicitar compartir comprueba ahora al compañero que has elegido, aunque varios tengan la misma misión o haya filtros activos en la comparación.",
+          "Las columnas contraídas del Registro de misiones del grupo se mantienen así al pulsar Actualizar o cambiar la composición del grupo, mientras esos jugadores sigan presentes.",
+          "El Registro de misiones del grupo y el Seguimiento de objetivos del grupo limpian los códigos de formato de los títulos y objetivos recibidos de otros jugadores antes de mostrarlos, sin alterar los datos originales.",
+          "Los controles para seleccionar jugadores en el mapa se retiran al cambiar las restricciones de la interfaz, siempre que WoW lo permita. Se mantiene su ocultación durante el combate."
+        ]
+      },
+      {
+        "title": "Rendimiento",
+        "items": [
+          "Se reducen las comprobaciones y los cambios repetidos al mover los indicadores del minimapa. También se reutilizan los datos de presentación y las conversiones de coordenadas de jugadores cercanos cuando no han cambiado.",
+          "Las respuestas sobre misiones del grupo comparten temporalmente la lectura de la lista de misiones para evitar trabajo duplicado. Actualizar toma una lectura nueva y los objetivos se siguen consultando de nuevo en cada solicitud de detalles."
+        ]
+      },
+      {
+        "title": "Pruebas dentro del juego",
+        "items": [
+          "Las pruebas se cargan al ejecutar /qt test, lo que reduce el uso de memoria durante el juego normal. Para usar el comando, activa el addon opcional QuestTogether Tests incluido en el paquete y recarga la interfaz. QuestTogether funciona sin él."
         ]
       }
     ]

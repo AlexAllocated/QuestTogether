@@ -4,6 +4,26 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.11
+
+Party Quest Log fixes and reduced background work.
+
+### Party and map fixes
+
+- Request Share now works for the player you select, including when several party members have the quest or comparison filters hide its row.
+- Collapsed player columns stay collapsed when you refresh the Party Quest Log or the party roster changes.
+- Quest titles and objective text received from other players are cleaned up before display to prevent embedded formatting from disrupting the Party Quest Log or Party Objective Tracker.
+- Improved cleanup of map targeting controls when the UI becomes restricted.
+
+### Performance
+
+- Reduced repeated minimap work and unnecessary allocations while tracking nearby players.
+- Party quest requests reuse unchanged quest-log data while explicit refreshes and objective details still read current information.
+
+### In-game tests
+
+- Tests now load only when you run /qt test, reducing memory use during normal play. Keep the bundled QuestTogether Tests addon enabled to use this command.
+
 ## 9.0.10
 
 Smoother world-map tooltips.

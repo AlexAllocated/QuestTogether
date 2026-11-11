@@ -1,13 +1,29 @@
 {
-  "source_sha256": "187e123cc68b18100e9fed552142760e5ad1bfade425b8ae82168c219ab4fa99",
+  "source_sha256": "8d4663118c8c793c673f5631230e5b390e8ac74f03bcc5c03d0be55e792f1dfa",
   "notes": {
-    "version": "9.0.10",
-    "welcome": "Flüssigere Tooltips auf der Weltkarte.",
+    "version": "9.0.11",
+    "welcome": "Dieser Patch verbessert den Questvergleich deiner Gruppe, behebt ein Kartenproblem und verringert den laufenden Aufwand des Addons.",
     "sections": [
       {
-        "title": "Leistung auf der Weltkarte",
+        "title": "Korrekturen für Gruppe und Karte",
         "items": [
-          "Weniger FPS-Einbrüche beim Überfahren von Spielermarkierungen auf der Weltkarte, besonders bei zusammengefassten Markierungen und Tooltips mit mehreren Gruppenmitgliedern. Die angezeigten Spielerinformationen werden weiterhin aktualisiert, solange der Tooltip geöffnet ist."
+          "„Teilen anfordern“ prüft jetzt das ausgewählte Gruppenmitglied korrekt, auch wenn mehrere Spieler dieselbe Quest haben oder Filter im Gruppenquestlog aktiv sind.",
+          "Eingeklappte Spielerspalten bleiben beim Aktualisieren und bei Änderungen an der Gruppe eingeklappt, solange die jeweiligen Spieler weiterhin zur Gruppe gehören.",
+          "Gruppenquestlog und Gruppen-Zielverfolgung bereinigen die Darstellung empfangener Questnamen und Zieltexte, ohne die empfangenen Daten zu verändern.",
+          "Veraltete Schaltflächen zum Anvisieren auf der Karte werden bei wechselnden Oberflächenbeschränkungen entfernt, sobald WoW dies erlaubt. Das geschützte Ausblenden im Kampf bleibt erhalten."
+        ]
+      },
+      {
+        "title": "Leistung",
+        "items": [
+          "Die Spielermarkierungen auf der Minikarte benötigen weniger wiederholte Prüfungen und Anzeigeänderungen. Unveränderte Positionsdaten naher Spieler und ihre Koordinatenumrechnungen werden wiederverwendet.",
+          "Beim Austausch der Gruppenquestlisten werden kurzzeitig gemeinsame Zwischenergebnisse genutzt und bei Queständerungen verworfen. Manuelles Aktualisieren liest den aktuellen Stand neu ein; Questziele werden weiterhin frisch abgefragt."
+        ]
+      },
+      {
+        "title": "Tests im Spiel",
+        "items": [
+          "Die Tests werden erst bei Bedarf über das mitgelieferte optionale Addon QuestTogether Tests geladen. Dadurch belegt QuestTogether beim normalen Spielen weniger Arbeitsspeicher. Für /qt test muss QuestTogether Tests aktiviert sein; zum Spielen wird es nicht benötigt."
         ]
       }
     ]

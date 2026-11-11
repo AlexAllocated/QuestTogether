@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.11
+
+Questo aggiornamento corregge il confronto delle missioni del gruppo e i controlli di selezione sulla mappa, riducendo anche il lavoro continuo dell’addon.
+
+### Correzioni per gruppo e mappa
+
+- «Richiedi condivisione» verifica correttamente il membro del gruppo selezionato, anche quando più giocatori hanno la stessa missione o sono attivi dei filtri nel Registro missioni del gruppo.
+- Le colonne compresse dei giocatori restano compresse dopo un aggiornamento o una modifica alla composizione del gruppo, finché quei giocatori rimangono nel gruppo.
+- Il Registro missioni del gruppo e il Tracciamento obiettivi del gruppo ripuliscono la visualizzazione dei titoli e degli obiettivi ricevuti, senza modificare i dati ricevuti.
+- I controlli di selezione sulla mappa non più validi vengono rimossi quando cambiano le restrizioni dell’interfaccia, appena WoW lo consente. Rimane attivo il sistema protetto che li nasconde in combattimento.
+
+### Prestazioni
+
+- La visualizzazione dei giocatori sulla minimappa richiede meno controlli e aggiornamenti ripetuti. I dati visualizzati e le conversioni delle coordinate vengono riutilizzati quando la posizione dei giocatori vicini resta invariata.
+- La preparazione degli elenchi delle missioni del gruppo riutilizza brevemente i dati comuni, scartandoli quando cambiano le missioni. Un aggiornamento manuale legge di nuovo lo stato attuale; gli obiettivi vengono comunque riletti a ogni richiesta.
+
+### Test nel gioco
+
+- I test vengono caricati solo quando servono tramite QuestTogether Tests, l’addon facoltativo incluso. QuestTogether usa così meno memoria durante il normale gioco. Per eseguire /qt test occorre abilitare QuestTogether Tests; non è necessario per giocare.
+
 ## 9.0.10
 
 Prestazioni migliori consultando i giocatori sulla mappa.

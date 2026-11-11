@@ -1,11 +1,27 @@
 {
-  "version": "9.0.10",
-  "welcome": "Smoother world-map tooltips.",
+  "version": "9.0.11",
+  "welcome": "Party Quest Log fixes and reduced background work.",
   "sections": [
     {
-      "title": "World-map performance",
+      "title": "Party and map fixes",
       "items": [
-        "Reduced FPS drops when hovering player markers on the world map, especially clusters and tooltips showing several party members. Player information continues to update while the tooltip is open."
+        "Request Share now works for the player you select, including when several party members have the quest or comparison filters hide its row.",
+        "Collapsed player columns stay collapsed when you refresh the Party Quest Log or the party roster changes.",
+        "Quest titles and objective text received from other players are cleaned up before display to prevent embedded formatting from disrupting the Party Quest Log or Party Objective Tracker.",
+        "Improved cleanup of map targeting controls when the UI becomes restricted."
+      ]
+    },
+    {
+      "title": "Performance",
+      "items": [
+        "Reduced repeated minimap work and unnecessary allocations while tracking nearby players.",
+        "Party quest requests reuse unchanged quest-log data while explicit refreshes and objective details still read current information."
+      ]
+    },
+    {
+      "title": "In-game tests",
+      "items": [
+        "Tests now load only when you run /qt test, reducing memory use during normal play. Keep the bundled QuestTogether Tests addon enabled to use this command."
       ]
     }
   ]

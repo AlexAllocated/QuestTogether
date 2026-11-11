@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.11
+
+Correcciones en las misiones del grupo y el mapa, menos trabajo repetido y pruebas que solo se cargan cuando las necesitas.
+
+### Correcciones del grupo y el mapa
+
+- Solicitar compartir comprueba ahora al compañero que has elegido, aunque varios tengan la misma misión o haya filtros activos en la comparación.
+- Las columnas contraídas del Registro de misiones del grupo se mantienen así al pulsar Actualizar o cambiar la composición del grupo, mientras esos jugadores sigan presentes.
+- El Registro de misiones del grupo y el Seguimiento de objetivos del grupo limpian los códigos de formato de los títulos y objetivos recibidos de otros jugadores antes de mostrarlos, sin alterar los datos originales.
+- Los controles para seleccionar jugadores en el mapa se retiran al cambiar las restricciones de la interfaz, siempre que WoW lo permita. Se mantiene su ocultación durante el combate.
+
+### Rendimiento
+
+- Se reducen las comprobaciones y los cambios repetidos al mover los indicadores del minimapa. También se reutilizan los datos de presentación y las conversiones de coordenadas de jugadores cercanos cuando no han cambiado.
+- Las respuestas sobre misiones del grupo comparten temporalmente la lectura de la lista de misiones para evitar trabajo duplicado. Actualizar toma una lectura nueva y los objetivos se siguen consultando de nuevo en cada solicitud de detalles.
+
+### Pruebas dentro del juego
+
+- Las pruebas se cargan al ejecutar /qt test, lo que reduce el uso de memoria durante el juego normal. Para usar el comando, activa el addon opcional QuestTogether Tests incluido en el paquete y recarga la interfaz. QuestTogether funciona sin él.
+
 ## 9.0.10
 
 Mejor rendimiento al consultar jugadores en el mapa del mundo.

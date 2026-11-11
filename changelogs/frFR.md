@@ -2,6 +2,26 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.11
+
+Ce correctif améliore la comparaison des quêtes du groupe, corrige les commandes de ciblage sur la carte et réduit le travail effectué en continu par l’addon.
+
+### Corrections du groupe et de la carte
+
+- « Demander le partage » vérifie correctement le membre du groupe sélectionné, même si plusieurs joueurs possèdent la quête ou si des filtres sont actifs dans le Journal de quêtes du groupe.
+- Les colonnes réduites restent réduites après une actualisation ou une modification du groupe, pour les joueurs toujours présents.
+- Le Journal de quêtes du groupe et le Suivi des objectifs du groupe nettoient l’affichage des titres et des objectifs de quête reçus, sans modifier les données reçues.
+- Les commandes de ciblage devenues obsolètes sur la carte sont retirées lors des changements de restrictions de l’interface, dès que WoW l’autorise. Le masquage sécurisé en combat est conservé.
+
+### Performances
+
+- L’affichage des joueurs sur la minicarte évite des vérifications et des mises à jour redondantes. Les données d’affichage et les conversions de coordonnées sont réutilisées lorsque la position des joueurs proches ne change pas.
+- La préparation des listes de quêtes du groupe réutilise brièvement des données communes, invalidées dès que les quêtes changent. Une actualisation manuelle relit l’état actuel et les objectifs sont toujours relus à chaque demande.
+
+### Tests en jeu
+
+- Les tests se chargent désormais à la demande grâce à QuestTogether Tests, l’addon facultatif fourni avec QuestTogether. Cela réduit la mémoire utilisée pendant le jeu normal. Pour utiliser /qt test, activez QuestTogether Tests ; il n’est pas nécessaire pour jouer.
+
 ## 9.0.10
 
 Des infobulles plus fluides sur la carte du monde.
