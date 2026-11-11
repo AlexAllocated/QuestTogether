@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.10
+
+Mejor rendimiento al consultar jugadores en el mapa del mundo.
+
+### Rendimiento del mapa del mundo
+
+- Se han reducido las caídas de FPS al pasar el cursor sobre los marcadores de jugadores del mapa del mundo, especialmente los marcadores agrupados y las descripciones emergentes con varios miembros de un grupo. Los datos siguen actualizándose mientras se muestran.
+
 ## 9.0.9
 
 Este parche mejora la búsqueda de jugadores y corrige más avisos de error que aparecían en el chat.

@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.10
+
+Flüssigere Tooltips auf der Weltkarte.
+
+### Leistung auf der Weltkarte
+
+- Weniger FPS-Einbrüche beim Überfahren von Spielermarkierungen auf der Weltkarte, besonders bei zusammengefassten Markierungen und Tooltips mit mehreren Gruppenmitgliedern. Die angezeigten Spielerinformationen werden weiterhin aktualisiert, solange der Tooltip geöffnet ist.
+
 ## 9.0.9
 
 Dieser Patch verbessert die Spielersuche und behebt weitere störende Chatmeldungen.

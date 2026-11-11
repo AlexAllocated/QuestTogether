@@ -1,15 +1,13 @@
 {
-  "source_sha256": "fe70acab61a1485a53de039e17b7303bce1bb59354d5d148d36192429947b6a3",
+  "source_sha256": "187e123cc68b18100e9fed552142760e5ad1bfade425b8ae82168c219ab4fa99",
   "notes": {
-    "version": "9.0.9",
-    "welcome": "Ce correctif améliore la recherche de joueurs et réduit les messages d’erreur indésirables dans le chat.",
+    "version": "9.0.10",
+    "welcome": "Des infobulles plus fluides sur la carte du monde.",
     "sections": [
       {
-        "title": "Recherche de joueurs et messages du chat",
+        "title": "Performances sur la carte du monde",
         "items": [
-          "Une erreur pouvait encore laisser apparaître dans le chat les échecs de chuchotements envoyés en arrière-plan par QT. Elle a été corrigée. Les erreurs concernant vos propres chuchotements restent affichées.",
-          "Les délais avant de recontacter un joueur injoignable sont conservés lors des changements de zone et après un rechargement de l’interface. Les anciennes informations ne relancent plus les tentatives en boucle. QT garde les connexions qui fonctionnent jusqu’à ce qu’un remplaçant réponde.",
-          "QT suspend ses demandes en arrière-plan lorsqu’il ne peut pas en masquer les erreurs sans risquer de cacher celles de vos propres messages. Le diagnostic distingue désormais les messages réellement masqués des cas où cette distinction est incertaine."
+          "Consulter les marqueurs de joueurs sur la carte du monde entraîne moins de baisses de FPS, notamment pour les marqueurs regroupés et les infobulles affichant plusieurs membres d’un groupe. Les informations continuent de s’actualiser pendant la consultation."
         ]
       }
     ]

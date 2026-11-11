@@ -3,15 +3,13 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "9.0.9",
-	welcome = "More reliable background connections and quieter handling of unavailable players.",
+	version = "9.0.10",
+	welcome = "Smoother world-map tooltips.",
 	sections = {
 		{
-			title = "Communication fixes",
+			title = "World-map performance",
 			items = {
-				"Fixed more cases where QuestTogether’s background whispers could leave “No player named…” messages in chat. Errors from whispers you send yourself remain visible.",
-				"Connection retries now remember unavailable players across loading screens and reloads. Old address hints no longer cause endless retries, and working connections stay in place until a replacement responds.",
-				"Background communication waits when chat errors cannot be safely filtered. Improved diagnostics help identify any remaining cases.",
+				"Reduced FPS drops when hovering player markers on the world map, especially clusters and tooltips showing several party members. Player information continues to update while the tooltip is open.",
 			},
 		},
 	},

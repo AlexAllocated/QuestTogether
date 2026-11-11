@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.10
+
+Melhor desempenho ao consultar jogadores no mapa-múndi.
+
+### Desempenho no mapa-múndi
+
+- Reduzidas as quedas de FPS ao passar o cursor sobre os marcadores de jogadores, principalmente os marcadores agrupados e as dicas com vários membros de um grupo. As informações continuam sendo atualizadas enquanto a dica está aberta.
+
 ## 9.0.9
 
 Este patch corrige avisos indevidos no bate-papo e melhora a busca por outros jogadores.

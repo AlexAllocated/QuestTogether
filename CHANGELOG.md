@@ -4,6 +4,14 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.10
+
+Smoother world-map tooltips.
+
+### World-map performance
+
+- Reduced FPS drops when hovering player markers on the world map, especially clusters and tooltips showing several party members. Player information continues to update while the tooltip is open.
+
 ## 9.0.9
 
 More reliable background connections and quieter handling of unavailable players.

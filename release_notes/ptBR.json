@@ -1,15 +1,13 @@
 {
-  "source_sha256": "fe70acab61a1485a53de039e17b7303bce1bb59354d5d148d36192429947b6a3",
+  "source_sha256": "187e123cc68b18100e9fed552142760e5ad1bfade425b8ae82168c219ab4fa99",
   "notes": {
-    "version": "9.0.9",
-    "welcome": "Este patch corrige avisos indevidos no bate-papo e melhora a busca por outros jogadores.",
+    "version": "9.0.10",
+    "welcome": "Melhor desempenho ao consultar jogadores no mapa-múndi.",
     "sections": [
       {
-        "title": "Busca de jogadores e avisos no bate-papo",
+        "title": "Desempenho no mapa-múndi",
         "items": [
-          "Corrigimos mais uma situação em que erros de sussurros enviados pelo QT em segundo plano apareciam no bate-papo. Os avisos de falha dos sussurros que você envia continuam visíveis.",
-          "O tempo de espera antes de tentar falar novamente com um jogador inacessível agora é mantido ao mudar de zona ou recarregar a interface. Informações antigas não provocam mais tentativas sem parar, e conexões que funcionam são mantidas até que uma substituta responda.",
-          "O QT pausa as solicitações em segundo plano quando não consegue ocultar seus erros com segurança. O diagnóstico agora diferencia os avisos realmente ocultos daqueles que podem ser de sussurros enviados por você."
+          "Reduzidas as quedas de FPS ao passar o cursor sobre os marcadores de jogadores, principalmente os marcadores agrupados e as dicas com vários membros de um grupo. As informações continuam sendo atualizadas enquanto a dica está aberta."
         ]
       }
     ]

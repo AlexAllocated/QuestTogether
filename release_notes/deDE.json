@@ -1,15 +1,13 @@
 {
-  "source_sha256": "fe70acab61a1485a53de039e17b7303bce1bb59354d5d148d36192429947b6a3",
+  "source_sha256": "187e123cc68b18100e9fed552142760e5ad1bfade425b8ae82168c219ab4fa99",
   "notes": {
-    "version": "9.0.9",
-    "welcome": "Dieser Patch verbessert die Spielersuche und behebt weitere störende Chatmeldungen.",
+    "version": "9.0.10",
+    "welcome": "Flüssigere Tooltips auf der Weltkarte.",
     "sections": [
       {
-        "title": "Spielersuche und Chatmeldungen",
+        "title": "Leistung auf der Weltkarte",
         "items": [
-          "Ein weiterer Fehler wurde behoben, durch den fehlgeschlagene Hintergrundanfragen als Flüsterfehlermeldungen im Chat erscheinen konnten. Fehler beim Versenden deiner eigenen Flüsternachrichten bleiben sichtbar.",
-          "Die Wartezeit nach einem fehlgeschlagenen Kontaktversuch bleibt auch nach einem Gebietswechsel oder dem Neuladen der Benutzeroberfläche erhalten. Veraltete Hinweise führen nicht mehr zu ständigen neuen Versuchen. Funktionierende Verbindungen bleiben bestehen, bis ein Ersatz antwortet.",
-          "Lassen sich die Fehlermeldungen von Hintergrundanfragen nicht sicher zuordnen und ausblenden, pausiert QT diese Anfragen. Die Diagnose unterscheidet nun tatsächlich ausgeblendete Meldungen von solchen, die wegen möglicher eigener Flüsternachrichten sichtbar bleiben."
+          "Weniger FPS-Einbrüche beim Überfahren von Spielermarkierungen auf der Weltkarte, besonders bei zusammengefassten Markierungen und Tooltips mit mehreren Gruppenmitgliedern. Die angezeigten Spielerinformationen werden weiterhin aktualisiert, solange der Tooltip geöffnet ist."
         ]
       }
     ]

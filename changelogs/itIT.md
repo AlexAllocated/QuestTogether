@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.10
+
+Prestazioni migliori consultando i giocatori sulla mappa.
+
+### Prestazioni sulla mappa del mondo
+
+- Ridotti i cali di FPS quando si passa il puntatore sui segnalini dei giocatori nella mappa del mondo, soprattutto quelli raggruppati e i tooltip con più membri del gruppo. Le informazioni continuano ad aggiornarsi mentre il tooltip è aperto.
+
 ## 9.0.9
 
 Connessioni in background più affidabili e meno tentativi inutili verso giocatori non disponibili.

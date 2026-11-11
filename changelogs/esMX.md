@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.10
+
+Consulta a los jugadores en el mapa del mundo con mayor fluidez.
+
+### Rendimiento en el mapa del mundo
+
+- Pasar el cursor sobre los marcadores de jugadores ahora provoca menos caídas de FPS, sobre todo en los marcadores agrupados y los recuadros que muestran a varios miembros de un grupo. La información continúa actualizándose mientras el recuadro está abierto.
+
 ## 9.0.9
 
 Este parche reduce los avisos molestos del chat y mejora la búsqueda de otros jugadores.

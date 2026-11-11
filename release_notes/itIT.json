@@ -1,15 +1,13 @@
 {
-  "source_sha256": "fe70acab61a1485a53de039e17b7303bce1bb59354d5d148d36192429947b6a3",
+  "source_sha256": "187e123cc68b18100e9fed552142760e5ad1bfade425b8ae82168c219ab4fa99",
   "notes": {
-    "version": "9.0.9",
-    "welcome": "Connessioni in background più affidabili e meno tentativi inutili verso giocatori non disponibili.",
+    "version": "9.0.10",
+    "welcome": "Prestazioni migliori consultando i giocatori sulla mappa.",
     "sections": [
       {
-        "title": "Correzioni alle comunicazioni",
+        "title": "Prestazioni sulla mappa del mondo",
         "items": [
-          "Corretti altri casi in cui i sussurri automatici di QuestTogether lasciavano in chat un errore relativo a un giocatore non trovato. Gli errori dei sussurri inviati personalmente restano visibili.",
-          "Le attese tra i tentativi di connessione vengono mantenute anche dopo un caricamento o un ricaricamento dell’interfaccia. Le informazioni obsolete sui giocatori non causano più tentativi continui e le connessioni funzionanti rimangono attive finché non risponde un sostituto.",
-          "Le comunicazioni automatiche attendono quando non è possibile filtrare in modo sicuro gli errori in chat. La diagnostica è stata migliorata per individuare eventuali problemi ancora presenti."
+          "Ridotti i cali di FPS quando si passa il puntatore sui segnalini dei giocatori nella mappa del mondo, soprattutto quelli raggruppati e i tooltip con più membri del gruppo. Le informazioni continuano ad aggiornarsi mentre il tooltip è aperto."
         ]
       }
     ]

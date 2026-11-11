@@ -2,6 +2,14 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.10
+
+Des infobulles plus fluides sur la carte du monde.
+
+### Performances sur la carte du monde
+
+- Consulter les marqueurs de joueurs sur la carte du monde entraîne moins de baisses de FPS, notamment pour les marqueurs regroupés et les infobulles affichant plusieurs membres d’un groupe. Les informations continuent de s’actualiser pendant la consultation.
+
 ## 9.0.9
 
 Ce correctif améliore la recherche de joueurs et réduit les messages d’erreur indésirables dans le chat.

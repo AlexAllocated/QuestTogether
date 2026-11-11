@@ -1,15 +1,13 @@
 {
-  "source_sha256": "fe70acab61a1485a53de039e17b7303bce1bb59354d5d148d36192429947b6a3",
+  "source_sha256": "187e123cc68b18100e9fed552142760e5ad1bfade425b8ae82168c219ab4fa99",
   "notes": {
-    "version": "9.0.9",
-    "welcome": "Este parche reduce los avisos molestos del chat y mejora la búsqueda de otros jugadores.",
+    "version": "9.0.10",
+    "welcome": "Consulta a los jugadores en el mapa del mundo con mayor fluidez.",
     "sections": [
       {
-        "title": "Búsqueda de jugadores y errores de susurros",
+        "title": "Rendimiento en el mapa del mundo",
         "items": [
-          "Se corrigió un caso que todavía dejaba pasar al chat los errores de susurros enviados automáticamente por QT. Si falla un susurro que tú enviaste, el aviso se sigue mostrando.",
-          "QT conserva la espera antes de volver a contactar a un jugador que no responde, incluso al cambiar de zona o recargar la interfaz. La información desactualizada ya no provoca intentos constantes. Las conexiones activas se mantienen hasta que su reemplazo contesta.",
-          "Cuando no es seguro distinguir y ocultar los errores de sus solicitudes en segundo plano, QT las pausa. El diagnóstico ahora separa los avisos realmente ocultos de los que podrían deberse a tus propios susurros."
+          "Pasar el cursor sobre los marcadores de jugadores ahora provoca menos caídas de FPS, sobre todo en los marcadores agrupados y los recuadros que muestran a varios miembros de un grupo. La información continúa actualizándose mientras el recuadro está abierto."
         ]
       }
     ]
