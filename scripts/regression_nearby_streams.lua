@@ -578,3 +578,55 @@ QT:RegisterTest("nearby streams reuse only the current tick location sample and 
 	a:UpdateNearbyStreams(sample)
 	Equal(#a.sent, before)
 end)
+
+QT:RegisterTest("stationary stream presentations reuse immutable rows only while current metadata and consent match", function()
+	local a, b = Pair()
+	Tick(a, b, 8)
+	local base = a.playerLocationState.peers[b.name]
+	local peer = a.nearbyStreamState.wanted[b.name]
+	a.now = peer.sample.at + 1
+	local first = a:GetNearbyStreamPosition(base, true)
+	assert(first ~= base)
+	for _ = 1, 120 do Equal(a:GetNearbyStreamPosition(base, true), first) end
+	base.classFile, base.level = nil, 61
+	local changed = a:GetNearbyStreamPosition(base, true)
+	assert(changed ~= first)
+	Equal(changed.classFile, nil)
+	Equal(changed.level, 61)
+	Equal(first.classFile, "MAGE")
+	Equal(first.level, nil, "published snapshots must not be mutated by later metadata")
+	local replacement = a:DeepCopy(base)
+	a.playerLocationState.peers[b.name] = replacement
+	local replaced = a:GetNearbyStreamPosition(replacement, true)
+	assert(replaced ~= changed)
+	Equal(a:GetNearbyStreamPosition(replacement, true), replaced)
+	peer.sample.x = peer.sample.x + 0.01
+	local moved = a:GetNearbyStreamPosition(replacement, true)
+	assert(moved ~= replaced and moved.x ~= replaced.x)
+	Equal(replaced.x, changed.x)
+	a.db.profile.sharePlayerLocation = false
+	Equal(a:GetNearbyStreamPosition(replacement, true), replacement)
+	Equal(peer.presentation, nil)
+	a.db.profile.sharePlayerLocation = true
+	assert(a:GetNearbyStreamPosition(replacement, true) ~= replacement)
+	a.now = peer.sample.at + 3
+	Equal(a:GetNearbyStreamPosition(replacement, true), replacement)
+	Equal(peer.presentation, nil)
+end)
+
+QT:RegisterTest("stream presentation callbacks cannot publish through a replaced lease owner", function()
+	local a, b = Pair()
+	Tick(a, b, 8)
+	local base = a.playerLocationState.peers[b.name]
+	local old = a.nearbyStreamState.wanted[b.name]
+	local read = a.GetFreshPlayerLocation
+	function a:GetFreshPlayerLocation(...)
+		local row = read(self, ...)
+		self.nearbyStreamState.wanted[b.name] = {}
+		return row
+	end
+	Equal(a:GetNearbyStreamPosition(base, true), base)
+	Equal(old.presentation, nil)
+end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_nearby_streams.lua")

@@ -1524,3 +1524,5 @@ QT:RegisterTest("quest acquisition publishes classification and rows atomically 
 	assert(select(2, a:RebuildQuestSnapshotStore()))
 	assert(a:GetQuestClassification(12345).isWorldQuest == false)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_core_state.lua")

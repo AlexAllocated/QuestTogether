@@ -1357,3 +1357,5 @@ QuestTogether:RegisterTest("restricted progress bursts coalesce without losing a
 	a:UNIT_QUEST_LOG_CHANGED(nil, "player")
 	AssertEqual(#a.onQuestLogUpdate, 1, "reset cannot retain a marker from the old queue")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_quest_state.lua")

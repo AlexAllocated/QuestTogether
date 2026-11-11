@@ -576,10 +576,6 @@ function QuestTogether:GetDebugTestOptions(present)
 	return options
 end
 
-function QuestTogether:RunTests(reverse, present)
-	return self:GetDebugController():RunTests(reverse, present)
-end
-
 QuestTogether:RegisterTest(
 	"group options refresh saved sharing and partner status through profiles resets and slash changes",
 	function()
@@ -7893,3 +7889,5 @@ QuestTogether:RegisterTest(
 		AssertEquals(asset, "Interface\\AddOns\\QuestTogether\\Media\\QuestTogetherPartnerIcon")
 	end
 )
+
+_G.QuestTogether:RecordTestModule("Tests.lua")

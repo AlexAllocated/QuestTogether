@@ -831,3 +831,5 @@ QT:RegisterTest("own bubble renderer and capability report share the current vis
 	Equal(a:ShowAnnouncementBubbleOnNameplate(host, "Hidden progress"), false)
 	Equal(#a:GetNameplateCapabilityNoticeReport().lines, 1)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_nameplates.lua")

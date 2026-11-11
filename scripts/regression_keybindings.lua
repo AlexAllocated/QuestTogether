@@ -129,3 +129,5 @@ QT:RegisterTest("keybinding stop follow cancels the active preview without chang
 	a.nativePartyFocusOwner = nil
 	assert(a:HandleKeybinding("stop_follow") and not a.states.live.following)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_keybindings.lua")

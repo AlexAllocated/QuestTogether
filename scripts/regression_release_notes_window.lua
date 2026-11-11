@@ -734,3 +734,5 @@ Register("minor release pages append patch text tips and repeated illustrations 
 	assert(image.shown and repeated.shown)
 	Equal(a.db.global.releaseNotesSeenVersion, "5.9.2")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_release_notes_window.lua")

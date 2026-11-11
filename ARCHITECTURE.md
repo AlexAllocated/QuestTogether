@@ -223,6 +223,10 @@ private `.local` notes are historical context, not the source of truth.
   a retained tooltip never preserves an old click target or cluster click hint.
   Its independent secure button mirrors the marker or menu row's display layer
   so an overlying window also covers the invisible click target.
+  Retiring that button uses native object-specific protected-function permission,
+  independently of the policy against new actions. The synchronous restriction
+  event retires it before activation where permitted; combat retains its secure
+  hide driver. A denied native cleanup is retried without a stale logical owner.
   Nearby phase decoration first uses readable native identity and explicit phase
   evidence from target, mouseover, focus, nameplate and current-group units. Each
   one-second scan replaces this local evidence; it expires after two seconds and
@@ -254,6 +258,12 @@ private `.local` notes are historical context, not the source of truth.
   frame, including peers without stream leases and authorized private dots. This
   pass rechecks visibility and freshness, reuses fixed world-coordinate conversions,
   and leaves membership, tooltips and network sampling on their normal cadence.
+  Pure cached projection needs no repeated native restriction poll; each native
+  write retains a fresh guard and the pass rechecks policy after callbacks. A
+  failed write retires the presentation rather than caching uncommitted geometry.
+  Stationary stream samples reuse a private immutable presentation row only while
+  their base observation, metadata, coordinates and sample time still match.
+  Stream interpolation never changes baseline freshness or sharing consent.
   The world-map QT button toggles all QT player and waypoint overlays together.
   Its per-profile preference defaults on and does not affect the minimap, sharing,
   filters or discovery. Hovering the button shows the map legend without changing
@@ -367,6 +377,19 @@ private `.local` notes are historical context, not the source of truth.
   certified revision before updating the member's displayed entry. Publish and
   retire member entries, revisions and sample times together through the shared
   snapshot helpers; installed entry maps are not mutated in place.
+- Comparison response preparation shares one immutable local summary per quest
+  generation, profile and world lifetime, with a one-second maximum reuse age.
+  Foreground unconditional requests, including Manual Refresh, only reuse a
+  capture from the current time tick, so native changes are sampled even before
+  their quest events arrive. Simultaneous requests still share that capture;
+  background and conditional requests may reuse it across ticks within the bound.
+  Quest events invalidate it immediately; incomplete reads are shared only for
+  the same tick and never become an empty certified log. Objective details remain
+  fresh reads. Captured log indices are internal hints, revalidated against native
+  quest identity before use; they never enter payloads or revision fingerprints.
+  Selected-player share eligibility uses that peer's certified entry, independently
+  of display filters and the default row owner. Continuing the same comparison
+  preserves collapsed columns for surviving identities.
 - Settings validate a whole edit before committing any key. `SetOptions` batches
   related changes and dispatches each affected service once. Profile activation
   uses the same effects, including themes, scale, privacy and navigation; it
@@ -946,7 +969,9 @@ Title resolution notifies current views even when another surface filled the
 cache first. Each view owns its deferred refresh and session checks. Quest Details
 uses the same resolver for its heading and retains pending native tooltip IDs
 even before text arrives. Received quest titles are normalized only for display;
-certified snapshots and revision inputs remain unchanged.
+certified snapshots and revision inputs remain unchanged. This display boundary
+also covers POT fallback titles and remote objective rows in both PQL and POT;
+remote rendering markup must not reach their FontStrings.
 
 The settings home page keeps General controls with a compact status readout and
 shortcuts for the Party Quest Log, patch notes, and support. Category navigation
@@ -962,7 +987,17 @@ held scrolling. Debug controls follow the same policy in upstream LibChev.
 
 ## Validation and delivery
 
-`/qt test` loads private fixtures through the same TOC as the addon. Tests must
+The production TOC excludes test definitions. `/qt test` loads the bundled optional
+`QuestTogether_Tests` addon through its own canonical TOC before the existing runner
+starts. It shares QT's private pinned library through a namespace bridge. Every QA
+module reports completion, and the final marker checks the manifest's module count;
+a missing or failed middle file cannot yield an apparently successful partial suite.
+Version mismatch, loading errors and incomplete registration abort visibly. CI
+loads these same two manifests and separately checks normal startup contains no QA
+definitions, native load failures/continuation, one-time loading and both API forms.
+Packages include both sibling folders, with matched interface/version metadata and
+installation-relative hashes; normal gameplay does not require the companion.
+Tests must
 never patch Blizzard globals, shared native tables, secure-adjacent APIs or
 live frames. UI fixtures model parent visibility, frame reuse and independently
 forbidden/protected regions. `scripts/test.lua` alone owns offline engine stubs.

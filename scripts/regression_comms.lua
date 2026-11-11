@@ -1186,6 +1186,7 @@ QuestTogether:RegisterTest(
 				)
 			)
 			local sent = #peer.wire
+			peer.questCompareSnapshot = { entries = {}, profile = peer.db.profile }
 			if change == "switch" then
 				assert(peer:SetActiveProfile("Private"))
 				assert(peer:SetActiveProfile("Initial"))
@@ -1202,6 +1203,7 @@ QuestTogether:RegisterTest(
 			Equal(peer.reads, nil)
 			Equal(#peer.wire, sent)
 			Equal(peer.developerRequestState, nil)
+			Equal(peer.questCompareSnapshot, nil)
 		end
 	end
 )
@@ -4754,3 +4756,211 @@ QuestTogether:RegisterTest("own bubble policy applies equally to announcements a
 	end
 	Equal(#a.delayed, 0, "own visibility must not schedule network or replay work")
 end)
+
+local function SharedComparisonSnapshotFixture(count)
+	local a = NewCommsFixture()
+	a.db = { profile = {} }
+	a.rows, a.rowReads = {}, 0
+	for id = 1, count do a.rows[id] = { questID = id, title = "Quest " .. id, isComplete = false } end
+	function a:IsWorkBlocked() return self.blocked == true end
+	function a:GetQuestShareableStatusLabel() return "No" end
+	a.API.GetNumQuestLogEntries = function() return #a.rows end
+	a.API.GetQuestLogInfo = function(index)
+		a.rowReads = a.rowReads + 1
+		return a.rows[index]
+	end
+	InstallResponseClock(a)
+	return a
+end
+
+QuestTogether:RegisterTest("comparison snapshots share one native log capture across simultaneous responders", function()
+	local a = SharedComparisonSnapshotFixture(100)
+	for index = 1, 16 do
+		assert(ReceiveComparison(a, "shared-" .. index, { requesterName = "Viewer" .. index .. "-Realm" }))
+	end
+	Equal(a.rowReads, 100)
+	Equal(#a.responses, 16)
+	local revision = a.responses[1].record.revision
+	for _, response in ipairs(a.responses) do
+		Equal(response.record.count, 100)
+		Equal(response.record.revision, revision)
+	end
+	local first = a:BuildRevisionedQuestCompareEntries()
+	Equal(a:BuildRevisionedQuestCompareEntries(), first)
+	Equal(a.rowReads, 100)
+	-- An unchanged native refresh retains its revision after the bounded reuse
+	-- interval, while still sampling native state once for the next readers.
+	a.now = a.now + 1
+	Equal(a:BuildRevisionedQuestCompareEntries(), first)
+	Equal(a.rowReads, 200)
+end)
+
+QuestTogether:RegisterTest("comparison snapshot details reuse ownership but always read fresh objectives", function()
+	local a = SharedComparisonSnapshotFixture(100)
+	local counter, reads = 1, 0
+	function a:ReadQuestCompareObjectives(id)
+		Equal(id, 42)
+		reads = reads + 1
+		return { { questId = id, objectiveIndex = 1, text = "Wolves", current = counter, required = 10 } }
+	end
+	local summary = assert(a:BuildRevisionedQuestCompareEntries())
+	local first = a:BuildRevisionedQuestCompareEntries(42)[1]
+	counter = 2
+	local second = a:BuildQuestCompareResponseEntries(42)[1]
+	Equal(a.rowReads, 100)
+	Equal(reads, 2)
+	Equal(first.objectives[1].current, 1)
+	Equal(second.objectives[1].current, 2)
+	Equal(summary[42].objectives, nil)
+	Equal(a.questCompareSnapshot.entries[42].objectives, nil)
+	second.questTitle = "Changed by consumer"
+	Equal(a:BuildQuestCompareResponseEntries(42)[1].questTitle, "Quest 42")
+	Equal(#a:BuildQuestCompareResponseEntries(101), 0)
+end)
+
+QuestTogether:RegisterTest("comparison snapshot invalidation cannot certify unreadable or restricted native state", function()
+	local a = SharedComparisonSnapshotFixture(2)
+	local before = assert(a:BuildRevisionedQuestCompareEntries())
+	a.rows[2].title = ""
+	a:InvalidateQuestCompareSnapshot()
+	for _ = 1, 16 do Equal(a:BuildRevisionedQuestCompareEntries(), nil) end
+	Equal(a.rowReads, 4) -- The incomplete attempt is shared only within this tick.
+	a.rows[2].title = "Updated title"
+	a.now = a.now + 0.01
+	local after = assert(a:BuildRevisionedQuestCompareEntries())
+	Equal(after[2].questTitle, "Updated title")
+	assert(after.revision ~= before.revision)
+	Equal(a.rowReads, 6)
+	a.blocked = true
+	local entries, reason = a:BuildRevisionedQuestCompareEntries()
+	Equal(entries, nil)
+	Equal(reason, "restricted")
+	Equal(a.rowReads, 6)
+	a.blocked = false
+	Equal(a:BuildRevisionedQuestCompareEntries(), after)
+	-- Invalidation during a native read must not publish an intermediate log.
+	a:InvalidateQuestCompareSnapshot()
+	local get = a.API.GetQuestLogInfo
+	a.API.GetQuestLogInfo = function(index)
+		if index == 2 then a:InvalidateQuestCompareSnapshot() end
+		return get(index)
+	end
+	entries, reason = a:BuildRevisionedQuestCompareEntries()
+	Equal(entries, nil)
+	Equal(reason, "pending")
+	Equal(a.questCompareSnapshot, nil)
+	a.API.GetQuestLogInfo = function(index)
+		if index == 2 then a.blocked = true end
+		return get(index)
+	end
+	entries, reason = a:BuildRevisionedQuestCompareEntries()
+	Equal(entries, nil)
+	Equal(reason, "restricted")
+	Equal(a.questCompareSnapshot, nil)
+end)
+
+QuestTogether:RegisterTest("comparison objective reads cannot return retired or newly restricted summaries", function()
+	for _, boundary in ipairs({ "restricted", "event", "profile", "world", "clock" }) do
+		local a = SharedComparisonSnapshotFixture(1)
+		assert(a:BuildRevisionedQuestCompareEntries())
+		function a:ReadQuestCompareObjectives()
+			if boundary == "restricted" then self.blocked = true
+			elseif boundary == "event" then self:InvalidateQuestCompareSnapshot()
+			elseif boundary == "profile" then self.db.profile = {}
+			elseif boundary == "world" then self.commsWorldGeneration = (self.commsWorldGeneration or 0) + 1
+			else self.now = self.now - 1 end
+			return {}
+		end
+		local entries, reason = a:BuildQuestCompareResponseEntries(1)
+		Equal(entries, nil)
+		Equal(reason, boundary == "restricted" and "restricted" or "pending")
+	end
+end)
+
+QuestTogether:RegisterTest("comparison snapshot index hints avoid cold searches and validate reordered native rows", function()
+	local a = SharedComparisonSnapshotFixture(100)
+	local searches, objectiveReads = 0, 0
+	a.API.GetQuestLogIndexForQuestID = function(id)
+		searches = searches + 1
+		for index = 1, #a.rows do
+			if a.API.GetQuestLogInfo(index).questID == id then return index end
+		end
+	end
+	a.API.GetNumQuestLeaderBoards = function(index)
+		Equal(a.rows[index].questID, 42)
+		return 1
+	end
+	a.API.GetQuestObjectiveInfo = function(id, objectiveIndex, _, index)
+		Equal(id, 42)
+		Equal(objectiveIndex, 1)
+		Equal(a.rows[index].questID, id)
+		objectiveReads = objectiveReads + 1
+		return "Wolves", "monster", false, 2, 5
+	end
+	local summary = assert(a:BuildRevisionedQuestCompareEntries())
+	Equal(summary[42].questLogIndex, nil)
+	Equal(a.questCompareSnapshot.entries[42].questLogIndex, nil)
+	Equal(a.questCompareSnapshot.questLogIndices[42], 42)
+	local detail = a:BuildQuestCompareResponseEntries(42)[1]
+	Equal(detail.objectives[1].current, 2)
+	Equal(detail.questLogIndex, nil)
+	Equal(searches, 0)
+	Equal(a.rowReads, 102) -- One capture, then two native identity checks.
+	a.rows[42], a.rows[84] = a.rows[84], a.rows[42]
+	detail = a:BuildQuestCompareResponseEntries(42)[1]
+	Equal(detail.questId, "42")
+	Equal(detail.objectives[1].required, 5)
+	Equal(objectiveReads, 2)
+	Equal(searches, 1) -- A stale hint must use the current native position.
+end)
+
+QuestTogether:RegisterTest("comparison snapshot cache follows quest events profiles world and monotonic time", function()
+	local a = SharedComparisonSnapshotFixture(1)
+	a.onQuestLogUpdate = {}
+	function a:OnPartyQuestLogChanged() end
+	function a:ScheduleQuestStateRefreshWork() end
+	function a:ScheduleQuestLogTaskDrain() end
+	function a:ScheduleTaskAreaRefresh() end
+	function a:GetRuntimeFlag() return false end
+	local function Title(value)
+		a.rows[1].title = value
+		Equal(a:BuildRevisionedQuestCompareEntries()[1].questTitle, value)
+	end
+	Title("Initial")
+	a:QUEST_LOG_UPDATE()
+	Title("Log event")
+	a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+	Title("Objective event")
+	Equal(a.rowReads, 3)
+	a:UNIT_QUEST_LOG_CHANGED(nil, "party1")
+	Equal(a:BuildRevisionedQuestCompareEntries()[1].questTitle, "Objective event")
+	Equal(a.rowReads, 3)
+	a.db.profile = {}
+	Title("New profile")
+	a.commsWorldGeneration = (a.commsWorldGeneration or 0) + 1
+	Title("New world")
+	a.now = a.now - 1
+	Title("Rewound clock")
+	a:EndCommunicationSession()
+	Equal(a.questCompareSnapshot, nil)
+	Equal(a.questCompareLocalRevision, nil)
+	Title("Ended world")
+	Equal(a.rowReads, 7)
+end)
+
+QuestTogether:RegisterTest("explicit comparison refresh samples native changes before quest events arrive", function()
+	local a = SharedComparisonSnapshotFixture(2)
+	local previous = assert(a:BuildRevisionedQuestCompareEntries())
+	a.rows[1].isComplete = true
+	a.rows[2].title = "Changed before native event"
+	a.now = a.now + 0.1
+	assert(ReceiveComparison(a, "manual-refresh"))
+	Equal(a.responses[1].record.entries[1].isComplete, true)
+	Equal(a.responses[1].record.entries[2].questTitle, "Changed before native event")
+	assert(a.responses[1].record.revision ~= previous.revision)
+	Equal(a.rowReads, 4)
+	assert(ReceiveComparison(a, "another-viewer", { requesterName = "Other-Realm" }))
+	Equal(a.rowReads, 4, "simultaneous foreground requests still share the refreshed capture")
+end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_comms.lua")

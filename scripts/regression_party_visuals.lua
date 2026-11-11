@@ -936,3 +936,5 @@ QT:RegisterTest("party reload uses the live solo or unknown-size grouped evidenc
 		Eq(restored:GetPlayerPartyVisualInfo(name), nil)
 	end
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_party_visuals.lua")

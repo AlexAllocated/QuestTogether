@@ -398,3 +398,5 @@ QT:RegisterTest("client locale renders hint prefix body command help and meta ti
 	end
 	assert(found)
 end, { locale = "client" })
+
+_G.QuestTogether:RecordTestModule("scripts/regression_hints.lua")

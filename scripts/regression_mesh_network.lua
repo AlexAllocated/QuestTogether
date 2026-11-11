@@ -2809,3 +2809,5 @@ QT:RegisterTest("mesh silent timeouts share exhausted history with preexisting c
 	local metrics = peer:GetMeshNetworkMetrics()
 	assert(metrics.failureHistory == 1 and metrics.candidatesExhausted == 2 and metrics.candidatesCoolingDown == 0)
 end, { offline = true })
+
+_G.QuestTogether:RecordTestModule("scripts/regression_mesh_network.lua")

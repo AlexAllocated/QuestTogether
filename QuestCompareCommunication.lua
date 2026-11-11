@@ -1,6 +1,7 @@
 local QuestTogether = _G.QuestTogether
 local L = QuestTogether.Translate
 local QUEST_COMPARE_MAX_ENTRIES = 100
+local QUEST_COMPARE_SNAPSHOT_LIFETIME = 1
 local function SafeNumber(a, v)
 	return a:SafeToNumber(v)
 end
@@ -20,7 +21,7 @@ function QuestTogether:BuildQuestCompareEntries()
 	if self.IsWorkBlocked and self:IsWorkBlocked("quest_snapshot_refresh") then
 		return nil, "restricted"
 	end
-	local entries = {}
+	local entries, questLogIndices = {}, {}
 	local numQuestLogEntries = SafeNumber(self, self.API.GetNumQuestLogEntries and self.API.GetNumQuestLogEntries())
 	if not numQuestLogEntries or numQuestLogEntries < 0 or numQuestLogEntries ~= math.floor(numQuestLogEntries) then
 		return nil
@@ -81,6 +82,7 @@ function QuestTogether:BuildQuestCompareEntries()
 				isComplete = complete,
 				isPushable = isPushable,
 			}
+			questLogIndices[questId] = questLogIndex
 		end
 	end
 	local finalCount = SafeNumber(self, self.API.GetNumQuestLogEntries and self.API.GetNumQuestLogEntries())
@@ -88,13 +90,73 @@ function QuestTogether:BuildQuestCompareEntries()
 		return nil
 	end
 
-	return entries
+	return entries, nil, questLogIndices
 end
 
-function QuestTogether:BuildRevisionedQuestCompareEntries(objectiveQuestId)
-	local entries, reason = self:BuildQuestCompareResponseEntries(objectiveQuestId)
+function QuestTogether:InvalidateQuestCompareSnapshot()
+	self.questCompareSnapshotGeneration = (rawget(self, "questCompareSnapshotGeneration") or 0) + 1
+	self.questCompareSnapshot = nil
+	local revision = rawget(self, "questCompareLocalRevision")
+	if revision then revision.sourceEntries = nil end
+end
+
+function QuestTogether:GetQuestCompareSnapshot(requireCurrentTick)
+	-- Restrictions apply even to an already captured log. Never let a warm
+	-- cache turn unavailable native state into a new certified response.
+	if self.IsWorkBlocked and self:IsWorkBlocked("quest_snapshot_refresh") then
+		return nil, "restricted"
+	end
+	local now = self.API.GetTime()
+	local db = rawget(self, "db")
+	local profile = db and db.profile
+	local generation = rawget(self, "questCompareSnapshotGeneration") or 0
+	local world = rawget(self, "commsWorldGeneration") or 0
+	local cached = rawget(self, "questCompareSnapshot")
+	if cached and cached.generation == generation and cached.world == world and cached.profile == profile
+		and now >= cached.createdAt
+		and (not requireCurrentTick or cached.createdAt == now)
+		and ((cached.entries and now < cached.createdAt + QUEST_COMPARE_SNAPSHOT_LIFETIME)
+			or (not cached.entries and now == cached.createdAt)) then
+		return cached.entries and cached or nil, cached.reason
+	end
+	local entries, reason, questLogIndices = self:BuildQuestCompareEntries()
+	if self.IsWorkBlocked and self:IsWorkBlocked("quest_snapshot_refresh") then
+		return nil, "restricted"
+	end
+	db = rawget(self, "db")
+	if generation ~= (rawget(self, "questCompareSnapshotGeneration") or 0)
+		or world ~= (rawget(self, "commsWorldGeneration") or 0) or profile ~= (db and db.profile)
+		or self.API.GetTime() < now then
+		return nil, "pending"
+	end
+	local byQuestID = {}
+	for _, entry in ipairs(entries or {}) do
+		local id = self:NormalizeQuestID(entry.questId)
+		if id then byQuestID[id] = entry end
+	end
+	-- Quest events invalidate immediately. The short maximum age also covers
+	-- clients that deliver a native change before its corresponding event.
+	-- Incomplete scans are shared only for this tick, never as an empty log.
+	cached = { entries = entries, byQuestID = byQuestID, questLogIndices = questLogIndices,
+		reason = reason, createdAt = now,
+		generation = generation, world = world, profile = profile }
+	self.questCompareSnapshot = cached
+	return entries and cached or nil, reason
+end
+
+function QuestTogether:BuildRevisionedQuestCompareEntries(objectiveQuestId, requireCurrentTick)
+	local entries, reason = self:BuildQuestCompareResponseEntries(objectiveQuestId, requireCurrentTick)
 	if not entries or objectiveQuestId then
 		return entries, reason
+	end
+	local previous, now = rawget(self, "questCompareLocalRevision"), self.API.GetTime()
+	local generation = rawget(self, "commsWorldGeneration") or 0
+	local db = rawget(self, "db")
+	local profile = db and db.profile
+	local previousCurrent = previous and previous.generation == generation
+		and previous.profile == profile and now >= previous.createdAt
+	if previousCurrent and previous.sourceEntries == entries then
+		return previous.entries
 	end
 	local fields = {}
 	for _, entry in ipairs(entries) do
@@ -107,14 +169,8 @@ function QuestTogether:BuildRevisionedQuestCompareEntries(objectiveQuestId)
 	end
 	table.sort(fields)
 	local fingerprint = table.concat(fields, ";")
-	local previous, now = rawget(self, "questCompareLocalRevision"), self.API.GetTime()
-	local generation = rawget(self, "commsWorldGeneration") or 0
-	if
-		previous
-		and previous.generation == generation
-		and now >= previous.createdAt
-		and previous.fingerprint == fingerprint
-	then
+	if previousCurrent and previous.fingerprint == fingerprint then
+		previous.sourceEntries = entries
 		return previous.entries
 	end
 	self.questCompareRevisionSequence = (rawget(self, "questCompareRevisionSequence") or 0) + 1
@@ -136,7 +192,8 @@ function QuestTogether:BuildRevisionedQuestCompareEntries(objectiveQuestId)
 	end
 	copy.revision = revision
 	self.questCompareLocalRevision =
-		{ entries = copy, fingerprint = fingerprint, createdAt = now, generation = generation }
+		{ entries = copy, sourceEntries = entries, fingerprint = fingerprint, createdAt = now,
+			generation = generation, profile = profile }
 	return copy
 end
 
@@ -453,7 +510,13 @@ function QuestTogether:ProgressQuestCompareResponses(now)
 				entries, reason, used = self:ProgressQuestHistoryResponse(job, math.min(8, historyBudget))
 				historyBudget = historyBudget - used
 			else
-				entries, reason = self:BuildRevisionedQuestCompareEntries(job.data.objectiveQuestId)
+				-- An explicit refresh asks for a new baseline even if native
+				-- quest events have not arrived yet. Same-frame callers can
+				-- still share that capture; background/conditional work may
+				-- reuse the short event-invalidated cache across frames.
+				local requireCurrentTick = not job.data.objectiveQuestId
+					and not job.data.background and not job.data.knownRevision
+				entries, reason = self:BuildRevisionedQuestCompareEntries(job.data.objectiveQuestId, requireCurrentTick)
 			end
 			if entries then
 				local unchanged = entries.revision ~= nil and entries.revision == job.data.knownRevision

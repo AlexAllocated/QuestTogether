@@ -378,3 +378,5 @@ QT:RegisterTest("geographic density stays bounded within a same-tick discovery b
 	a.now = a.now + 600
 	Check(a:GetGeographicZonePopulation(1) == 0, "cached density expires on original deadline")
 end, { offline = true })
+
+_G.QuestTogether:RecordTestModule("scripts/regression_presence_v2.lua")

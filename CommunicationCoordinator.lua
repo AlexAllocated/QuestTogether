@@ -1237,6 +1237,8 @@ function QT:UpdateCommunicationRuntime()
 	end
 end
 function QT:EndCommunicationSession(preserveVerifiedPeers)
+	self:InvalidateQuestCompareSnapshot()
+	self.questCompareLocalRevision = nil
 	self.meshDepartureRoutes = self.GetMeshDepartureRoutes and self:GetMeshDepartureRoutes() or {}
 	self:ResetVIPIdentity(preserveVerifiedPeers)
 	self:ResetDeveloperAnnouncements()

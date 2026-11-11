@@ -499,3 +499,5 @@ QT:RegisterTest("unchanged party names still rebind PQL when converting to and f
 	assert(partyMember ~= raidMember and partyMember == viewer:GetPartyQuestSyncMember(remote.name),
 		"returning to a party must reattach PQL to the new shared cache")
 end, { offline = true })
+
+_G.QuestTogether:RecordTestModule("scripts/regression_party_sync.lua")

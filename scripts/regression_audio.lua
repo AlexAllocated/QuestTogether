@@ -195,3 +195,5 @@ QT:RegisterTest("party audio accepts fresh remote milestones and rejects stale u
 	a:ObservePartyAnnouncementAudio(event, "Friend")
 	Equal(#a.plays, 3, "an unavailable local server clock fails quiet")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_audio.lua")

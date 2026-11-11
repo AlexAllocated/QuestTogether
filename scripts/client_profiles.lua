@@ -1807,6 +1807,47 @@ return rawRow end
 			assert(mismatchedRequired == nil, "mismatched rows cannot supplement missing native counters")
 			GetQuestObjectiveInfo, C_QuestLog.GetQuestObjectives = originalObjective, originalRows
 		end
+		do
+			-- A captured index avoids a legacy full-log search even when the core
+			-- snapshot is cold. A reordered row must still resolve the actual ID.
+			local originalObjective, originalRows, originalLeaderboard =
+				GetQuestObjectiveInfo, C_QuestLog.GetQuestObjectives, GetQuestLogLeaderBoard
+			local originalInfo, originalCount = addon.API.GetQuestLogInfo, addon.API.GetNumQuestLogEntries
+			local snapshots = addon:GetQuestSnapshotStateStore().byQuestID
+			local originalSnapshot = snapshots[12345]
+			local ok, detail = pcall(function()
+				GetQuestObjectiveInfo, C_QuestLog.GetQuestObjectives = nil, nil
+				snapshots[12345] = nil
+				local position, reads, objectiveReads = 42, 0, 0
+				addon.API.GetNumQuestLogEntries = function() return 100 end
+				addon.API.GetQuestLogInfo = function(index)
+					reads = reads + 1
+					return { questID = index == position and 12345 or 50000 + index }
+				end
+				GetQuestLogLeaderBoard = function(objectiveIndex, index)
+					assert(objectiveIndex == 1 and index == position, "legacy objective read used another quest's row")
+					objectiveReads = objectiveReads + 1
+					return "Legacy wolves", "monster", false
+				end
+				local text = addon:GetNormalizedQuestObjectiveInfo(12345, 1, false, 42)
+				assert(text == "Legacy wolves" and reads == 1 and objectiveReads == 1,
+					"a validated hint must avoid the cold core index search")
+				position, reads = 84, 0
+				text = addon:GetNormalizedQuestObjectiveInfo(12345, 1, false, 42)
+				assert(text == "Legacy wolves" and reads == 85 and objectiveReads == 2,
+					"a reordered stale hint must search for the correct quest ID")
+				for _, invalid in ipairs({ 0, -1, 1.5, secret, inaccessible }) do
+					reads = 0
+					assert(addon:GetNormalizedQuestObjectiveInfo(12345, 1, false, invalid) == "Legacy wolves")
+					assert(reads == 84, "an invalid hint must use the native ID search")
+				end
+			end)
+			GetQuestObjectiveInfo, C_QuestLog.GetQuestObjectives, GetQuestLogLeaderBoard =
+				originalObjective, originalRows, originalLeaderboard
+			addon.API.GetQuestLogInfo, addon.API.GetNumQuestLogEntries = originalInfo, originalCount
+			snapshots[12345] = originalSnapshot
+			assert(ok, detail)
+		end
 		local text, kind, done, count, required = addon.API.GetQuestObjectiveInfo(12345, 1, false)
 		assert(text == "Wolves slain: 2/5" and kind == "monster" and done == false and count == 2 and required == 5)
 		objective.numRequired = secret

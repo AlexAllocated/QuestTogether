@@ -1320,3 +1320,5 @@ QT:RegisterTest("transport large private packets earn byte credit under continuo
 		assert(bytes <= 30 * 800 and #a.sent <= 30 * 4)
 	end
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_transport_v2.lua")

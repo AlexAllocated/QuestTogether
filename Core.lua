@@ -1425,6 +1425,25 @@ QuestTogether.API = QuestTogether.API
 			end
 			return false
 		end,
+		CanCallProtectedFunctions = function(frame)
+			if not CanAccessForeignValue(frame) then return false end
+			local actions = C_RestrictedActions
+			if actions ~= nil then
+				if not CanAccessForeignTable(actions) then return false end
+				local check = actions.CheckAllowProtectedFunctions
+				if not CanAccessForeignValue(check) then return false end
+				if check ~= nil then
+					if type(check) ~= "function" then return false end
+					local ok, allowed = pcall(check, frame, true)
+					return ok and CanAccessForeignValue(allowed) and allowed == true
+				end
+			end
+			-- Older clients expose only combat lockdown. Missing or unreadable
+			-- permission is never an authorization to modify a secure button.
+			if not CanAccessForeignValue(InCombatLockdown) or type(InCombatLockdown) ~= "function" then return false end
+			local ok, locked = pcall(InCombatLockdown)
+			return ok and CanAccessForeignValue(locked) and locked == false
+		end,
 		DoEmote = function(emoteToken, target)
 			local performEmote = C_ChatInfo and C_ChatInfo.PerformEmote
 			if type(performEmote) ~= "function" then
@@ -3214,7 +3233,7 @@ QuestTogether.API = QuestTogether.API
 			end
 			return pcall(request, id)
 		end,
-		GetQuestObjectiveInfo = function(questID, objectiveIndex, displayComplete)
+		GetQuestObjectiveInfo = function(questID, objectiveIndex, displayComplete, questLogIndex)
 			if InCombatLockdown and InCombatLockdown() then
 				return nil, nil, nil, nil
 			end
@@ -3259,7 +3278,18 @@ QuestTogether.API = QuestTogether.API
 					objective.numFulfilled,
 					objective.numRequired
 			elseif type(GetQuestLogLeaderBoard) == "function" then
-				local index = QuestTogether.API.GetQuestLogIndexForQuestID(numericQuestID)
+				-- A caller can reuse a captured index, but native row identity must
+				-- still match before the legacy index-based objective read.
+				local index = QuestTogether:SafeToNumber(questLogIndex)
+				if index and index > 0 and index == math.floor(index) then
+					local row = QuestTogether.API.GetQuestLogInfo(index)
+					if not CanAccessForeignTable(row) or QuestTogether:NormalizeQuestID(row.questID) ~= numericQuestID then
+						index = nil
+					end
+				else
+					index = nil
+				end
+				index = index or QuestTogether.API.GetQuestLogIndexForQuestID(numericQuestID)
 				if not index then
 					return nil, nil, nil, nil
 				end
@@ -3537,6 +3567,20 @@ QuestTogether.API = QuestTogether.API
 				return ok and result or false
 			end
 			return false
+		end,
+		LoadTestSuite = function()
+			local loader = C_AddOns and C_AddOns.LoadAddOn or LoadAddOn
+			if type(loader) ~= "function" then return false, "Addon loading is unavailable." end
+			local metadata = QuestTogether.API.GetAddOnMetadata
+			local version = metadata("QuestTogether_Tests", "Version")
+			if type(version) ~= "string" or version == "" or version ~= metadata("QuestTogether", "Version") then
+				return false, "QuestTogether and its test companion must be the same version."
+			end
+			local ok, loaded, reason = pcall(loader, "QuestTogether_Tests")
+			if not ok or not QuestTogether:CanAccessValue(loaded) or loaded ~= true then
+				return false, ok and QuestTogether:CanAccessValue(reason) and type(reason) == "string" and reason or nil
+			end
+			return true
 		end,
 		IsAddOnLoaded = function(requestedAddonName)
 			if C_AddOns and C_AddOns.IsAddOnLoaded then
@@ -6356,11 +6400,11 @@ function QuestTogether:NormalizeQuestObjectiveCounters(kind, finished, current, 
 	return current, required
 end
 
-function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, displayComplete)
+function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, displayComplete, questLogIndex)
 	local objectiveText, objectiveType, finished, currentValue, requiredValue = nil, nil, nil, nil, nil
 	if self.API and self.API.GetQuestObjectiveInfo then
 		objectiveText, objectiveType, finished, currentValue, requiredValue =
-			self.API.GetQuestObjectiveInfo(questId, objectiveIndex, displayComplete)
+			self.API.GetQuestObjectiveInfo(questId, objectiveIndex, displayComplete, questLogIndex)
 	end
 	if objectiveText == nil and objectiveType == nil and currentValue == nil then
 		objectiveText = ""

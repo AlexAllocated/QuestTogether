@@ -674,3 +674,5 @@ function QT:ApplyTestUITemplate(frame, template)
 	end
 	return frame
 end
+
+_G.QuestTogether:RecordTestModule("scripts/ui_fixture.lua")

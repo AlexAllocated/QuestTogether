@@ -294,6 +294,36 @@ QT:RegisterTest("column choices follow player identities across roster reorderin
 	Equal(a.invalidCalls, nil)
 end)
 
+QT:RegisterTest("collapsed columns survive refresh and roster replacement only for surviving identities", function()
+	local a, frame, previous = Open(2)
+	local friend = previous.members[2].name
+	assert(a:SetPartyQuestColumnCollapsed(friend, true, previous))
+	frame.refresh:Click()
+	local refreshed = a.partyQuestCompareSession
+	assert(refreshed ~= previous)
+	Equal(refreshed.collapsedPlayers[friend], true)
+	assert(refreshed.collapsedPlayers ~= previous.collapsedPlayers)
+	a:Roster("Third-Realm", a.name, friend)
+	a:OnPartyQuestRosterChanged()
+	local reordered = a.partyQuestCompareSession
+	assert(reordered ~= refreshed)
+	a:RenderPartyQuestCompare()
+	for index, member in ipairs(reordered.members) do
+		Equal(frame.columns[index].collapsed, member.name == friend)
+	end
+	assert(a:SetPartyQuestColumnCollapsed("Third-Realm", true, reordered))
+	a:Roster(a.name, "Third-Realm")
+	a:OnPartyQuestRosterChanged()
+	Equal(a.partyQuestCompareSession.collapsedPlayers[friend], nil)
+	Equal(a.partyQuestCompareSession.collapsedPlayers["Third-Realm"], true)
+	a:Roster(a.name, friend, "Third-Realm")
+	a:OnPartyQuestRosterChanged()
+	Equal(a.partyQuestCompareSession.collapsedPlayers[friend], nil)
+	Equal(a.partyQuestCompareSession.collapsedPlayers["Third-Realm"], true)
+	Equal(a:SetPartyQuestColumnCollapsed(friend, true, previous), false)
+	Equal(a.invalidCalls, nil)
+end)
+
 QT:RegisterTest("compact party header menu actions expire with their captured session", function()
 	local a, frame, session = Open(2)
 	local actions = {}
@@ -355,3 +385,5 @@ QT:RegisterTest("remote column menus include personal notes and player share fee
 	end
 	Equal(a.invalidCalls, nil)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_compare_interaction.lua")

@@ -3,6 +3,7 @@ local QT = _G.QuestTogether
 local function Equal(a, b) assert(a == b, tostring(a) .. " ~= " .. tostring(b)) end
 local function Fixture()
 	local a = setmetatable({ isEnabled = true, valid = true }, { __index = QT })
+	a.API = { CanCallProtectedFunctions = function() return not a.combat and not a.denied end }
 	function a:IsRuntimeRestricted() return self.blocked == true end
 	function a:IsIgnoredPlayerName(name) return self.ignored == name end
 	function a:NormalizeMemberName(name) return name end
@@ -17,11 +18,11 @@ local function Fixture()
 		local b = { scripts = {}, attrs = {}, shown = false }
 		function b:SetScript(event, fn) self.scripts[event] = fn end
 		function b:SetAttribute(key, value)
-			assert(not a.blocked, "restricted attribute write")
+			assert(not a.combat and not a.denied, "protected attribute write")
 			assert(type(value) ~= "table", "secure payload must stay primitive")
 			self.attrs[key] = value
 		end
-		function b:Hide() assert(not a.blocked); self.shown = false end
+		function b:Hide() assert(not a.combat and not a.denied); self.shown = false end
 		function b:Show() assert(not a.blocked); self.shown = true end
 		function b:SetFrameStrata(value) assert(not a.blocked); self.strata = value end
 		function b:SetFrameLevel(value) assert(not a.blocked); self.level = value end
@@ -92,16 +93,80 @@ QT:RegisterTest("target hover tracks screen position and drops hidden ignored di
 		elseif reason == "parentHidden" then a.owner.parentHidden = true
 		elseif reason == "ignored" then a.ignored = "Friend-Realm"
 		elseif reason == "disabled" then a.isEnabled = false
-		elseif reason == "restricted" then a.blocked = true; b.shown = false -- Secure visibility driver.
+		elseif reason == "restricted" then a.blocked, a.combat = true, true; b.shown = false -- Combat visibility driver only.
 		elseif reason == "forbidden" then a.owner.forbidden = true
 		else a.valid = false end
 		b.scripts.OnUpdate(nil, 0.1)
 		Equal(a.locationTargetState.current, nil)
 		Equal(b.shown, false)
-		a.blocked = false
+		a.blocked, a.combat = false, false
 		b.scripts.PostClick(nil, "LeftButton")
 		Equal(a.clicked, nil)
 	end
+end)
+
+QT:RegisterTest("noncombat target restrictions retire the secure overlay before a stale hardware click", function()
+	for _, trigger in ipairs({ "update", "click", "leave", "restrictionEvent" }) do
+		local a = Fixture(); assert(a:Open())
+		local b = a.locationTargetState.button
+		a.blocked = true -- No combat visibility driver fires for this policy.
+		if trigger == "update" then b.scripts.OnUpdate(nil, 0.1)
+		elseif trigger == "click" then b.scripts.PreClick()
+		elseif trigger == "leave" then b.scripts.OnLeave()
+		else
+			function a:ScheduleAnnouncementChannelOrder() end
+			function a:FlushDeferredWork() end
+			a:ADDON_RESTRICTION_STATE_CHANGED()
+		end
+		Equal(a.locationTargetState.current, nil)
+		Equal(b.attrs.macrotext1, nil)
+		Equal(b.shown, false)
+		b.scripts.PostClick(nil, "LeftButton")
+		Equal(a.clicked, nil)
+		Equal(a:Open(), false)
+	end
+end)
+
+QT:RegisterTest("target cleanup waits for real object permission and never revives the retired action", function()
+	local a = Fixture(); assert(a:Open())
+	local b = a.locationTargetState.button
+	a.blocked, a.denied = true, true
+	b.scripts.OnUpdate(nil, 0.1)
+	b.scripts.PreClick()
+	Equal(a.locationTargetState.current, nil)
+	Equal(b.shown, true) -- A protected mutation must not be attempted.
+	a.denied = false -- Policy remains blocked while native cleanup becomes legal.
+	b.scripts.OnUpdate(nil, 0.1)
+	Equal(b.shown, false)
+	Equal(b.attrs.macrotext1, nil)
+	a.blocked = false
+	b.scripts.OnUpdate(nil, 0.1)
+	Equal(b.shown, false)
+	for _, value in ipairs({ "true", 1, {} }) do
+		a.API.CanCallProtectedFunctions = function() return value end
+		Equal(a:CanMutateLocationTargetButton(b), false)
+	end
+	a.API.CanCallProtectedFunctions = function() error("unavailable") end
+	Equal(a:CanMutateLocationTargetButton(b), false)
+	a.API.CanCallProtectedFunctions = nil
+	Equal(a:CanMutateLocationTargetButton(b), false)
+end)
+
+QT:RegisterTest("target cleanup does not hide a new hover acquired by an attribute callback", function()
+	local a = Fixture(); assert(a:Open())
+	local b = a.locationTargetState.button
+	local write = b.SetAttribute
+	function b:SetAttribute(key, value)
+		write(self, key, value)
+		if key == "macrotext1" and value == nil and not a.reentered then
+			a.reentered = true
+			assert(a:Open("New-Realm"))
+		end
+	end
+	a:HideLocationTargetButton()
+	Equal(b.shown, true)
+	Equal(b.attrs.macrotext1, "/targetexact [nocombat] New-Realm")
+	Equal(a.locationTargetState.current.name, "New-Realm")
 end)
 
 QT:RegisterTest("target macros preserve full identities and reject command syntax", function()
@@ -114,3 +179,19 @@ QT:RegisterTest("target macros preserve full identities and reject command synta
 		Equal(a:GetLocationTargetMacro(name), nil)
 	end
 end)
+
+QT:RegisterTest("target geometry callbacks cannot position an overlay after policy changes", function()
+	local a = Fixture(); assert(a:Open())
+	local b = a.locationTargetState.button
+	local original = a.GetLocationTargetButtonRect
+	function a:GetLocationTargetButtonRect(owner)
+		a.blocked = true
+		return original(self, owner)
+	end
+	b.scripts.OnUpdate(nil, 0.1)
+	Equal(a.locationTargetState.current, nil)
+	Equal(b.attrs.macrotext1, nil)
+	Equal(b.shown, false)
+end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_location_targeting.lua")

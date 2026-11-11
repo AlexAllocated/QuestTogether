@@ -348,3 +348,5 @@ QT:RegisterTest("minor upgrades show the base release and ordered patches on one
 	assert(a:ShowReleaseNotesPage(2))
 	Equal(a.db.global.releaseNotesSeenVersion, "7.4.10")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_release_notes.lua")

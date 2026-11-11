@@ -149,21 +149,28 @@ end
 UIParent = setmetatable({}, Frame)
 local clientChecks = arg[3] and assert(loadfile(addonRoot .. "/scripts/client_profiles.lua"))()(arg[3])
 local namespace = {}
--- Load the exact live manifest. Missing/omitted test modules must not be hidden
--- by a second, independently maintained offline file list.
+-- Both manifests are canonical: production starts without QA code; the companion
+-- uses a separate native addon namespace and is loaded only by /qt test.
 GetLocale = function()
 	return os.getenv("QT_TEST_LOCALE") or "enUS"
 end
-for line in io.lines(addonRoot .. "/QuestTogether.toc") do
-	local file = line:match("^%s*(.-)%s*$")
-	if file ~= "" and not file:match("^#") then
-		assert(file:match("%.lua$"), "unsupported manifest entry: " .. file)
-		local path = addonRoot .. "/" .. file:gsub("\\", "/")
-		local chunk, err = loadfile(path)
-		assert(chunk, err)
-		chunk("QuestTogether", namespace)
+local function LoadManifest(name, ns)
+	for line in io.lines(addonRoot .. "/" .. name .. ".toc") do
+		local file = line:match("^%s*(.-)%s*$")
+		if name == "QuestTogether_Tests" then
+			ns.expectedTestModules = file:match("^## X%-QT%-TestModules:%s*(%d+)$") or ns.expectedTestModules
+		end
+		if file ~= "" and not file:match("^#") then
+			assert(file:match("%.lua$"), "unsupported manifest entry: " .. file)
+			assert(loadfile(addonRoot .. "/" .. file:gsub("\\", "/")))(name, ns)
+		end
 	end
 end
+LoadManifest("QuestTogether", namespace)
+assert(QuestTogether.tests == nil and QuestTogether.CreateTestAddon == nil,
+	"normal startup must not load QA fixtures or register tests")
+LoadManifest("QuestTogether_Tests", {})
+assert(QuestTogether.testSuiteLoaded == true, "companion must finish before tests run")
 QuestTogether:InitializeDatabase()
 QuestTogether:EnsureRuntimeStateStore()
 QuestTogether.isInitialized = true

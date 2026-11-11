@@ -129,15 +129,21 @@ function QuestTogether:GetPlayerLocationPriorityOrigin()
 	if continent and north and west then return { continent = continent, north = north, west = west } end
 end
 
-function QuestTogether:GetCachedPlayerLocationWorldPosition(row)
-	if self:IsRuntimeRestricted() then return nil end
-	local cache = rawget(self, "locationPriorityCache")
-	if not cache then cache = setmetatable({}, { __mode = "k" }); self.locationPriorityCache = cache end
-	local saved = cache[row]
+local function CachedWorldPosition(addon, row)
+	local cache = rawget(addon, "locationPriorityCache")
+	local saved = cache and cache[row]
 	if saved and saved.mapID == row.mapID and saved.x == row.x and saved.y == row.y then
 		return saved.continent, saved.north, saved.west
 	end
-	local continent, north, west = self:GetLocationPinWorldPosition(row.mapID, row.x, row.y)
+end
+
+function QuestTogether:GetCachedPlayerLocationWorldPosition(row)
+	if self:IsRuntimeRestricted() then return nil end
+	local continent, north, west = CachedWorldPosition(self, row)
+	if continent then return continent, north, west end
+	local cache = rawget(self, "locationPriorityCache")
+	if not cache then cache = setmetatable({}, { __mode = "k" }); self.locationPriorityCache = cache end
+	continent, north, west = self:GetLocationPinWorldPosition(row.mapID, row.x, row.y)
 	-- Do not cache a transient native failure; successful coordinates are fixed
 	-- for this map and position and need not be projected for every admission.
 	if continent and north and west then
@@ -549,7 +555,10 @@ function QuestTogether:ProjectPlayerLocationPin(surface, row, geometry, markerSi
 	else
 		local continent, north, west
 		if cachedWorldPosition then
-			continent, north, west = self:GetCachedPlayerLocationWorldPosition(row)
+			-- A cache hit is pure arithmetic on owned coordinates, not permission
+			-- for native access. Cache misses and every UI write keep fresh guards.
+			continent, north, west = CachedWorldPosition(self, row)
+			if not continent then continent, north, west = self:GetCachedPlayerLocationWorldPosition(row) end
 		else
 			continent, north, west = self:GetLocationPinWorldPosition(row.mapID, row.x, row.y)
 		end
@@ -1563,6 +1572,12 @@ end
 -- Reproject admitted minimap dots against this frame's camera, including peers
 -- without a stream lease. Membership, artwork and tooltips keep their own cadence.
 -- No new frames, peer requests, or writes to Blizzard-owned UI here.
+local function CurrentMinimapPin(addon, state, surface, pin, name, generation)
+	return rawget(addon, "locationPinState") == state and state.surfaces.minimap == surface
+		and pin.name == name and pin.presentationGeneration == generation
+		and addon.isEnabled and not addon.isLoggingOut and addon:GetOption("showPlayerLocations") == true
+end
+
 function QuestTogether:RefreshMinimapLocationGeometry()
 	local state = rawget(self, "locationPinState")
 	local surface = state and state.surfaces.minimap
@@ -1580,6 +1595,7 @@ function QuestTogether:RefreshMinimapLocationGeometry()
 		end
 		for _, pin in ipairs(surface.pins) do
 			if pin.name then
+				local name, generation = pin.name, pin.presentationGeneration
 				if pin.mapID ~= geometry.mapID then
 					HideSurface(self, state, surface)
 					return
@@ -1593,18 +1609,29 @@ function QuestTogether:RefreshMinimapLocationGeometry()
 					row = self:GetFreshPlayerLocation(pin.name, "minimap")
 					if row then row = self:GetNearbyStreamPosition(row, true) end
 				end
-				if not row or not self:ShouldShowPlayerLocation(pin.name) or not Guard(self, pin.frame) then
+				local eligible = row and self:ShouldShowPlayerLocation(name) and self.LibChev.CanMutateOwnedRegion(pin.frame)
+				if not CurrentMinimapPin(self, state, surface, pin, name, generation) then return end
+				if not eligible then
 					pin.minimapX, pin.minimapY = nil, nil
 					Hide(self, state, pin.frame)
 				else
 					-- A fixed map coordinate has a fixed world position; reuse that
 					-- conversion while only the local camera moves.
 					local x, y = self:ProjectPlayerLocationPin("minimap", row, geometry, pin.size, true)
+					if not CurrentMinimapPin(self, state, surface, pin, name, generation) then return end
 					if x and y then
 						if x ~= pin.minimapX or y ~= pin.minimapY then
-							Call(self, pin.frame, "ClearAllPoints")
+							local wasHidden = pin.minimapX == nil
+							-- This pin already has exactly this anchor. Replacing its
+							-- offset needs one native write, not clear/point/show.
+							-- Call throws on refusal/native failure; the enclosing pass
+							-- then retires this surface without committing coordinates.
 							Call(self, pin.frame, "SetPoint", "CENTER", surface.frame, "TOPLEFT", x, -y)
-							Call(self, pin.frame, "Show")
+							if not CurrentMinimapPin(self, state, surface, pin, name, generation) then return end
+							if wasHidden then
+								Call(self, pin.frame, "Show")
+								if not CurrentMinimapPin(self, state, surface, pin, name, generation) then return end
+							end
 							pin.minimapX, pin.minimapY = x, y
 						end
 					else
@@ -1615,5 +1642,9 @@ function QuestTogether:RefreshMinimapLocationGeometry()
 			end
 		end
 	end)
-	if not ok then HideSurface(self, state, surface) end
+	-- A read/projection callback can change policy even when no dot needed a
+	-- write. Recheck at the pass boundary; never retain an ambient guard cache.
+	if rawget(self, "locationPinState") == state and state.surfaces.minimap == surface
+		and (not ok or not self.isEnabled or self.isLoggingOut or self:GetOption("showPlayerLocations") ~= true
+			or self:IsRuntimeRestricted()) then HideSurface(self, state, surface) end
 end

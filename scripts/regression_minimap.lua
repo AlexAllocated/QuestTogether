@@ -1088,3 +1088,5 @@ Register("minimap VIP logo follows activation cosmetics and restriction recovery
 	a:RefreshMinimapButton()
 	Equal(icon.texture, normal)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_minimap.lua")

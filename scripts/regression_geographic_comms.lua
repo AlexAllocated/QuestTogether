@@ -2438,3 +2438,5 @@ QT:RegisterTest("global baselines remain replayable until renewal without refres
 	b.now = baseline.at + 600
 	Equal(b:GetFreshPlayerLocation(a.name), nil)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_geographic_comms.lua")

@@ -702,3 +702,5 @@ QT:RegisterTest("unreadable map visibility keeps deferred tooltip work blocked",
 	addon:Tick()
 	Equal(calls, 1)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_runtime.lua")

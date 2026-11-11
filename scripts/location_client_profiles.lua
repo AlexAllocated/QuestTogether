@@ -796,6 +796,42 @@ assert(pinLevelReads == nativePinLevelReads, "restricted geometry must not read 
 assert(playerMapReads == before, "restricted geometry must not query a fallback map")
 assert(forbiddenReads == 0)
 assert(inaccessibleReads == 0)
+-- Secure-button retirement follows per-object permission, independently of
+-- the broader rendering policy. All native replacements here are offline.
+do
+	local actions, combat = C_RestrictedActions, InCombatLockdown
+	local object = {}
+	InCombatLockdown = function() return false end
+	C_RestrictedActions = { CheckAllowProtectedFunctions = function(frame, silent)
+		assert(frame == object and silent == true)
+		return true
+	end }
+	assert(addon.API.CanCallProtectedFunctions(object))
+	for _, value in ipairs({ false, "true", 1, secret, inaccessible }) do
+		C_RestrictedActions.CheckAllowProtectedFunctions = function() return value end
+		assert(not addon.API.CanCallProtectedFunctions(object))
+	end
+	C_RestrictedActions.CheckAllowProtectedFunctions = function() return nil end
+	assert(not addon.API.CanCallProtectedFunctions(object))
+	C_RestrictedActions.CheckAllowProtectedFunctions = function() error("native denied") end
+	assert(not addon.API.CanCallProtectedFunctions(object))
+	C_RestrictedActions.CheckAllowProtectedFunctions = "invalid"
+	assert(not addon.API.CanCallProtectedFunctions(object))
+	C_RestrictedActions = inaccessible
+	assert(not addon.API.CanCallProtectedFunctions(object))
+	assert(inaccessibleReads == 0)
+	C_RestrictedActions = {}
+	assert(addon.API.CanCallProtectedFunctions(object), "legacy combat permission remains supported")
+	InCombatLockdown = function() return true end
+	assert(not addon.API.CanCallProtectedFunctions(object))
+	InCombatLockdown = function() return secret end
+	assert(not addon.API.CanCallProtectedFunctions(object))
+	InCombatLockdown = function() error("native unavailable") end
+	assert(not addon.API.CanCallProtectedFunctions(object))
+	InCombatLockdown = nil
+	assert(not addon.API.CanCallProtectedFunctions(object))
+	C_RestrictedActions, InCombatLockdown = actions, combat
+end
 print(
 	"location native contracts "
 		.. client

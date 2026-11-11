@@ -307,3 +307,5 @@ QT:RegisterTest("quest details suspend under hidden parents and refresh safely o
 	a:DismissManagedWindow(frame)
 	Check(a, 2)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_quest_details.lua")

@@ -757,3 +757,5 @@ function QT:CreateTestNetwork(options)
 	end
 	return network
 end
+
+_G.QuestTogether:RecordTestModule("scripts/network_fixture.lua")

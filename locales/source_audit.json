@@ -209,6 +209,7 @@
       "/qt resetlayout - ",
       "ACCEPTED",
       "ALL",
+      "Addon loading is unavailable.",
       "Adopted existing QuestTogether chat window id=%s on login",
       "Applied main chat font size=%s to QuestTogether chat frame id=%s",
       "BUSY",
@@ -239,6 +240,7 @@
       "Party Only",
       "Prefix",
       "QuestTogether %.1f, %.1f",
+      "QuestTogether and its test companion must be the same version.",
       "QuestTogether chat window was closed; reverting chat log destination to main chat window",
       "Reactivated existing QuestTogether chat window id=%s",
       "Ready to Turn In",
@@ -270,7 +272,12 @@
       "ALL",
       "Clear",
       "Matches",
-      "Refresh"
+      "QuestTogether test loader is unavailable.",
+      "QuestTogether tests are unavailable. Enable the bundled QuestTogether Tests addon and reload. ",
+      "QuestTogether tests cannot load while the UI is restricted.",
+      "QuestTogether tests cannot start while the UI is restricted.",
+      "Refresh",
+      "The test companion did not finish loading."
     ],
     "DeveloperAnnouncements.lua": [
       "DEVANN",

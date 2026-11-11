@@ -23,24 +23,57 @@ class PackagingTests(unittest.TestCase):
             package.package(ROOT, second)
             self.assertEqual(first.read_bytes(), second.read_bytes())
             manifest = package.verify_archive(first.read_bytes())
-            self.assertTrue(set(package.toc_entries((ROOT / "QuestTogether.toc").read_text())) <= set(manifest["files"]))
-            self.assertIn("Libs/libchev/LICENSE", manifest["files"])
-            self.assertIn("Media/QuestTogetherIcon.tga", manifest["files"])
-            self.assertIn("Media/QuestTogetherTipIcon.tga", manifest["files"])
-            self.assertIn("Media/QuestTogetherTipIcon.png", manifest["files"])
-            self.assertIn("Media/QuestTogetherDeveloperIcon.tga", manifest["files"])
-            self.assertIn("Media/QuestTogetherDeveloperPartnerIcon.tga", manifest["files"])
+            self.assertTrue({"QuestTogether/" + p for p in package.toc_entries((ROOT / "QuestTogether.toc").read_text())} <= set(manifest["files"]))
+            self.assertIn("QuestTogether/Libs/libchev/LICENSE", manifest["files"])
+            self.assertIn("QuestTogether/Media/QuestTogetherIcon.tga", manifest["files"])
+            self.assertIn("QuestTogether/Media/QuestTogetherTipIcon.tga", manifest["files"])
+            self.assertIn("QuestTogether/Media/QuestTogetherTipIcon.png", manifest["files"])
+            self.assertIn("QuestTogether/Media/QuestTogetherDeveloperIcon.tga", manifest["files"])
+            self.assertIn("QuestTogether/Media/QuestTogetherDeveloperPartnerIcon.tga", manifest["files"])
             audio = json.loads((ROOT / "Media/Audio/manifest.json").read_text())
-            self.assertIn("Media/Audio/NOTICE.txt", manifest["files"])
-            self.assertIn("Media/Audio/manifest.json", manifest["files"])
+            self.assertIn("QuestTogether/Media/Audio/NOTICE.txt", manifest["files"])
+            self.assertIn("QuestTogether/Media/Audio/manifest.json", manifest["files"])
             for cue in ("scroll", "spellbook", "selection", "chime", "progress", "completion"):
                 for gain in range(1, 101):
-                    self.assertIn(f"Media/Audio/{cue}/{gain:03}.ogg", manifest["files"])
+                    self.assertIn(f"QuestTogether/Media/Audio/{cue}/{gain:03}.ogg", manifest["files"])
                 for variant in audio["cues"][cue]["variants"]:
-                    self.assertEqual(manifest["files"]["Media/Audio/" + variant["file"]], variant["sha256"])
-            self.assertNotIn("scripts/test.lua", manifest["files"])
-            self.assertNotIn("scripts/offline_numeric_tests.lua", manifest["files"])
+                    self.assertEqual(manifest["files"]["QuestTogether/Media/Audio/" + variant["file"]], variant["sha256"])
+            self.assertNotIn("QuestTogether/scripts/test.lua", manifest["files"])
+            self.assertNotIn("QuestTogether/scripts/offline_numeric_tests.lua", manifest["files"])
             self.assertFalse(any(p.startswith(".local/") or p.endswith("image.png") for p in manifest["files"]))
+            self.assertEqual(manifest["schema"], 2)
+            self.assertIn("QuestTogether_Tests/QuestTogether_Tests.toc", manifest["files"])
+            self.assertIn("QuestTogether_Tests/Tests.lua", manifest["files"])
+            self.assertNotIn("QuestTogether/Tests.lua", manifest["files"])
+            # WoW discovers root Bindings.xml independently of TOC entries.
+            # The companion must never register the main addon's bindings again.
+            self.assertIn("QuestTogether/Bindings.xml", manifest["files"])
+            self.assertEqual(manifest["files"]["QuestTogether_Tests/Bindings.xml"], package.digest(package.TEST_BINDINGS))
+            companion = (ROOT / "QuestTogether_Tests.toc").read_text()
+            entries = package.validate_test_manifest(companion, (ROOT / "QuestTogether.toc").read_text())
+            self.assertTrue({"QuestTogether_Tests/" + p for p in entries} <= set(manifest["files"]))
+
+    def test_companion_rejects_wrong_version_eager_loading_and_missing_files(self):
+        main = (ROOT / "QuestTogether.toc").read_text()
+        companion = (ROOT / "QuestTogether_Tests.toc").read_text()
+        for changed in (companion.replace("## LoadOnDemand: 1", "## LoadOnDemand: 0"),
+                        companion.replace("## RequiredDeps: QuestTogether", "## RequiredDeps:"),
+                        companion.replace("## X-QT-TestModules:", "## Wrong-Count:"),
+                        companion.replace("scripts/test_complete.lua", "Core.lua"),
+                        companion.replace("## Version: " + package.version_from_toc(main), "## Version: 0.0.0")):
+            with self.assertRaises(package.PackageError): package.validate_test_manifest(changed, main)
+        with self.assertRaises(package.PackageError):
+            package.validate_test_completion("Tests.lua", b"-- incomplete module\n")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "addon.zip"
+            package.package(ROOT, path)
+            with zipfile.ZipFile(path) as archive:
+                payloads = {name: archive.read(name) for name in archive.namelist()}
+            del payloads["QuestTogether_Tests/Tests.lua"]
+            buffer = io.BytesIO()
+            with zipfile.ZipFile(buffer, "w") as archive:
+                for name, value in payloads.items(): archive.writestr(name, value)
+            with self.assertRaises(package.PackageError): package.verify_archive(buffer.getvalue())
 
     def test_ref_is_independent_of_working_tree(self):
         # A clean checkout cannot expose accidentally reading working-tree files
@@ -82,10 +115,10 @@ class PackagingTests(unittest.TestCase):
                 (root / "Media/Untracked.tga").write_bytes(b"untracked asset")
                 version, files = package.payloads(root, "HEAD")
             self.assertEqual(version, "1.0.0")
-            self.assertEqual({name: data for name, data in files.items() if name != package.MANIFEST}, published)
-            manifest = json.loads(files[package.MANIFEST])
+            self.assertEqual({name: data for name, data in files.items() if name != "QuestTogether/" + package.MANIFEST}, {"QuestTogether/" + name: data for name, data in published.items()})
+            manifest = json.loads(files["QuestTogether/" + package.MANIFEST])
             self.assertEqual(manifest["sourceCommit"], commit)
-            self.assertEqual(manifest["files"], {name: hashlib.sha256(data).hexdigest() for name, data in published.items()})
+            self.assertEqual(manifest["files"], {"QuestTogether/" + name: hashlib.sha256(data).hexdigest() for name, data in published.items()})
 
     def test_rejects_damaged_and_incomplete_payloads(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -94,12 +127,25 @@ class PackagingTests(unittest.TestCase):
             original = archive.read_bytes()
             with zipfile.ZipFile(io.BytesIO(original)) as source:
                 entries = {name: source.read(name) for name in source.namelist()}
-            for mutation in ("corrupt", "missing", "extra", "path_alias"):
+            for mutation in ("corrupt", "missing", "extra", "path_alias", "main_root", "test_root", "parent_collision", "test_bindings"):
                 changed = dict(entries)
                 if mutation == "corrupt": changed["QuestTogether/Core.lua"] += b"--bad"
                 elif mutation == "missing": del changed["QuestTogether/Core.lua"]
                 elif mutation == "extra": changed["QuestTogether/private-key"] = b"unexpected"
-                else: changed["QuestTogether/../escape"] = b"unexpected"
+                elif mutation == "path_alias": changed["QuestTogether/../escape"] = b"unexpected"
+                elif mutation == "test_bindings":
+                    name = "QuestTogether_Tests/Bindings.xml"
+                    changed[name] = b'<Bindings><Binding name="QUESTTOGETHER_SETTINGS">print("bad")</Binding></Bindings>'
+                    manifest = json.loads(changed["QuestTogether/" + package.MANIFEST])
+                    manifest["files"][name] = package.digest(changed[name])
+                    changed["QuestTogether/" + package.MANIFEST] = json.dumps(manifest).encode()
+                else:
+                    collision = {"main_root": "QuestTogether", "test_root": "QuestTogether_Tests",
+                                 "parent_collision": "QuestTogether/Media"}[mutation]
+                    changed[collision] = b"regular file colliding with directory"
+                    manifest = json.loads(changed["QuestTogether/" + package.MANIFEST])
+                    manifest["files"][collision] = package.digest(changed[collision])
+                    changed["QuestTogether/" + package.MANIFEST] = json.dumps(manifest).encode()
                 data = io.BytesIO()
                 with zipfile.ZipFile(data, "w") as target:
                     for name, value in changed.items(): target.writestr(name, value)

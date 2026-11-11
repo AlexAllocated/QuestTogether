@@ -273,3 +273,5 @@ QT:RegisterTest("recent companions UI stops before mutating a forbidden child", 
 	assert(not a:RefreshRecentCompanionsWindow() and not a:OpenRecentCompanions())
 	assert((a.invalidCalls or 0) == 0)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_recent_companions.lua")

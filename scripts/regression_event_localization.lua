@@ -825,3 +825,5 @@ QT:RegisterTest("quest display title normalization is bounded single-line and id
 	function a:CanAccessValue(value) return value ~= inaccessible end
 	assert(a:NormalizeQuestDisplayTitleText(inaccessible) == "")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_event_localization.lua")

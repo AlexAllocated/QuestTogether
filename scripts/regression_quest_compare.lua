@@ -581,6 +581,62 @@ QuestTogether:RegisterTest("party share request and consent complete through two
 	Equal(b.pushes, 1)
 end)
 
+QuestTogether:RegisterTest("focused player share actions ignore list filters and the default quest owner", function()
+	for _, filter in ipairs({ { "ownership", "all" }, { "ownership", "mine" }, { "search", "unrelated" },
+		{ "progress", "ready" }, { "action", "share" } }) do
+		for _, target in ipairs({ "Friend-Realm", "Third-Realm" }) do
+			local a = Fixture(nil, { Quest(1, "Local quest", true) })
+			a:Roster(a.name, "Friend-Realm", "Third-Realm")
+			a:RefreshPartyQuestCompare()
+			Reply(a, "Friend-Realm", { Quest(2, "Shared quest", true) }, true)
+			Reply(a, "Third-Realm", { Quest(2, "Shared quest", true) }, true)
+			local owner
+			for _, row in ipairs(a:BuildPartyQuestDiffRows()) do
+				if row.questId == 2 then owner = row.owner end
+			end
+			Equal(owner, "Friend-Realm")
+			a:SetPartyQuestCompareFilter(filter[1], filter[2])
+			if filter[2] ~= "all" then
+				for _, row in ipairs(a:BuildPartyQuestDiffRows()) do assert(row.questId ~= 2) end
+			end
+			a.API.IsInRaid = function() return false end
+			function a:GetPartyNavigationPeer() return { questID = 2, title = "Shared quest" } end
+			function a:WouldPartyQuestFollowCycle() return false end
+			local actions, menu = {}, { CreateTitle = function() end }
+			function menu:CreateButton(label, callback) actions[label] = callback end
+			a:PopulatePartyFocusMenu(menu, target)
+			local before = #a.wire
+			assert(actions["Request Share"])()
+			Equal(#a.wire, before + 1)
+			Equal(a.wire[#a.wire].operation, "QSHR")
+			Equal(a.wire[#a.wire].record.questID, 2)
+			Equal(a.wire[#a.wire].record.targetName, target)
+			Equal(a.lastRoutes[1].target, target)
+			actions["Request Share"]()
+			Equal(#a.wire, before + 1, "repeated menu clicks retain the request cooldown")
+		end
+	end
+end)
+
+QuestTogether:RegisterTest("selected share owners still require complete capable current snapshots", function()
+	for _, change in ipairs({ "loading", "unsupported", "notPushable", "absent", "localLoading", "localOwned" }) do
+		local a = Fixture()
+		a:RefreshPartyQuestCompare()
+		Reply(a, "Friend-Realm", { Quest(1, "Shared quest", true) }, true)
+		local session = a.partyQuestCompareSession
+		local member = session.byName["Friend-Realm"]
+		if change == "loading" then member.state = "loading"
+		elseif change == "unsupported" then member.supportsShareRequests = false
+		elseif change == "notPushable" then member.entries[1].isPushable = nil
+		elseif change == "absent" then member.entries[1] = nil
+		elseif change == "localLoading" then session.byName[a.name].state = "loading"
+		else session.byName[a.name].entries[1] = Quest(1) end
+		local before = #a.wire
+		Equal(a:RequestPartyQuestShare(1, member.name), false)
+		Equal(#a.wire, before)
+	end
+end)
+
 QuestTogether:RegisterTest(
 	"party diff snapshots preserve Forever full names across the codec boundary",
 	function()
@@ -2598,6 +2654,33 @@ QuestTogether:RegisterTest("expanded comparison objectives accept only complete 
 	Equal(a:OnCommReceived(a.commPrefix, b.wire[1], "WHISPER", b.name), false)
 end)
 
+QuestTogether:RegisterTest("remote PQL objective markup renders as plain text without changing received snapshots", function()
+	local a, b = BeginObjectiveExchange()
+	local source = "|cffff0000|Hquest:1:0|h[任務: 3/8]|h|r|TIcon:128:128|t|Aatlas:128:128|a"
+	local record = a:DeepCopy(b.wire[1].record)
+	record.entries[1].objectives[1].text = source
+	local wire = assert(a:EncodeCommRecord("QCRS", record))
+	local decoded = assert(a:DecodeCommRecord("QCRS", wire))
+	assert(a:HandleQuestCompareResponse(decoded, b.name))
+	local acceptedWire = assert(a:EncodeCommRecord("QCRS", decoded))
+	AttachUI(a)
+	assert(a:CreatePartyQuestCompareWindow())
+	a:RenderPartyQuestCompare()
+	local found = false
+	for _, row in ipairs(a.partyQuestCompareWindow.rows) do
+		if row.data and row.data.kind == "objective" and row.title.text:find("任務", 1, true) then
+			Equal(row.data.title, "[任務: 3/8]")
+			Equal(row.title.text, "[任務: 3/8]")
+			Equal(row.data.fraction, 3 / 8)
+			found = true
+		end
+	end
+	assert(found)
+	local detail = a.partyQuestCompareSession.byName[b.name].objectiveDetails[1]
+	Equal(detail.objectives[1].text, source)
+	Equal(assert(a:EncodeCommRecord("QCRS", decoded)), acceptedWire)
+end)
+
 QuestTogether:RegisterTest("invalid objective snapshots time out as unknown without losing quest ownership", function()
 	local a, b = BeginObjectiveExchange()
 	local member = a.partyQuestCompareSession.byName[b.name]
@@ -4291,11 +4374,9 @@ local function QueuedSharePair()
 	local a, b = Fixture("Me-Realm"), Fixture("Friend-Realm", { Quest(1, "Together", true) })
 	a:Roster(a.name, b.name)
 	b:Roster(a.name, b.name)
-	-- Domain model is supplied directly; these tests exercise share transactions,
-	-- while PQL snapshot construction is covered by its codec integration tests.
-	function a:BuildPartyQuestDiffRows()
-		return { { questId = 1, action = "request", owner = b.name } }
-	end
+	-- Install the same certified source data used by real menu and row actions.
+	a:RefreshPartyQuestCompare()
+	Reply(a, b.name, b.entries, true)
 	for _, pair in ipairs({ { a, b }, { b, a } }) do
 		local sender, receiver = pair[1], pair[2]
 		sender.Request, sender.Respond = QuestTogether.Request, QuestTogether.Respond
@@ -4506,3 +4587,5 @@ QuestTogether:RegisterTest("shared objective requests retire stale consumers wit
 		Equal(next(a.partyQuestProgress), nil)
 	end
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_quest_compare.lua")

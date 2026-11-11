@@ -143,6 +143,50 @@ local function Fixture()
 	end
 	return a
 end
+
+QT:RegisterTest("remote focus headings and objectives sanitize markup while preserving wire observations", function()
+	local peer = QT:CreateTestPartyQuestCompareFixture({})
+	local accepted
+	local ok, id = peer:RequestQuestCompare("Friend-Realm", {
+		objectiveQuestId = 42, onEntry = function(entry) accepted = entry end, onDone = function() end,
+	})
+	assert(ok)
+	local title = "|cffff0000|Hquest:42:0|h[결속]|h|r|TIcon:128:128|t|Aatlas:128:128|a"
+	local objective = "|cffff0000|Hquest:42:0|h[任務: 1/8]|h|r|TIcon:128:128|t|Aatlas:128:128|a"
+	local wire = assert(peer:EncodeCommRecord("QCRS", {
+		requestId = id, snapshotId = "focus-markup", revision = "focus-markup-v1", count = 1, objectiveQuestId = 42,
+		entries = { { questId = 42, questTitle = title, isPushable = true, objectiveCount = 1,
+			objectives = { { questId = 42, objectiveIndex = 1, text = objective, kind = "item",
+				current = 1, required = 8, finished = false } } } },
+	}))
+	local decoded = assert(peer:DecodeCommRecord("QCRS", wire))
+	assert(peer:HandleQuestCompareResponse(decoded, "Friend-Realm"))
+	local a = Fixture()
+	function a:GetLocalizedQuestTitle() end
+	function a:BuildQuestCompareResponseEntries() return {} end
+	a:UpdateQuestFocusWindow()
+	a:Drain()
+	local receiver = assert(a.sent[1]).receiver
+	receiver.onEntry(accepted)
+	receiver.onDone()
+	a:Drain()
+	Equal(a.questFocusWindow.heading.text, "[결속]")
+	local found = false
+	for _, row in ipairs(a.questFocusWindow.rows) do
+		if row.title.text:find("任務", 1, true) then
+			Equal(row.title.text, "[任務: 1/8]")
+			found = true
+		end
+	end
+	assert(found)
+	Equal(accepted.questTitle, title)
+	Equal(accepted.objectives[1].text, objective)
+	Equal(assert(peer:EncodeCommRecord("QCRS", decoded)), wire)
+	function a:GetLocalizedQuestTitle() return "|cffffffffLocal quest|r" end
+	Equal(a:GetQuestFocusTitle(a.questFocusState), "Local quest")
+	function a:GetLocalizedQuestTitle() return "|TIcon:128:128|t" end
+	Equal(a:GetQuestFocusTitle(a.questFocusState), "[결속]")
+end)
 QT:RegisterTest(
 	"focus HUD follows native focus and shares immediate remote progress while local reads stay event driven",
 	function()
@@ -1122,3 +1166,5 @@ QT:RegisterTest("native quest hover events coalesce and revalidate after leave d
 	Equal(frame.questTooltipDocked, nil, "Edit Mode retains normal full placement bounds")
 	Equal(tip:IsShown(), true)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_quest_focus.lua")

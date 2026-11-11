@@ -523,3 +523,5 @@ QT:RegisterTest("peer source ordering never compares counters from unrelated sen
 	other.sourceSampledAt = record.sourceSampledAt - 1
 	Equal(a:ComparePeerRecordSamples(other, projection), -1)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_peer_state.lua")

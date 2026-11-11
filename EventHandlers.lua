@@ -587,6 +587,7 @@ function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
 	if not normalizedQuestId then
 		return
 	end
+	self:InvalidateQuestCompareSnapshot()
 
 	-- A repeatable quest can be accepted before the previous removal timer runs.
 	-- Finish the old lifecycle before installing the new acceptance token.
@@ -698,6 +699,7 @@ function QuestTogether:QUEST_TURNED_IN(_, questId)
 	if not questId then
 		return
 	end
+	self:InvalidateQuestCompareSnapshot()
 	if self.FlushObjectiveAnnouncements then self:FlushObjectiveAnnouncements(questId) end
 
 	self.retiredQuestIds = self.retiredQuestIds or {}
@@ -734,6 +736,7 @@ function QuestTogether:QUEST_REMOVED(_, questId)
 	if not questId then
 		return
 	end
+	self:InvalidateQuestCompareSnapshot()
 
 	if self.pendingQuestAcceptances then
 		self.pendingQuestAcceptances[questId] = nil
@@ -779,6 +782,7 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 	if unit ~= "player" then
 		return
 	end
+	self:InvalidateQuestCompareSnapshot()
 
 	-- Every callback reads the current log, not the event-time state. Retain
 	-- one progress scan while restrictions defer it, alongside independently
@@ -870,6 +874,7 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 end
 
 function QuestTogether:QUEST_LOG_UPDATE()
+	self:InvalidateQuestCompareSnapshot()
 	if self.OnPartyQuestLogChanged then self:OnPartyQuestLogChanged() end
 	-- Progress initialization must recover even with nameplate features off.
 	if self.ScheduleQuestStateRefreshWork then self:ScheduleQuestStateRefreshWork("QUEST_LOG_UPDATE") end

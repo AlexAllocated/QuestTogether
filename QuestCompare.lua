@@ -256,7 +256,9 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName, condi
 		expandedQuestIds = previous and previous.expandedQuestIds or {},
 		objectiveOwner = {},
 		search = previous and previous.search or "",
+		collapsedPlayers = {},
 	}
+	local preserveColumns = previous and previous.mode == session.mode and previous.targetName == targetName
 	self.partyQuestCompareSession = session
 	local names = { ownName }
 	if targetName then
@@ -281,6 +283,9 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName, condi
 		member.classFile = member.isLocal and self:GetPlayerClassFile() or self:GetGroupedSenderClassFile(name)
 		session.members[#session.members + 1] = member
 		session.byName[name] = member
+		if preserveColumns and previous.collapsedPlayers and previous.collapsedPlayers[name] then
+			session.collapsedPlayers[name] = true
+		end
 	end
 	self:RefreshLocalPartyQuestCompare()
 	for _, member in ipairs(session.members) do
@@ -741,15 +746,20 @@ function QuestTogether:RequestPartyQuestShare(questId, target)
 		self:QueuePartyQuestCompareRender()
 		return false
 	end
-	local eligible = false
-	for _, row in ipairs(self:BuildPartyQuestDiffRows()) do
-		if row.questId == questId and row.action == "request" and row.owner == target then
-			eligible = true
-		end
+	-- The focused-player menu can select any owner, including one hidden by
+	-- the list filters. Eligibility belongs to that member's certified data.
+	local session = self.partyQuestCompareSession
+	local own = session and session.byName[session.playerName]
+	local member = session and session.byName[target]
+	local quest = member and member.entries[questId]
+	if not own or own.state ~= "ready" or own.entries[questId]
+		or not member or member.isLocal or member.state ~= "ready" or not member.supportsShareRequests
+		or not quest or quest.isPushable ~= true then
+		return false
 	end
 	-- Re-read local ownership: the user may already have accepted this quest.
 	local entries = self:BuildQuestCompareEntries()
-	if not eligible or not entries or EntryMap(self, entries)[questId] then
+	if not entries or EntryMap(self, entries)[questId] then
 		return false
 	end
 	if self:ReadCharacterQuestHistoryStatus(questId) == "completed" then

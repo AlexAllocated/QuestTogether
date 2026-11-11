@@ -1819,3 +1819,5 @@ QT:RegisterTest("partner quest titles preserve UTF-8 and framing within the addo
 		assert(#wire <= 255)
 	end
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_player_plates.lua")

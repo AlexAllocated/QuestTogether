@@ -341,3 +341,5 @@ QT:RegisterTest("native tracker focus indicators retire immediately for restrict
 		a:AssertNativeReadOnly()
 	end
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_party_focus_indicators.lua")

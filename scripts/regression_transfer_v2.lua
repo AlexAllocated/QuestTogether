@@ -770,3 +770,5 @@ QT:RegisterTest("transfer protocol 3 reentrant supersession keeps only the newes
 	Equal(#b.dispatched, 1)
 	Equal(b.dispatched[1].record.requestId, "newest")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_transfer_v2.lua")

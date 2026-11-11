@@ -76,14 +76,25 @@ local function Current(addon, record)
 	return ok and valid == true
 end
 
+function QT:CanMutateLocationTargetButton(button)
+	if not self:CanAccessForeignFrame(button) then return false end
+	local check = self.API and self.API.CanCallProtectedFunctions
+	if type(check) ~= "function" then return false end
+	local ok, allowed = pcall(check, button)
+	return ok and self:CanAccessValue(allowed) and allowed == true
+end
+
 function QT:HideLocationTargetButton()
 	local state = rawget(self, "locationTargetState")
 	if not state then return end
 	state.current = nil
-	-- Combat visibility is handled by the secure driver, never by a deferred click.
-	if not self:IsRuntimeRestricted() and self:CanAccessForeignFrame(state.button) then
-		state.button:Hide()
+	-- New actions obey all addon restrictions; retiring this secure action uses
+	-- its actual native write permission. Noncombat policy is not combat lockdown.
+	-- Keep retrying from OnUpdate if the native object really is protected.
+	if self:CanMutateLocationTargetButton(state.button) and state.current == nil then
 		state.button:SetAttribute("macrotext1", nil)
+		-- Native attribute callbacks can acquire a new hover or change permission.
+		if self:CanMutateLocationTargetButton(state.button) and state.current == nil then state.button:Hide() end
 	end
 end
 
@@ -102,9 +113,8 @@ function QT:ShowLocationTargetButton(owner, name, isCurrent, onEnter, onLeave, o
 		-- Preserve SecureActionButtonTemplate's OnClick. Only primitive macro text
 		-- crosses into its attributes; all validation and callbacks stay addon-owned.
 		button:SetScript("PreClick", function()
-			if not self:IsRuntimeRestricted() and not Current(self, state.current) then
-				button:SetAttribute("macrotext1", nil)
-			end
+			local current = state.current
+			if not Current(self, current) and state.current == current then self:HideLocationTargetButton() end
 		end)
 		button:SetScript("PostClick", function(_, mouseButton)
 			local current = state.current
@@ -129,12 +139,14 @@ function QT:ShowLocationTargetButton(owner, name, isCurrent, onEnter, onLeave, o
 			if not Current(self, current) then self:HideLocationTargetButton(); return end
 			local x, y, w, h = self:GetLocationTargetButtonRect(current.owner)
 			local currentStrata, currentLevel = self:GetLocationTargetButtonLayer(current.owner)
-			if not x or not currentStrata then self:HideLocationTargetButton(); return end
+			if state.current ~= current then return end
+			if not x or not currentStrata or not Current(self, current)
+				or not self:CanMutateLocationTargetButton(button) then self:HideLocationTargetButton(); return end
 			SetLayer(state, currentStrata, currentLevel)
 			self:PositionLocationTargetButton(button, x, y, w, h)
 		end)
 	end
-	if not self:CanAccessForeignFrame(state.button) then return false end
+	if not Current(self, record) or not self:CanMutateLocationTargetButton(state.button) then return false end
 	state.current = record
 	SetLayer(state, strata, level)
 	self:PositionLocationTargetButton(state.button, left, bottom, width, height)

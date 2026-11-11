@@ -327,3 +327,5 @@ QT:RegisterTest("share requests carry exact owner eligibility explanations while
 	Equal(index, nil)
 	Equal(code, "not_owned")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_quest_completion.lua")

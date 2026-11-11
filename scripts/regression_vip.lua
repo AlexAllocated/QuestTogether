@@ -279,3 +279,5 @@ QT:RegisterTest("VIP window offers contact claim and private activation with saf
 	a.blocked = true
 	assert(not a:OpenVIPWindow())
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_vip.lua")

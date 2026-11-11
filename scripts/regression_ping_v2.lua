@@ -515,3 +515,5 @@ QT:RegisterTest(
 	end,
 	{ offline = true }
 )
+
+_G.QuestTogether:RecordTestModule("scripts/regression_ping_v2.lua")

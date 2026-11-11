@@ -536,3 +536,5 @@ QT:RegisterTest(
 		Equal(a.invalid, 0)
 	end
 )
+
+_G.QuestTogether:RecordTestModule("scripts/regression_player_tooltips.lua")

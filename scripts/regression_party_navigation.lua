@@ -1116,3 +1116,5 @@ QT:RegisterTest("party navigation crosses the shared protocol atomically and ref
 	Equal(info.x, 0.25)
 	Equal(installed, 1, "duplicate fragments must not dispatch another navigation snapshot")
 end, { offline = true })
+
+_G.QuestTogether:RecordTestModule("scripts/regression_party_navigation.lua")

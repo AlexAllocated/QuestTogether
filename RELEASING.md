@@ -403,6 +403,34 @@ The TOC determines Lua load contents; explicit asset rules include game textures
 release screenshots, localized changelogs and required vendor notices. The
 packager verifies the pinned library manifest and writes a SHA-256 sidecar.
 
+The archive installs two sibling folders: `QuestTogether` and the optional
+`QuestTogether_Tests` companion. The latter is load-on-demand: normal gameplay
+does not compile or register test fixtures. `/qt test` loads it before starting
+the staggered test runner. Both TOCs must have matching version/interface metadata;
+the bump script updates both version fields. Keep both folders when installing
+the release if in-game tests are wanted; QT gameplay does not depend on the companion.
+
+For a development checkout, keep the main addon linked to the repository. Create
+`QuestTogether_Tests` as a separate directory with these links into the checkout:
+
+- `QuestTogether_Tests.toc` -> the same-named root TOC
+- `Tests.lua` -> the root test-registration file
+- `scripts` -> the repository's scripts directory
+- `Libs/libchev/SelfTests.lua` -> the pinned library's self-test file
+
+Create an empty `Bindings.xml` containing `<Bindings></Bindings>` in the companion
+directory as well. The package includes this empty container so native binding
+discovery always finds a file but registers no commands.
+
+Do **not** link the companion directory to the entire repository: WoW discovers
+root `Bindings.xml` independently of the TOC and would register the main addon's
+bindings a second time. These narrow links still pick up source and new regression
+modules automatically. Adding the new addon folder may require restarting the game
+so it is discovered. Offline tests read both canonical
+manifests; `lua scripts/test_loader.lua` separately verifies cold startup and the
+on-demand loading/failure path. Package schema 2 records installation-relative
+paths for both folders; the verifier retains support for historical schema 1 archives.
+
 Every archive contains `package-manifest.json` with its source commit and hashes
 of all installed files. The packager validates the ZIP against those inputs,
 and the Discord release verifier validates the whole installation manifest

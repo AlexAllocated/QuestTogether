@@ -607,3 +607,5 @@ QT:RegisterTest("aura events never schedule quest scans for NPC or unrelated uni
 	Equal(#state.clock.timers, timers)
 	Equal(state.invalid, 0)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_friendly_nameplate_visibility.lua")

@@ -545,3 +545,5 @@ QT:RegisterTest("optional world map clustering defaults on and disabling restore
 	Equal(#markers, 2)
 	assert(markers[1].selected and #markers[2].members == 2)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_map_presentation.lua")

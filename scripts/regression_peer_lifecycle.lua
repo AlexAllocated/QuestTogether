@@ -301,3 +301,5 @@ QT:RegisterTest("world reentry immediately republishes fresh join metadata after
 	sender:ResumeCommsWorldSession()
 	assert(sender.geographicCommsState.latest.QJST, "same-tick reentry cannot lose staged join metadata")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_peer_lifecycle.lua")

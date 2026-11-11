@@ -73,7 +73,13 @@ local function Frame(addon, parent, kind)
 	end
 	function frame:SetPoint(...)
 		self:Check()
-		self.points[#self.points + 1] = { ... }
+		local point = { ... }
+		-- Native SetPoint replaces this anchor's offset; it does not append
+		-- another CENTER constraint on every camera update.
+		for index, old in ipairs(self.points) do
+			if old[1] == point[1] then self.points[index] = point; return end
+		end
+		self.points[#self.points + 1] = point
 	end
 	function frame:SetSize(width, height)
 		self:Check()
@@ -4602,3 +4608,126 @@ Register("cluster navigation hints retry unavailable native information and reti
 	a:HidePlayerLocationPins()
 	Equal(a.locationPinState.clusterTooltipNavigation, nil)
 end)
+
+Register("minimap camera passes bound restriction polling and replace one existing anchor per moving pin", function()
+	for _, count in ipairs({ 8, 32 }) do
+		local a = ClusterFixture(count)
+		a.rows.minimap, a.rows.map = a.rows.map, {}
+		local checks, combat = 0, 0
+		a.IsRuntimeRestricted = QuestTogether.IsRuntimeRestricted
+		function a:IsRuntimeRestrictionTypeActive() checks = checks + 1; return self.blocked == true end
+		a.API.InCombatLockdown = function() combat = combat + 1; return false end
+		a:RefreshPlayerLocationPins()
+		a:RefreshMinimapLocationGeometry()
+		checks, combat = 0, 0
+		a:RefreshMinimapLocationGeometry()
+		Equal(checks, 10) -- One admission and one completion check, independent of pin count.
+		Equal(combat, 2)
+		local writes = 0
+		for _, pin in ipairs(a.locationPinState.surfaces.minimap.pins) do writes = writes + pin.frame.writes end
+		a.geometry.minimap.west = a.geometry.minimap.west + 1
+		checks, combat = 0, 0
+		a:RefreshMinimapLocationGeometry()
+		Equal(checks, 5 * (count + 2)) -- Every actual native mutation still has a fresh guard.
+		Equal(combat, count + 2)
+		local after = 0
+		for _, pin in ipairs(a.locationPinState.surfaces.minimap.pins) do
+			after = after + pin.frame.writes
+			Equal(#pin.frame.points, 1)
+		end
+		Equal(after - writes, count)
+	end
+end)
+
+Register("minimap native mutation reentry cannot write through restrictions or update a retired pin generation", function()
+	for _, change in ipairs({ "restriction", "generation", "state" }) do
+		local a = ClusterFixture(2)
+		a.rows.minimap, a.rows.map = a.rows.map, {}
+		a:RefreshPlayerLocationPins()
+		a:RefreshMinimapLocationGeometry()
+		local state, pin = a.locationPinState, Pin(a, "minimap")
+		local oldX, oldY = pin.minimapX, pin.minimapY
+		local setPoint = pin.frame.SetPoint
+		function pin.frame:SetPoint(...)
+			setPoint(self, ...)
+			if change == "restriction" then a.blocked = true
+			elseif change == "generation" then pin.presentationGeneration = pin.presentationGeneration + 1
+			else a.locationPinState = { surfaces = {} } end
+		end
+		a.geometry.minimap.west = a.geometry.minimap.west + 1
+		a:RefreshMinimapLocationGeometry()
+		if change == "restriction" then
+			assert(not state.surfaces.minimap.frame:IsVisible())
+		else
+			Equal(pin.minimapX, oldX)
+			Equal(pin.minimapY, oldY)
+		end
+		Equal(a.invalidCalls or 0, 0)
+	end
+end)
+
+Register("stationary stream rows reuse world coordinates until movement metadata or lease replacement", function()
+	local a = ClusterFixture(4)
+	a.rows.minimap, a.rows.map = a.rows.map, {}
+	a.db = { profile = { showPlayerLocations = true, sharePlayerLocation = true } }
+	a.playerLocationState, a.nearbyStreamState = { peers = {} }, { wanted = {} }
+	for _, row in ipairs(a.rows.minimap) do
+		a.playerLocationState.peers[row.name] = row
+		a.nearbyStreamState.wanted[row.name] = { sample = {
+			mapID = 1, x = row.x, y = row.y, fromX = row.x, fromY = row.y, at = 100, duration = 1,
+		} }
+	end
+	local conversions = 0
+	local convert = a.GetLocationPinWorldPosition
+	function a:GetLocationPinWorldPosition(...)
+		conversions = conversions + 1
+		return convert(self, ...)
+	end
+	a:RefreshPlayerLocationPins()
+	a:RefreshMinimapLocationGeometry()
+	conversions = 0
+	for _ = 1, 120 do a:RefreshMinimapLocationGeometry() end
+	Equal(conversions, 0)
+	local row = a.rows.minimap[1]
+	local peer = a.nearbyStreamState.wanted[row.name]
+	peer.sample.x = peer.sample.x + 0.01
+	peer.sample.fromX = peer.sample.x
+	a:RefreshMinimapLocationGeometry()
+	Equal(conversions, 1)
+	local old = peer.presentation
+	row.classFile = "WARRIOR"
+	a:RefreshMinimapLocationGeometry()
+	assert(peer.presentation ~= old and peer.presentation.classFile == "WARRIOR")
+	Equal(old.classFile, "MAGE")
+	a.ignored = row.name
+	a:RefreshMinimapLocationGeometry()
+	assert(not Pin(a, "minimap").frame:IsVisible())
+end)
+
+Register("minimap native write failures retire cached coordinates and retry on the next membership pass", function()
+	local a = ClusterFixture(2)
+	a.rows.minimap, a.rows.map = a.rows.map, {}
+	a:RefreshPlayerLocationPins()
+	a:RefreshMinimapLocationGeometry()
+	local surface, pin = a.locationPinState.surfaces.minimap, Pin(a, "minimap")
+	local setPoint, attempts = pin.frame.SetPoint, 0
+	function pin.frame:SetPoint(...)
+		attempts = attempts + 1
+		if attempts == 1 then error("native anchor unavailable") end
+		return setPoint(self, ...)
+	end
+	a.geometry.minimap.west = a.geometry.minimap.west + 1
+	a:RefreshMinimapLocationGeometry()
+	Equal(attempts, 1)
+	Equal(pin.minimapX, nil)
+	Equal(pin.minimapY, nil)
+	assert(not surface.frame:IsVisible())
+	assert(not a.blocked, "a native failure must not require a restriction transition to recover")
+	a:RefreshPlayerLocationPins()
+	a:RefreshMinimapLocationGeometry()
+	assert(attempts > 1 and surface.frame:IsVisible())
+	assert(pin.minimapX and pin.minimapY)
+	Equal(a.invalidCalls or 0, 0)
+end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_location_pins.lua")

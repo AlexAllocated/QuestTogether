@@ -521,3 +521,5 @@ QT:RegisterTest("unsupported native animation keeps the partner logo bright and 
 	end
 	Equal(s.invalid, 0)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_lfg_nameplates.lua")

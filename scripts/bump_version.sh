@@ -54,6 +54,9 @@ fi
 # local work before validation, network access, or writes, so a successful tag
 # cannot silently omit the implementation described by its authored notes.
 release_files=("$toc_file" release_notes.json ReleaseNotes.lua)
+if [[ -f QuestTogether_Tests.toc ]]; then
+	release_files+=(QuestTogether_Tests.toc)
+fi
 if [[ -f release_notes/context.json ]]; then
 	release_files+=(release_notes/context.json)
 fi
@@ -212,7 +215,10 @@ if [[ -n "$remote_tag" ]]; then
 	exit 1
 fi
 
-echo "Updating ${toc_file} to version ${new_version}..."
+toc_files=("$toc_file")
+if [[ -f QuestTogether_Tests.toc ]]; then toc_files+=(QuestTogether_Tests.toc); fi
+for manifest_file in "${toc_files[@]}"; do
+echo "Updating ${manifest_file} to version ${new_version}..."
 tmp_file="$(mktemp)"
 awk -v version="${new_version}" '
 BEGIN { updated = 0 }
@@ -227,8 +233,9 @@ END {
 		exit 1
 	}
 }
-' "$toc_file" > "$tmp_file"
-mv "$tmp_file" "$toc_file"
+' "$manifest_file" > "$tmp_file"
+mv "$tmp_file" "$manifest_file"
+done
 
 python3 scripts/check_release_notes.py --write --set-version "$new_version" --baseline-ref "$notes_baseline_ref" "${notes_reuse_args[@]}"
 python3 scripts/check_release_notes.py --check --baseline-ref "$notes_baseline_ref"

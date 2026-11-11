@@ -520,3 +520,5 @@ QT:RegisterTest("private note callbacks guard independently forbidden editor reg
 		assert((a.invalidCalls or 0) == 0, key)
 	end
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_player_notes.lua")

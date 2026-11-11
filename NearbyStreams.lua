@@ -33,17 +33,21 @@ local function Capability(s, name, now)
 	return cap and cap.streams and Fresh(now, cap.receivedAt, cap.lifetime or 600)
 end
 
-local function Position(entry, now, smooth)
+local function Coordinates(entry, now, smooth)
 	local sample = entry and entry.sample
 	if not sample or not Fresh(now, sample.at, FRESH) then
 		return nil
 	end
 	local fraction = smooth and math.min(1, (now - sample.at) / sample.duration) or 1
+	return sample.mapID, sample.fromX + (sample.x - sample.fromX) * fraction,
+		sample.fromY + (sample.y - sample.fromY) * fraction, sample.at
+end
+
+local function Position(entry, now, smooth)
+	local mapID, x, y, at = Coordinates(entry, now, smooth)
+	if not mapID then return nil end
 	return {
-		mapID = sample.mapID,
-		sampledAt = sample.at,
-		x = sample.fromX + (sample.x - sample.fromX) * fraction,
-		y = sample.fromY + (sample.y - sample.fromY) * fraction,
+		mapID = mapID, sampledAt = at, x = x, y = y,
 	}
 end
 
@@ -149,27 +153,48 @@ function QT:GetNearbyStreamCandidates()
 	return result
 end
 
+local POSITION_FIELDS = { mapID = true, x = true, y = true, sampledAt = true }
+local function SameMetadata(row, copy)
+	for key, value in pairs(row) do
+		if not POSITION_FIELDS[key] and copy[key] ~= value then return false end
+	end
+	for key in pairs(copy) do
+		if not POSITION_FIELDS[key] and row[key] == nil then return false end
+	end
+	return true
+end
+
 function QT:GetNearbyStreamPosition(row, smooth)
 	local s = rawget(self, "nearbyStreamState")
-	if not s or not s.wanted[row.name] then
+	local peer = s and s.wanted[row.name]
+	if not peer then
 		return row
 	end
 	local now = Now(self)
 	if not Enabled(self) or not BasePeer(self, row.name, now) then
+		peer.presentationSource, peer.presentation = nil, nil
 		return row
 	end
-	local position = Position(s.wanted[row.name], now, smooth)
-	if not position then
+	if rawget(self, "nearbyStreamState") ~= s or s.wanted[row.name] ~= peer then return row end
+	local mapID, x, y, at = Coordinates(peer, now, smooth)
+	if not mapID then
+		peer.presentationSource, peer.presentation = nil, nil
 		return row
 	end
+	-- Reuse an immutable presentation only while its base observation and every
+	-- displayed field still match. A stationary stream then keeps the same row
+	-- identity for the world-coordinate cache without allocating each frame.
+	local copy = peer.presentation
+	if peer.presentationSource == row and copy and copy.mapID == mapID and copy.x == x and copy.y == y
+		and copy.sampledAt == at and SameMetadata(row, copy) then return copy end
 	-- Preserve identity/consent/tooltip metadata; never mutate the LOC sequence
 	-- or refresh its lifetime with a packet from this independent protocol.
-	local copy = {}
+	copy = {}
 	for key, value in pairs(row) do
 		copy[key] = value
 	end
-	copy.mapID, copy.x, copy.y = position.mapID, position.x, position.y
-	copy.sampledAt = position.sampledAt
+	copy.mapID, copy.x, copy.y, copy.sampledAt = mapID, x, y, at
+	peer.presentationSource, peer.presentation = row, copy
 	return copy
 end
 

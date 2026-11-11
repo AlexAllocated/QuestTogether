@@ -934,3 +934,5 @@ QT:RegisterTest("explicit metadata cancellation frees incoming payload and queue
 	a:CancelCommRequest(pending.id, "cancelled")
 	Eq(a:GetCommTransferMetrics().bytes, 0, "repeated cancellation cannot release bytes twice")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_player_details.lua")

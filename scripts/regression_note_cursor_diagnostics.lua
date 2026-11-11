@@ -193,3 +193,5 @@ QT:RegisterTest("note cursor diagnostics slash aliases stay local and bypass rem
 	assert(a.captures == 2)
 	assert(remoteRequests == 0 and exports == 0)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_note_cursor_diagnostics.lua")

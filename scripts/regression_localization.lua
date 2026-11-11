@@ -220,3 +220,5 @@ QT:RegisterTest("client locale renders minimap menus tooltip and settings status
 	assert(status:find(T("Version") .. ": 6.1.2", 1, true))
 	assert(status:find(T("Active profile") .. ": ", 1, true))
 end, { locale = "client" })
+
+_G.QuestTogether:RecordTestModule("scripts/regression_localization.lua")

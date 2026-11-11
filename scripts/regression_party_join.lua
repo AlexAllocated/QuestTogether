@@ -1123,3 +1123,5 @@ QT:RegisterTest("party metadata force republishes current permissions without by
 	Equal(a:BroadcastPartyJoinMetadata(true), false)
 	Equal(#a.wire, 3)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_party_join.lua")

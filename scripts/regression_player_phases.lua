@@ -479,3 +479,5 @@ QT:RegisterTest("phase comparison uses typed multipart replies without truncatin
 	Eq(next(a.communicationState.requests), nil)
 	Eq(next(b.communicationState.requests), nil)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_player_phases.lua")

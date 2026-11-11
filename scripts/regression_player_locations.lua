@@ -1062,3 +1062,5 @@ QT:RegisterTest("v2 pong imports require explicit sharing and preserve public fi
 	Equal(Import(response), false)
 	Equal(a.playerLocationState.peers[name].mask, 0)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_player_locations.lua")

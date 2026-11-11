@@ -16,11 +16,12 @@ local function Counter(addon, value)
 	return n and n >= 0 and n <= 1000000000 and n == math.floor(n) and n or nil
 end
 
-function QT:ReadQuestCompareObjectives(questId)
+function QT:ReadQuestCompareObjectives(questId, questLogIndex)
 	if self:IsWorkBlocked("quest_snapshot_refresh") then
 		return nil
 	end
-	local index = self:GetQuestLogIndexForQuest(questId)
+	local hint = questLogIndex and { questLogIndex = questLogIndex } or nil
+	local index = self:GetQuestLogIndexForQuest(questId, hint)
 	if not index then
 		return nil
 	end
@@ -33,7 +34,7 @@ function QT:ReadQuestCompareObjectives(questId)
 	local rows = {}
 	for i = 1, count do
 		local ok, text, kind, finished, current, required =
-			pcall(self.GetNormalizedQuestObjectiveInfo, self, questId, i, false)
+			pcall(self.GetNormalizedQuestObjectiveInfo, self, questId, i, false, index)
 		if not ok then
 			return nil
 		end
@@ -61,7 +62,7 @@ function QT:ReadQuestCompareObjectives(questId)
 			required = required,
 		}
 	end
-	if self:GetQuestLogIndexForQuest(questId) ~= index then
+	if self:GetQuestLogIndexForQuest(questId, { questLogIndex = index }) ~= index then
 		return nil
 	end
 	local finalCount = self:SafeToNumber(self.API.GetNumQuestLeaderBoards(index))
@@ -71,22 +72,30 @@ function QT:ReadQuestCompareObjectives(questId)
 	return rows
 end
 
-function QT:BuildQuestCompareResponseEntries(questId)
-	local entries, reason = self:BuildQuestCompareEntries()
-	if not entries or not questId then
-		return entries, reason
+function QT:BuildQuestCompareResponseEntries(questId, requireCurrentTick)
+	local snapshot, reason = self:GetQuestCompareSnapshot(requireCurrentTick)
+	if not snapshot or not questId then
+		return snapshot and snapshot.entries or nil, reason
 	end
-	for _, entry in ipairs(entries) do
-		if self:NormalizeQuestID(entry.questId) == questId then
-			local copy = {}
-			for key, value in pairs(entry) do
-				copy[key] = value
-			end
-			local objectives = self:ReadQuestCompareObjectives(questId)
-			copy.objectiveCount = objectives and #objectives or nil
-			copy.objectives = objectives
-			return { copy }
+	local entry = snapshot.byQuestID[questId]
+	if entry then
+		local copy = {}
+		for key, value in pairs(entry) do
+			copy[key] = value
 		end
+		-- The ownership/title summary is shared; objective counters are sampled
+		-- for each detail request and never retained in that summary.
+		local objectives = self:ReadQuestCompareObjectives(questId, snapshot.questLogIndices and snapshot.questLogIndices[questId])
+		if self:IsWorkBlocked("quest_snapshot_refresh") then return nil, "restricted" end
+		local db = rawget(self, "db")
+		if rawget(self, "questCompareSnapshot") ~= snapshot or snapshot.profile ~= (db and db.profile)
+			or snapshot.world ~= (rawget(self, "commsWorldGeneration") or 0)
+			or self.API.GetTime() < snapshot.createdAt then
+			return nil, "pending"
+		end
+		copy.objectiveCount = objectives and #objectives or nil
+		copy.objectives = objectives
+		return { copy }
 	end
 	return {}
 end
@@ -270,7 +279,9 @@ function QT:AppendPartyQuestObjectiveRows(rows, member, questId)
 				questId = questId,
 				kind = "objective",
 				classFile = member.classFile,
-				title = objective.text,
+				-- Older peers may include rendering markup; keep it out of both
+				-- views without changing the certified source observation.
+				title = self:CleanQuestCompareObjectiveText(objective.text),
 				cells = {},
 				hint = Progress(objective, current, required),
 				complete = objective.finished == true,

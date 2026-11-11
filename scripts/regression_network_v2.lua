@@ -1014,3 +1014,5 @@ QT:RegisterTest("mesh two hundred simultaneous clients retain bounded progressiv
 	assert(#latencies > 0, "public state must progress beside connection and interest traffic")
 
 end, { offline = true })
+
+_G.QuestTogether:RecordTestModule("scripts/regression_network_v2.lua")

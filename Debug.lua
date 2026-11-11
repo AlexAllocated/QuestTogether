@@ -4,6 +4,24 @@ local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
 local LibChev = QuestTogether.LibChev
 
+function QuestTogether:EnsureTestSuiteLoaded()
+	if self.testSuiteLoaded == true then return true end
+	if self:IsRuntimeRestricted() then error("QuestTogether tests cannot load while the UI is restricted.", 0) end
+	local loader = self.API and self.API.LoadTestSuite
+	if type(loader) ~= "function" then error("QuestTogether test loader is unavailable.", 0) end
+	local ok, loaded, reason = pcall(loader)
+	if not ok or loaded ~= true or self.testSuiteLoaded ~= true then
+		error("QuestTogether tests are unavailable. Enable the bundled QuestTogether Tests addon and reload. "
+			.. (ok and type(reason) == "string" and reason or "The test companion did not finish loading."), 0)
+	end
+	if self:IsRuntimeRestricted() then error("QuestTogether tests cannot start while the UI is restricted.", 0) end
+	return true
+end
+
+function QuestTogether:RunTests(reverse, present)
+	return self:GetDebugController():RunTests(reverse, present)
+end
+
 function QuestTogether:NormalizeDebugLogStoreEntries(entries)
 	entries = type(entries) == "table" and entries or {}
 	local chars = 0
@@ -82,6 +100,7 @@ function QuestTogether:GetDebugController()
 			return owner:GetDebugTestOptions(present)
 		end,
 		beforeTests = function()
+			owner:EnsureTestSuiteLoaded()
 			if not owner.isInitialized then
 				owner:OnInitialize()
 			end

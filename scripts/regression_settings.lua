@@ -254,3 +254,5 @@ QT:RegisterTest("own bubble solo policy reads current native membership and fail
 	a.API.IsInAnyGroup = nil
 	assert(a:ShouldShowOwnChatBubble() == false)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_settings.lua")

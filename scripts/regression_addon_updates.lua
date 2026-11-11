@@ -624,3 +624,5 @@ QT:RegisterTest("compact version evidence cannot postpone missing full details o
 	assert(not a:RememberPlayerAddonVersion("Friend-Realm", "9.0.2", latePong))
 	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "9.0.4", "a late Pong cannot replace a newer reported version")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_addon_updates.lua")

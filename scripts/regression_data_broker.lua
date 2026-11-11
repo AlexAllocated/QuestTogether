@@ -157,3 +157,5 @@ QT:RegisterTest("data broker tooltip uses only guarded public content calls and 
 	tooltip.AddLine = function() error("display tooltip failed") end
 	Equal(object.OnTooltipShow(tooltip), false, "third-party failures stay inside the integration")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_data_broker.lua")

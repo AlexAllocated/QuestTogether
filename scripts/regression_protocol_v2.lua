@@ -845,3 +845,5 @@ QT:RegisterTest("protocol v3 identifiers survive Forever timestamps and long cli
 	local request = assert(a:PrepareDeveloperPingRequest({}, "Bob-Realm", false))
 	assert(request.requestId:match("^dev%-2200000000%-%d+%-%d+$"))
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_protocol_v2.lua")

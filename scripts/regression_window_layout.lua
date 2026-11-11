@@ -289,3 +289,5 @@ QT:RegisterTest("quarantined window keeps its profile transition until a later s
 	frame.scripts.OnShow() -- Uses ApplyWindowLayout without an explicit restore argument.
 	AssertDefaultLayout(frame, root)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_window_layout.lua")

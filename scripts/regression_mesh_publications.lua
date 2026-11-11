@@ -1681,3 +1681,5 @@ QT:RegisterTest("mesh replay metadata reservation survives synchronous payload r
 		assert(bridge:GetCommTransferMetrics().bytes == 0)
 	end
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_mesh_publications.lua")

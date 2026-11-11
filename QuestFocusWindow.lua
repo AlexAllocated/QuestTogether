@@ -327,14 +327,15 @@ function QT:BuildQuestFocusRows(state)
 end
 
 function QT:GetQuestFocusTitle(state)
-	local title = state.id and self:GetLocalizedQuestTitle(state.id)
-	if title then
+	local title = self:NormalizeQuestDisplayTitleText(state.id and self:GetLocalizedQuestTitle(state.id))
+	if title ~= "" then
 		return title
 	end
 	for _, member in ipairs(state.members) do
 		local entry = state.id and member.entries[state.id]
-		if entry and entry.questTitle then
-			return entry.questTitle
+		title = self:NormalizeQuestDisplayTitleText(entry and entry.questTitle)
+		if title ~= "" then
+			return title
 		end
 	end
 	return L("Party Objective Tracker")

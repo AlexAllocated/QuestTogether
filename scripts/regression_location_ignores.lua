@@ -416,3 +416,5 @@ QT:RegisterTest("new allowed playback cancels deferred ignore cleanup on the reu
 		Equal(QT.nameplateBubbleStateByFrame[bubble].text, "New allowed progress")
 	end)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_location_ignores.lua")

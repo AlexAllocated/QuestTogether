@@ -57,7 +57,8 @@ def check(root=ROOT, source_overrides=None):
     root = Path(root)
     overrides = source_overrides or {}
     errors, count = [], 0
-    for line in (root / "QuestTogether.toc").read_text().splitlines():
+    manifests = [root / "QuestTogether.toc", root / "QuestTogether_Tests.toc"]
+    for line in (line for manifest in manifests if manifest.exists() for line in manifest.read_text().splitlines()):
         name = line.strip().replace("\\", "/")
         if name != "Tests.lua" and not (name.startswith("scripts/") and name.endswith(".lua")):
             continue

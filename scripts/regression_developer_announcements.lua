@@ -757,3 +757,5 @@ QT:RegisterTest("private location feed orders snapshots across privacy changes d
 	dev:ResetDeveloperAnnouncements()
 	assert(not Accept(), "late callbacks from a retired developer lifetime cannot install a dot")
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_developer_announcements.lua")

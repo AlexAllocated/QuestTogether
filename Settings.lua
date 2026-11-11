@@ -518,6 +518,7 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	if all then
 		Invoke(self, "ClearPlayerMapSelection")
 		Invoke(self, "ResetObjectiveAnnouncements")
+		Invoke(self, "InvalidateQuestCompareSnapshot")
 	end
 	if Has("clusterPlayerLocations", "showWorldMapData") then
 		Invoke(self, "ClearPlayerLocationClusterExpansion")

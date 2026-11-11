@@ -12,6 +12,9 @@ import subprocess
 import zipfile
 
 ADDON = "QuestTogether"
+TEST_ADDON = "QuestTogether_Tests"
+TEST_BINDINGS = b"<Bindings>\n</Bindings>\n"
+TEST_UNMARKED = {"scripts/test_bootstrap.lua", "scripts/test_complete.lua", "Libs/libchev/SelfTests.lua"}
 MANIFEST = "package-manifest.json"
 MAX_BYTES = 64 * 1024 * 1024
 ASSETS = ("Media/**/*.tga", "Media/*.tga", "Media/Audio/**/*.ogg", "Media/Audio/manifest.json", "Media/Audio/NOTICE.txt", "Media/QuestTogetherTipIcon.png", "Media/ReleaseNotes/*.png", "changelogs/*.md")
@@ -36,7 +39,7 @@ def toc_entries(text):
     if len({p.casefold() for p in entries}) != len(entries):
         raise PackageError("duplicate live manifest entry")
     if any(not p.endswith(".lua") or (p.startswith("scripts/") and not
-            (p.startswith("scripts/regression_") or p in ("scripts/ui_fixture.lua", "scripts/network_fixture.lua"))) for p in entries):
+            (p.startswith("scripts/regression_") or p in ("scripts/ui_fixture.lua", "scripts/network_fixture.lua", "scripts/test_bootstrap.lua", "scripts/test_complete.lua"))) for p in entries):
         raise PackageError("TOC contains an unsupported or offline-only file")
     return entries
 
@@ -73,20 +76,62 @@ def payloads(root, ref=None):
     toc = read(ADDON + ".toc")
     text = toc.decode("utf-8")
     version = version_from_toc(text)
-    selected = set(toc_entries(text)) | set(DOCUMENTS) | {ADDON + ".toc"}
-    selected.update(safe_path(name) for name in names if any(fnmatch.fnmatchcase(name, pattern) for pattern in ASSETS))
-    data = {name: read(name) for name in sorted(selected)}
-    dependency = json.loads(data["Libs/libchev/manifest.json"])
+    dependency = json.loads(read("Libs/libchev/manifest.json"))
     if dependency.get("schema") != 1 or not re.fullmatch(r"[a-f0-9]{40}", dependency.get("revision", "")):
         raise PackageError("invalid pinned library manifest")
+    selected = set(toc_entries(text)) | set(DOCUMENTS) | {ADDON + ".toc"}
+    # The pinned library stays intact on disk; SelfTests is no longer executed by
+    # the main TOC. The optional companion reuses its private library instance.
+    selected.update("Libs/libchev/" + safe_path(name) for name in dependency["files"])
+    selected.update(safe_path(name) for name in names if any(fnmatch.fnmatchcase(name, pattern) for pattern in ASSETS))
+    data = {ADDON + "/" + name: read(name) for name in sorted(selected)}
+    test_toc_name = TEST_ADDON + ".toc"
+    if (ref and test_toc_name in names) or (not ref and (root / test_toc_name).is_file()):
+        test_toc = read(test_toc_name)
+        test_entries = validate_test_manifest(test_toc.decode("utf-8"), text)
+        for name in test_entries:
+            value = read(name)
+            validate_test_completion(name, value)
+            data[TEST_ADDON + "/" + name] = value
+        data[TEST_ADDON + "/" + test_toc_name] = test_toc
+        # Keep native binding discovery stable without defining any commands.
+        data[TEST_ADDON + "/Bindings.xml"] = TEST_BINDINGS
     for name, expected in dependency["files"].items():
-        key = "Libs/libchev/" + safe_path(name)
+        key = ADDON + "/Libs/libchev/" + safe_path(name)
         if key not in data or digest(data[key]) != expected:
             raise PackageError("vendored library differs from its pinned manifest: " + key)
-    package_manifest = {"schema": 1, "addon": ADDON, "version": version, "sourceCommit": commit,
+    package_manifest = {"schema": 2, "addon": ADDON, "version": version, "sourceCommit": commit,
                         "files": {name: digest(value) for name, value in data.items()}}
-    data[MANIFEST] = (json.dumps(package_manifest, sort_keys=True, indent=2) + "\n").encode()
+    data[ADDON + "/" + MANIFEST] = (json.dumps(package_manifest, sort_keys=True, indent=2) + "\n").encode()
     return version, data
+
+
+def validate_test_manifest(test, main):
+    if version_from_toc(test) != version_from_toc(main):
+        raise PackageError("test companion version differs from main addon")
+    interfaces = lambda text: re.findall(r"^## Interface[^\r\n]*$", text, re.M)
+    if interfaces(test) != interfaces(main):
+        raise PackageError("test companion client interfaces differ from main addon")
+    if not re.search(r"^## LoadOnDemand: 1$", test, re.M) or not re.search(r"^## RequiredDeps: QuestTogether$", test, re.M):
+        raise PackageError("test companion must be on-demand and depend on QuestTogether")
+    entries = toc_entries(test)
+    if not entries or entries[0] != "scripts/test_bootstrap.lua" or entries[-1] != "scripts/test_complete.lua":
+        raise PackageError("test companion is missing its namespace or completion marker")
+    if any(p not in ("Tests.lua", "Libs/libchev/SelfTests.lua") and not p.startswith("scripts/") for p in entries):
+        raise PackageError("test companion cannot reload production modules")
+    if set(entries) & set(toc_entries(main)):
+        raise PackageError("test companion must not load during normal startup")
+    counts = re.findall(r"^## X-QT-TestModules: (\d+)$", test, re.M)
+    if len(counts) != 1 or int(counts[0]) != len(set(entries) - TEST_UNMARKED):
+        raise PackageError("test companion completion count differs from its manifest")
+    return entries
+
+
+def validate_test_completion(name, data):
+    if name not in TEST_UNMARKED:
+        marker = '_G.QuestTogether:RecordTestModule("' + name + '")'
+        if not data.decode("utf-8").rstrip().endswith(marker):
+            raise PackageError("test module must end with its completion marker: " + name)
 
 
 def verify_archive(data, expected=None):
@@ -98,32 +143,48 @@ def verify_archive(data, expected=None):
             names = set()
             for entry in entries:
                 safe_path(entry.filename)
-                if not entry.filename.startswith(ADDON + "/") or entry.filename.casefold() in names:
+                if not entry.filename.startswith((ADDON + "/", TEST_ADDON + "/")) or entry.filename.casefold() in names:
                     raise PackageError("archive has an unexpected root or duplicate path")
                 if entry.flag_bits & 1 or (entry.external_attr >> 16) & 0o170000 == 0o120000:
                     raise PackageError("archive contains encrypted or linked entries")
                 names.add(entry.filename.casefold())
-            manifest = json.loads(archive.read(ADDON + "/" + MANIFEST))
-            if manifest.get("schema") != 1 or manifest.get("addon") != ADDON or not isinstance(manifest.get("files"), dict):
+            for name in names:
+                if any("/".join(name.split("/")[:i]) in names for i in range(1, len(name.split("/")))):
+                    raise PackageError("archive has a file/directory path collision")
+            manifest_path = ADDON + "/" + MANIFEST
+            manifest = json.loads(archive.read(manifest_path))
+            schema = manifest.get("schema")
+            if schema not in (1, 2) or manifest.get("addon") != ADDON or not isinstance(manifest.get("files"), dict):
                 raise PackageError("invalid package manifest")
             hashes = manifest["files"]
             for name in hashes: safe_path(name)
-            if set(archive.namelist()) != {ADDON + "/" + p for p in hashes} | {ADDON + "/" + MANIFEST}:
+            install_hashes = {ADDON + "/" + p: h for p, h in hashes.items()} if schema == 1 else hashes
+            if set(archive.namelist()) != set(install_hashes) | {manifest_path}:
                 raise PackageError("archive contents differ from package manifest")
-            contents = {p: archive.read(ADDON + "/" + p) for p in hashes}
-            if any(digest(contents[p]) != h for p, h in hashes.items()):
+            contents = {p: archive.read(p) for p in install_hashes}
+            if any(digest(contents[p]) != h for p, h in install_hashes.items()):
                 raise PackageError("package content hash mismatch")
-            toc = contents[ADDON + ".toc"].decode("utf-8")
-            if version_from_toc(toc) != manifest.get("version") or not set(toc_entries(toc)) <= set(contents):
+            toc = contents[ADDON + "/" + ADDON + ".toc"].decode("utf-8")
+            if version_from_toc(toc) != manifest.get("version") or not {ADDON + "/" + p for p in toc_entries(toc)} <= set(contents):
                 raise PackageError("package version or live load manifest mismatch")
-            if not set(DOCUMENTS) <= set(contents):
+            if not {ADDON + "/" + p for p in DOCUMENTS} <= set(contents):
                 raise PackageError("package is missing mandatory assets or licenses")
-            dependency = json.loads(contents["Libs/libchev/manifest.json"])
-            if any(digest(contents["Libs/libchev/" + safe_path(p)]) != h for p, h in dependency["files"].items()):
+            test_files = {p for p in contents if p.startswith(TEST_ADDON + "/")}
+            if test_files:
+                test_path = TEST_ADDON + "/" + TEST_ADDON + ".toc"
+                bindings_path = TEST_ADDON + "/Bindings.xml"
+                test_entries = validate_test_manifest(contents[test_path].decode("utf-8"), toc)
+                if test_files != {TEST_ADDON + "/" + p for p in test_entries} | {test_path, bindings_path}:
+                    raise PackageError("test companion contents differ from its manifest")
+                if contents[bindings_path] != TEST_BINDINGS:
+                    raise PackageError("test companion must not define keybindings")
+                for name in test_entries:
+                    validate_test_completion(name, contents[TEST_ADDON + "/" + name])
+            dependency = json.loads(contents[ADDON + "/Libs/libchev/manifest.json"])
+            if any(digest(contents[ADDON + "/Libs/libchev/" + safe_path(p)]) != h for p, h in dependency["files"].items()):
                 raise PackageError("package vendored library does not match its pin")
-            if expected is not None:
-                actual = dict(contents, **{MANIFEST: archive.read(ADDON + "/" + MANIFEST)})
-                if actual != expected: raise PackageError("archive differs from source payloads")
+            if expected is not None and dict(contents, **{manifest_path: archive.read(manifest_path)}) != expected:
+                raise PackageError("archive differs from source payloads")
             return manifest
     except (zipfile.BadZipFile, KeyError, TypeError, UnicodeError, json.JSONDecodeError, RuntimeError) as error:
         raise PackageError("invalid installation archive: " + str(error)) from error
@@ -134,7 +195,7 @@ def package(root, output, ref=None):
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in sorted(contents.items()):
-            entry = zipfile.ZipInfo(ADDON + "/" + name, (1980, 1, 1, 0, 0, 0))
+            entry = zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0))
             entry.compress_type, entry.create_system = zipfile.ZIP_DEFLATED, 3
             entry.external_attr = 0o100644 << 16
             archive.writestr(entry, data, compresslevel=9)

@@ -707,3 +707,5 @@ QT:RegisterTest("temporary native Edit Mode settings visits preserve the bubble 
 	revert:Click()
 	assert(a.options.chatBubbleSize == 160)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_ui_runtime.lua")

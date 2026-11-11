@@ -50,6 +50,21 @@ def check(root=ROOT, source_overrides=None):
         errors.append("preview cannot replace live focus state")
     toc = [line.strip() for line in (root / "QuestTogether.toc").read_text().splitlines()
            if line.strip() and not line.startswith("#")]
+    test_toc = [line.strip() for line in (root / "QuestTogether_Tests.toc").read_text().splitlines()
+                if line.strip() and not line.startswith("#")]
+    from package import validate_test_manifest, validate_test_completion, PackageError
+    try:
+        validate_test_manifest((root / "QuestTogether_Tests.toc").read_text(), (root / "QuestTogether.toc").read_text())
+        for name in test_toc:
+            validate_test_completion(name, (root / name).read_bytes())
+    except PackageError as error:
+        errors.append(str(error))
+    if any(name == "Tests.lua" or name.startswith("scripts/") or name.endswith("/SelfTests.lua") for name in toc):
+        errors.append("test fixtures must load only through the on-demand test companion")
+    combined = toc + test_toc
+    if test_toc[0] != "scripts/test_bootstrap.lua" or test_toc[-1] != "scripts/test_complete.lua":
+        errors.append("test companion must bracket all fixtures with its namespace and completion markers")
+    if len(combined) != len(set(combined)): errors.append("duplicate module across live and test manifests")
     if len(toc) != len(set(toc)): errors.append("duplicate TOC module")
     order = [("Core.lua", "Audio.lua"), ("Audio.lua", "Settings.lua"), ("Core.lua", "Settings.lua"), ("QuestProgressStyle.lua", "QuestCompareWindow.lua"),
              ("QuestProgressStyle.lua", "QuestFocusWindow.lua"), ("OwnedUI.lua", "WindowController.lua"),
@@ -69,11 +84,11 @@ def check(root=ROOT, source_overrides=None):
                   ("MapLocationPresentation.lua", "LocationPins.lua"),
                   ("ObjectiveAnnouncements.lua", "EventHandlers.lua")])
     for before, after in order:
-        if before not in toc or after not in toc or toc.index(before) >= toc.index(after):
+        if before not in combined or after not in combined or combined.index(before) >= combined.index(after):
             errors.append(f"load {before} before {after}")
     for name in sources:
         if name not in toc: errors.append("production module is not in the live manifest: " + name)
-    for name in toc:
+    for name in combined:
         if not (root / name).is_file(): errors.append("missing live module: " + name)
     if errors: raise ValueError("\n".join(errors))
     return len(toc)

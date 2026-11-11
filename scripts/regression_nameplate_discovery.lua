@@ -1556,3 +1556,5 @@ QT:RegisterTest("ordinary health and threat events respect exhausted tooltip dis
 		Decorated(state)
 	end)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_nameplate_discovery.lua")

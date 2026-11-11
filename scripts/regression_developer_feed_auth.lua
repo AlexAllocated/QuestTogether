@@ -222,3 +222,5 @@ QT:RegisterTest("developer feed real signatures bind action session target sende
 	Finish(peer)
 	assert(not called, "a signed diagnostic ping cannot authorize announcement mirroring")
 end, { offline = true })
+
+_G.QuestTogether:RecordTestModule("scripts/regression_developer_feed_auth.lua")

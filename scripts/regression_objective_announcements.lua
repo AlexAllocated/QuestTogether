@@ -332,3 +332,5 @@ QT:RegisterTest("manual unknown and invalid objective facts never receive guesse
 	Equal(#clock.timers, 0)
 	Equal(a.objectiveAnnouncementState, nil)
 end)
+
+_G.QuestTogether:RecordTestModule("scripts/regression_objective_announcements.lua")
