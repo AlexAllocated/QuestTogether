@@ -1492,7 +1492,7 @@ QT:RegisterTest(
 	"mesh replay fence capacity preserves live retirements and fails closed within reserved memory",
 	function()
 		local owner, bridge = Peer("Owner-Realm"), Peer("Bridge-Realm")
-		local first
+		local first, firstPublication
 		for index = 1, 128 do
 			owner.name = "Origin" .. index .. "-Realm"
 			local publication = Publish(owner, "STATE", {
@@ -1505,9 +1505,13 @@ QT:RegisterTest(
 					},
 				},
 			}, { owner = owner, expires = owner.now + 120 })
+			-- Distinct arrival times make payload eviction deterministic. Privacy
+			-- fences survive even when the oldest cached payload is reclaimed.
+			bridge.now = bridge.now + 0.001
 			assert(bridge:HandleMeshPublication(Wire(publication), owner.name))
 			Finish(bridge)
 			first = first or bridge.meshPublicationState.replayFences[owner.name]
+			firstPublication = firstPublication or publication
 			owner:ResetMeshPublications()
 			assert(bridge:GetMeshPublicationMetrics().retainedBytes <= 131072)
 		end
@@ -1515,6 +1519,12 @@ QT:RegisterTest(
 		for index = 2, 128 do
 			bridge:RetireMeshPublicationPeer("Origin" .. index .. "-Realm")
 		end
+		assert(next(bridge.meshPublicationState.entries) == nil, "capacity may reclaim payloads without losing their fences")
+		-- Establish an actual replayable payload after making room; a surviving
+		-- fence alone does not promise its payload survived capacity pressure.
+		assert(bridge:HandleMeshPublication(Wire(firstPublication), firstPublication.origin))
+		Finish(bridge)
+		assert(bridge.meshPublicationState.replayFences[firstPublication.origin] == first)
 		local queued
 		function bridge:ForwardMeshPublication(_, options)
 			if options.meshInterest then
