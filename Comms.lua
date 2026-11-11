@@ -460,7 +460,10 @@ local function ApplyWhisperUnavailable(a, s, row, key, now, exactAttempt)
 	a:CancelCommunicationWhere(function(work)
 		if not WhisperRoutingCurrent(a, s, row, now, exactAttempt) then return false end
 		local route = work.route
-		local recipient = route and route.distribution == "WHISPER" and WhisperName(a, route.target)
+		-- A targeted group response still uses the group route. A failed whisper
+		-- to its recipient must not cancel that transfer or its cached reply.
+		if not route or route.distribution ~= "WHISPER" then return false end
+		local recipient = WhisperName(a, route.target)
 		return recipient ~= nil and recipient:lower() == key
 	end, "unavailable")
 end

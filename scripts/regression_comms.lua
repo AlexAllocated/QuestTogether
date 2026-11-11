@@ -248,6 +248,80 @@ QuestTogether:RegisterTest(
 )
 
 QuestTogether:RegisterTest(
+	"offline whispers cancel only their direct transfers and cached replies while group delivery continues",
+	function()
+		for _, distribution in ipairs({ "PARTY", "RAID", "INSTANCE_CHAT" }) do
+			for _, trigger in ipairs({ "notice", "native" }) do
+				for _, activeTransfer in ipairs({ true, false }) do
+					local a = WhisperFailureFixture(true)
+					a:InitializeCommunications()
+					local name, completions = "Absent Player", 0
+					local groupRoute = { distribution = distribution, recipient = name }
+					local whisperRoute = { distribution = "WHISPER", target = name }
+					local context = { operation = "QCRS", requestId = "snapshot", session = "sender", messageId = "reply", stamp = 100 }
+					local frames = assert(a:BuildCommFrames("QCRS", {
+						requestId = context.requestId, snapshotId = "snapshot", count = 1,
+						entries = { { questId = 42, questTitle = string.rep("quest", 150) } },
+					}, context))
+					local groupJob
+					if activeTransfer then
+						local accepted, reason
+						accepted, reason, groupJob = a:QueueCommTransfer(frames, context, groupRoute, { reliable = true })
+						assert(accepted, reason)
+						assert(a:QueueCommTransfer(frames, context, whisperRoute, {
+							reliable = true,
+							onComplete = function(sent, failure)
+								assert(not sent and failure == "unavailable")
+								completions = completions + 1
+							end,
+						}))
+						a:UpdateCommTransfers()
+						assert(groupJob.inFlight, "the failure must occur during a real group snapshot transfer")
+					end
+					-- Exercise the response cache independently too: it invokes cancellation
+					-- predicates even when no outgoing transfer currently exists.
+					for _, item in ipairs({
+						{ "group", groupRoute },
+						{ "whisper", whisperRoute },
+						{ "other", { distribution = "WHISPER", target = "Other Player" } },
+					}) do
+						a:CacheCommResponse({ operation = "QCRS", requestId = item[1] }, "cached", item[2], { expires = 200 })
+					end
+					Equal(a.communicationState.replyBytes, 18)
+					if trigger == "native" then
+						a.API.SendAddonMessage = function() return 12 end
+							a.now = a.now + 1
+						local sent, reason = a:SendTransportNow("probe", "MHEL", whisperRoute)
+						assert(not sent and reason == "rejected", tostring(reason))
+					else
+						a:Attempt(name)
+					end
+					assert(a:Filter(a:Notice(name)))
+					assert(a:Filter(a:Notice(name)), "repeated chat frames must not repeat cancellation")
+					Equal(completions, activeTransfer and 1 or 0)
+					Equal(a.communicationState.replyBytes, 12)
+					assert(a.communicationState.replies[name .. ":group:QCRS"])
+					assert(a.communicationState.replies["Other Player:other:QCRS"])
+					Equal(a.communicationState.replies[name .. ":whisper:QCRS"], nil)
+					if activeTransfer then
+						Equal(#a.commTransferState.outgoing, 1)
+						Equal(a.commTransferState.outgoing[1], groupJob)
+						a.API.SendAddonMessage = function(_, _, route)
+							Equal(route, distribution)
+							return 0
+						end
+						a.now = a.now + 1
+						a:DrainTransport()
+						Equal(groupJob.nextPart, 2)
+						Equal(completions, 1)
+					end
+				end
+			end
+		end
+	end
+)
+
+QuestTogether:RegisterTest(
 	"ordinary whisper intent before or after QT attempts keeps player-not-found feedback visible",
 	function()
 		for _, before in ipairs({ true, false }) do
