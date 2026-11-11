@@ -723,6 +723,7 @@ end
 
 local function HideTooltip(addon, state)
 	state.locationHover = nil
+	state.clusterTooltipNavigation = nil
 	if state.clusterTooltip then addon:HidePlayerTooltipPresentation(state.clusterTooltip) end
 	addon:HidePlayerTooltipPresentation(state)
 	HoverHighlights(addon, state)
@@ -1008,14 +1009,17 @@ local function Tooltip(addon, state, pin, row)
 	return addon:PresentPlayerTooltip(state, pin, row)
 end
 
-CurrentCluster = function(addon, pin)
+CurrentCluster = function(addon, pin, needsLayout)
 	if not addon.isEnabled or addon:IsRuntimeRestricted() or not Guard(addon, pin.frame)
 		or not addon:IsQuestTogetherMapDataShown("map")
 		or Method(addon, pin.frame, "IsVisible") ~= true or not pin.cluster then return nil end
 	local geometry = addon:GetLocationPinSurface("map")
 	if not geometry or geometry.mapID ~= pin.mapID or geometry.parent ~= pin.parent then return nil end
 	local rows = addon:GetVisiblePlayerLocations("map")
-	local markers = addon:GetPlayerLocationMapMarkers(rows, geometry, MAX_PINS)
+	-- A held hover follows its original members, not their changing clustering.
+	-- Currentness checks need fresh eligible rows, but not a new map layout.
+	local markers = (needsLayout or not pin.locationHover)
+		and addon:GetPlayerLocationMapMarkers(rows, geometry, MAX_PINS) or nil
 	if pin.locationHover then
 		local members = {}
 		for index = 1, math.min(MAX_LOCATION_ROWS, #rows) do
@@ -1032,15 +1036,44 @@ CurrentCluster = function(addon, pin)
 	end
 end
 
-local function ClusterTooltip(addon, state, pin)
-	local cluster, geometry, markers = CurrentCluster(addon, pin)
+local function ClusterTooltipNavigation(addon, state, pin, cluster, geometry)
+	local cached = state.clusterTooltipNavigation
+	local now = Number(addon, addon.API.GetTime()) or 0
+	local same = cached and cached.pin == pin and SameMapGeometry(cached.geometry, geometry)
+		and #cached.members == #cluster.members
+	if same then
+		for index, row in ipairs(cluster.members) do
+			local prior = cached.members[index]
+			if prior.name ~= row.name or prior.mapID ~= row.mapID or prior.x ~= row.x or prior.y ~= row.y then
+				same = false
+				break
+			end
+		end
+	end
+	-- This caches only the wording of the click hint. The click itself always
+	-- resolves current native map geometry and permissions again. Retry unknown
+	-- native map information rather than retaining an unavailable result forever.
+	if same and (cached.action ~= "unavailable" or now >= cached.at and now - cached.at < 1) then
+		return cached.action
+	end
+	local members, view = {}, {}
+	for _, row in ipairs(cluster.members) do
+		members[#members + 1] = { name = row.name, mapID = row.mapID, x = row.x, y = row.y }
+	end
+	for key, value in pairs(geometry) do view[key] = value end
+	local action = addon:GetPlayerLocationClusterNavigationAction(cluster, geometry)
+	state.clusterTooltipNavigation = { pin = pin, members = members, geometry = view, action = action, at = now }
+	return action
+end
+
+local function ClusterTooltip(addon, state, pin, deferHighlights)
+	local cluster, geometry, markers = CurrentCluster(addon, pin, rawget(addon, "playerLocationClusterExpansion") ~= nil)
 	if not cluster or state.clusterHoverGeneration ~= state.surfaces.map.geometryGeneration
 		or Method(addon, addon:GetPlayerTooltipPresentationParent(), "IsVisible") ~= true then
 		HideTooltip(addon, state)
 		return false
 	end
 	addon:HidePlayerTooltipPresentation(state)
-	HoverHighlights(addon, state)
 	local _, expanded, info = addon:GetPlayerLocationClusterExpansion(markers, geometry)
 	local active = expanded and expanded.key == cluster.key
 	local actionable = true
@@ -1056,7 +1089,7 @@ local function ClusterTooltip(addon, state, pin)
 	if #cluster.members > #members then
 		lines[#lines + 1] = string.format(L("…and %d more"), #cluster.members - #members)
 	end
-	local navigation = actionable and not active and addon:GetPlayerLocationClusterNavigationAction(cluster, geometry)
+	local navigation = actionable and not active and ClusterTooltipNavigation(addon, state, pin, cluster, geometry)
 	if actionable and active then lines[#lines + 1] = L("Click to collapse. Hover a player for details.")
 	elseif navigation == "expand" then lines[#lines + 1] = L("Click to expand players.")
 	elseif navigation == "navigate" then lines[#lines + 1] = L("Click to open a more detailed map.") end
@@ -1068,12 +1101,12 @@ local function ClusterTooltip(addon, state, pin)
 		title = string.format(L("%d players"), #cluster.members),
 		text = table.concat(lines, "\n"), color = { 1, 0.82, 0 }, members = members,
 	})
-	UpdateMapFocus(addon, state)
+	if not deferHighlights then HoverHighlights(addon, state) end
 	return true
 end
 
 local function OpenCluster(addon, state, pin, pageDelta)
-	local cluster, geometry, markers = CurrentCluster(addon, pin)
+	local cluster, geometry, markers = CurrentCluster(addon, pin, true)
 	if not cluster then return false end
 	local wasHovered = state.clusterTooltip and (state.clusterTooltip.hovered == pin
 		or (state.locationHover and state.locationHover.pin == pin))
@@ -1521,7 +1554,7 @@ function QuestTogether:RefreshPlayerLocationPins(onlySurface)
 		end
 	end
 	if state.clusterTooltip and state.clusterTooltip.hovered then
-		if not pcall(ClusterTooltip, self, state, state.clusterTooltip.hovered) then HideTooltip(self, state) end
+		if not pcall(ClusterTooltip, self, state, state.clusterTooltip.hovered, true) then HideTooltip(self, state) end
 	end
 	HoverHighlights(self, state)
 	return visible

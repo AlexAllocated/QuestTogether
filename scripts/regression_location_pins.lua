@@ -4534,3 +4534,71 @@ Register("map animation clips admitted markers and retires hover expansion and d
 	a:RefreshWorldMapOverlayGeometry()
 	assert(not surface.frame:IsVisible())
 end)
+
+Register("stationary cluster hovers rebuild one map layout per refresh and reuse only their navigation hint", function()
+	local a = Fixture()
+	a.now = 100
+	a.API.GetTime = function() return a.now end
+	a.rows.map = {}
+	for index = 1, 80 do a.rows.map[index] = Row("Peer" .. index .. "-Realm", 0.5 + index * 0.00001, 0.5) end
+	function a:GetPlayerLocationHoverCursorPosition() return 500, 300 end
+	function a:IsPlayerLocationPinUnderCursor() return true end
+	local layouts, navigation = 0, 0
+	local build = a.GetPlayerLocationMapMarkers
+	function a:GetPlayerLocationMapMarkers(...)
+		layouts = layouts + 1
+		return build(self, ...)
+	end
+	function a:GetPlayerLocationClusterNavigationAction()
+		navigation = navigation + 1
+		return "expand"
+	end
+	a:RefreshPlayerLocationPins()
+	local pin = Pin(a, "map")
+	pin.frame.scripts.OnEnter()
+	Equal(navigation, 1)
+	layouts = 0
+	for _ = 1, 5 do
+		a.now = a.now + 0.2
+		a:RefreshPlayerLocationPins()
+	end
+	Equal(layouts, 5)
+	Equal(navigation, 1)
+	for _ = 1, 60 do a:UpdatePlayerLocationHover() end
+	Equal(layouts, 5)
+	-- New coordinates invalidate the display hint without delaying other model updates.
+	a.rows.map[1].x = a.rows.map[1].x + 0.00001
+	a:RefreshPlayerLocationPins()
+	Equal(navigation, 2)
+	function a:TryNavigatePlayerLocationCluster(cluster, geometry)
+		self:GetPlayerLocationClusterNavigationAction(cluster, geometry)
+		return false
+	end
+	pin.frame.scripts.OnClick(nil, "LeftButton")
+	Equal(navigation, 3)
+	assert(a.playerLocationClusterExpansion, "click must use current navigation and still expand the cluster")
+end)
+
+Register("cluster navigation hints retry unavailable native information and retire with the hover", function()
+	local a = Fixture()
+	a.now = 100
+	a.API.GetTime = function() return a.now end
+	a.rows.map = { Row("One-Realm"), Row("Two-Realm", 0.501) }
+	function a:GetPlayerLocationHoverCursorPosition() return 500, 300 end
+	function a:IsPlayerLocationPinUnderCursor() return true end
+	local calls, available = 0, false
+	function a:GetPlayerLocationClusterNavigationAction()
+		calls = calls + 1
+		return available and "expand" or "unavailable"
+	end
+	a:RefreshPlayerLocationPins()
+	Pin(a, "map").frame.scripts.OnEnter()
+	a:RefreshPlayerLocationPins()
+	Equal(calls, 1)
+	available, a.now = true, 101
+	a:RefreshPlayerLocationPins()
+	Equal(calls, 2)
+	assert(a.locationPinState.clusterTooltip.tooltipLabel.text:find("expand"))
+	a:HidePlayerLocationPins()
+	Equal(a.locationPinState.clusterTooltipNavigation, nil)
+end)

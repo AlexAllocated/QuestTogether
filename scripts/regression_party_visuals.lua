@@ -484,6 +484,82 @@ local function SharedRoster()
 	return a, b, "Member2-Realm", a:GetPlayerPartyVisualInfo(b.name).key
 end
 
+QT:RegisterTest("party queries read each real source once and skip admission for losing candidates", function()
+	local a, b = Peer(), Peer("Leader-Realm")
+	Start(a, b, 5)
+	assert(Deliver(a, b.wire[2], b.name))
+	local members = a:GetPlayerPartyVisualInfo(b.name).members
+	for _, member in ipairs(members) do
+		assert(ObserveState(a, "HandlePartyVisualMetadata", "QTPG", b.wire[1].record, member.name))
+		a.qtPlayerPresenceState.peers[member.name] = a.now
+	end
+	local reads, nativeNames = 0, 0
+	a.IsKnownQTPlayer, a.GetPlayerPartySize = QT.IsKnownQTPlayer, QT.GetPlayerPartySize
+	a.GetPlayerFullName, a.GetUnitFullName = QT.GetPlayerFullName, QT.GetUnitFullName
+	a.API.UnitFullName = function()
+		nativeNames = nativeNames + 1
+		return "Me", "Realm"
+	end
+	function a:GetPlayerTooltipStats(name)
+		reads = reads + 1
+		return QT.GetPlayerTooltipStats(self, name)
+	end
+	for _, member in ipairs(members) do
+		reads, nativeNames = 0, 0
+		local info = a:GetPlayerPartyVisualInfo(member.name)
+		Eq(info.members, members)
+		Eq(info.size, 5)
+		assert(reads > 0 and reads <= #members, "read each direct party source only once per query")
+		assert(nativeNames <= #members * 2, "losing candidates must not repeat native-backed admission checks")
+	end
+end)
+
+QT:RegisterTest("party queries never retain source reads across evidence changes expiry or failed reads", function()
+	for _, mode in ipairs({ "stats", "join", "presence", "ignore", "clock", "lifetime", "retirement", "state" }) do
+		local a, b, member = SharedRoster()
+		a.IsKnownQTPlayer = QT.IsKnownQTPlayer
+		a.qtPlayerPresenceState.peers[b.name], a.qtPlayerPresenceState.peers[member] = a.now, a.now
+		a.now = 101
+		assert(a:GetPlayerPartyVisualInfo(b.name).members)
+		assert(a:GetPlayerPartyVisualInfo(member).members)
+		if mode == "stats" then
+			a.qtPlayerPresenceState.peerTooltipStats = { [b.name] = { partySize = 0, at = a.now } }
+		elseif mode == "join" then
+			a.partyJoinState = { peers = { [b.name] = { grouped = "0", at = a.now } } }
+		elseif mode == "presence" then a.qtPlayerPresenceState.peers[b.name] = nil
+		elseif mode == "ignore" then a.ignored = b.name
+		elseif mode == "clock" then a.now = 281
+		elseif mode == "lifetime" then a:GetPartyVisualState().peers[b.name].lifetime = 0
+		elseif mode == "retirement" then
+			assert(ObserveState(a, "HandlePartyVisualMetadata", "QTPG", { size = 0 }, member))
+		elseif mode == "state" then a:ResetPartyVisuals() end
+		local info = a:GetPlayerPartyVisualInfo(b.name)
+		if mode == "stats" or mode == "join" then Eq(info.size, 0)
+		elseif mode == "retirement" then Eq(info.key, nil); Eq(info.members, nil)
+		else Eq(info, nil) end
+	end
+	local a, b = SharedRoster()
+	function a:GetPlayerTooltipStats() error("source read failed") end
+	assert(not pcall(a.GetPlayerPartyVisualInfo, a, b.name))
+	a.GetPlayerTooltipStats = QT.GetPlayerTooltipStats
+	assert(a:GetPlayerPartyVisualInfo(b.name).members, "a failed resolution must not leave a cached result")
+end)
+
+QT:RegisterTest("party query candidates that can win still require current subject admission", function()
+	local a, b, member = SharedRoster()
+	a.known[member] = true
+	local checks = 0
+	function a:CanAcceptPeerUpdate(name, ...)
+		if name == member then checks = checks + 1; return false end
+		return QT.CanAcceptPeerUpdate(self, name, ...)
+	end
+	Eq(a:GetPlayerPartyVisualInfo(member), nil)
+	assert(checks > 0, "a newer inferred membership must still check the subject departure fence")
+	assert(a:GetPlayerPartyVisualInfo(b.name).members)
+	a.CanAcceptPeerUpdate = QT.CanAcceptPeerUpdate
+	assert(a:GetPlayerPartyVisualInfo(member).members, "the next query must retry current admission")
+end)
+
 QT:RegisterTest("shared party roster resolves every known member without copied observations or new requests", function()
 	local a, b, member, key = SharedRoster()
 	local state = a:GetPartyVisualState()

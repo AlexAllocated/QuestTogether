@@ -563,7 +563,7 @@ function QT:HandlePartyVisualMetadata(data, sender, observation)
 	BoundPeers(s)
 	return true
 end
-local function DirectPartyEvidence(a, s, name, now)
+local function ReadDirectPartyEvidence(a, s, name, now)
 	local info = s.peers[name]
 	local known = a:IsKnownQTPlayer(name)
 	if not (known or info and info.cached and FreshCachedLocation(a, name, now)) or not Fresh(info, now, TTL) then
@@ -588,13 +588,21 @@ local function DirectPartyEvidence(a, s, name, now)
 	end
 	return info
 end
+local function DirectPartyEvidence(a, s, name, now, reads)
+	if not reads then return ReadDirectPartyEvidence(a, s, name, now) end
+	local entry = reads[name]
+	if entry then return entry.value end
+	local value = ReadDirectPartyEvidence(a, s, name, now)
+	reads[name] = { value = value }
+	return value
+end
 local function ProofCurrent(a, s, info)
 	local roster = s.rosters[info.key]
 	local invalidated = roster and (roster.invalidatedBy or roster.invalidatedAt and { sampledAt = roster.invalidatedAt })
 	return not info.membershipInvalidated and (not invalidated or Newer(a, info, invalidated))
 end
-local function SelectPartyEvidence(a, s, name, now, membershipOnly)
-	local direct = DirectPartyEvidence(a, s, name, now)
+local function SelectPartyEvidence(a, s, name, now, membershipOnly, reads)
+	local direct = DirectPartyEvidence(a, s, name, now, reads)
 	local raw = s.peers[name]
 	if raw and (not s.sources or not s.sources[name] or s.sources[name].record ~= raw) then
 		IndexMembershipSource(s, name, raw)
@@ -605,12 +613,12 @@ local function SelectPartyEvidence(a, s, name, now, membershipOnly)
 	if membershipOnly or a:IsKnownQTPlayer(name) or FreshCachedLocation(a, name, now) then
 		for reporter, record in pairs(s.memberships and s.memberships[name] or {}) do
 			if reporter ~= name and s.peers[reporter] == record and not a:IsIgnoredPlayerName(reporter) then
-				local candidate = DirectPartyEvidence(a, s, reporter, now)
+				local candidate = DirectPartyEvidence(a, s, reporter, now, reads)
 				if candidate and candidate.key and candidate.key == record.key and ProofCurrent(a, s, candidate)
-					and a:CanAcceptPeerUpdate(name, nil, Sample(candidate))
 					and (not direct or Newer(a, candidate, direct))
 					and (not info or Newer(a, candidate, info)
-						or a:ComparePeerRecordSamples(candidate, info) == 0 and reporter < source) then
+						or a:ComparePeerRecordSamples(candidate, info) == 0 and reporter < source)
+					and a:CanAcceptPeerUpdate(name, nil, Sample(candidate)) then
 					info, source = candidate, reporter
 				end
 			end
@@ -618,12 +626,12 @@ local function SelectPartyEvidence(a, s, name, now, membershipOnly)
 	end
 	return info, source
 end
-PartyRevisionCurrent = function(a, s, info, now)
+PartyRevisionCurrent = function(a, s, info, now, reads)
 	local roster = s.rosters[info.key]
 	if not ProofCurrent(a, s, info) then return false end
 	local function Conflicts(name)
 		if not name or a:IsIgnoredPlayerName(name) then return false end
-		local current = SelectPartyEvidence(a, s, name, now, true)
+		local current = SelectPartyEvidence(a, s, name, now, true, reads)
 		if current and Newer(a, current, info)
 			and (current.key and current.key ~= info.key or current.size ~= nil and current.size ~= info.size) then
 			RetireMembershipProof(a, s, info, current)
@@ -640,7 +648,7 @@ PartyRevisionCurrent = function(a, s, info, now)
 	end
 	return true
 end
-local function KnownPartyMembers(a, s, info, now)
+local function KnownPartyMembers(a, s, info, now, reads)
 	local names, members = {}, {}
 	local function Add(name, class)
 		if not name or names[name] or a:IsIgnoredPlayerName(name) then return end
@@ -652,7 +660,7 @@ local function KnownPartyMembers(a, s, info, now)
 	-- party, without walking all peer records or querying another resolver.
 	for name, record in pairs(s.memberships and s.memberships[info.leader] or {}) do
 		if s.peers[name] == record and record.key == info.key and not a:IsIgnoredPlayerName(name) then
-			local current = DirectPartyEvidence(a, s, name, now)
+			local current = DirectPartyEvidence(a, s, name, now, reads)
 			if current and not current.membershipInvalidated and current.key == info.key then Add(name) end
 		end
 	end
@@ -681,9 +689,13 @@ function QT:GetPlayerPartyVisualInfo(sender)
 	return ResolvePartyEvidence(self, s, name, now)
 end
 ResolvePartyEvidence = function(self, s, name, now)
-	local info, source = SelectPartyEvidence(self, s, name, now)
+	-- Resolve each direct source once within this query. Keep the underlying
+	-- records live for conflict checks; no membership conclusion or source read
+	-- is retained across queries, callbacks, changed evidence, or expiry.
+	local reads = {}
+	local info, source = SelectPartyEvidence(self, s, name, now, nil, reads)
 	if not info or not info.key then return info end
-	if not PartyRevisionCurrent(self, s, info, now) then
+	if not PartyRevisionCurrent(self, s, info, now, reads) then
 		return Summary(self, info, info.size)
 	end
 	local roster = s.rosters[info.key]
@@ -693,7 +705,7 @@ ResolvePartyEvidence = function(self, s, name, now)
 		size = info.size, key = info.key, leader = info.leader, leaderClass = info.leaderClass,
 		revision = info.revision, sourceName = source,
 		members = roster and roster.members or nil,
-		knownMembers = not roster and KnownPartyMembers(self, s, info, now) or nil })
+		knownMembers = not roster and KnownPartyMembers(self, s, info, now, reads) or nil })
 end
 -- A newly validated full list can prove that a player moved even when that
 -- player never sent their own party metadata. Retire old proofs immediately,

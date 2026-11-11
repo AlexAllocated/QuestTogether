@@ -36,9 +36,11 @@ local function Method(addon, frame, method, ...)
 end
 function QuestTogether:HidePlayerTooltipPresentation(state)
 	self:ClearPlayerDetailsInterest(state)
+	local wasHovered = state.hovered ~= nil
 	state.hovered = nil
+	state.tooltipPresentation = nil
 	self:HideOwnedUI(state.tooltip)
-	if state.onHoverChanged then
+	if wasHovered and state.onHoverChanged then
 		state.onHoverChanged()
 	end
 end
@@ -464,10 +466,55 @@ local function LayoutTooltipLegend(addon, state, model, width, anchor, top)
 	return height
 end
 
+local PRESENTATION_FIELDS = { "title", "introText", "text", "factionTexture", "maxWidth" }
+local MEMBER_PRESENTATION_FIELDS = {
+	"label", "icon", "usesQT", "developer", "vip", "hiddenLocation", "leader", "partyKey", "partySize",
+}
+local function SamePresentationFields(previous, current, fields)
+	for _, field in ipairs(fields) do
+		if previous[field] ~= current[field] then return false end
+	end
+	for index = 1, 3 do
+		if previous.color[index] ~= current.color[index] then return false end
+	end
+	return true
+end
+local function SameTooltipPresentation(previous, model)
+	-- The ordinary player and cluster presenters have at most six rows. Legend
+	-- samples have their own drawing callback, so retain their normal render path.
+	if not previous or model.legend or #model.members > 6
+		or not SamePresentationFields(previous, model, PRESENTATION_FIELDS)
+		or #previous.members ~= #model.members then return false end
+	for index, member in ipairs(model.members) do
+		if not SamePresentationFields(previous.members[index], member, MEMBER_PRESENTATION_FIELDS) then return false end
+	end
+	return true
+end
+local function CopyPresentationFields(model, fields)
+	local copy = { color = { model.color[1], model.color[2], model.color[3] } }
+	for _, field in ipairs(fields) do copy[field] = model[field] end
+	return copy
+end
+local function TooltipPresentation(model)
+	if model.legend or #model.members > 6 then return nil end
+	local copy = CopyPresentationFields(model, PRESENTATION_FIELDS)
+	copy.members = {}
+	for index, member in ipairs(model.members) do
+		copy.members[index] = CopyPresentationFields(member, MEMBER_PRESENTATION_FIELDS)
+	end
+	return copy
+end
+
 function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 	local addon, pin = self, anchor
 	local parent = addon:GetPlayerTooltipPresentationParent()
-	if not addon:CanAccessForeignFrame(parent, true) or not Guard(addon, pin.frame) then
+	local previous = state.tooltipPresentation
+	-- Commit reuse only after every write succeeds. A failed or restricted pass
+	-- must never leave a partial layout eligible for the unchanged-model shortcut.
+	state.tooltipPresentation = nil
+	if not addon:CanAccessForeignFrame(parent, true) or not Guard(addon, pin.frame)
+		or Method(addon, pin.frame, "IsVisible") ~= true or Method(addon, parent, "IsVisible") ~= true then
+		HideTooltip(addon, state)
 		return
 	end
 	local tooltip = state.tooltip
@@ -475,6 +522,7 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 		tooltip = New(addon, "Frame", parent)
 		Call(addon, tooltip, "Hide")
 		state.tooltip = tooltip
+		state.tooltipParent = parent
 		Call(addon, tooltip, "SetFrameStrata", "TOOLTIP")
 		Call(addon, tooltip, "SetClampedToScreen", true)
 		local background = Call(addon, tooltip, "CreateTexture", nil, "BACKGROUND")
@@ -508,97 +556,115 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 		Call(addon, state.tooltipLabel, "SetWordWrap", true)
 		Call(addon, state.tooltipLabel, "SetSpacing", 3)
 	end
-	local r, g, b = unpack(model.color)
-	local factionTexture = model.factionTexture
-	Call(addon, state.tooltipDivider, "SetColorTexture", r, g, b, 0.6)
-	if factionTexture then
-		Call(addon, state.tooltipFaction, "SetTexture", factionTexture)
-		Call(addon, state.tooltipFaction, "Show")
-	else
-		Call(addon, state.tooltipFaction, "Hide")
+	if not Guard(addon, tooltip) then HideTooltip(addon, state); return end
+	if state.tooltipParent ~= parent then
+		Call(addon, tooltip, "SetParent", parent)
+		state.tooltipParent = parent
 	end
-	Call(addon, state.tooltipTitle, "SetText", model.title)
-	local text, introText = model.text, model.introText
-	Call(addon, state.tooltipIntro, "SetText", introText or "")
-	Call(addon, state.tooltipLabel, "SetText", text)
-	local maxWidth = math.max(160, math.min(360, Number(addon, model.maxWidth) or 272))
-	local contentWidth = math.min(
-		maxWidth,
-		math.max(
-			model.legend and maxWidth or 160,
-			TooltipTextWidth(addon, state.tooltipTitle, maxWidth) + (factionTexture and 44 or 0),
-			TooltipTextWidth(addon, state.tooltipIntro, maxWidth),
-			TooltipTextWidth(addon, state.tooltipLabel, maxWidth),
-			PartyTooltipRows(addon, state, model.members)
+	local unchanged = previous and previous.tooltip == tooltip and previous.parent == parent
+		and SameTooltipPresentation(previous.model, model)
+	if not unchanged then
+		local r, g, b = unpack(model.color)
+		local factionTexture = model.factionTexture
+		Call(addon, state.tooltipDivider, "SetColorTexture", r, g, b, 0.6)
+		if factionTexture then
+			Call(addon, state.tooltipFaction, "SetTexture", factionTexture)
+			Call(addon, state.tooltipFaction, "Show")
+		else
+			Call(addon, state.tooltipFaction, "Hide")
+		end
+		Call(addon, state.tooltipTitle, "SetText", model.title)
+		local text, introText = model.text, model.introText
+		Call(addon, state.tooltipIntro, "SetText", introText or "")
+		Call(addon, state.tooltipLabel, "SetText", text)
+		local maxWidth = math.max(160, math.min(360, Number(addon, model.maxWidth) or 272))
+		local contentWidth = math.min(
+			maxWidth,
+			math.max(
+				model.legend and maxWidth or 160,
+				TooltipTextWidth(addon, state.tooltipTitle, maxWidth) + (factionTexture and 44 or 0),
+				TooltipTextWidth(addon, state.tooltipIntro, maxWidth),
+				TooltipTextWidth(addon, state.tooltipLabel, maxWidth),
+				PartyTooltipRows(addon, state, model.members)
+			)
 		)
-	)
-	Call(addon, state.tooltipTitle, "SetWidth", contentWidth - (factionTexture and 44 or 0))
-	Call(addon, state.tooltipIntro, "SetWidth", contentWidth)
-	Call(addon, state.tooltipLabel, "SetWidth", contentWidth)
-	local titleHeight = Positive(addon, Call(addon, state.tooltipTitle, "GetStringHeight"))
-	if not titleHeight then
-		HideTooltip(addon, state)
-		return
-	end
-	local bodyGap = math.max(16, factionTexture and (30 - titleHeight) or 0)
-	Call(addon, state.tooltipDivider, "ClearAllPoints")
-	Call(addon, state.tooltipDivider, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -6)
-	Call(addon, state.tooltipDivider, "SetWidth", contentWidth)
-	Call(addon, state.tooltipIntro, "ClearAllPoints")
-	Call(addon, state.tooltipIntro, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -bodyGap)
-	local introHeight = 0
-	if introText then
-		Call(addon, state.tooltipIntro, "SetText", introText)
-		introHeight = Positive(addon, Call(addon, state.tooltipIntro, "GetStringHeight"))
-		if not introHeight then
+		Call(addon, state.tooltipTitle, "SetWidth", contentWidth - (factionTexture and 44 or 0))
+		Call(addon, state.tooltipIntro, "SetWidth", contentWidth)
+		Call(addon, state.tooltipLabel, "SetWidth", contentWidth)
+		local titleHeight = Positive(addon, Call(addon, state.tooltipTitle, "GetStringHeight"))
+		if not titleHeight then
 			HideTooltip(addon, state)
 			return
 		end
-		Call(addon, state.tooltipIntro, "Show")
-	else
-		Call(addon, state.tooltipIntro, "Hide")
+		local bodyGap = math.max(16, factionTexture and (30 - titleHeight) or 0)
+		Call(addon, state.tooltipDivider, "ClearAllPoints")
+		Call(addon, state.tooltipDivider, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -6)
+		Call(addon, state.tooltipDivider, "SetWidth", contentWidth)
+		Call(addon, state.tooltipIntro, "ClearAllPoints")
+		Call(addon, state.tooltipIntro, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -bodyGap)
+		local introHeight = 0
+		if introText then
+			Call(addon, state.tooltipIntro, "SetText", introText)
+			introHeight = Positive(addon, Call(addon, state.tooltipIntro, "GetStringHeight"))
+			if not introHeight then
+				HideTooltip(addon, state)
+				return
+			end
+			Call(addon, state.tooltipIntro, "Show")
+		else
+			Call(addon, state.tooltipIntro, "Hide")
+		end
+		local partyHeight = LayoutPartyTooltipRows(addon, state, contentWidth, introText ~= nil, bodyGap)
+		local legendHeight = LayoutTooltipLegend(addon, state, model, contentWidth,
+			introText and state.tooltipIntro or state.tooltipTitle, (introText and 8 or bodyGap) + partyHeight)
+		if legendHeight > 0 then partyHeight = partyHeight + legendHeight + (introText and 8 or 0) end
+		Call(addon, state.tooltipLabel, "ClearAllPoints")
+		if introText then
+			Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipIntro, "BOTTOMLEFT", 0, -partyHeight - 14)
+		elseif partyHeight > 0 then
+			Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -bodyGap - partyHeight - 14)
+		else
+			Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -18)
+		end
+		Call(addon, state.tooltipLabel, "SetText", text)
+		local height = Positive(addon, Call(addon, state.tooltipLabel, "GetStringHeight"))
+		if not height then
+			HideTooltip(addon, state)
+			return
+		end
+		Call(
+			addon,
+			tooltip,
+			"SetSize",
+			contentWidth + 28,
+			titleHeight + height + 28 + bodyGap + introHeight + partyHeight + ((introText or partyHeight > 0) and 14 or 0)
+		)
 	end
-	local partyHeight = LayoutPartyTooltipRows(addon, state, contentWidth, introText ~= nil, bodyGap)
-	local legendHeight = LayoutTooltipLegend(addon, state, model, contentWidth,
-		introText and state.tooltipIntro or state.tooltipTitle, (introText and 8 or bodyGap) + partyHeight)
-	if legendHeight > 0 then partyHeight = partyHeight + legendHeight + (introText and 8 or 0) end
-	Call(addon, state.tooltipLabel, "ClearAllPoints")
-	if introText then
-		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipIntro, "BOTTOMLEFT", 0, -partyHeight - 14)
-	elseif partyHeight > 0 then
-		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -bodyGap - partyHeight - 14)
-	else
-		Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -18)
-	end
-	Call(addon, state.tooltipLabel, "SetText", text)
-	local height = Positive(addon, Call(addon, state.tooltipLabel, "GetStringHeight"))
-	if not height then
-		HideTooltip(addon, state)
-		return
-	end
-	Call(
-		addon,
-		tooltip,
-		"SetSize",
-		contentWidth + 28,
-		titleHeight + height + 28 + bodyGap + introHeight + partyHeight + ((introText or partyHeight > 0) and 14 or 0)
-	)
-	Call(addon, tooltip, "ClearAllPoints")
+	local relative, relativePoint, x, y = pin.frame, "TOPRIGHT", 6, 6
 	if pin.cursorPosition then
-		Call(addon, tooltip, "SetPoint", "BOTTOMLEFT", parent, "BOTTOMLEFT", pin.cursorPosition.x + 12, pin.cursorPosition.y + 12)
+		relative, relativePoint = parent, "BOTTOMLEFT"
+		x, y = pin.cursorPosition.x + 12, pin.cursorPosition.y + 12
 	elseif pin.chatLink then
-		local x, y = addon:GetChatLogTooltipCursorPosition(parent)
+		x, y = addon:GetChatLogTooltipCursorPosition(parent)
 		if not x or not y then
 			HideTooltip(addon, state)
 			return
 		end
-		Call(addon, tooltip, "SetPoint", "BOTTOMLEFT", parent, "BOTTOMLEFT", x + 12, y + 12)
-	else
-		Call(addon, tooltip, "SetPoint", "BOTTOMLEFT", pin.frame, "TOPRIGHT", 6, 6)
+		relative, relativePoint, x, y = parent, "BOTTOMLEFT", x + 12, y + 12
 	end
-	Call(addon, tooltip, "Show")
+	if not previous or previous.tooltip ~= tooltip or previous.parent ~= parent or previous.relative ~= relative
+		or previous.relativePoint ~= relativePoint or previous.x ~= x or previous.y ~= y then
+		Call(addon, tooltip, "ClearAllPoints")
+		Call(addon, tooltip, "SetPoint", "BOTTOMLEFT", relative, relativePoint, x, y)
+	end
+	if Method(addon, tooltip, "IsShown") ~= true then Call(addon, tooltip, "Show") end
+	local presentation = unchanged and previous or { model = TooltipPresentation(model) }
+	presentation.tooltip, presentation.parent = tooltip, parent
+	presentation.relative, presentation.relativePoint, presentation.x, presentation.y = relative, relativePoint, x, y
+	state.tooltipPresentation = presentation
+	local hoverChanged = state.hovered ~= pin
 	state.hovered = pin
-	if state.onHoverChanged then
+	if hoverChanged and state.onHoverChanged then
 		state.onHoverChanged()
 	end
 end

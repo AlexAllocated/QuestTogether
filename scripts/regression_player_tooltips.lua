@@ -16,6 +16,8 @@ local function Fixture()
 		invalid = 0,
 		frames = {},
 		reads = 0,
+		writes = 0,
+		measurements = 0,
 		db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} },
 		partyMembers = {},
 	}, { __index = QT })
@@ -32,10 +34,19 @@ local function Fixture()
 				a.invalid = a.invalid + 1
 				error("unsafe tooltip fixture access")
 			end
+			if write then a.writes = a.writes + 1 end
 		end
 		function f:IsShown()
 			Check(self)
 			return self.shown
+		end
+		function f:IsVisible()
+			Check(self)
+			return self.shown and (not self.parent or self.parent:IsVisible())
+		end
+		function f:SetParent(parent)
+			Check(self, true)
+			self.parent = parent
 		end
 		function f:GetParent()
 			Check(self)
@@ -60,7 +71,13 @@ local function Fixture()
 		end
 		function f:GetStringHeight()
 			Check(self)
+			a.measurements = a.measurements + 1
 			return a.textHeight or 28
+		end
+		function f:GetStringWidth()
+			Check(self)
+			a.measurements = a.measurements + 1
+			return #(self.text or "") * 6
 		end
 		function f:Show()
 			Check(self, true)
@@ -84,6 +101,7 @@ local function Fixture()
 		end
 		function f:SetText(v)
 			Check(self, true)
+			if self.failText then error("injected owned text failure") end
 			self.text = v
 		end
 		function f:ClearAllPoints()
@@ -102,6 +120,7 @@ local function Fixture()
 			Check(self, true)
 			return Frame(self, true)
 		end
+		f.CreateMaskTexture = f.CreateTexture
 		for _, method in ipairs({
 			"SetFrameStrata",
 			"SetClampedToScreen",
@@ -113,7 +132,13 @@ local function Fixture()
 			"SetWordWrap",
 			"SetTexCoord",
 			"SetVertexColor",
+			"SetTextColor",
 			"SetBlendMode",
+			"SetAlpha",
+			"SetSpacing",
+			"AddMaskTexture",
+			"SetJustifyV",
+			"SetScript",
 		}) do
 			f[method] = function(self)
 				Check(self, true)
@@ -121,6 +146,7 @@ local function Fixture()
 		end
 		return f
 	end
+	a.frameFactory = Frame
 	a.host, a.parent = Frame(nil, false), Frame(nil, false)
 	a.bar = Frame(a.host, false)
 	a.bar.bottom = 174
@@ -210,6 +236,141 @@ QT:RegisterTest("whole player tooltip section follows current friendship and gro
 	assert(a:UpdatePlayerTooltipBadge())
 	a.API.IsPlayerTooltipFriend = nil
 	assert(a:UpdatePlayerTooltipBadge())
+	Equal(a.invalid, 0)
+end)
+
+local function PresenterFixture()
+	local a = Fixture()
+	a.hoverChanges, a.interestUpdates, a.interestClears, a.modelReads = 0, 0, 0, 0
+	function a:IsRuntimeRestricted() return self.blocked == true end
+	function a:GetPlayerTooltipPresentationParent() return self.parent end
+	function a:CreatePlayerTooltipPresentationFrame(_, _, parent)
+		local frame = self.frameFactory(parent, true)
+		self.frames[#self.frames + 1] = frame
+		return frame
+	end
+	function a:CreateOwnedUICleanupFrame() return self.frameFactory(nil, true) end
+	function a:CreatePlayerMarkerGlow(frame) return self.frameFactory(frame, true) end
+	function a:SetPlayerMarkerGlow(frame, style, size)
+		self:CallOwnedUI(frame, "SetSize", size, size)
+		frame.glow = style
+	end
+	function a:ClearPlayerDetailsInterest() self.interestClears = self.interestClears + 1 end
+	function a:SetPlayerDetailsInterest(_, name, current)
+		self.interestUpdates = self.interestUpdates + 1
+		self.interestName, self.interestCurrent = name, current
+	end
+	function a:BuildPlayerTooltipModel()
+		self.modelReads = self.modelReads + 1
+		return self:DeepCopy(self.model)
+	end
+	function a:GetChatLogTooltipCursorPosition() return self.cursorX, self.cursorY end
+	a.anchor = { name = a.name, frame = a.frameFactory(a.parent, true), presentationGeneration = 1 }
+	a.state = { onHoverChanged = function() a.hoverChanges = a.hoverChanges + 1 end }
+	a.model = {
+		title = "Party member", introText = "Level 20 Mage", text = "QuestTogether 9.0.9", color = { 0.3, 0.5, 1 },
+		members = {
+			{ label = "Friend-Realm", color = { 0.3, 0.5, 1 }, icon = "QT", usesQT = true,
+				leader = true, partyKey = "party", partySize = 2 },
+			{ label = "Other-Realm", color = { 1, 0.7, 0.4 }, icon = "QT", usesQT = true,
+				partyKey = "party", partySize = 2 },
+		},
+	}
+	return a
+end
+
+QT:RegisterTest("owned player tooltip refresh reuses unchanged layout while refreshing current details interest", function()
+	local a = PresenterFixture()
+	local function Refresh() a:PresentPlayerTooltip(a.state, a.anchor, { name = a.name }) end
+	Refresh()
+	local writes, measurements = a.writes, a.measurements
+	local firstCurrent, firstPresentation = a.interestCurrent, a.state.tooltipPresentation
+	for _ = 1, 20 do Refresh() end
+	Equal(a.writes, writes)
+	Equal(a.measurements, measurements)
+	Equal(a.modelReads, 21)
+	Equal(a.interestUpdates, 21)
+	Equal(a.hoverChanges, 1)
+	assert(firstCurrent ~= a.interestCurrent and a.interestCurrent())
+	Equal(a.state.tooltipPresentation, firstPresentation)
+	-- New model tables are equivalent; live status, cosmetics, roster grouping,
+	-- text color and wrapping width still invalidate the presentation immediately.
+	for _, Change in ipairs({
+		function() a.model.text = "Updated just now" end,
+		function() a.model.members[2].vip = true end,
+		function() a.model.members[1].partySize = 3 end,
+		function() a.model.members[2].hiddenLocation = true end,
+		function() a.model.members[2].color[2] = 0.9 end,
+		function() a.model.maxWidth = 320 end,
+	}) do
+		Change()
+		Refresh()
+		assert(a.writes > writes and a.measurements > measurements)
+		writes, measurements = a.writes, a.measurements
+		Refresh()
+		Equal(a.writes, writes)
+		Equal(a.measurements, measurements)
+	end
+	Equal(a.hoverChanges, 1)
+	Equal(a.invalid, 0)
+end)
+
+QT:RegisterTest("owned player tooltip repositions without relayout and notifies only real hover transitions", function()
+	local a = PresenterFixture()
+	a.anchor.cursorPosition = { x = 20, y = 30 }
+	a:RenderPlayerTooltip(a.state, a.anchor, a.model)
+	local writes, measurements = a.writes, a.measurements
+	a.anchor.cursorPosition.x = 80
+	a:RenderPlayerTooltip(a.state, a.anchor, a:DeepCopy(a.model))
+	Equal(a.writes - writes, 2) -- clear/set the outer anchor only
+	Equal(a.measurements, measurements)
+	Equal(a.state.tooltip.points[1][4], 92)
+	Equal(a.hoverChanges, 1)
+	a.anchor.cursorPosition, a.anchor.chatLink = nil, true
+	a.cursorX, a.cursorY = 90, 40
+	a:RenderPlayerTooltip(a.state, a.anchor, a.model)
+	Equal(a.measurements, measurements)
+	Equal(a.state.tooltip.points[1][4], 102)
+	local nextAnchor = { name = "Other-Realm", frame = a.frameFactory(a.parent, true) }
+	a:RenderPlayerTooltip(a.state, nextAnchor, a.model)
+	Equal(a.hoverChanges, 2)
+	Equal(a.measurements, measurements)
+	a:HidePlayerTooltipPresentation(a.state)
+	a:HidePlayerTooltipPresentation(a.state)
+	Equal(a.hoverChanges, 3)
+	assert(not a.state.tooltipPresentation)
+	a:RenderPlayerTooltip(a.state, nextAnchor, a.model)
+	Equal(a.hoverChanges, 4)
+	assert(a.measurements > measurements)
+	measurements = a.measurements
+	a.parent = a.frameFactory(nil, false)
+	a:RenderPlayerTooltip(a.state, nextAnchor, a.model)
+	Equal(a.state.tooltip.parent, a.parent)
+	assert(a.measurements > measurements)
+	Equal(a.invalid, 0)
+end)
+
+QT:RegisterTest("owned player tooltip never reuses a failed hidden or restricted presentation", function()
+	local a = PresenterFixture()
+	a:RenderPlayerTooltip(a.state, a.anchor, a.model)
+	local measurements = a.measurements
+	a.model.title, a.state.tooltipTitle.failText = "Changed title", true
+	assert(not pcall(a.RenderPlayerTooltip, a, a.state, a.anchor, a.model))
+	assert(not a.state.tooltipPresentation)
+	a.model.title, a.state.tooltipTitle.failText = "Party member", nil
+	a:RenderPlayerTooltip(a.state, a.anchor, a.model)
+	assert(a.measurements > measurements)
+	for _, restricted in ipairs({ "anchor", "parent", "runtime" }) do
+		if restricted == "anchor" then a.anchor.frame.shown = false end
+		if restricted == "parent" then a.parent.shown = false end
+		if restricted == "runtime" then a.blocked = true end
+		a:RenderPlayerTooltip(a.state, a.anchor, a.model)
+		assert(not a.state.tooltipPresentation and not a.state.hovered and not a.state.tooltip.shown)
+		measurements = a.measurements
+		a.anchor.frame.shown, a.parent.shown, a.blocked = true, true, false
+		a:RenderPlayerTooltip(a.state, a.anchor, a.model)
+		assert(a.measurements > measurements)
+	end
 	Equal(a.invalid, 0)
 end)
 
