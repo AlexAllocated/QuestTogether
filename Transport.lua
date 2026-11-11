@@ -23,6 +23,7 @@ local METRICS = {
 	nativeBooleanSuccess = true,
 	whisperUnavailable = true,
 	whisperCorrelationFull = true,
+	whisperFilterBlocked = true,
 }
 local NATIVE_RESULTS = {}
 local NATIVE_ROUTES = { PARTY = true, RAID = true, INSTANCE_CHAT = true, WHISPER = true }
@@ -141,6 +142,16 @@ local function WhisperTrackable(a, route)
 	end
 	return a:CanRecordAddonWhisperAttempt(route.target, route.meshTraffic)
 end
+local function TrackingFailure(reason)
+	return (reason == "capacity" or reason == "filter-unavailable") and reason or "invalid"
+end
+local function RecordTrackingBlock(s, reason)
+	if reason == "capacity" then
+		Count(s, "whisperCorrelationFull")
+	elseif reason == "filter-unavailable" then
+		Count(s, "whisperFilterBlocked")
+	end
+end
 
 local function Take(s, now, cost, mesh)
 	Refill(s, now)
@@ -205,10 +216,8 @@ local function NativeSend(a, s, wire, context, route)
 			receipt, reason = a:RecordAddonWhisperAttempt(target, route.meshTraffic)
 		end
 		if not receipt then
-			if reason == "capacity" then
-				Count(s, "whisperCorrelationFull")
-			end
-			return false, reason == "capacity" and "capacity" or "invalid"
+			RecordTrackingBlock(s, reason)
+			return false, TrackingFailure(reason)
 		end
 	end
 	Count(s, "attempts")
@@ -386,10 +395,8 @@ function QT:SendTransportNow(wire, context, route, mode)
 	end
 	local trackable, trackingReason = WhisperTrackable(self, route)
 	if not trackable then
-		if trackingReason == "capacity" then
-			Count(s, "whisperCorrelationFull")
-		end
-		return false, trackingReason == "capacity" and "capacity" or "invalid"
+		RecordTrackingBlock(s, trackingReason)
+		return false, TrackingFailure(trackingReason)
 	end
 	if s.departing then
 		if (s.blockedUntil and now < s.blockedUntil) or s.tokens < 1 or s.byteTokens < cost then
@@ -422,10 +429,15 @@ function QT:QueueTransportWire(wire, context, route, options)
 	if not Valid(self, wire, route) or (options ~= nil and type(options) ~= "table") then
 		return false, "invalid"
 	end
-	-- A full receipt ledger may recover before this packet expires, but an
-	-- invalid address can never be safely sent or correlated.
-	local trackable, trackingReason = WhisperTrackable(self, route)
-	if not trackable and trackingReason ~= "capacity" then
+	-- Receipt capacity and safe error filtering may recover before expiry.
+	-- Hold finite background work without spending native budget; private work
+	-- remains eligible. An invalid address cannot recover by waiting.
+	local trackable, trackingReason = WhisperTrackable(self, {
+		distribution = route.distribution,
+		target = route.target,
+		meshTraffic = route.meshTraffic == true or (options and options.meshTraffic == true),
+	})
+	if not trackable and TrackingFailure(trackingReason) == "invalid" then
 		return false, "invalid"
 	end
 	options = options or {}
@@ -526,11 +538,13 @@ local function SelectClass(a, s, now, cursor, lastFlow, eligible, reserveTurn, f
 		local class, flows, seen = CLASSES[slot], {}, {}
 		for _, row in ipairs(s.queue) do
 			local flow = flowKey and flowKey(row) or row.flow
-			local trackable = true
+			local trackable, trackingReason = true, nil
 			if row.priority == class then
-				trackable = WhisperTrackable(a, row.route)
-				if not trackable and not row.correlationBlocked then Count(s, "whisperCorrelationFull") end
-				row.correlationBlocked = not trackable or nil
+				trackable, trackingReason = WhisperTrackable(a, row.route)
+				if not trackable and row.correlationBlocked ~= trackingReason then
+					RecordTrackingBlock(s, trackingReason)
+				end
+				row.correlationBlocked = not trackable and trackingReason or nil
 			end
 			if row.priority == class and trackable and eligible(row) and not seen[flow] then
 				seen[flow] = true
@@ -636,6 +650,14 @@ function QT:DrainTransport()
 				Count(s, "whisperUnavailable")
 				Complete(s, row, false, "unavailable")
 			end
+			break
+		end
+		-- Currentness callbacks can change local chat/filter safety after
+		-- selection. Preserve the packet and all native credit if they do.
+		local trackable, trackingReason = WhisperTrackable(self, row.route)
+		if not trackable then
+			if row.correlationBlocked ~= trackingReason then RecordTrackingBlock(s, trackingReason) end
+			row.correlationBlocked = trackingReason
 			break
 		end
 		if not Take(s, now, Cost(self, row.wire), row.meshTraffic) then

@@ -297,7 +297,13 @@ function QT:CreateTestNetwork(options)
 		for _, window in ipairs(peer.chatWindows) do
 			local filter = peer.chatFilters.CHAT_MSG_SYSTEM
 			-- Native chat does not invoke addon filters for inaccessible text.
-			local hidden = peer:CanAccessValue(message) and filter and filter(window, "CHAT_MSG_SYSTEM", message)
+			local hidden = false
+			if peer:CanAccessValue(message) and filter then
+				-- Blizzard's registry guards each callback: a throwing filter
+				-- does not suppress the line or prevent later chat frames.
+				local ok, discard = pcall(filter, window, "CHAT_MSG_SYSTEM", message)
+				hidden = ok and discard == true
+			end
 			if not hidden then window.visibleMessages = window.visibleMessages + 1 end
 		end
 		if not options.systemEventFirst then Event() end
@@ -662,15 +668,15 @@ function QT:CreateTestNetwork(options)
 		peer.API.SendAddonMessage = function(...)
 			return self:NativeSend(peer, ...)
 		end
-		if options.whisperNotices then
-			peer.chatFilters, peer.chatWindows = {}, { { visibleMessages = 0 }, { visibleMessages = 0 } }
-			peer.API.GetPlayerNotFoundMessageFormat = function() return "No player named '%s' is currently playing." end
-			peer.API.SetOrdinaryWhisperObserver = function(callback) peer.ordinaryWhisperObserver = callback; return true end
-			peer.API.AddMessageEventFilter = function(event, callback) peer.chatFilters[event] = callback; return true end
-			peer.API.RemoveMessageEventFilter = function(event, callback)
-				if peer.chatFilters[event] == callback then peer.chatFilters[event] = nil end
-				return true
-			end
+		-- Native chat support exists independently of whether this scenario
+		-- injects offline-recipient notices. It is required for safe discovery.
+		peer.chatFilters, peer.chatWindows = {}, { { visibleMessages = 0 }, { visibleMessages = 0 } }
+		peer.API.GetPlayerNotFoundMessageFormat = function() return "No player named '%s' is currently playing." end
+		peer.API.SetOrdinaryWhisperObserver = function(callback) peer.ordinaryWhisperObserver = callback; return true end
+		peer.API.AddMessageEventFilter = function(event, callback) peer.chatFilters[event] = callback; return true end
+		peer.API.RemoveMessageEventFilter = function(event, callback)
+			if peer.chatFilters[event] == callback then peer.chatFilters[event] = nil end
+			return true
 		end
 		function peer:GetPlayerFullName()
 			return self.name

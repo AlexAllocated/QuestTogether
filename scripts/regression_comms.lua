@@ -207,6 +207,11 @@ local function WhisperFailureFixture(regional)
 	function a:Filter(message)
 		return self.filters.CHAT_MSG_SYSTEM({}, "CHAT_MSG_SYSTEM", message)
 	end
+	function a:ReceiveNotice(message)
+		local suppressed = self:Filter(message)
+		self:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", message)
+		return suppressed
+	end
 	function a:Attempt(name)
 		self.now = self.now + 1
 		assert(self:SendTransportNow("private-wire", "MHEL", { distribution = "WHISPER", target = name }))
@@ -244,6 +249,146 @@ QuestTogether:RegisterTest(
 		Equal(a:GetAddonWhisperMetrics().untracked, 1, "unrelated system text is not a failed-whisper diagnostic")
 		local report = a:GetCommsDiagnostics()
 		assert(not tostring(report.lastFailure):find(name, 1, true), "routine diagnostics must omit identities")
+	end
+)
+
+QuestTogether:RegisterTest(
+	"native whisper filtering is independent of failing cleanup in either event order",
+	function()
+		for _, eventFirst in ipairs({ false, true }) do
+			for _, failure in ipairs({ "retirement", "cancellation", "diagnostics", "diagnostic-reentry" }) do
+				for _, human in ipairs({ false, true }) do
+					local a, name = WhisperFailureFixture(), "Absent-Realm"
+					a:Attempt(name)
+					if human then a.ordinaryObserver("WHISPER", name) end
+					local cleanupCalls, diagnosticCalls = 0, 0
+					function a:RetireMeshPeer()
+						cleanupCalls = cleanupCalls + 1
+						if failure == "retirement" then error("injected retirement failure") end
+					end
+					function a:CancelCommunicationWhere()
+						if failure == "cancellation" then error("injected cancellation failure") end
+					end
+					function a:RecordCommsDiagnostic()
+						diagnosticCalls = diagnosticCalls + 1
+						if failure == "diagnostics" then error("injected diagnostics failure") end
+						if failure == "diagnostic-reentry" then
+							local sent, reason = self:SendTransportNow("reentrant", "MHEL", { distribution = "WHISPER", target = name })
+							assert(not sent and reason == "unavailable", "barrier must precede diagnostic callbacks too")
+						end
+					end
+					function a:RecordDiagnosticError() error("injected diagnostic logger failure") end
+					local message, visible = a:Notice(name), 0
+					if eventFirst then a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", message) end
+					for _ = 1, 2 do
+						-- Native securecallfunction treats a throwing filter as nil,
+						-- showing the notice. Model that contract for two chat windows.
+						local ok, suppressed = pcall(a.filters.CHAT_MSG_SYSTEM, {}, "CHAT_MSG_SYSTEM", message)
+						if not ok or not suppressed then visible = visible + 1 end
+					end
+					Equal(visible, human and 2 or 0)
+					if not eventFirst then
+						Equal(cleanupCalls, 0, "filter callbacks must never run networking cleanup")
+						Equal(diagnosticCalls, 0, "filter callbacks must never invoke diagnostic logging")
+						a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", message)
+					end
+					assert(a:IsAddonWhisperTargetUnavailable(name), "the barrier survives cleanup failure")
+					Equal(cleanupCalls, 1)
+					Equal(diagnosticCalls, 1)
+					Equal(a.shareMessages[1], message, "cleanup failure must not skip unrelated system handlers")
+					local metrics = a:GetAddonWhisperMetrics()
+					Equal(metrics.filterInvocations, 2)
+					Equal(metrics.filterSuppressed, human and 0 or 2)
+					Equal(metrics.filterPassed, human and 2 or 0)
+					Equal(metrics.filterErrors, 0)
+					Equal(metrics[human and "ordinary" or "matched"], 1, "event classifications remain separate")
+					Equal(metrics.cleanupErrors, (failure == "retirement" or failure == "cancellation") and 1 or 0)
+					Equal(metrics.noticeLogErrors, failure == "diagnostics" and 1 or 0)
+					a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", message)
+					Equal(cleanupCalls, 1, "duplicate notices cannot repeat failed cleanup")
+				end
+			end
+		end
+	end
+)
+
+QuestTogether:RegisterTest(
+	"whisper filter metrics distinguish native classification bypass and fail-open callback errors",
+	function()
+		local a = WhisperFailureFixture()
+		a:Attempt("Absent-Realm")
+		a:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", a:Notice("Absent"))
+		local metrics = a:GetAddonWhisperMetrics()
+		Equal(metrics.matched, 1)
+		Equal(metrics.filterInvocations, 0, "an event classification is not proof native chat invoked our filter")
+		-- Native filters may replace event arguments for filters later in the
+		-- chain, while QT's independent native-event handler sees the original.
+		Equal(a:Filter("[other chat filter] " .. a:Notice("Absent")), false)
+		metrics = a:GetAddonWhisperMetrics()
+		Equal(metrics.filterInvocations, 1)
+		Equal(metrics.filterPassed, 1)
+		Equal(metrics.filterSuppressed, 0)
+		Equal(metrics.matched, 1)
+		a.NormalizeMemberName = function() error("injected name adapter failure") end
+		Equal(a:Filter(a:Notice("Absent")), false, "classification errors preserve human feedback")
+		metrics = a:GetAddonWhisperMetrics()
+		Equal(metrics.filterInvocations, 2)
+		Equal(metrics.filterErrors, 1)
+		Equal(metrics.filterPassed, 2)
+		Equal(metrics.filterSuppressed, 0)
+		Equal(metrics.matched, 1)
+	end
+)
+
+QuestTogether:RegisterTest(
+	"unsafe whisper filtering pauses mesh admission with paced registration recovery",
+	function()
+		for _, failedAdapter in ipairs({ "observer", "filter" }) do
+			local a, attempts = WhisperFailureFixture(), 0
+			a:ResetAddonWhisperFailures()
+			local original = a.API[failedAdapter == "observer" and "SetOrdinaryWhisperObserver" or "AddMessageEventFilter"]
+			local method = failedAdapter == "observer" and "SetOrdinaryWhisperObserver" or "AddMessageEventFilter"
+			a.API[method] = function() attempts = attempts + 1; return false end
+			for _ = 1, 20 do
+				local allowed, reason = a:CanRecordAddonWhisperAttempt("Candidate-Realm", true)
+				assert(not allowed and reason == "filter-unavailable")
+				a.now = a.now + 0.1
+			end
+			Equal(attempts, 1, "broken registration is not retried on every drain/frame")
+			assert(a:CanRecordAddonWhisperAttempt("Private-Realm", false), "intentional private work is not paused")
+			Equal(next(a.addonWhisperState.targets), nil)
+			Equal(#a.wire, 0)
+			a.API[method] = original
+			a.now = a.now + 5
+			assert(a:CanRecordAddonWhisperAttempt("Candidate-Realm", true))
+			Equal(a:GetAddonWhisperMetrics().meshAdmissionBlocked, false)
+			a.ordinaryObserver(nil, nil)
+			local allowed, reason = a:CanRecordAddonWhisperAttempt("Candidate-Realm", true)
+			assert(not allowed and reason == "filter-unavailable", "unknown human intent cannot produce speculative error spam")
+			assert(a:CanRecordAddonWhisperAttempt("Private-Realm", false))
+			Equal(a:GetAddonWhisperMetrics().meshAdmissionBlocked, true)
+			a.now = a.now + 121
+			assert(a:CanRecordAddonWhisperAttempt("Candidate-Realm", true))
+			Equal(a:GetAddonWhisperMetrics().meshAdmissionBlocked, false)
+		end
+		local a = WhisperFailureFixture()
+		local formatCalls = 0
+		a.API.GetPlayerNotFoundMessageFormat = function()
+			formatCalls = formatCalls + 1
+			return "%s %s"
+		end
+		for _ = 1, 20 do
+			local allowed, reason = a:CanRecordAddonWhisperAttempt("Candidate-Realm", true)
+			assert(not allowed and reason == "filter-unavailable", "installed filter must also support the native notice format")
+			a.now = a.now + 0.1
+		end
+		Equal(formatCalls, 1)
+		Equal(a:GetAddonWhisperMetrics().noticeFormatSupported, false)
+		assert(a:CanRecordAddonWhisperAttempt("Private-Realm", false))
+		a.API.GetPlayerNotFoundMessageFormat = function() return "No player named '%s' is currently playing." end
+		a.now = a.now + 5
+		assert(a:CanRecordAddonWhisperAttempt("Candidate-Realm", true))
+		Equal(a:GetAddonWhisperMetrics().noticeFormatSupported, true)
 	end
 )
 
@@ -296,7 +441,7 @@ QuestTogether:RegisterTest(
 					else
 						a:Attempt(name)
 					end
-					assert(a:Filter(a:Notice(name)))
+					assert(a:ReceiveNotice(a:Notice(name)))
 					assert(a:Filter(a:Notice(name)), "repeated chat frames must not repeat cancellation")
 					Equal(completions, activeTransfer and 1 or 0)
 					Equal(a.communicationState.replyBytes, 12)
@@ -361,8 +506,8 @@ QuestTogether:RegisterTest(
 		end
 		b.ordinaryObserver("WHISPER", "secret-target")
 		Equal(b:Filter(b:Notice("Peer")), false)
-		assert(b:IsAddonWhisperTargetUnavailable("Peer-Realm"), "unreadable human intent must not permit a QT retry flood")
 		b:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", b:Notice("Peer"))
+		assert(b:IsAddonWhisperTargetUnavailable("Peer-Realm"), "unreadable human intent must not permit a QT retry flood")
 		Equal(b:Filter("secret-target"), false)
 		b:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", "secret-target")
 		Equal(b:GetAddonWhisperMetrics().ordinaryUnknown, 1)
@@ -379,20 +524,20 @@ QuestTogether:RegisterTest(
 			local a, name = WhisperFailureFixture(true), "Chronic Exhaustion"
 			a:Attempt(name)
 			if failedFirst then
-				assert(a:Filter(a:Notice(name)))
+				assert(a:ReceiveNotice(a:Notice(name)))
 				assert(a:IsAddonWhisperTargetUnavailable(name))
 			end
 			a.now = a.now + 1
 			a:ClearAddonWhisperFailure(name)
 			assert(not a:IsAddonWhisperTargetUnavailable(name))
 			a.now = a.now + 35
-			assert(a:Filter(a:Notice(name)), "a reply must not erase correlation for earlier native attempts")
+			assert(a:ReceiveNotice(a:Notice(name)), "a reply must not erase correlation for earlier native attempts")
 			assert(a:Filter(a:Notice(name)), "every chat window must suppress the delayed notice")
 			Equal(#a.retired, failedFirst and 1 or 0)
 			Equal(a:GetCommsDiagnostics().whisperUnavailable, 1, "delayed failures stay in QT diagnostics")
 			assert(not a:IsAddonWhisperTargetUnavailable(name), "an older failure must not retire a recovered address")
 			a:Attempt(name)
-			assert(a:Filter(a:Notice(name)))
+			assert(a:ReceiveNotice(a:Notice(name)))
 			assert(a:IsAddonWhisperTargetUnavailable(name), "a subsequent failed attempt still installs the barrier")
 			Equal(#a.retired, failedFirst and 2 or 1)
 		end
@@ -406,7 +551,7 @@ QuestTogether:RegisterTest(
 		a:Attempt(name)
 		local sentAt = a.now
 		a.now = sentAt + 90
-		assert(a:Filter(a:Notice(name)), "server failures can arrive after the original 30-second window")
+		assert(a:ReceiveNotice(a:Notice(name)), "server failures can arrive after the original 30-second window")
 		assert(a:IsAddonWhisperTargetUnavailable(name))
 		a.now = sentAt + 121
 		Equal(a:Filter(a:Notice(name)), false, "notice correlation still has a finite lifetime")
@@ -536,18 +681,18 @@ QuestTogether:RegisterTest(
 		local a = WhisperFailureFixture(true)
 		a.failureFormat = "[Hinweis] Kein Spieler namens '%1$s' online (100%%)."
 		a:Attempt("Chronic Exhaustion")
-		assert(a:Filter("[Hinweis] Kein Spieler namens 'Chronic Exhaustion' online (100%)."))
+		assert(a:ReceiveNotice("[Hinweis] Kein Spieler namens 'Chronic Exhaustion' online (100%)."))
 		Equal(a:Filter("[Hinweis] Kein Spieler namens 'Chronic' online (100%)."), false)
 		a.failureFormat = "%s %s"
 		Equal(a:Filter("Chronic Exhaustion"), false)
 		a.failureFormat = nil
 		a.now = a.now + 31
-		assert(a:Filter(a:Notice("Chronic Exhaustion")))
+		assert(a:ReceiveNotice(a:Notice("Chronic Exhaustion")))
 		assert(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"))
 		a.now = a.now + 30
 		Equal(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"), false)
 		a:Attempt("Chronic Exhaustion")
-		assert(a:Filter(a:Notice("Chronic Exhaustion")))
+		assert(a:ReceiveNotice(a:Notice("Chronic Exhaustion")))
 		a:EndTransportSession()
 		assert(a:IsAddonWhisperTargetUnavailable("Chronic Exhaustion"), "departure cleanup must keep the send barrier")
 		assert(a:Filter(a:Notice("Chronic Exhaustion")))
@@ -572,7 +717,7 @@ QuestTogether:RegisterTest(
 			self:ClearAddonWhisperFailure(name)
 			assert(self:QueueTransportWire("new-lifetime", "MHEL", { distribution = "WHISPER", target = name }))
 		end
-		assert(a:Filter(a:Notice("Chronic Exhaustion")))
+		assert(a:ReceiveNotice(a:Notice("Chronic Exhaustion")))
 		Equal(a:GetTransportMetrics().queuedPackets, 1, "an old notice must not cancel a new lifetime")
 	end
 )

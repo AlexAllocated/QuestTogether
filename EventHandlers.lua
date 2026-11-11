@@ -48,9 +48,13 @@ end
 function QuestTogether:CHAT_MSG_SYSTEM(_, message, ...)
 	if self.isEnabled and not self.isLoggingOut then
 		if self.HandleAddonWhisperSystemMessage then
-			local _, decision = self:HandleAddonWhisperSystemMessage(message, ...)
-			-- Count the native event once, rather than once per chat-frame filter.
-			if self.RecordAddonWhisperNoticeDecision then self:RecordAddonWhisperNoticeDecision(decision) end
+			local ok, _, decision = pcall(self.HandleAddonWhisperSystemMessage, self, message, ...)
+			-- These count native-event classifications, not successful display
+			-- suppression. The passive chat filter keeps its own outcome counters.
+			-- Logging/cleanup failures must not stop unrelated native handlers.
+			if self.RecordAddonWhisperNoticeDecision then
+				pcall(self.RecordAddonWhisperNoticeDecision, self, ok and decision or "classificationError")
+			end
 		end
 		if self.HandleQuestShareSystemMessage then
 			self:HandleQuestShareSystemMessage(message)

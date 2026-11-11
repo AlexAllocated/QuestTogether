@@ -77,6 +77,7 @@
       "Rejected announcement event because payload was invalid",
       "Skipping channel join because addon is disabled",
       "Unable to join peer directory ",
+      "Unavailable-peer cleanup failed; receipt retained.",
       "Unknown",
       "WHISPER",
       "announcement age sender=%s event=%s reportedAgeSeconds=%s",
@@ -84,7 +85,8 @@
       "option event=",
       "route=WHISPER notice=PLAYER_NOT_FOUND",
       "route=WHISPER result=12 TargetOffline",
-      "scope sender="
+      "scope sender=",
+      "whisper failure cleanup"
     ],
     "CommsProtocol.lua": [
       "ANN",

@@ -481,7 +481,12 @@ their existing source-verification requirements.
 Battle.net account identities, notes and chat contents are never harvested;
 other games, projects, regions and offline accounts are excluded. Up to 64
 confirmed public peers are saved for 24 hours per character/client/region.
-Private diagnostics never supply saved seeds.
+Private diagnostics never supply saved seeds. A separate, equally scoped store
+retains at most 512 failed-address records for 24 hours: canonical address,
+failure time, backoff and bounded attempt count only. These records never create
+candidates or accepted player observations. Load sanitization discards expired,
+future-clock, ignored and malformed records and strips unexpected values;
+world transitions, profile changes and reloads preserve valid negative evidence.
 If combat interrupts selection restoration, one bounded cleanup record retains
 channel names across graph resets. A native event retries it when safe, resolves
 current display indices, and yields to a user's intervening selection.
@@ -491,7 +496,14 @@ handshakes. Introductions carry at most 8 addresses, without establishing presen
 location, credentials or party membership. After three staggered initial probes,
 an underfilled node probes every 4–6 seconds while transport and authentication
 have spare capacity. Full or pressured nodes use the 20–30-second maintenance
-cadence; unanswered candidates still wait 5–30 minutes. Reciprocal reservations
+cadence; unanswered candidates still wait 5–30 minutes. Three failed probes
+exhaust a stale address's allowance until direct native chat, visibility or a
+hello supplies new evidence, or its 24-hour recovery epoch expires. Repeated
+saved seeds, introductions and cached roster rows cannot renew that allowance.
+Fresh observations preserve active backoff. Only an accepted unanswered probe
+or explicit native unavailable response contributes persisted failure evidence;
+local suppression, queue expiry, restrictions and admission failures do not.
+Reciprocal reservations
 become eligible after one second, through the same scheduler and handshake limit.
 Directory scans refresh every 5 minutes, processing 32 rows per paced tick and
 1,500 per cycle.
@@ -499,7 +511,14 @@ Cycles share the row allowance across active directories and rotate both the
 first directory and each directory's starting roster row. A large global roster
 cannot permanently exclude zone rosters or members beyond its first 1,500 rows.
 Geographically useful contacts coexist with randomly selected connecting contacts.
-An eligible connection rotates at most once per 120 seconds.
+Replacement exploration is paced to at most once per 120 seconds and retains
+all healthy edges while challenging a candidate. Only a correlated admitted
+reply or fresh crossed native hello permits replacing the least-useful edge;
+confirmed neighbors and reservations still occupy at most eight slots together.
+An old queued admission intent gets a new challenge before any replacement.
+Reciprocal reservations outrank waiting intents, which retain FIFO priority over
+generic candidates. Discovery defers before reserving a slot while native
+whisper-error suppression cannot safely distinguish addon traffic.
 Friend-list scans share the 32-row runtime allowance with directories and guild
 rosters, with at most 1,500 rows per contact scan and five game accounts per
 Battle.net friend. Scans run every five minutes; friend-change events coalesce
@@ -524,9 +543,11 @@ confirms the same session; normal validation then runs again. Expiry, retirement
 and runtime reset discard them.
 A full recipient retains at most three declined native hello requests for up to
 480 seconds, ordered by original arrival. Repeated requests do not renew their
-expiry or priority. When capacity opens, or the normal 120-second rotation frees
-a slot, the oldest eligible caller receives a reciprocal reservation ahead of
-generic discovery. It must still complete a fresh correlated handshake. Ignore,
+expiry or priority. When capacity opens, the oldest eligible caller receives a
+reciprocal reservation ahead of generic discovery. If the graph remains full,
+the 120-second replacement opportunity challenges that caller while keeping its
+existing edges. Fresh native reachability permits the reservation and replacement;
+a correlated handshake is still required to confirm the edge. Ignore,
 retirement, a subsequent failed attempt, or a new runtime lifetime cancels the
 waiting request. This queue neither increases the eight-neighbor limit nor adds
 extra rotations or a separate send path. Aggregate diagnostics expose its depth,
@@ -578,12 +599,25 @@ The native send observer treats an omitted chat type as SAY, matching Blizzard's
 API default; unreadable edit-box metadata remains unknown and fails open.
 Chat filters suppress only correlated notices; failures remain counted in QT's
 diagnostics. Missing hooks, unreadable values, and uncertain matches fail open.
-Fixed `comms.whisperFilter` counters count native system events once, separately
-from per-chat-frame filtering. They distinguish matched notices, ordinary-whisper
-exemptions, untracked/expired addresses, missing filter support, and inaccessible
-system messages; the latter cannot be classified as whisper failures. Reports
-include only counts, filter registration and guard duration, never names or
-message contents. Blizzard can bypass addon filters for secret system messages
+The registered filter only classifies the notice and updates bounded local
+counters. It never retires peers, cancels work or invokes diagnostic logging.
+The native system-event handler separately applies guarded failure cleanup;
+native `TargetOffline` results use the same guarded cleanup. A cleanup exception
+therefore cannot prevent the filter from returning its suppression decision.
+The receipt and send barrier survive cleanup failures, which remain counted.
+Fixed `comms.whisperFilter` counters distinguish native-event classifications
+from actual per-chat-frame filter invocations, suppression, pass-through and
+errors. Reason buckets include ordinary-whisper exemptions, untracked/expired
+addresses, missing support and inaccessible system messages; the latter cannot
+be classified as whisper failures. A native-event `matched` count alone is not
+proof that Blizzard invoked the filter or hid the message.
+Speculative mesh whispers wait when filtering is unavailable, the localized
+notice format cannot be matched, or unreadable ordinary-whisper metadata makes
+attribution globally ambiguous. Registration/format recovery is checked at most
+once every five seconds; queued work retains its normal expiry and consumes no
+native budget while held. Intentional private and group communication continues.
+Reports include only fixed counts, readiness gauges and guard duration, never
+names or message contents. Blizzard can bypass addon filters for secret system messages
 during chat lockdown, so correlation cannot guarantee suppression of a delayed
 notice crossing that boundary.
 The transport revalidates the native Chat restriction before spending send

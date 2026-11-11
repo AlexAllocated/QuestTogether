@@ -14,7 +14,8 @@ local MAX_PENDING_INTERESTS = 24
 local MAX_DIRECTORY_ROWS, ROWS_PER_TICK = 1500, 32
 local CONTACT_SECONDS, CONTACT_EVENT_SECONDS, CONTACT_EVENT_LIMIT = 300, 10, 16
 local CONTACT_SOURCES = { friend = true, bnet = true, chat = true, visible = true }
-local RetirePeerRoutes
+local RetirePeerRoutes, PersistFailure, RestoreFailure, ForgetFailure, MakeReplacementRoom
+local MAX_FAILURES, FAILURE_LIFETIME, MAX_STALE_PROBES = 512, 86400, 3
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime()) or 0
 end
@@ -97,10 +98,27 @@ local function Native(a, method, ...)
 	end
 	return { one, two, three, four, five, six, seven, eight }
 end
-local function RetryCandidate(row, now)
+local function RetryCandidate(a, row, now, remoteFailure)
 	row.delay = math.min(1800, math.max(300, (row.delay or 150) * 2))
 	row.retryAt = now + row.delay
 	row.failureSerial = (row.failureSerial or 0) + 1
+	if remoteFailure then
+		local fresh = (row.evidenceAt or 0) > (row.failureEvidenceAt or 0)
+			or (row.evidenceSerial or 0) > (row.failureEvidenceSerial or 0)
+		row.probeFailures = math.min(MAX_STALE_PROBES, (fresh and 0 or row.probeFailures or 0) + 1)
+		row.failureEvidenceAt, row.failureAt = row.evidenceAt or 0, Server(a)
+		row.failureEvidenceSerial = row.evidenceSerial or 0
+		PersistFailure(a, row)
+	end
+end
+local function ProbeEligible(a, row)
+	if row.failureAt and Server(a) - row.failureAt >= FAILURE_LIFETIME then
+		row.probeFailures, row.failureEvidenceAt, row.failureAt = nil, nil, nil
+		ForgetFailure(a, row.name)
+	end
+	return (row.probeFailures or 0) < MAX_STALE_PROBES
+		or (row.evidenceAt or 0) > (row.failureEvidenceAt or 0)
+		or (row.evidenceSerial or 0) > (row.failureEvidenceSerial or 0)
 end
 local function RetireOldestCandidate(s, now)
 	local oldest, at
@@ -183,7 +201,7 @@ local function Reserve(a, s, name, reciprocal)
 	}
 	return true
 end
-local function SeedStore(a)
+local function ScopedStore(a, field)
 	local global = a.db and a.db.global
 	if type(global) ~= "table" then
 		return nil
@@ -194,14 +212,102 @@ local function SeedStore(a)
 	if type(namespace) ~= "string" or namespace == "" or not character then
 		return nil
 	end
-	if type(global.meshPeerSeeds) ~= "table" then
-		global.meshPeerSeeds = {}
+	if type(global[field]) ~= "table" then
+		global[field] = {}
 	end
 	local key = namespace .. ":" .. character
-	if type(global.meshPeerSeeds[key]) ~= "table" then
-		global.meshPeerSeeds[key] = {}
+	if type(global[field][key]) ~= "table" then
+		global[field][key] = {}
 	end
-	return global.meshPeerSeeds[key]
+	return global[field][key]
+end
+local function SeedStore(a)
+	return ScopedStore(a, "meshPeerSeeds")
+end
+local function FailureStore(a)
+	return ScopedStore(a, "meshPeerFailures")
+end
+local function Finite(a, value)
+	local n = a:SafeToNumber(value)
+	return n and n == n and n ~= math.huge and n ~= -math.huge and n or nil
+end
+local function PruneFailures(a, rows)
+	local now, kept = Server(a), {}
+	for key, row in pairs(rows or {}) do
+		local at = type(row) == "table" and Finite(a, row.at)
+		local delay = type(row) == "table" and Finite(a, row.delay)
+		local untilAt = type(row) == "table" and Finite(a, row.untilAt)
+		local failures = type(row) == "table" and Finite(a, row.failures)
+		local evidence = type(row) == "table" and Finite(a, row.evidenceAt)
+		if
+			not Name(a, key)
+			or key ~= key:lower()
+			or a:IsIgnoredPlayerName(key)
+			or not at
+			or at <= 0
+			or at > now
+			or now - at >= FAILURE_LIFETIME
+			or not delay
+			or delay < 300
+			or delay > 1800
+			or not untilAt
+			or untilAt < at
+			or untilAt > at + 1800
+			or not failures
+			or failures < 1
+			or failures > MAX_STALE_PROBES
+			or failures % 1 ~= 0
+			or not evidence
+			or evidence < 0
+			or evidence > at
+		then
+			rows[key] = nil
+		else
+			-- Rebuild rather than retaining unexpected nested or oversized values
+			-- from a damaged saved-variable record.
+			rows[key] = { at = at, delay = delay, untilAt = untilAt, failures = failures, evidenceAt = evidence }
+			kept[#kept + 1] = { key = key, at = at }
+		end
+	end
+	table.sort(kept, function(one, two)
+		return one.at > two.at or one.at == two.at and one.key < two.key
+	end)
+	for index = MAX_FAILURES + 1, #kept do
+		rows[kept[index].key] = nil
+	end
+end
+PersistFailure = function(a, row)
+	local rows, stamp = FailureStore(a), Server(a)
+	if not rows or stamp <= 0 then
+		return
+	end
+	rows[row.name:lower()] = {
+		at = stamp,
+		untilAt = stamp + row.delay,
+		delay = row.delay,
+		failures = row.probeFailures,
+		evidenceAt = math.min(stamp, row.failureEvidenceAt or 0),
+	}
+	PruneFailures(a, rows)
+end
+RestoreFailure = function(a, row, preserveDirectEvidence)
+	local rows = FailureStore(a)
+	local old = rows and rows[row.name:lower()]
+	if old then
+		row.delay = old.delay
+		row.retryAt = Now(a) + math.max(0, old.untilAt - Server(a))
+		row.probeFailures, row.failureEvidenceAt, row.failureAt = old.failures, old.evidenceAt, old.at
+		-- A repeated address after a reset is not a newly observed live player.
+		if not preserveDirectEvidence or not row.evidenceSerial then
+			row.evidenceAt = math.min(row.evidenceAt or old.evidenceAt, old.evidenceAt)
+		end
+	end
+end
+ForgetFailure = function(a, name)
+	local rows = FailureStore(a)
+	if rows then
+		rows[name:lower()] = nil
+	end
 end
 local function RememberSeed(a, name)
 	local seeds, stamp = SeedStore(a), Server(a)
@@ -268,12 +374,14 @@ function QT:InitializeMeshNetwork()
 		serviceSerial = 0,
 	}
 	self.meshNetworkState = s
+	s.failureRows = FailureStore(self)
+	PruneFailures(self, s.failureRows)
 	local seeds, stamp = SeedStore(self), Server(self)
 	local loaded = 0
 	for name, at in pairs(seeds or {}) do
 		at = self:SafeToNumber(at)
 		if at and at <= stamp and stamp - at < SEED_LIFETIME and loaded < MAX_SEEDS then
-			if self:RememberMeshCandidate(name, "saved") then
+			if self:RememberMeshCandidate(name, "saved", nil, at) then
 				loaded = loaded + 1
 			else
 				seeds[name] = nil
@@ -284,7 +392,7 @@ function QT:InitializeMeshNetwork()
 	end
 	return s
 end
-function QT:RememberMeshCandidate(value, source, zone)
+function QT:RememberMeshCandidate(value, source, zone, observedAt)
 	local s = rawget(self, "meshNetworkState")
 	local name = Name(self, value)
 	if not s or not Current(self, s) or not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
@@ -299,9 +407,23 @@ function QT:RememberMeshCandidate(value, source, zone)
 			end
 		end
 		local random = Native(self, "Random", 1, 1000000)
-		row = { name = name, retryAt = now, heardAt = now, discoveredAt = now, rank = random and random[1] or 0 }
+		row = {
+			name = name,
+			retryAt = now,
+			heardAt = now,
+			discoveredAt = now,
+			rank = random and random[1] or 0,
+			evidenceAt = observedAt or Server(self),
+		}
+		RestoreFailure(self, row)
 		s.candidates[name] = row
 		Metric(s, "candidatesAdded")
+	end
+	-- Cached rosters, introductions and saved seeds are addresses. Only a
+	-- direct native observation can reopen an exhausted probe allowance.
+	if source == "hello" or source == "confirmed" then
+		row.evidenceAt = Server(self)
+		row.evidenceSerial = (row.evidenceSerial or 0) + 1
 	end
 	row.heardAt, row.source = now, source
 	if zone then
@@ -354,6 +476,10 @@ function QT:ObserveMeshContact(value, source, zone)
 			row.zone = validZone
 		end
 	end
+	if source == "chat" or source == "visible" then
+		row.evidenceAt = Server(self)
+		row.evidenceSerial = (row.evidenceSerial or 0) + 1
+	end
 	row.contactAt, row.contactSource = now, source
 	return true
 end
@@ -405,6 +531,8 @@ local function Confirm(a, s, name, context, sharedDelivery)
 	local candidate = s.candidates[name]
 	if candidate then
 		candidate.delay, candidate.retryAt = nil, now + CHALLENGE_SECONDS
+		candidate.probeFailures, candidate.failureEvidenceAt, candidate.failureAt = nil, nil, nil
+		ForgetFailure(a, name)
 	end
 	RememberSeed(a, name)
 	if fresh then
@@ -516,6 +644,19 @@ function QT:HandleMeshHello(record, sender, context)
 		return false
 	end
 	previous.replyAt = now
+	local prospective = s.pending[sender]
+	if
+		prospective
+		and prospective.exploring
+		and now < prospective.expires
+		and not Neighbor(self, s, sender)
+		and not Reserved(self, s, sender)
+	then
+		MakeReplacementRoom(self, s, sender)
+		if not Current(self, s) then
+			return false
+		end
+	end
 	local admitted = Reserve(self, s, sender, true)
 	if not admitted then
 		Metric(s, "handshakeBusyReplies")
@@ -561,8 +702,23 @@ function QT:HandleMeshHello(record, sender, context)
 end
 local function StartHandshake(a, s, candidate)
 	local name, now = candidate.name, Now(a)
+	if a.CanRecordAddonWhisperAttempt then
+		local ready, reason = a:CanRecordAddonWhisperAttempt(name, true)
+		if not ready and reason == "filter-unavailable" then
+			s.nextHandshake = now + 1
+			Metric(s, "handshakeLocalDeferrals")
+			return
+		end
+	end
 	local reservation = Reserved(a, s, name)
 	if not (reservation and reservation.reciprocal) then
+		-- Another spelling may have completed a silent timeout since this
+		-- candidate was learned. Read the shared address history before probing.
+		RestoreFailure(a, candidate, true)
+		if now < candidate.retryAt or not ProbeEligible(a, candidate) then
+			s.nextHandshake = now + 0.2
+			return
+		end
 		-- Directory/chat spellings can arrive after a failed address was retired.
 		-- Share its remaining backoff before attempting a native probe. This is
 		-- one bounded candidate scan per probe opportunity, not per queued packet
@@ -585,7 +741,16 @@ local function StartHandshake(a, s, candidate)
 			return
 		end
 	end
-	if not Reserve(a, s, name) then
+	local exploring = not Neighbor(a, s, name) and not reservation and Count(s.neighbors) >= MAX_NEIGHBORS
+	if exploring then
+		for _, pending in pairs(s.pending) do
+			if pending.exploring then
+				s.nextHandshake = now + 1
+				return
+			end
+		end
+	end
+	if not exploring and not Reserve(a, s, name) then
 		-- Local occupancy says nothing about this peer. Wait for a slot instead
 		-- of imposing an unreachable-peer cooldown before any packet is sent.
 		candidate.lastHandshakeOutcome, candidate.lastHandshakeAt = "local_capacity", now
@@ -594,7 +759,10 @@ local function StartHandshake(a, s, candidate)
 		Metric(s, "handshakeCapacity")
 		return
 	end
-	local pending = { submitting = true }
+	local pending = { submitting = true, exploring = exploring, expires = now + 20 }
+	if exploring then
+		s.nextRotation = now + 120
+	end
 	s.pending[name] = pending
 	candidate.triedAt = now
 	local function Finish(success, outcome, reason, detail)
@@ -612,7 +780,7 @@ local function StartHandshake(a, s, candidate)
 		candidate.lastHandshakeCode = a:CanAccessValue(detail) and type(detail) == "number" and a:SafeToNumber(detail)
 			or nil
 		if not success then
-			RetryCandidate(candidate, Now(a))
+			RetryCandidate(a, candidate, Now(a), outcome == "timeout")
 			local metric = ({
 				busy = "handshakeBusy",
 				timeout = "handshakeTimeouts",
@@ -655,6 +823,7 @@ local function StartHandshake(a, s, candidate)
 				if
 					not Current(a, s)
 					or s.pending[name] ~= pending
+					or Now(a) >= pending.expires
 					or Name(a, sender) ~= name
 					or a:IsIgnoredPlayerName(name)
 					or record.protocol ~= 3
@@ -669,6 +838,15 @@ local function StartHandshake(a, s, candidate)
 					Finish(false, "busy", "busy")
 					a:CancelCommRequest(record.requestId, "rejected")
 					return true
+				end
+				if pending.exploring and not Neighbor(a, s, name) and not Reserved(a, s, name) then
+					if not MakeReplacementRoom(a, s, name) or s.pending[name] ~= pending or not Reserve(a, s, name) then
+						Finish(false, "confirmation_failed", "capacity")
+						return false
+					end
+				end
+				if s.admissionIntents[name] then
+					Metric(s, "admissionReservations")
 				end
 				local confirmed = Confirm(a, s, name, context, record.sharedDelivery)
 				if not confirmed then
@@ -1635,19 +1813,16 @@ local function PublicationDeliveryKey(a, s, publication, lease, target)
 	if not peer then
 		return nil
 	end
-	return table.concat(
-		{
-			publication.origin,
-			publication.session,
-			publication.id,
-			publication.digest,
-			tostring(lease.zone),
-			target,
-			tostring(peer.session or ""),
-			peer.sharedDelivery and "shared" or lease.destination,
-		},
-		":"
-	)
+	return table.concat({
+		publication.origin,
+		publication.session,
+		publication.id,
+		publication.digest,
+		tostring(lease.zone),
+		target,
+		tostring(peer.session or ""),
+		peer.sharedDelivery and "shared" or lease.destination,
+	}, ":")
 end
 function QT:HasDeliveredMeshPublicationForInterest(publication, lease)
 	local s = rawget(self, "meshNetworkState")
@@ -1977,18 +2152,13 @@ function QT:ForwardMeshPublication(publication, descriptor)
 						return
 					end
 					s.pendingPublications[deliveryKey], reservation.pendingKeys[deliveryKey] = reservation, true
-					local accepted, reason = self:SendMeshPublicationToPeer(
-						publication,
-						nextTarget,
-						{
-							leaseId = lease.id,
-							destination = lease.destination,
-							zone = lease.zone,
-							hops = item.hops,
-							sharedDelivery = peer.sharedDelivery and true or nil,
-						},
-						attempt
-					)
+					local accepted, reason = self:SendMeshPublicationToPeer(publication, nextTarget, {
+						leaseId = lease.id,
+						destination = lease.destination,
+						zone = lease.zone,
+						hops = item.hops,
+						sharedDelivery = peer.sharedDelivery and true or nil,
+					}, attempt)
 					admitted = admitted or accepted
 					if accepted then
 						Served()
@@ -2052,10 +2222,11 @@ function QT:RetireMeshPeer(value, reason)
 				candidate.lastHandshakeAt, candidate.lastHandshakeCode = now, nil
 				Metric(s, "handshakeUnavailable")
 			end
-			RetryCandidate(candidate, now)
+			RetryCandidate(self, candidate, now, retirement == "unavailable")
 		end
 		if self:IsIgnoredPlayerName(retiredName) then
 			s.candidates[retiredName] = nil
+			ForgetFailure(self, retiredName)
 			local seeds = SeedStore(self)
 			if seeds then
 				seeds[retiredName] = nil
@@ -2079,6 +2250,35 @@ local function UsefulPeer(s, name)
 		end
 	end
 	return useful
+end
+MakeReplacementRoom = function(a, s, replacement)
+	if not Current(a, s) or a:IsIgnoredPlayerName(replacement) then
+		return false
+	end
+	if Neighbor(a, s, replacement) or Reserved(a, s, replacement) or Count(s.neighbors) < MAX_NEIGHBORS then
+		return true
+	end
+	local victim, usefulness, age
+	for name, peer in pairs(s.neighbors) do
+		local current, connectedAt = UsefulPeer(s, name), peer.connectedAt or peer.at or Now(a)
+		if
+			not s.pending[name]
+			and (not usefulness or current < usefulness or current == usefulness and connectedAt < age)
+		then
+			victim, usefulness, age = name, current, connectedAt
+		end
+	end
+
+	if not victim then
+		return false
+	end
+	a:RetireMeshPeer(victim, "rotated")
+	if not Current(a, s) then
+		return false
+	end
+	Metric(s, "neighborRotations")
+	s.nextRotation = Now(a) + 120
+	return true
 end
 local function RotateNeighbor(a, s, now)
 	PruneAdmissionIntents(a, s, now)
@@ -2117,41 +2317,14 @@ local function RotateNeighbor(a, s, now)
 		return
 	end
 	if not waiting then
-		local alternate = false
-		for name, candidate in pairs(s.candidates) do
-			if
-				not s.neighbors[name]
-				and not s.pending[name]
-				and candidate.retryAt <= now
-				and not a:IsIgnoredPlayerName(name)
-			then
-				alternate = true
-				break
-			end
-		end
-		if not alternate then
-			return
-		end
+		return
 	end
-	local victim, usefulness, age
-	for name, peer in pairs(s.neighbors) do
-		local current = UsefulPeer(s, name)
-		if
-			not s.pending[name]
-			and (not usefulness or current < usefulness or current == usefulness and peer.connectedAt < age)
-		then
-			victim, usefulness, age = name, current, peer.connectedAt
-		end
-	end
-	if victim then
-		a:RetireMeshPeer(victim, "rotated")
-		if not Current(a, s) then
-			return
-		end
-		Metric(s, "neighborRotations")
-		s.nextRotation = now + 120
-		AdmitWaiting()
-	end
+
+	-- A queued hello can be several minutes old. Challenge that caller first;
+	-- only its fresh reply (or crossed native hello) can replace a live edge.
+	local candidate = s.candidates[waiting]
+	candidate.retryAt = math.min(candidate.retryAt, now)
+	s.nextHandshake = math.min(s.nextHandshake, now)
 end
 function QT:UpdateMeshNetwork(now)
 	self:RestoreMeshDirectorySelection()
@@ -2253,6 +2426,9 @@ function QT:UpdateMeshNetwork(now)
 		local function Tier(candidate)
 			local reservation = Reserved(self, s, candidate.name)
 			if reservation and reservation.reciprocal then
+				return 3
+			end
+			if s.admissionIntents[candidate.name] then
 				return 2
 			end
 			if preferContact and candidate.contactAt and now - candidate.contactAt < CONTACT_SECONDS then
@@ -2267,6 +2443,10 @@ function QT:UpdateMeshNetwork(now)
 			local tier, previousTier = Tier(candidate), Tier(previous)
 			if tier ~= previousTier then
 				return tier > previousTier
+			end
+			if tier == 2 then
+				local one, two = s.admissionIntents[candidate.name], s.admissionIntents[previous.name]
+				return one.queuedAt < two.queuedAt or one.queuedAt == two.queuedAt and candidate.name < previous.name
 			end
 			-- A newly heard stranger must not jump ahead of every retried contact.
 			-- Discovery time remains fixed when later chat/roster sightings arrive.
@@ -2283,7 +2463,8 @@ function QT:UpdateMeshNetwork(now)
 			if
 				not s.pending[name]
 				and now >= candidate.retryAt
-				and (renew or not peer and Count(s.neighbors) < MAX_NEIGHBORS)
+				and (renew or not peer and (Count(s.neighbors) < MAX_NEIGHBORS or now >= s.nextRotation))
+				and (renew or ProbeEligible(self, candidate))
 				and not self:IsIgnoredPlayerName(name)
 				and Prefer(candidate, selected)
 			then
@@ -2329,6 +2510,21 @@ function QT:GetMeshNetworkMetrics()
 	metrics.neighbors, metrics.candidates, metrics.handshakes, metrics.interests =
 		Count(s.neighbors), Count(s.candidates), Count(s.pending), Count(s.interests)
 	metrics.admissionIntents, metrics.reservations = Count(s.admissionIntents), Count(s.reservations)
+	metrics.failureHistory, metrics.candidatesCoolingDown, metrics.candidatesExhausted = Count(s.failureRows), 0, 0
+	local now, stamp = Now(self), Server(self)
+	for _, candidate in pairs(s.candidates) do
+		if candidate.delay and candidate.retryAt > now then
+			metrics.candidatesCoolingDown = metrics.candidatesCoolingDown + 1
+		end
+		if
+			(candidate.probeFailures or 0) >= MAX_STALE_PROBES
+			and stamp - (candidate.failureAt or stamp) < FAILURE_LIFETIME
+			and (candidate.evidenceAt or 0) <= (candidate.failureEvidenceAt or 0)
+			and (candidate.evidenceSerial or 0) <= (candidate.failureEvidenceSerial or 0)
+		then
+			metrics.candidatesExhausted = metrics.candidatesExhausted + 1
+		end
+	end
 	metrics.pendingInterests = 0
 	for _, items in pairs(s.pendingInterests) do
 		metrics.pendingInterests = metrics.pendingInterests + #items
@@ -2345,7 +2541,6 @@ function QT:GetMeshNetworkMetrics()
 	metrics.publicationRoutes = Count(s.forwarded)
 	metrics.pendingPublications = Count(s.pendingPublications)
 	metrics.oldestNeighborIdle, metrics.oldestHandshakeAge = 0, 0
-	local now = Now(self)
 	metrics.oldestAdmissionIntentAge = 0
 	for _, intent in pairs(s.admissionIntents) do
 		metrics.oldestAdmissionIntentAge = math.max(metrics.oldestAdmissionIntentAge, now - intent.queuedAt)

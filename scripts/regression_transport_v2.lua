@@ -15,6 +15,12 @@ local function Fixture()
 		Random = function(low)
 			return low
 		end,
+		SetOrdinaryWhisperObserver = function() return true end,
+		GetPlayerNotFoundMessageFormat = function() return "No player named '%s' is currently playing." end,
+		AddMessageEventFilter = function(_, callback)
+			a.systemFilter = callback
+			return true
+		end,
 		SendAddonMessage = function(prefix, wire, distribution, target)
 			a.sent[#a.sent + 1] =
 				{ prefix = prefix, wire = wire, distribution = distribution, target = target, at = a.now }
@@ -83,6 +89,7 @@ QT:RegisterTest(
 			end
 			a:SendTransportNow("later", "MHEL", route)
 			assert(a.systemFilter({}, "CHAT_MSG_SYSTEM", "No player named 'Peer-Realm' is currently playing."))
+			a:HandleAddonWhisperSystemMessage("No player named 'Peer-Realm' is currently playing.")
 			if outcome == 3 then
 				assert(
 					not a:IsAddonWhisperTargetUnavailable(route.target) and a.retired == 0,
@@ -120,6 +127,7 @@ QT:RegisterTest(
 			a.native = function()
 				if reentry == "notice" then
 					assert(a.systemFilter({}, "CHAT_MSG_SYSTEM", notice))
+					a:HandleAddonWhisperSystemMessage(notice)
 				elseif reentry == "reply" then
 					a:ClearAddonWhisperFailure(route.target)
 				else
@@ -133,6 +141,7 @@ QT:RegisterTest(
 			-- observation or the newer send would leak this later native notice.
 			a.now = a.now + 20
 			assert(a.systemFilter({}, "CHAT_MSG_SYSTEM", notice), "rollback must preserve newer native evidence")
+			a:HandleAddonWhisperSystemMessage(notice)
 			if reentry == "reply" then
 				assert(a.retired == 0 and not a:IsAddonWhisperTargetUnavailable(route.target))
 			else
@@ -178,6 +187,79 @@ QT:RegisterTest("transport refuses untrackable whisper addresses before spending
 		assert(not queued and queueReason == "invalid" and not sent and reason == "invalid")
 	end
 	assert(#a.sent == 0 and s.tokens == tokens and s.byteTokens == bytes)
+end)
+
+QT:RegisterTest("transport pauses unsafe background whispers without blocking party or targeted work", function()
+	for _, blockedBy in ipairs({ "registration", "unknown-human-target" }) do
+		local a = WhisperReceiptFixture()
+		if blockedBy == "registration" then
+			a.addonWhisperChatFilterRegistered = nil
+			a.API.SetOrdinaryWhisperObserver = function() return false end
+		else
+			a:RegisterAddonWhisperChatFilter()
+			a:RecordOrdinaryWhisperAttempt(nil, nil)
+		end
+		local s, completions = a:GetTransportState(), 0
+		local packets, bytes = s.tokens, s.byteTokens
+		local mesh = { distribution = "WHISPER", target = "Peer-Realm", meshTraffic = true }
+		local sent, reason = a:SendTransportNow("mesh-immediate", "MHEL", mesh)
+		assert(not sent and reason == "filter-unavailable" and #a.sent == 0)
+		assert(s.tokens == packets and s.byteTokens == bytes, "a local filter hold must not spend native tokens")
+		assert(a:QueueTransportWire("mesh-queued", "MHEL", mesh, {
+			expires = a.now + 180,
+			onComplete = function(ok)
+				assert(ok)
+				completions = completions + 1
+			end,
+		}))
+		assert(a:QueueTransportWire("party", "QTN3", { distribution = "PARTY" }))
+		assert(a:QueueTransportWire("targeted", "PING", { distribution = "WHISPER", target = "Direct-Realm" }))
+		for _ = 1, 3 do a:Advance(1) end
+		assert(#a.sent == 2 and completions == 0 and #s.queue == 1,
+			"a held public packet must not block private messages or escape through the native adapter")
+		assert(a:GetTransportMetrics().whisperFilterBlocked == 2,
+			"count immediate and newly held work, not every frame spent waiting")
+		a.API.SetOrdinaryWhisperObserver = function() return true end
+		-- Resume after the same bounded protection period used for ordinary
+		-- whispers, without re-creating the queued packet or its callbacks.
+		a:Advance(121)
+		assert(#a.sent == 3 and a.sent[3].wire == "mesh-queued" and completions == 1 and #s.queue == 0)
+		a:Advance(1)
+		assert(completions == 1)
+	end
+	local a = WhisperReceiptFixture()
+	a.API.AddMessageEventFilter = function() return false end
+	a.addonWhisperChatFilterRegistered = nil
+	local completed = 0
+	assert(a:Queue("expires-quietly", {
+		meshTraffic = true, expires = a.now + 2,
+		onComplete = function(ok, reason)
+			assert(not ok and reason == "expired")
+			completed = completed + 1
+		end,
+	}))
+	a:Advance(1)
+	a:Advance(2)
+	a:Advance(2)
+	assert(#a.sent == 0 and completed == 1 and #a:GetTransportState().queue == 0)
+
+	local b, validations = WhisperReceiptFixture(), 0
+	assert(b:Queue("callback-hold", {
+		meshTraffic = true, expires = b.now + 180,
+		isCurrent = function()
+			validations = validations + 1
+			if validations == 2 then b:RecordOrdinaryWhisperAttempt(nil, nil) end
+			return true
+		end,
+	}))
+	local bs = b:GetTransportState()
+	local packets, bytes, meshPackets, meshBytes = bs.tokens, bs.byteTokens, bs.meshTokens, bs.meshByteTokens
+	b:DrainTransport()
+	assert(#b.sent == 0 and #bs.queue == 1)
+	assert(bs.tokens == packets and bs.byteTokens == bytes and bs.meshTokens == meshPackets
+		and bs.meshByteTokens == meshBytes, "post-selection safety changes must not spend shared or mesh tokens")
+	b:Advance(121)
+	assert(#b.sent == 1 and #bs.queue == 0)
 end)
 
 QT:RegisterTest("transport refuses channel delivery without spending budget or invoking native APIs", function()

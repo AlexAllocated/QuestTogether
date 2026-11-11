@@ -342,16 +342,14 @@ QT:RegisterTest(
 			queued = options
 			return true
 		end
-		assert(
-			peer:ForwardMeshPublication({
-				origin = peer.name,
-				session = "source",
-				id = "1",
-				digest = "digest",
-				scope = 12,
-				expiresAt = wall + 120,
-			})
-		)
+		assert(peer:ForwardMeshPublication({
+			origin = peer.name,
+			session = "source",
+			id = "1",
+			digest = "digest",
+			scope = 12,
+			expiresAt = wall + 120,
+		}))
 		assert(queued and queued.isCurrent())
 		peer:RememberMeshCandidate("Remote-Realm", "friend")
 		local candidate = s.candidates["Remote-Realm"]
@@ -2386,6 +2384,7 @@ QT:RegisterTest("mesh whisper failures retire casing aliases without conflating 
 		assert(peer:SendTransportNow("private-wire", "MHEL", { distribution = "WHISPER", target = alias }))
 		local notice = "No player named '" .. canonical .. "' is currently playing."
 		assert(peer.systemFilter({}, "CHAT_MSG_SYSTEM", notice))
+		peer:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", notice)
 		assert(not peer:IsConfirmedMeshNeighbor(canonical), "a casing alias must retire the existing native peer")
 		assert(not state.interests["live-route"], "a failed native peer must not retain a differently cased route")
 		for _, name in ipairs({ canonical, alias }) do
@@ -2435,6 +2434,7 @@ QT:RegisterTest(
 			assert(
 				peer.systemFilter({}, "CHAT_MSG_SYSTEM", "No player named '" .. canonical .. "' is currently playing.")
 			)
+			peer:CHAT_MSG_SYSTEM("CHAT_MSG_SYSTEM", "No player named '" .. canonical .. "' is currently playing.")
 			local retryAt = state.candidates[canonical].retryAt
 			-- The short native send hold has ended, but failed discovery has a
 			-- longer backoff. A later directory spelling must not reopen that probe.
@@ -2471,3 +2471,341 @@ QT:RegisterTest(
 	end,
 	{ offline = true }
 )
+
+local function QuietDiscoveryPeer(net, name, global)
+	local peer = Peer(net, name)
+	peer.UpdatePlayerCommunications = function() end
+	peer.API.GetNumDisplayChannels = function()
+		return 0
+	end
+	peer.API.GetChannelRosterInfo = function() end
+	peer.API.GetNumGuildMembers = function()
+		return 0
+	end
+	peer.API.Random = function(low)
+		return low
+	end
+	if global then
+		peer.db.global = global
+	end
+	net:StartPeer(peer)
+	peer:InitializeMeshNetwork()
+	return peer
+end
+local function MeshProbeCount(peer)
+	local count = 0
+	for _, packet in ipairs(peer.attempts) do
+		local frame = peer:DecodeCommFrame(packet.wire)
+		if frame and frame.operation == "MHEL" then
+			count = count + 1
+		end
+	end
+	return count
+end
+
+QT:RegisterTest(
+	"mesh negative reachability survives world transitions reload and casing without becoming bootstrap seeds",
+	function()
+		local net = QT:CreateTestNetwork({ fps = 5, now = 10000 })
+		local peer = QuietDiscoveryPeer(net, "Owner-Realm")
+		net.sendRule = function()
+			return 12
+		end
+		assert(peer:RememberMeshCandidate("Absent-Realm", "directory"))
+		net:Advance(5)
+		local first = peer.meshNetworkState.candidates["Absent-Realm"]
+		assert(MeshProbeCount(peer) == 1 and first.probeFailures == 1)
+		local deadline, global = first.retryAt, peer.db.global
+		peer:EndCommunicationSession()
+		peer:ResumeCommunicationSession()
+		peer:InitializeMeshNetwork()
+		assert(not peer.meshNetworkState.candidates["Absent-Realm"], "failure history cannot create candidates")
+		assert(peer:RememberMeshCandidate("absent-realm", "introduction"))
+		local alias = peer.meshNetworkState.candidates["absent-realm"]
+		assert(alias.probeFailures == 1 and math.abs(alias.retryAt - deadline) < 1)
+		net:Advance(60)
+		assert(MeshProbeCount(peer) == 1, "a world transition must preserve the failed address cooldown")
+		local reload = QT:CreateTestNetwork({ fps = 5, now = net.now })
+		local restored = QuietDiscoveryPeer(reload, "Owner-Realm", global)
+		reload.sendRule = function()
+			return 12
+		end
+		assert(Count(restored.meshNetworkState.candidates) == 0)
+		assert(restored:RememberMeshCandidate("Absent-Realm", "party"))
+		reload:Advance(60)
+		assert(MeshProbeCount(restored) == 0, "a reload must not reopen the same failed address")
+		local other = QuietDiscoveryPeer(reload, "Other-Realm", global)
+		assert(other:RememberMeshCandidate("Absent-Realm", "directory"))
+		assert(
+			not other.meshNetworkState.candidates["Absent-Realm"].delay,
+			"another character owns independent evidence"
+		)
+		local scoped = global.meshPeerFailures["test:US:realm:Owner-Realm"]
+		assert(scoped["absent-realm"] and Count(scoped) == 1)
+		restored.ignored["Absent-Realm"] = true
+		restored:RetireMeshPeer("Absent-Realm", "ignored")
+		assert(not scoped["absent-realm"], "ignore removes retained discovery evidence")
+	end,
+	{ offline = true }
+)
+
+QT:RegisterTest(
+	"mesh stale hints exhaust a bounded probe allowance until direct evidence or sparse recovery",
+	function()
+		local net = QT:CreateTestNetwork({ fps = 1, now = 10000 })
+		local peer = QuietDiscoveryPeer(net, "Owner-Realm")
+		net.sendRule = function()
+			return 12
+		end
+		assert(peer:RememberMeshCandidate("Absent-Realm", "directory"))
+		net:Advance(1000)
+		assert(MeshProbeCount(peer) == 3 and peer.meshNetworkState.candidates["Absent-Realm"].probeFailures == 3)
+		peer:ResetMeshNetwork()
+		peer:InitializeMeshNetwork()
+		for _, source in ipairs({ "introduction", "party", "directory", "guild" }) do
+			assert(peer:RememberMeshCandidate("Absent-Realm", source))
+		end
+		assert(peer:ObserveMeshContact("Absent-Realm", "friend"))
+		assert(peer:ObserveMeshContact("Absent-Realm", "bnet"))
+		net:Advance(2000)
+		assert(MeshProbeCount(peer) == 3, "repeated stale hints and graph reset cannot manufacture new reachability")
+		assert(peer:ObserveMeshContact("Absent-Realm", "chat"))
+		net:Advance(5)
+		assert(MeshProbeCount(peer) == 4, "a fresh native message permits recovery after existing backoff")
+		local row = peer.meshNetworkState.candidates["Absent-Realm"]
+		assert(row.probeFailures == 1)
+		local due = row.retryAt
+		assert(peer:ObserveMeshContact("Absent-Realm", "visible"))
+		assert(row.retryAt == due, "fresh evidence must not erase the active failed-address backoff")
+		-- A silent address remains recoverable, but only after the bounded daily epoch.
+		row.probeFailures = 3
+		row.failureEvidenceAt = row.evidenceAt
+		row.failureEvidenceSerial = row.evidenceSerial
+		net.now, peer.now = net.now + 86401, peer.now + 86401
+		net:Advance(5)
+		assert(MeshProbeCount(peer) == 5 and row.probeFailures == 1)
+		-- A real native round trip retires negative evidence rather than persisting distrust.
+		net.sendRule = nil
+		local returning = QuietDiscoveryPeer(net, "Absent-Realm")
+		assert(returning:RememberMeshCandidate(peer.name, "directory"))
+		net:Advance(40)
+		assert(peer:IsConfirmedMeshNeighbor("Absent-Realm"))
+		assert(not peer.db.global.meshPeerFailures["test:US:realm:Owner-Realm"]["absent-realm"])
+	end,
+	{ offline = true }
+)
+
+QT:RegisterTest("mesh saved negative evidence validates bounds clock identity and primitive privacy", function()
+	local net = QT:CreateTestNetwork({ now = 10000 })
+	local peer = Peer(net, "Owner-Realm")
+	local stamp, rows = peer:GetAnnouncementServerTime(), {}
+	for index = 1, 520 do
+		rows["peer" .. index .. "-realm"] = {
+			at = stamp - index,
+			untilAt = stamp - index + 300,
+			delay = 300,
+			failures = 1,
+			evidenceAt = stamp - index,
+			unwanted = { location = "private" },
+		}
+	end
+	rows["future-realm"] = { at = stamp + 1, untilAt = stamp + 301, delay = 300, failures = 1, evidenceAt = stamp }
+	rows["old-realm"] = { at = stamp - 86400, untilAt = stamp - 86100, delay = 300, failures = 1, evidenceAt = 0 }
+	rows["nan-realm"] = { at = math.huge, untilAt = stamp, delay = 300, failures = 1, evidenceAt = 0 }
+	rows["bad|name"] = {}
+	rows[false] = true
+	peer.db.global.meshPeerFailures =
+		{ ["test:US:realm:Owner-Realm"] = rows, ["test:EU:realm:Owner-Realm"] = { untouched = true } }
+	peer:InitializeMeshNetwork()
+	assert(Count(rows) == 512 and Count(peer.meshNetworkState.candidates) == 0)
+	assert(not rows["future-realm"] and not rows["old-realm"] and not rows["nan-realm"] and not rows["peer520-realm"])
+	for key, row in pairs(rows) do
+		assert(key == key:lower() and Count(row) == 5 and not row.unwanted)
+	end
+	assert(peer.db.global.meshPeerFailures["test:EU:realm:Owner-Realm"].untouched)
+	peer:RememberMeshCandidate("Peer1-Realm", "saved")
+	assert(peer.meshNetworkState.candidates["Peer1-Realm"].probeFailures == 1)
+	peer.db.profile = {}
+	peer:InitializeMeshNetwork()
+	assert(Count(peer.meshNetworkState.candidates) == 0, "profile switching cannot bootstrap failed names")
+end, { offline = true })
+
+QT:RegisterTest("mesh unsent local failures never persist remote reachability evidence", function()
+	for _, failure in ipairs({ "filter", "admission", "queue" }) do
+		local net = QT:CreateTestNetwork({ fps = 5, now = 10000 })
+		local peer = QuietDiscoveryPeer(net, "Owner-Realm")
+		local state = peer.meshNetworkState
+		if failure == "filter" then
+			peer.CanRecordAddonWhisperAttempt = function()
+				return false, "filter-unavailable"
+			end
+		elseif failure == "admission" then
+			peer.Request = function()
+				return false, "capacity"
+			end
+		else
+			net.sendRule = function()
+				return 3
+			end
+		end
+		assert(peer:RememberMeshCandidate("Absent-Realm", "directory"))
+		net:Advance(25)
+		assert(Count(peer.db.global.meshPeerFailures["test:US:realm:Owner-Realm"]) == 0)
+		if failure == "filter" then
+			assert(
+				not state.candidates["Absent-Realm"].triedAt
+					and Count(state.reservations) == 0
+					and Count(state.pending) == 0
+			)
+			peer.CanRecordAddonWhisperAttempt = QT.CanRecordAddonWhisperAttempt
+			net:Advance(3)
+			assert(MeshProbeCount(peer) > 0, "local suppression recovery must resume discovery")
+		end
+	end
+end, { offline = true })
+
+QT:RegisterTest("mesh prospective replacements keep healthy edges until fresh native reachability", function()
+	for _, boundary in ipairs({ "offline", "stale_waiter", "expiry", "reset", "ignore", "reachable" }) do
+		local net = QT:CreateTestNetwork({ fps = 5, now = 10000 })
+		local peer = QuietDiscoveryPeer(net, "Owner-Realm")
+		local state = peer.meshNetworkState
+		for index = 1, 8 do
+			local name = "Healthy" .. index .. "-Realm"
+			state.neighbors[name] =
+				{ name = name, at = peer.now + 10000, connectedAt = peer.now, expires = peer.now + 10000 }
+		end
+		state.nextRotation = peer.now
+		assert(peer:RememberMeshCandidate("Candidate-Realm", "introduction"))
+		local reply
+		if boundary == "reachable" then
+			QuietDiscoveryPeer(net, "Candidate-Realm")
+		elseif boundary == "offline" or boundary == "stale_waiter" then
+			net.sendRule = function(packet)
+				return packet.target == "Candidate-Realm" and 12 or 0
+			end
+			if boundary == "stale_waiter" then
+				state.admissionIntents["Candidate-Realm"] =
+					{ queuedAt = peer.now - 100, expiresAt = peer.now + 100, failureSerial = 0 }
+			end
+		else
+			peer.Request = function(_, _, _, _, options)
+				reply = options.onResponse
+				return true, "queued", {}, "probe"
+			end
+		end
+		net:Advance(3)
+		if reply then
+			if boundary == "expiry" then
+				net.now, peer.now = net.now + 21, peer.now + 21
+			elseif boundary == "reset" then
+				peer:ResetMeshNetwork()
+			else
+				peer.ignored["Candidate-Realm"] = true
+			end
+			assert(
+				not reply(
+					{ requestId = "probe", protocol = 3, capabilities = "mesh1", admitted = true },
+					"Candidate-Realm",
+					{ distribution = "WHISPER", session = "native" }
+				)
+			)
+		end
+		if boundary == "reachable" then
+			net:Advance(35)
+			assert(peer:IsConfirmedMeshNeighbor("Candidate-Realm") and Count(state.neighbors) == 8)
+			assert(state.metrics.neighborRotations == 1)
+		elseif boundary ~= "reset" then
+			assert(
+				Count(state.neighbors) == 8 and (state.metrics.neighborRotations or 0) == 0,
+				boundary .. " discarded a healthy edge"
+			)
+		end
+	end
+end, { offline = true })
+
+QT:RegisterTest("mesh discovery admission keeps reciprocal priority FIFO and same-second native recovery", function()
+	local net = QT:CreateTestNetwork({ now = 10000, fps = 5 })
+	local peer = QuietDiscoveryPeer(net, "Owner-Realm")
+	local s = peer.meshNetworkState
+	for index = 1, 7 do
+		local name = "Healthy" .. index .. "-Realm"
+		s.neighbors[name] = { name = name, at = peer.now + 10000, connectedAt = peer.now, expires = peer.now + 10000 }
+	end
+	for _, name in ipairs({ "Reciprocal-Realm", "First-Realm", "Later-Realm" }) do
+		assert(peer:RememberMeshCandidate(name, "directory"))
+	end
+	s.reservations["Reciprocal-Realm"] = { reciprocal = true, expires = peer.now + 120 }
+	for _, name in ipairs({ "First-Realm", "Later-Realm" }) do
+		s.admissionIntents[name] = {
+			queuedAt = peer.now + (name == "First-Realm" and -10 or -5),
+			expiresAt = peer.now + 480,
+			failureSerial = 0,
+		}
+	end
+	-- A newer caller can have an older address hint; arrival order still wins.
+	s.candidates["Later-Realm"].discoveredAt = peer.now - 500
+	local targets = {}
+	peer.Request = function(_, _, _, routes)
+		targets[#targets + 1] = routes[1].target
+		return true, "queued", {}, "probe" .. #targets
+	end
+	s.nextRotation, s.nextHandshake = peer.now, peer.now
+	peer:UpdateMeshNetwork(peer.now)
+	assert(targets[1] == "Reciprocal-Realm", "a queued caller cannot starve an occupied reciprocal slot")
+	assert(not s.pending["First-Realm"] and Count(s.neighbors) == 7)
+	-- Clear the private pending fixture, then exercise FIFO with a genuinely free slot.
+	s.pending, s.reservations = {}, {}
+	peer.now, net.now = peer.now + 1, net.now + 1
+	s.nextHandshake = peer.now
+	peer:UpdateMeshNetwork(peer.now)
+	assert(targets[2] == "First-Realm")
+	local fresh = QuietDiscoveryPeer(QT:CreateTestNetwork({ now = 10000, fps = 5 }), "Other-Realm")
+	fresh:RememberMeshCandidate("Returning-Realm", "directory")
+	local row = fresh.meshNetworkState.candidates["Returning-Realm"]
+	row.probeFailures, row.failureAt, row.failureEvidenceAt = 3, fresh:GetAnnouncementServerTime(), row.evidenceAt
+	row.retryAt, row.evidenceSerial, row.failureEvidenceSerial = fresh.now + 1800, 0, 0
+	fresh.Respond = function()
+		return true
+	end
+	local requested = false
+	fresh.Request = function()
+		requested = true
+		return true, "queued", {}, "recovery"
+	end
+	assert(
+		fresh:HandleMeshHello(
+			{ requestId = "same-second", protocol = 3, capabilities = "mesh1" },
+			"Returning-Realm",
+			{ distribution = "WHISPER" }
+		)
+	)
+	fresh.meshNetworkState.nextHandshake = fresh.now
+	fresh:UpdateMeshNetwork(fresh.now)
+	assert(requested, "native recovery in the same server second must escape exhausted stale evidence")
+end, { offline = true })
+
+QT:RegisterTest("mesh silent timeouts share exhausted history with preexisting casing aliases", function()
+	local net = QT:CreateTestNetwork({ now = 10000, fps = 1 })
+	local peer = QuietDiscoveryPeer(net, "Owner-Realm")
+	assert(peer:RememberMeshCandidate("Absent-Realm", "directory"))
+	-- Learn a second spelling before any failure, then let only the canonical
+	-- spelling consume its three accepted-but-unanswered challenge attempts.
+	assert(peer:RememberMeshCandidate("absent-realm", "introduction"))
+	local state, alias = peer.meshNetworkState, peer.meshNetworkState.candidates["absent-realm"]
+	alias.retryAt = peer.now + 100000
+	net:Advance(1100)
+	local canonical = state.candidates["Absent-Realm"]
+	assert(canonical.probeFailures == 3 and canonical.lastHandshakeOutcome == "timeout")
+	local probes, due = MeshProbeCount(peer), canonical.retryAt
+	alias.retryAt = peer.now
+	state.nextHandshake = peer.now
+	net:Advance(1)
+	assert(alias.probeFailures == 3 and math.abs(alias.retryAt - due) < 1)
+	net:Advance(2200)
+	assert(
+		MeshProbeCount(peer) == probes and not state.pending["absent-realm"],
+		"a stale casing alias cannot reopen an exhausted remote address"
+	)
+	local metrics = peer:GetMeshNetworkMetrics()
+	assert(metrics.failureHistory == 1 and metrics.candidatesExhausted == 2 and metrics.candidatesCoolingDown == 0)
+end, { offline = true })
