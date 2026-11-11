@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.7
+
+Este parche mejora la comunicación en segundo plano, los avisos de fase y los cambios de perfil.
+
+### Comunicación
+
+- Se han corregido más casos de avisos no deseados de jugador no encontrado causados por los susurros de QT en segundo plano, incluidos los que llegaban tarde tras cambiar de zona o desactivar y reactivar el addon. Los errores de tus propios susurros siguen mostrándose.
+- Cuando WoW indica que un jugador está desconectado, QT pausa los intentos y cancela los envíos pendientes. Cambiar las mayúsculas de una misma dirección completa ya no permite saltarse la espera antes de reintentarlo.
+- /qt diagnostics ayuda a investigar problemas con los susurros en segundo plano. Los nuevos contadores no incluyen nombres ni mensajes.
+
+### Mapas y perfiles
+
+- Con «Detectar capas diferentes» activado, QT prioriza los datos explícitos de WoW. La información del jugador distingue «Fase diferente», confirmada por WoW, de la estimación «Probablemente en otra capa (experimental)».
+- El área de clic para seleccionar jugadores en el minimapa sigue ahora su marcador o menú y deja de interceptar clics destinados a ventanas situadas por encima.
+- Al cambiar de perfil se descartan las comparaciones de misiones pendientes y los anuncios traducidos que esperaban mostrarse en el perfil anterior. Los resultados tardíos no afectan al nuevo perfil.
+
 ## 9.0.6
 
 La leyenda del mapa ya incluye los iconos de VIP y del desarrollador.

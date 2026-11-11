@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.7
+
+Questa patch migliora le comunicazioni in background, gli avvisi di fase e il passaggio tra profili.
+
+### Comunicazioni
+
+- Corretti altri casi di avvisi indesiderati di giocatore non trovato causati dai sussurri di QT in background, anche dopo un cambio di zona o dopo aver disattivato e riattivato l’addon. Gli errori relativi ai tuoi normali sussurri restano visibili.
+- Quando WoW segnala un giocatore offline, QT sospende i tentativi e annulla gli invii in attesa. Scrivere lo stesso indirizzo completo con maiuscole e minuscole diverse non permette più di aggirare la pausa prima di riprovare.
+- /qt diagnostics aiuta a individuare i problemi dei sussurri in background. I nuovi contatori non contengono nomi di giocatori né contenuti dei messaggi.
+
+### Mappe e profili
+
+- Con «Rileva livelli di mondo diversi» attivo, QT dà precedenza alle indicazioni esplicite di WoW. La descrizione distingue «Fase diversa», confermata da WoW, dalla stima «Probabile livello di mondo diverso (sperimentale)».
+- L’area cliccabile per selezionare i giocatori sulla minimappa segue ora il proprio indicatore o menu e non intercetta più i clic destinati alle finestre sovrapposte.
+- Il cambio di profilo scarta i confronti delle missioni in attesa e gli annunci tradotti ancora da mostrare del profilo precedente. I risultati tardivi non influiscono sul nuovo profilo.
+
 ## 9.0.6
 
 La legenda della mappa ora include le icone VIP e dello sviluppatore.

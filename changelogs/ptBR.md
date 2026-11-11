@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.7
+
+Mais correções na comunicação em segundo plano, na indicação de fases e no comportamento do minimapa e dos perfis.
+
+### Comunicação
+
+- Corrigidos mais casos de avisos de jogador não encontrado causados pelos sussurros internos do QT, inclusive avisos atrasados após trocar de área ou desativar e reativar o addon. Os avisos de erro dos seus sussurros normais continuam aparecendo.
+- Quando WoW informa que um jogador está offline, o QT interrompe os envios pendentes e espera antes de tentar novamente. Diferenças de maiúsculas no mesmo nome completo não provocam mais novas tentativas antes da hora.
+- /qt diagnostics traz mais informações para investigar esses avisos. Os novos contadores não incluem nomes de jogadores nem conteúdo de mensagens.
+
+### Mapas e perfis
+
+- Com Detectar camadas diferentes ativado, o QT prioriza as informações de fase do WoW. A dica diferencia Fase diferente da estimativa Provavelmente em outra camada (experimental). Não ver ou não conseguir selecionar um jogador, por si só, não indica outra fase.
+- A área de seleção de jogadores no minimapa acompanha o marcador ou menu, deixando de interceptar cliques destinados às janelas que estão por cima.
+- Ao trocar de perfil, comparações de missões pendentes e anúncios traduzidos ainda em espera do perfil anterior são descartados, sem aparecer nem alterar o novo perfil.
+
 ## 9.0.6
 
 Os ícones de VIP e do desenvolvedor agora estão na legenda do mapa.

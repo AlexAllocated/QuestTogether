@@ -3,13 +3,23 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "9.0.6",
-	welcome = "The map legend now explains VIP and developer icons.",
+	version = "9.0.7",
+	welcome = "This patch improves background communication and fixes several map and profile issues.",
 	sections = {
 		{
-			title = "Map legend",
+			title = "Communication",
 			items = {
-				"Hover the QT button on the world map to see the VIP star and developer gear, alongside their matching QT logos.",
+				"Fixed more causes of unwanted \"No player named...\" messages from QT's background whispers, including delayed errors after zoning or disabling QT. Errors from ordinary whispers remain visible.",
+				"QT stops sending to unavailable players sooner and prevents alternate capitalization of the same name from bypassing retry delays.",
+				"Added details to /qt diagnostics to help identify any remaining whisper-notice problems, without including player names or message contents in those counters.",
+			},
+		},
+		{
+			title = "Maps and profiles",
+			items = {
+				"The existing layer-detection option now uses WoW's own phase information when available. Player tooltips distinguish a reported phase difference from an estimated layer difference; a player being out of sight alone does not imply another phase.",
+				"Fixed minimap player-targeting controls intercepting clicks meant for windows displayed above them.",
+				"Changing profiles now cancels pending quest comparisons and delayed localized announcements from the previous profile.",
 			},
 		},
 	},

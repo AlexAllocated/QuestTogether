@@ -1,13 +1,23 @@
 {
-  "source_sha256": "d302a096d479ea21896dde2a35b24742e889ef2d8f1a15c95c9d12af45a55a6a",
+  "source_sha256": "341374a591c1614fe4357d3e494ea12efe75f3a4547a7ec7dfcf7d8bff1ebeca",
   "notes": {
-    "version": "9.0.6",
-    "welcome": "Les icônes VIP et développeur figurent désormais dans la légende de la carte.",
+    "version": "9.0.7",
+    "welcome": "Ce correctif améliore les échanges en arrière-plan, les indications de phase et le changement de profil.",
     "sections": [
       {
-        "title": "Légende de la carte",
+        "title": "Communication",
         "items": [
-          "Survolez le bouton QT de la carte du monde pour retrouver dans la légende l’étoile VIP et la roue dentée du développeur, accompagnées de leurs logos QT respectifs."
+          "D’autres cas de messages indésirables signalant un joueur introuvable ont été corrigés pour les chuchotements de QT en arrière-plan, notamment après un changement de zone ou une désactivation suivie d’une réactivation. Les erreurs liées à vos propres chuchotements restent visibles.",
+          "Quand WoW signale un joueur hors ligne, QT suspend les nouvelles tentatives et annule les envois en attente. Changer les majuscules d’une même adresse complète ne permet plus de contourner ce délai.",
+          "/qt diagnostics aide à résoudre les problèmes de chuchotements en arrière-plan. Les nouveaux compteurs ne contiennent ni noms de joueurs ni contenu de messages."
+        ]
+      },
+      {
+        "title": "Cartes et profils",
+        "items": [
+          "Avec « Détecter les couches différentes » activé, les indications explicites de WoW sont désormais prioritaires. L’infobulle distingue « Phase différente », confirmée par WoW, de l’estimation « Couche probablement différente (expérimental) ».",
+          "La zone de clic pour cibler un joueur sur la minicarte suit désormais son repère ou son menu. Elle ne bloque plus les clics destinés aux fenêtres situées au-dessus.",
+          "Changer de profil abandonne les comparaisons de quêtes en attente et les annonces traduites différées de l’ancien profil. Les résultats tardifs n’affectent plus le nouveau profil."
         ]
       }
     ]

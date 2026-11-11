@@ -1,13 +1,23 @@
 {
-  "source_sha256": "d302a096d479ea21896dde2a35b24742e889ef2d8f1a15c95c9d12af45a55a6a",
+  "source_sha256": "341374a591c1614fe4357d3e494ea12efe75f3a4547a7ec7dfcf7d8bff1ebeca",
   "notes": {
-    "version": "9.0.6",
-    "welcome": "Die Kartenlegende erklärt jetzt auch die VIP- und Entwicklersymbole.",
+    "version": "9.0.7",
+    "welcome": "Dieser Patch verbessert die Hintergrundkommunikation, Phasenhinweise und das Verhalten beim Profilwechsel.",
     "sections": [
       {
-        "title": "Kartenlegende",
+        "title": "Kommunikation",
         "items": [
-          "Wenn du mit der Maus über die QT-Schaltfläche auf der Weltkarte fährst, zeigt die Legende auch den VIP-Stern und das Entwicklerzahnrad mit den passenden QT-Logos."
+          "Weitere Fälle unerwünschter „Spieler nicht gefunden“-Meldungen durch QTs Hintergrundflüstern wurden behoben. Das betrifft auch verspätete Meldungen nach einem Gebietswechsel oder nach dem Aus- und Einschalten des Addons. Fehlermeldungen zu deinen eigenen Flüsternachrichten bleiben erhalten.",
+          "Meldet WoW einen Spieler als offline, pausiert QT weitere Versuche und verwirft wartende Sendungen. Unterschiedliche Groß- und Kleinschreibung derselben vollständigen Spieleradresse umgeht diese Wartezeit nicht mehr.",
+          "/qt diagnostics liefert zusätzliche Hinweise zur Fehlersuche bei Hintergrundflüstern. Die neuen Diagnosezähler enthalten weder Spielernamen noch Nachrichteninhalte."
+        ]
+      },
+      {
+        "title": "Karten und Profile",
+        "items": [
+          "Bei aktivierter Option „Andere Layer erkennen“ haben eindeutige Phasenangaben von WoW jetzt Vorrang. Der Spielertooltip unterscheidet die bestätigte „Andere Phase“ von der Schätzung „Vermutlich anderer Layer (experimentell)“. Einen Spieler nicht zu sehen oder nicht anvisieren zu können, reicht dafür allein nicht aus.",
+          "Die Klickfläche zum Anvisieren eines Spielers auf der Minikarte folgt jetzt seiner Markierung oder seinem Menü. Klicks auf darüberliegende Fenster werden dadurch nicht mehr abgefangen.",
+          "Beim Profilwechsel werden ausstehende Questvergleiche und verzögerte lokalisierte Ankündigungen des bisherigen Profils verworfen. Verspätete Ergebnisse erscheinen nicht im neuen Profil und aktualisieren es auch nicht."
         ]
       }
     ]

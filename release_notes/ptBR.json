@@ -1,13 +1,23 @@
 {
-  "source_sha256": "d302a096d479ea21896dde2a35b24742e889ef2d8f1a15c95c9d12af45a55a6a",
+  "source_sha256": "341374a591c1614fe4357d3e494ea12efe75f3a4547a7ec7dfcf7d8bff1ebeca",
   "notes": {
-    "version": "9.0.6",
-    "welcome": "Os ícones de VIP e do desenvolvedor agora estão na legenda do mapa.",
+    "version": "9.0.7",
+    "welcome": "Mais correções na comunicação em segundo plano, na indicação de fases e no comportamento do minimapa e dos perfis.",
     "sections": [
       {
-        "title": "Legenda do mapa",
+        "title": "Comunicação",
         "items": [
-          "Passe o cursor sobre o botão do QT no mapa-múndi para ver a estrela de VIP e a engrenagem do desenvolvedor na legenda, acompanhadas dos respectivos logotipos do QT."
+          "Corrigidos mais casos de avisos de jogador não encontrado causados pelos sussurros internos do QT, inclusive avisos atrasados após trocar de área ou desativar e reativar o addon. Os avisos de erro dos seus sussurros normais continuam aparecendo.",
+          "Quando WoW informa que um jogador está offline, o QT interrompe os envios pendentes e espera antes de tentar novamente. Diferenças de maiúsculas no mesmo nome completo não provocam mais novas tentativas antes da hora.",
+          "/qt diagnostics traz mais informações para investigar esses avisos. Os novos contadores não incluem nomes de jogadores nem conteúdo de mensagens."
+        ]
+      },
+      {
+        "title": "Mapas e perfis",
+        "items": [
+          "Com Detectar camadas diferentes ativado, o QT prioriza as informações de fase do WoW. A dica diferencia Fase diferente da estimativa Provavelmente em outra camada (experimental). Não ver ou não conseguir selecionar um jogador, por si só, não indica outra fase.",
+          "A área de seleção de jogadores no minimapa acompanha o marcador ou menu, deixando de interceptar cliques destinados às janelas que estão por cima.",
+          "Ao trocar de perfil, comparações de missões pendentes e anúncios traduzidos ainda em espera do perfil anterior são descartados, sem aparecer nem alterar o novo perfil."
         ]
       }
     ]

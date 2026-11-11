@@ -4,6 +4,22 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.7
+
+This patch improves background communication and fixes several map and profile issues.
+
+### Communication
+
+- Fixed more causes of unwanted "No player named..." messages from QT's background whispers, including delayed errors after zoning or disabling QT. Errors from ordinary whispers remain visible.
+- QT stops sending to unavailable players sooner and prevents alternate capitalization of the same name from bypassing retry delays.
+- Added details to /qt diagnostics to help identify any remaining whisper-notice problems, without including player names or message contents in those counters.
+
+### Maps and profiles
+
+- The existing layer-detection option now uses WoW's own phase information when available. Player tooltips distinguish a reported phase difference from an estimated layer difference; a player being out of sight alone does not imply another phase.
+- Fixed minimap player-targeting controls intercepting clicks meant for windows displayed above them.
+- Changing profiles now cancels pending quest comparisons and delayed localized announcements from the previous profile.
+
 ## 9.0.6
 
 The map legend now explains VIP and developer icons.

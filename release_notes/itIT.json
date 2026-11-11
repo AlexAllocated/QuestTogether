@@ -1,13 +1,23 @@
 {
-  "source_sha256": "d302a096d479ea21896dde2a35b24742e889ef2d8f1a15c95c9d12af45a55a6a",
+  "source_sha256": "341374a591c1614fe4357d3e494ea12efe75f3a4547a7ec7dfcf7d8bff1ebeca",
   "notes": {
-    "version": "9.0.6",
-    "welcome": "La legenda della mappa ora include le icone VIP e dello sviluppatore.",
+    "version": "9.0.7",
+    "welcome": "Questa patch migliora le comunicazioni in background, gli avvisi di fase e il passaggio tra profili.",
     "sections": [
       {
-        "title": "Legenda della mappa",
+        "title": "Comunicazioni",
         "items": [
-          "Passando il mouse sul pulsante QT della mappa del mondo, la legenda mostra anche la stella VIP e l’ingranaggio dello sviluppatore, affiancati dai rispettivi loghi QT."
+          "Corretti altri casi di avvisi indesiderati di giocatore non trovato causati dai sussurri di QT in background, anche dopo un cambio di zona o dopo aver disattivato e riattivato l’addon. Gli errori relativi ai tuoi normali sussurri restano visibili.",
+          "Quando WoW segnala un giocatore offline, QT sospende i tentativi e annulla gli invii in attesa. Scrivere lo stesso indirizzo completo con maiuscole e minuscole diverse non permette più di aggirare la pausa prima di riprovare.",
+          "/qt diagnostics aiuta a individuare i problemi dei sussurri in background. I nuovi contatori non contengono nomi di giocatori né contenuti dei messaggi."
+        ]
+      },
+      {
+        "title": "Mappe e profili",
+        "items": [
+          "Con «Rileva livelli di mondo diversi» attivo, QT dà precedenza alle indicazioni esplicite di WoW. La descrizione distingue «Fase diversa», confermata da WoW, dalla stima «Probabile livello di mondo diverso (sperimentale)».",
+          "L’area cliccabile per selezionare i giocatori sulla minimappa segue ora il proprio indicatore o menu e non intercetta più i clic destinati alle finestre sovrapposte.",
+          "Il cambio di profilo scarta i confronti delle missioni in attesa e gli annunci tradotti ancora da mostrare del profilo precedente. I risultati tardivi non influiscono sul nuovo profilo."
         ]
       }
     ]

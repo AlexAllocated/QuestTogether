@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.7
+
+Ce correctif améliore les échanges en arrière-plan, les indications de phase et le changement de profil.
+
+### Communication
+
+- D’autres cas de messages indésirables signalant un joueur introuvable ont été corrigés pour les chuchotements de QT en arrière-plan, notamment après un changement de zone ou une désactivation suivie d’une réactivation. Les erreurs liées à vos propres chuchotements restent visibles.
+- Quand WoW signale un joueur hors ligne, QT suspend les nouvelles tentatives et annule les envois en attente. Changer les majuscules d’une même adresse complète ne permet plus de contourner ce délai.
+- /qt diagnostics aide à résoudre les problèmes de chuchotements en arrière-plan. Les nouveaux compteurs ne contiennent ni noms de joueurs ni contenu de messages.
+
+### Cartes et profils
+
+- Avec « Détecter les couches différentes » activé, les indications explicites de WoW sont désormais prioritaires. L’infobulle distingue « Phase différente », confirmée par WoW, de l’estimation « Couche probablement différente (expérimental) ».
+- La zone de clic pour cibler un joueur sur la minicarte suit désormais son repère ou son menu. Elle ne bloque plus les clics destinés aux fenêtres situées au-dessus.
+- Changer de profil abandonne les comparaisons de quêtes en attente et les annonces traduites différées de l’ancien profil. Les résultats tardifs n’affectent plus le nouveau profil.
+
 ## 9.0.6
 
 Les icônes VIP et développeur figurent désormais dans la légende de la carte.

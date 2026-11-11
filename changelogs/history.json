@@ -3,6 +3,140 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.0.6",
+        "welcome": "The map legend now explains VIP and developer icons.",
+        "sections": [
+          {
+            "title": "Map legend",
+            "items": [
+              "Hover the QT button on the world map to see the VIP star and developer gear, alongside their matching QT logos."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.0.6",
+        "welcome": "Die Kartenlegende erklärt jetzt auch die VIP- und Entwicklersymbole.",
+        "sections": [
+          {
+            "title": "Kartenlegende",
+            "items": [
+              "Wenn du mit der Maus über die QT-Schaltfläche auf der Weltkarte fährst, zeigt die Legende auch den VIP-Stern und das Entwicklerzahnrad mit den passenden QT-Logos."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.0.6",
+        "welcome": "Les icônes VIP et développeur figurent désormais dans la légende de la carte.",
+        "sections": [
+          {
+            "title": "Légende de la carte",
+            "items": [
+              "Survolez le bouton QT de la carte du monde pour retrouver dans la légende l’étoile VIP et la roue dentée du développeur, accompagnées de leurs logos QT respectifs."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.0.6",
+        "welcome": "La leyenda del mapa ya incluye los iconos de VIP y del desarrollador.",
+        "sections": [
+          {
+            "title": "Leyenda del mapa",
+            "items": [
+              "Al pasar el cursor sobre el botón de QT en el mapa del mundo, la leyenda muestra la estrella de VIP y el engranaje del desarrollador junto a sus respectivos logotipos de QT."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.0.6",
+        "welcome": "Ahora puedes identificar los iconos de VIP y del desarrollador en la leyenda del mapa.",
+        "sections": [
+          {
+            "title": "Leyenda del mapa",
+            "items": [
+              "Coloca el cursor sobre el botón de QT en el mapa del mundo: la leyenda incluye la estrella de VIP y el engranaje del desarrollador, cada uno con su logotipo de QT."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.0.6",
+        "welcome": "Os ícones de VIP e do desenvolvedor agora estão na legenda do mapa.",
+        "sections": [
+          {
+            "title": "Legenda do mapa",
+            "items": [
+              "Passe o cursor sobre o botão do QT no mapa-múndi para ver a estrela de VIP e a engrenagem do desenvolvedor na legenda, acompanhadas dos respectivos logotipos do QT."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.0.6",
+        "welcome": "В легенде карты появились пояснения к значкам VIP и разработчика.",
+        "sections": [
+          {
+            "title": "Легенда карты",
+            "items": [
+              "Наведите указатель на кнопку QT на карте мира: в легенде теперь есть звезда VIP и шестерёнка разработчика, а рядом с ними — соответствующие логотипы QT."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.0.6",
+        "welcome": "La legenda della mappa ora include le icone VIP e dello sviluppatore.",
+        "sections": [
+          {
+            "title": "Legenda della mappa",
+            "items": [
+              "Passando il mouse sul pulsante QT della mappa del mondo, la legenda mostra anche la stella VIP e l’ingranaggio dello sviluppatore, affiancati dai rispettivi loghi QT."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.0.6",
+        "welcome": "지도 범례에 VIP와 개발자 아이콘 설명이 추가되었습니다.",
+        "sections": [
+          {
+            "title": "지도 범례",
+            "items": [
+              "세계 지도에서 QT 버튼에 마우스를 올리면 VIP 별과 개발자 톱니바퀴 아이콘을 범례에서 확인할 수 있습니다. 각 아이콘 옆에는 해당 QT 로고도 함께 표시됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.0.6",
+        "welcome": "地图图例现在也会说明 VIP 和开发者图标。",
+        "sections": [
+          {
+            "title": "地图图例",
+            "items": [
+              "将鼠标悬停在世界地图的 QT 按钮上，即可在图例中查看 VIP 星形图标和开发者齿轮图标，以及各自对应的 QT 标志。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.0.6",
+        "welcome": "地圖圖例現在也有 VIP 與開發者圖示的說明。",
+        "sections": [
+          {
+            "title": "地圖圖例",
+            "items": [
+              "將滑鼠移到世界地圖的 QT 按鈕上，即可在圖例中看到 VIP 星星與開發者齒輪圖示，旁邊也會顯示各自對應的 QT 標誌。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.0.5",
         "welcome": "Choose when QuestTogether appears below player tooltips, with further fixes for unwanted whisper failure notices.",
         "sections": [

@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.7
+
+Dieser Patch verbessert die Hintergrundkommunikation, Phasenhinweise und das Verhalten beim Profilwechsel.
+
+### Kommunikation
+
+- Weitere Fälle unerwünschter „Spieler nicht gefunden“-Meldungen durch QTs Hintergrundflüstern wurden behoben. Das betrifft auch verspätete Meldungen nach einem Gebietswechsel oder nach dem Aus- und Einschalten des Addons. Fehlermeldungen zu deinen eigenen Flüsternachrichten bleiben erhalten.
+- Meldet WoW einen Spieler als offline, pausiert QT weitere Versuche und verwirft wartende Sendungen. Unterschiedliche Groß- und Kleinschreibung derselben vollständigen Spieleradresse umgeht diese Wartezeit nicht mehr.
+- /qt diagnostics liefert zusätzliche Hinweise zur Fehlersuche bei Hintergrundflüstern. Die neuen Diagnosezähler enthalten weder Spielernamen noch Nachrichteninhalte.
+
+### Karten und Profile
+
+- Bei aktivierter Option „Andere Layer erkennen“ haben eindeutige Phasenangaben von WoW jetzt Vorrang. Der Spielertooltip unterscheidet die bestätigte „Andere Phase“ von der Schätzung „Vermutlich anderer Layer (experimentell)“. Einen Spieler nicht zu sehen oder nicht anvisieren zu können, reicht dafür allein nicht aus.
+- Die Klickfläche zum Anvisieren eines Spielers auf der Minikarte folgt jetzt seiner Markierung oder seinem Menü. Klicks auf darüberliegende Fenster werden dadurch nicht mehr abgefangen.
+- Beim Profilwechsel werden ausstehende Questvergleiche und verzögerte lokalisierte Ankündigungen des bisherigen Profils verworfen. Verspätete Ergebnisse erscheinen nicht im neuen Profil und aktualisieren es auch nicht.
+
 ## 9.0.6
 
 Die Kartenlegende erklärt jetzt auch die VIP- und Entwicklersymbole.
