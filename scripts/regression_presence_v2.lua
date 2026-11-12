@@ -127,7 +127,6 @@ local function Fixture()
 		self.channels[n] = Count(self.channels) + 1
 		return true
 	end
-	function a:ScheduleAnnouncementChannelOrder() end
 	function a:GetViewedQuestTogetherMapID()
 		return self.viewedMap
 	end

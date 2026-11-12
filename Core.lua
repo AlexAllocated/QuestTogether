@@ -771,7 +771,6 @@ QuestTogether.runtimeEvents = {
 	"BN_FRIEND_ACCOUNT_ONLINE",
 	"BN_FRIEND_ACCOUNT_OFFLINE",
 	"CHANNEL_COUNT_UPDATE",
-	"CHANNEL_UI_UPDATE",
 	"PLAYER_LEVEL_UP",
 	"QUEST_ACCEPTED",
 	"QUEST_TURNED_IN",
@@ -1208,13 +1207,6 @@ QuestTogether.API = QuestTogether.API
 				return nil
 			end
 			return { GetChannelList() }
-		end,
-		SwapChatChannelIndices = function(first, second)
-			if not C_ChatInfo or type(C_ChatInfo.SwapChatChannelsByChannelIndex) ~= "function" then
-				return false
-			end
-			C_ChatInfo.SwapChatChannelsByChannelIndex(first, second)
-			return true
 		end,
 		GetNumChatWindows = function()
 			return NUM_CHAT_WINDOWS or 0
@@ -6549,7 +6541,6 @@ function QuestTogether:Enable()
 	end
 	if self.EnsureMeshDirectoryJoined then
 		self:EnsureMeshDirectoryJoined(self.announcementChannelName)
-		self:ScheduleAnnouncementChannelOrder()
 	end
 	if self.RefreshTaskAreaStates then
 		self:RefreshTaskAreaStates(false)
@@ -7337,7 +7328,6 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 	self:RefreshTaskAreaStates(false)
 	if self.EnsureMeshDirectoryJoined and self.isEnabled then
 		self:EnsureMeshDirectoryJoined(self.announcementChannelName)
-		self:ScheduleAnnouncementChannelOrder()
 	end
 end
 

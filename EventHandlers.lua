@@ -570,7 +570,6 @@ function QuestTogether:HandleGroupRosterChanged(reason)
 end
 
 function QuestTogether:PLAYER_REGEN_ENABLED()
-	self:ScheduleAnnouncementChannelOrder()
 	if self.FlushDeferredWork then
 		self:FlushDeferredWork("PLAYER_REGEN_ENABLED")
 	end

@@ -114,7 +114,6 @@ QT:RegisterTest("noncombat target restrictions retire the secure overlay before 
 		elseif trigger == "click" then b.scripts.PreClick()
 		elseif trigger == "leave" then b.scripts.OnLeave()
 		else
-			function a:ScheduleAnnouncementChannelOrder() end
 			function a:FlushDeferredWork() end
 			a:ADDON_RESTRICTION_STATE_CHANGED()
 		end

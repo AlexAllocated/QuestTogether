@@ -183,7 +183,7 @@ QT:RegisterTest("recent companion world lifecycle rebuilds real rosters without 
 	-- communication/nameplate/quest work uses owned no-op adapters in this case.
 	for _, method in ipairs({ "ResetPlayerPhases", "ResetObjectiveAnnouncements", "ResumeCommsWorldSession",
 		"EndCommsWorldSession", "SetRuntimeFlag", "RefreshTaskAreaStates", "EnsureAnnouncementChannelJoined",
-		"ScheduleAnnouncementChannelOrder", "BroadcastQTPlayerPresence", "BroadcastPlayerLocation",
+		"BroadcastQTPlayerPresence", "BroadcastPlayerLocation",
 		"FlushGeographicDeparture", "SavePlayerLocationCache" }) do
 		a[method] = function() end
 	end

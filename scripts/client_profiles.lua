@@ -1004,10 +1004,7 @@ return pushable end or nil,
 		-- Native contracts stay offline; the live suite uses private adapters.
 		do
 			local oldChat, oldList, oldRoster = C_ChatInfo, GetChannelList, GetChannelRosterInfo
-			C_ChatInfo = { SwapChatChannelsByChannelIndex = function(a, b)
-				assert(a == 2 and b == 4)
-			end }
-			assert(addon.API.SwapChatChannelIndices(2, 4))
+			C_ChatInfo = {}
 			GetChannelList = function() return 1, "General", false, 2, "QuestTogether", false end
 			local channels = addon.API.GetChatChannelList()
 			assert(#channels == 6 and channels[2] == "General" and channels[5] == "QuestTogether")
@@ -1027,7 +1024,6 @@ return pushable end or nil,
 				GetChannelRosterInfo = function() return unavailable end
 				assert(addon.API.GetChannelRosterInfo(4, 2) == nil)
 			end
-			assert(not addon.API.SwapChatChannelIndices(2, 4))
 			GetChannelRosterInfo = function() error("unavailable roster") end
 			assert(addon.API.GetChannelRosterInfo(4, 2) == nil)
 			GetChannelList, GetChannelRosterInfo = nil, nil
