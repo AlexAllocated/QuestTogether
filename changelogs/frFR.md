@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.14
+
+Les canaux de QT retrouvent leur place après vos canaux de discussion habituels.
+
+### Canaux de discussion
+
+- Correction d’un problème qui pouvait laisser les canaux masqués de QT avant le canal Général et les autres canaux de discussion.
+- Le canal global utilisé pour découvrir les autres joueurs s’appelle désormais QuestTogether.
+
 ## 9.0.13
 
 Les canaux de QuestTogether retrouvent leur place en fin de liste, tout en préservant vos réglages de discussion.

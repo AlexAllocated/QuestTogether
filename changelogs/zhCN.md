@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.14
+
+修复了 QT 频道排在常用聊天频道前面的问题。
+
+### 聊天频道
+
+- 隐藏的 QT 频道有时无法移到综合等聊天频道之后，现已修复。
+- 用于发现其他玩家的全局频道现已更名为 QuestTogether。
+
 ## 9.0.13
 
 QT 频道重新排在聊天频道列表末尾。

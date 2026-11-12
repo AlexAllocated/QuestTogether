@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.14
+
+Los canales de QT vuelven a quedar detrás de tus canales de chat habituales.
+
+### Canales de chat
+
+- Corregido un fallo que podía dejar los canales ocultos de QT por delante de General y de los demás canales de chat.
+- El canal global que permite descubrir a otros jugadores ahora se llama QuestTogether.
+
 ## 9.0.13
 
 Los canales de QuestTogether vuelven al final de la lista, conservando tus ajustes del chat.

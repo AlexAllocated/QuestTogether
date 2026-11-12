@@ -1,14 +1,14 @@
 {
-  "source_sha256": "270afef981eb3da135f6cdf8e0359ca375364af4bd32e159d634b9e6e9ae8fc1",
+  "source_sha256": "95cfeb68bc7c318948598034334762977009103ba7350d46283595266583330e",
   "notes": {
-    "version": "9.0.13",
-    "welcome": "I canali di QuestTogether tornano in fondo all’elenco, mantenendo le tue impostazioni della chat.",
+    "version": "9.0.14",
+    "welcome": "I canali di QT tornano dopo i tuoi normali canali di chat.",
     "sections": [
       {
         "title": "Canali di chat",
         "items": [
-          "I canali nascosti con cui QuestTogether trova altri giocatori vengono di nuovo spostati dopo i normali canali di chat. Colori e impostazioni restano associati al rispettivo canale e ogni finestra conserva il canale memorizzato per l’invio dei messaggi.",
-          "Il riordino attende mentre scrivi, tieni aperte le impostazioni dei canali o il gioco limita le modifiche. Se viene rilevato un problema imprevisto, si interrompe fino al ricaricamento dell’interfaccia."
+          "Risolto un problema che poteva lasciare i canali nascosti di QT prima del canale Generale e degli altri canali di chat.",
+          "Il canale globale usato per trovare gli altri giocatori si chiama ora QuestTogether."
         ]
       }
     ]

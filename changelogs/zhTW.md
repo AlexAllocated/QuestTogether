@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.14
+
+已修正 QT 頻道排在常用聊天頻道前面的問題。
+
+### 聊天頻道
+
+- 隱藏的 QT 頻道有時無法移到綜合等聊天頻道之後，現已修正。
+- 用來尋找其他玩家的全域頻道現已改名為 QuestTogether。
+
 ## 9.0.13
 
 QT 頻道會再次排在聊天頻道清單的最後。

@@ -4,6 +4,15 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.14
+
+QT channels should no longer get in the way of your usual chat channels.
+
+### Chat channels
+
+- Fixed a case where QT’s hidden channels stayed ahead of General and other chat channels.
+- The global discovery channel is now named QuestTogether.
+
 ## 9.0.13
 
 QuestTogether’s channels stay at the bottom of your channel list while keeping your chat setup intact.

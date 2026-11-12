@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.0.13",
+        "welcome": "QuestTogether’s channels stay at the bottom of your channel list while keeping your chat setup intact.",
+        "sections": [
+          {
+            "title": "Chat channels",
+            "items": [
+              "QT’s hidden discovery channels move below your other channels without changing their colors, settings, or the channel your chat windows remember.",
+              "Sorting waits while you type, adjust channel settings, or WoW restricts changes. If a reorder produces an unexpected result, further sorting stops until you reload."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.0.13",
+        "welcome": "QuestTogether hält seine Kanäle wieder am Ende der Liste und bewahrt dabei deine Chateinstellungen.",
+        "sections": [
+          {
+            "title": "Chatkanäle",
+            "items": [
+              "Die ausgeblendeten Kanäle, über die QuestTogether andere Spieler findet, werden wieder hinter die normalen Chatkanäle verschoben. Farben und Einstellungen bleiben beim jeweiligen Kanal; jedes Chatfenster merkt sich weiterhin denselben Kanal zum Schreiben.",
+              "Während du tippst, die Kanaleinstellungen geöffnet hast oder das Spiel Änderungen einschränkt, wartet die Umsortierung. Bei einem unerwarteten Problem wird sie bis zum Neuladen der Oberfläche ausgesetzt."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.0.13",
+        "welcome": "Les canaux de QuestTogether retrouvent leur place en fin de liste, tout en préservant vos réglages de discussion.",
+        "sections": [
+          {
+            "title": "Canaux de discussion",
+            "items": [
+              "Les canaux masqués utilisés par QuestTogether pour trouver d’autres joueurs sont de nouveau placés après les canaux de discussion habituels. Chaque canal garde ses couleurs et ses réglages, et chaque fenêtre conserve le canal mémorisé pour envoyer vos messages.",
+              "Les canaux ne sont pas réorganisés pendant que vous écrivez, lorsque leurs réglages sont ouverts ou que le jeu limite les modifications. En cas de problème inattendu, la réorganisation est suspendue jusqu’au rechargement de l’interface."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.0.13",
+        "welcome": "Los canales de QuestTogether vuelven al final de la lista, conservando tus ajustes del chat.",
+        "sections": [
+          {
+            "title": "Canales de chat",
+            "items": [
+              "Los canales ocultos que QuestTogether usa para encontrar a otros jugadores vuelven a situarse después de los canales de chat habituales. Cada canal conserva sus colores y ajustes, y cada ventana mantiene el canal que tenía guardado para enviar mensajes.",
+              "La reordenación espera mientras escribes, tienes abiertos los ajustes de canales o el juego restringe los cambios. Si se detecta un problema inesperado, se detiene hasta que recargues la interfaz."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.0.13",
+        "welcome": "QuestTogether vuelve a dejar sus canales al final de la lista sin perder tu configuración del chat.",
+        "sections": [
+          {
+            "title": "Canales de chat",
+            "items": [
+              "Los canales ocultos de QuestTogether que permiten encontrar a otros jugadores vuelven a colocarse después de los canales de chat habituales. Se conservan los colores y la configuración de cada canal, así como el canal que cada ventana recuerda para enviar mensajes.",
+              "El reordenamiento se pospone mientras escribes, tienes abierta la configuración de los canales o el juego restringe los cambios. Ante un problema inesperado, se suspende hasta que recargues la interfaz."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.0.13",
+        "welcome": "Os canais do QT voltam para o fim da lista, preservando suas preferências de bate-papo.",
+        "sections": [
+          {
+            "title": "Ordem dos canais de bate-papo",
+            "items": [
+              "O QT volta a manter seus canais ocultos depois dos canais de conversa, preservando as cores, as configurações e o canal de envio escolhido em cada janela.",
+              "A reorganização aguarda enquanto você digita, usa as configurações de canais ou o WoW limita essas alterações. Se o jogo retornar um resultado inesperado, o QT interrompe a reorganização até a interface ser recarregada."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.0.13",
+        "welcome": "Каналы QT снова располагаются в конце списка.",
+        "sections": [
+          {
+            "title": "Порядок каналов чата",
+            "items": [
+              "Скрытые каналы QuestTogether располагаются после обычных каналов. Цвета, настройки и выбранный канал отправки в каждом окне чата сохраняются.",
+              "QT откладывает перестановку, пока вы вводите сообщение, меняете настройки каналов или WoW запрещает такие изменения. При неожиданном результате перестановка прекращается до перезагрузки интерфейса."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.0.13",
+        "welcome": "I canali di QuestTogether tornano in fondo all’elenco, mantenendo le tue impostazioni della chat.",
+        "sections": [
+          {
+            "title": "Canali di chat",
+            "items": [
+              "I canali nascosti con cui QuestTogether trova altri giocatori vengono di nuovo spostati dopo i normali canali di chat. Colori e impostazioni restano associati al rispettivo canale e ogni finestra conserva il canale memorizzato per l’invio dei messaggi.",
+              "Il riordino attende mentre scrivi, tieni aperte le impostazioni dei canali o il gioco limita le modifiche. Se viene rilevato un problema imprevisto, si interrompe fino al ricaricamento dell’interfaccia."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.0.13",
+        "welcome": "QT 채널이 다시 채널 목록 끝에 표시됩니다.",
+        "sections": [
+          {
+            "title": "채팅 채널 순서",
+            "items": [
+              "QT의 숨겨진 채널을 일반 채팅 채널 뒤로 옮깁니다. 채널별 색상과 설정, 각 채팅 창에서 메시지를 보낼 채널은 그대로 유지합니다.",
+              "메시지를 입력하거나 채널 설정을 사용하는 동안, 또는 WoW에서 변경을 제한하는 동안에는 정렬을 미룹니다. 예기치 않은 결과가 감지되면 UI를 다시 불러올 때까지 정렬을 중단합니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.0.13",
+        "welcome": "QT 频道重新排在聊天频道列表末尾。",
+        "sections": [
+          {
+            "title": "聊天频道顺序",
+            "items": [
+              "隐藏的 QT 频道会移到普通聊天频道后面，同时保留各频道的颜色和设置，以及每个聊天窗口原先选择的发言频道。",
+              "输入消息、调整频道设置或游戏限制相关操作时，QT 会暂缓排序。如果排序结果异常，则会停止后续排序，直到重新加载界面。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.0.13",
+        "welcome": "QT 頻道會再次排在聊天頻道清單的最後。",
+        "sections": [
+          {
+            "title": "聊天頻道順序",
+            "items": [
+              "QT 的隱藏頻道會移到一般聊天頻道後方，並保留各頻道的顏色、設定，以及每個聊天視窗原先選擇的發話頻道。",
+              "輸入訊息、調整頻道設定，或遊戲限制相關操作時，QT 會暫緩排序。若排序結果異常，便會停止後續排序，直到重新載入介面。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.0.12",
         "welcome": "A fix for chat channels changing unexpectedly.",
         "sections": [

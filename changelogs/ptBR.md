@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.14
+
+Os canais do QT voltam a ficar depois dos seus canais de bate-papo habituais.
+
+### Canais de bate-papo
+
+- Corrigimos um problema que podia deixar os canais ocultos do QT à frente do Geral e dos outros canais de bate-papo.
+- O canal global usado para encontrar outros jogadores agora se chama QuestTogether.
+
 ## 9.0.13
 
 Os canais do QT voltam para o fim da lista, preservando suas preferências de bate-papo.

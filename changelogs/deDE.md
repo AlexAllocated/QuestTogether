@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.14
+
+Die QT-Kanäle bleiben wieder hinter euren normalen Chatkanälen.
+
+### Chatkanäle
+
+- Ein Fehler wurde behoben, durch den die versteckten QT-Kanäle vor Allgemein und anderen Chatkanälen stehen bleiben konnten.
+- Der globale Kanal zur Spielersuche heißt jetzt QuestTogether.
+
 ## 9.0.13
 
 QuestTogether hält seine Kanäle wieder am Ende der Liste und bewahrt dabei deine Chateinstellungen.

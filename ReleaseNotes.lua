@@ -3,14 +3,14 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "9.0.13",
-	welcome = "QuestTogether’s channels stay at the bottom of your channel list while keeping your chat setup intact.",
+	version = "9.0.14",
+	welcome = "QT channels should no longer get in the way of your usual chat channels.",
 	sections = {
 		{
 			title = "Chat channels",
 			items = {
-				"QT’s hidden discovery channels move below your other channels without changing their colors, settings, or the channel your chat windows remember.",
-				"Sorting waits while you type, adjust channel settings, or WoW restricts changes. If a reorder produces an unexpected result, further sorting stops until you reload.",
+				"Fixed a case where QT’s hidden channels stayed ahead of General and other chat channels.",
+				"The global discovery channel is now named QuestTogether.",
 			},
 		},
 	},

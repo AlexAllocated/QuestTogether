@@ -1,14 +1,14 @@
 {
-  "source_sha256": "270afef981eb3da135f6cdf8e0359ca375364af4bd32e159d634b9e6e9ae8fc1",
+  "source_sha256": "95cfeb68bc7c318948598034334762977009103ba7350d46283595266583330e",
   "notes": {
-    "version": "9.0.13",
-    "welcome": "QuestTogether hält seine Kanäle wieder am Ende der Liste und bewahrt dabei deine Chateinstellungen.",
+    "version": "9.0.14",
+    "welcome": "Die QT-Kanäle bleiben wieder hinter euren normalen Chatkanälen.",
     "sections": [
       {
         "title": "Chatkanäle",
         "items": [
-          "Die ausgeblendeten Kanäle, über die QuestTogether andere Spieler findet, werden wieder hinter die normalen Chatkanäle verschoben. Farben und Einstellungen bleiben beim jeweiligen Kanal; jedes Chatfenster merkt sich weiterhin denselben Kanal zum Schreiben.",
-          "Während du tippst, die Kanaleinstellungen geöffnet hast oder das Spiel Änderungen einschränkt, wartet die Umsortierung. Bei einem unerwarteten Problem wird sie bis zum Neuladen der Oberfläche ausgesetzt."
+          "Ein Fehler wurde behoben, durch den die versteckten QT-Kanäle vor Allgemein und anderen Chatkanälen stehen bleiben konnten.",
+          "Der globale Kanal zur Spielersuche heißt jetzt QuestTogether."
         ]
       }
     ]
