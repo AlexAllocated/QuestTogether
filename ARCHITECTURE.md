@@ -492,8 +492,12 @@ is never authority for the claimed origin.
 
 Generation-3 `QuestTogether3` and `QuestTogether3Z<zone>` channels are membership
 directories only. Display-list indices and native channel IDs remain distinct.
-Membership is resolved by name. QT does not reorder channels or rewrite native
-chat colors and sticky destinations; those belong to Blizzard and the player.
+Membership is resolved by name. RuntimeCoordinator paces QT-last channel ordering
+through a guarded native adapter: chat destinations are bound to channel names
+before Blizzard's secure-dispatched reorder helper moves the full channel metadata.
+QT never directly rewrites ChatTypeInfo or falls back to a bare native index swap.
+Typing, channel configuration and restrictions defer sorting; inconsistent native
+results suspend it for the session without a speculative rollback.
 Directory selection is guarded, restored and deferred while unsafe. Missing,
 suspended or incomplete directories are degraded discovery, not a reason to send
 channel payloads. `Transport` does not admit the CHANNEL distribution. Bootstrap

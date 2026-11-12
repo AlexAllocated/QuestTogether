@@ -4128,82 +4128,104 @@ QuestTogether:RegisterTest("protocol upgrade rejects all addon channels and reti
 	Equal(seen, 1)
 end)
 
-QuestTogether:RegisterTest("directory lifecycle preserves human channel colors destinations and visible messages", function()
+local function NewChannelOrderingFixture()
 	local addon = NewCommsFixture()
 	addon.db = { profile = {} }
 	addon.mapID = 12
 	addon:InitializeGeographicComms()
-	local channels = { "QuestTogether3", "General", "QuestTogether3Z12", "Trade", "MyFriends", "QuestTogether3Z45", "QuestTogether" }
-	local colors = { [2] = "general-gold", [4] = "trade-pink", [5] = "friends-green" }
-	local frames = { { target = 5, channels = {} }, { target = 4, channels = {} } }
-	local leaves, swaps = {}, 0
-	for _, frame in ipairs(frames) do
-		for _, name in ipairs(channels) do frame.channels[name] = true end
+	addon.channels = { "QuestTogether3", "General", "QuestTogether3Z12", "Trade", "MyFriends", "QuestTogether3Z45", "QuestTogether", "QuestTogether3ZFriends" }
+	addon.colors = { [2] = "general-gold", [4] = "trade-pink", [5] = "friends-green", [8] = "community-blue" }
+	addon.chatFrames = { { target = 5, channels = {} }, { target = 4, channels = {} } }
+	addon.leaves, addon.swaps = {}, {}
+	for _, frame in ipairs(addon.chatFrames) do
+		for _, name in ipairs(addon.channels) do frame.channels[name] = true end
 	end
 	function addon:IsRuntimeRestricted() return self.blocked == true end
-	function addon:IsRuntimeRestrictionTypeActive() return false end
+	function addon:IsRuntimeRestrictionTypeActive() return self.chatBlocked == true end
 	function addon:GetViewedQuestTogetherMapID() return nil end
 	-- Do not install callbacks on the live client's global chat frames.
 	function addon:RegisterAnnouncementChannelChatFilters() end
 	addon.API.GetBestMapForUnit = function() return addon.mapID end
 	addon.API.GetMapInfo = function() return { mapType = 3 } end
 	addon.API.GetChannelName = function(name)
-		for id, channel in pairs(channels) do
+		for id, channel in pairs(addon.channels) do
 			if channel == name then return id end
 		end
 	end
 	addon.API.GetChatChannelList = function()
 		local rows = {}
-		for id = 1, 12 do
-			if channels[id] then
-				rows[#rows + 1], rows[#rows + 2], rows[#rows + 3] = id, channels[id], false
+		-- Native enumeration order is not guaranteed to be numeric-ID order.
+		for id = 16, 1, -1 do
+			if addon.channels[id] then
+				rows[#rows + 1], rows[#rows + 2], rows[#rows + 3] = id, addon.channels[id], false
 			end
 		end
 		return rows
 	end
 	addon.API.JoinPermanentChannel = function(name)
-		for id = 1, 12 do
-			if not channels[id] then
-				channels[id] = name
-				for _, frame in ipairs(frames) do frame.channels[name] = true end
+		for id = 1, 16 do
+			if not addon.channels[id] then
+				addon.channels[id] = name
+				for _, frame in ipairs(addon.chatFrames) do frame.channels[name] = true end
 				return
 			end
 		end
 		error("fixture channel capacity exceeded")
 	end
 	addon.API.LeaveChannelByName = function(name)
-		leaves[name] = (leaves[name] or 0) + 1
-		channels[assert(addon.API.GetChannelName(name))] = nil
+		addon.leaves[name] = (addon.leaves[name] or 0) + 1
+		addon.channels[assert(addon.API.GetChannelName(name))] = nil
 	end
-	addon.API.GetNumChatWindows = function() return #frames end
-	addon.API.GetChatFrameByID = function(id) return frames[id] end
+	addon.API.GetNumChatWindows = function() return #addon.chatFrames end
+	addon.API.GetChatFrameByID = function(id) return addon.chatFrames[id] end
 	addon.API.RemoveChatWindowChannel = function(frame, name) frame.channels[name] = nil end
-	-- Model the native operation that caused issue #15: names move, while
-	-- colors and the chat edit boxes still refer to their numeric indices.
-	addon.API.SwapChatChannelIndices = function(one, two)
-		swaps = swaps + 1
-		channels[one], channels[two] = channels[two], channels[one]
+	-- This models the preserving adapter's contract. Its real native state
+	-- transaction is covered separately by the offline client API checks.
+	addon.API.SwapChatChannelsPreservingState = function(firstName, secondName)
+		local first, second = assert(addon.API.GetChannelName(firstName)), assert(addon.API.GetChannelName(secondName))
+		addon.swaps[#addon.swaps + 1] = { firstName, secondName, first, second }
+		for _, frame in ipairs(addon.chatFrames) do
+			if type(frame.target) == "number" then frame.target = addon.channels[frame.target] end
+		end
+		addon.channels[first], addon.channels[second] = addon.channels[second], addon.channels[first]
+		addon.colors[first], addon.colors[second] = addon.colors[second], addon.colors[first]
 		return true
 	end
-	local function CheckHumanChat()
-		local pending = addon.delayed
-		addon.delayed = {}
-		for _, callback in ipairs(pending) do callback() end
-		Equal(swaps, 0)
-		Equal(channels[2], "General")
-		Equal(channels[4], "Trade")
-		Equal(channels[5], "MyFriends")
-		Equal(colors[addon.API.GetChannelName("General")], "general-gold")
-		Equal(colors[addon.API.GetChannelName("Trade")], "trade-pink")
-		Equal(colors[addon.API.GetChannelName("MyFriends")], "friends-green")
+	return addon
+end
+
+QuestTogether:RegisterTest("QT-last directory lifecycle preserves human channel colors destinations and visible messages", function()
+	local addon = NewChannelOrderingFixture()
+	local channels, frames, leaves = addon.channels, addon.chatFrames, addon.leaves
+	local function SettleOrdering()
+		for _ = 1, 32 do
+			addon.now = addon.now + 1
+			local before = #addon.swaps
+			addon:UpdateAnnouncementChannelOrder()
+			assert(#addon.swaps - before <= 1, "ordering must do at most one swap per pass")
+		end
+		Equal(#addon.delayed, 0)
+	end
+	local function CheckHumanChat(extra)
+		local ordered = {}
+		for id = 1, 16 do
+			if channels[id] then ordered[#ordered + 1] = channels[id] end
+		end
+		Equal(table.concat(ordered, ","), "General,Trade,MyFriends,QuestTogether3ZFriends," .. (extra or "")
+			.. "QuestTogether3," .. addon.geographicCommsState.currentChannel)
+		Equal(addon.colors[addon.API.GetChannelName("General")], "general-gold")
+		Equal(addon.colors[addon.API.GetChannelName("Trade")], "trade-pink")
+		Equal(addon.colors[addon.API.GetChannelName("MyFriends")], "friends-green")
+		Equal(addon.colors[addon.API.GetChannelName("QuestTogether3ZFriends")], "community-blue")
 		for index, destination in ipairs({ "MyFriends", "Trade" }) do
 			local frame = frames[index]
-			Equal(channels[frame.target], destination)
+			Equal(frame.target, destination)
 			Equal(frame.channels[destination], true)
 			Equal(addon:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL", "QuestTogether is useful", "Friend", "",
-				frame.target .. ". " .. destination), false)
+				addon.API.GetChannelName(destination) .. ". " .. destination), false)
 			Equal(frame.channels.QuestTogether3, nil)
 		end
+		Equal(addon:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL", "community message", "Friend", "", "QuestTogether3ZFriends"), false)
 	end
 	Equal(addon:EnsureMeshDirectoryJoined(addon.announcementChannelName), true)
 	addon:CHANNEL_COUNT_UPDATE()
@@ -4213,34 +4235,88 @@ QuestTogether:RegisterTest("directory lifecycle preserves human channel colors d
 	Equal(addon.geographicCommsState.currentChannel, "QuestTogether3Z12")
 	Equal(frames[1].channels.QuestTogether3Z12, nil)
 	Equal(addon:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL", "directory message", "Friend", "", "3. QuestTogether3Z12"), true)
+	SettleOrdering()
+	assert(#addon.swaps > 0)
 	CheckHumanChat()
 
-	-- Zone changes must leave and join only QT directories.
 	addon.mapID, addon.now = 13, addon.now + 3
 	addon:UpdateGeographicSubscriptions()
 	Equal(leaves.QuestTogether3Z12, 1)
 	Equal(addon.geographicCommsState.currentChannel, "QuestTogether3Z13")
 	Equal(frames[1].channels.QuestTogether3Z13, nil)
+	SettleOrdering()
 	CheckHumanChat()
 
-	-- Native channel IDs can change independently. Refresh cached bindings by
-	-- name, and reconcile newly observed stale directories on the count event.
-	channels[9], channels[1] = channels[1], nil
-	channels[10], channels[3] = channels[3], nil
-	channels[11] = "QuestTogether3Z99"
+	-- A human channel arriving later belongs before the directories. At the
+	-- same time native IDs change; the next pass must use the new name mapping.
+	local globalID, zoneID = addon.API.GetChannelName("QuestTogether3"), addon.API.GetChannelName("QuestTogether3Z13")
+	channels[9], channels[globalID] = channels[globalID], nil
+	channels[10], channels[zoneID] = channels[zoneID], nil
+	channels[11], channels[12] = "QuestTogether3Z99", "AfterLogin"
+	addon.colors[12] = "later-orange"
 	addon:CHANNEL_COUNT_UPDATE()
 	Equal(addon.geographicCommsState.reconciledChannels, nil)
 	addon.blocked, addon.now = true, addon.now + 3
+	local before = #addon.swaps
 	addon:UpdateGeographicSubscriptions()
+	addon:UpdateAnnouncementChannelOrder()
+	Equal(#addon.swaps, before)
 	Equal(leaves.QuestTogether3Z99, nil)
 	addon.blocked = false
 	Equal(addon:EnsureMeshDirectoryJoined(addon.announcementChannelName), true)
 	addon:UpdateGeographicSubscriptions()
 	Equal(addon.announcementChannelLocalID, 9)
 	Equal(addon.announcementChannelBindings.QuestTogether3Z13, 10)
-	Equal(addon:GetAnnouncementChannelLocalID("QuestTogether3Z13"), 10)
 	Equal(leaves.QuestTogether3Z99, 1)
-	CheckHumanChat()
+	SettleOrdering()
+	CheckHumanChat("AfterLogin,")
+	Equal(addon.colors[addon.API.GetChannelName("AfterLogin")], "later-orange")
+	Equal(addon:GetAnnouncementChannelLocalID("QuestTogether3Z13"), addon.API.GetChannelName("QuestTogether3Z13"))
+end)
+
+QuestTogether:RegisterTest("channel ordering paces retries and respects stopped restricted and inconsistent lifetimes", function()
+	for _, case in ipairs({ { "deferred", 1 }, { "unavailable", 30 }, { "inconsistent", false } }) do
+		local addon, calls = NewChannelOrderingFixture(), 0
+		addon.API.SwapChatChannelsPreservingState = function()
+			calls = calls + 1
+			-- Native channel callbacks can run before the adapter returns.
+			addon:CHANNEL_COUNT_UPDATE()
+			addon:UpdateAnnouncementChannelOrder()
+			return false, case[1]
+		end
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(calls, 1)
+		addon.now = addon.now + 0.5
+		addon:CHANNEL_COUNT_UPDATE()
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(calls, 1)
+		addon.now = 100 + (case[2] or 1000) - 0.01
+		addon:CHANNEL_COUNT_UPDATE()
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(calls, 1)
+		addon.now = 100 + (case[2] or 1000)
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(calls, case[2] and 2 or 1)
+		Equal(#addon.delayed, 0)
+	end
+	for _, state in ipairs({ "isEnabled", "isLoggingOut", "blocked", "chatBlocked" }) do
+		local addon, calls = NewChannelOrderingFixture(), 0
+		addon.API.SwapChatChannelsPreservingState = function()
+			calls = calls + 1
+			return false, "deferred"
+		end
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(calls, 1)
+		addon[state] = state ~= "isEnabled"
+		addon.now = addon.now + 2
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(calls, 1)
+		addon[state] = state == "isEnabled"
+		addon.now = addon.now + 2
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(calls, 2)
+		Equal(#addon.delayed, 0)
+	end
 end)
 
 QuestTogether:RegisterTest("QT slash chat emits one global mesh event and echoes only admitted text", function()

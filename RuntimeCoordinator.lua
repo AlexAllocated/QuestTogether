@@ -68,6 +68,7 @@ function QT:InitializeRuntimeCoordinator()
 			return
 		end
 		elapsed = 0
+		self:UpdateAnnouncementChannelOrder()
 		self:UpdateQTAudio()
 		self:UpdatePartyNavigation()
 		self:UpdatePartyQuestFocusIndicators()

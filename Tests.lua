@@ -390,6 +390,7 @@ local function WithIsolatedState(testFn)
 			"personalBubbleEditSession",
 			"announcementChannelLocalID",
 			"legacyAnnouncementChannelLocalID",
+			"chatChannelOrderState",
 			"questCompareResponseQueue",
 			"questCompareResponseCache",
 			"partyFocusController",

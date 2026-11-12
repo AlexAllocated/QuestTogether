@@ -820,6 +820,210 @@ local function CallNativeMapLua(func, ...)
 	return pcall(securecallfunction, func, ...)
 end
 
+-- Preserve native channel identity as one guarded swap. Blizzard owns the full
+-- ChatTypeInfo exchange; QT never assigns its entries or rewrites RGB colors.
+local function SwapChatChannelsPreservingState(firstName, secondName)
+	local dispatched = false
+	local function Run()
+		local function Accessible(value) return CanAccessForeignValue(value) end
+		local function Name(value)
+			return Accessible(value) and type(value) == "string" and #value > 0
+				and #value <= 256 and not value:find("[%c|]")
+		end
+		if not Name(firstName) or not Name(secondName) or firstName == secondName then
+			return false, "invalid"
+		end
+		if QuestTogether.isRunningTests then return false, "restricted" end
+		local securityCheck, dispatch = issecurevariable, securecallfunction
+		if not Accessible(securityCheck) or type(securityCheck) ~= "function"
+			or not Accessible(dispatch) or type(dispatch) ~= "function" then
+			return false, "unavailable"
+		end
+		local function Secure(owner, key)
+			if not Accessible(owner) or (type(owner) == "table" and not CanAccessForeignTable(owner)) then return nil end
+			local secureOK, secure = pcall(securityCheck, owner, key)
+			return secureOK and Accessible(secure) and secure == true
+		end
+		local function Trusted(owner, key)
+			if not Secure(owner, key) then return nil end
+			local readOK, value = pcall(function() return owner[key] end)
+			return readOK and Accessible(value) and type(value) == "function" and value or nil
+		end
+		if Trusted(_G, "securecallfunction") ~= dispatch
+			or Trusted(_G, "issecurevariable") ~= securityCheck then return false, "unavailable" end
+		local function Call(func, ...)
+			if not func then return false end
+			-- Pass the actual trusted native function, never an addon closure.
+			return pcall(dispatch, func, ...)
+		end
+		local combat = Trusted(_G, "InCombatLockdown")
+		local function Restricted()
+			local ok, locked = Call(combat)
+			return not ok or not Accessible(locked) or (locked ~= false and locked ~= nil)
+				or not QuestTogether.isEnabled or QuestTogether.isLoggingOut
+				or QuestTogether:IsRuntimeRestricted()
+				or QuestTogether:IsRuntimeRestrictionTypeActive("chat")
+				or QuestTogether:IsWorkBlocked("foreign_frame_mutation")
+		end
+		if Restricted() then return false, "restricted" end
+		local getChannel = Trusted(_G, "GetChannelName")
+		local swap = Trusted(_G, "ChatConfigChannelSettings_SwapChannelsByIndex")
+		if not getChannel or not swap or not CanAccessForeignTable(C_ChatInfo)
+			or not Trusted(C_ChatInfo, "SwapChatChannelsByChannelIndex")
+			or not CanAccessForeignTable(ChatTypeInfo) or not CanAccessForeignTable(CHAT_FRAMES) then
+			return false, "unavailable"
+		end
+		local function Channel(value)
+			local ok, id, name = Call(getChannel, value)
+			if not ok or not Accessible(id) or type(id) ~= "number" or id < 1 or id > 30
+				or id ~= math.floor(id) or not Name(name) then return nil end
+			return id, name
+		end
+		local function ChannelMatches(name, expected)
+			local id, canonical = Channel(name)
+			return id == expected and canonical == name
+		end
+		local first, firstCanonical = Channel(firstName)
+		local second, secondCanonical = Channel(secondName)
+		if not first or not second or first == second
+			or firstCanonical ~= firstName or secondCanonical ~= secondName then return false, "invalid" end
+		local firstKey, secondKey = "CHANNEL" .. first, "CHANNEL" .. second
+		if not Secure(ChatTypeInfo, firstKey) or not Secure(ChatTypeInfo, secondKey) then
+			return false, "inaccessible"
+		end
+		local firstInfo, secondInfo = ChatTypeInfo[firstKey], ChatTypeInfo[secondKey]
+		local function Snapshot(info)
+			if not CanAccessForeignTable(info) then return nil end
+			local copy, count = {}, 0
+			for key, value in pairs(info) do
+				if not Accessible(key) or not Accessible(value) then return nil end
+				if type(key) ~= "string" and type(key) ~= "number" then return nil end
+				if not Secure(info, key) then return nil end
+				count = count + 1
+				if count > 64 then return nil end
+				copy[key] = value
+			end
+			return copy, count
+		end
+		local firstFields, firstCount = Snapshot(firstInfo)
+		local secondFields, secondCount = Snapshot(secondInfo)
+		if not firstFields or not secondFields or firstInfo == secondInfo then return false, "inaccessible" end
+		local function SameInfo(info, fields, count)
+			local current, currentCount = Snapshot(info)
+			if not current or currentCount ~= count then return false end
+			for key, value in pairs(fields) do
+				if current[key] ~= value then return false end
+			end
+			return true
+		end
+		local function InfoMatches(expectedFirst, expectedSecond)
+			if not CanAccessForeignTable(ChatTypeInfo)
+				or not Secure(ChatTypeInfo, firstKey) or not Secure(ChatTypeInfo, secondKey) then return false end
+			local currentFirst, currentSecond = ChatTypeInfo[firstKey], ChatTypeInfo[secondKey]
+			return CanAccessForeignTable(currentFirst) and CanAccessForeignTable(currentSecond)
+				and currentFirst == expectedFirst and currentSecond == expectedSecond
+		end
+		for _, frameName in ipairs({ "ChatConfigFrame", "ChatConfigChannelSettingsLeft", "ChannelFrame", "ColorPickerFrame" }) do
+			local frame = _G[frameName]
+			if not Accessible(frame) then return false, "inaccessible" end
+			if frame == nil then
+				if frameName == "ChatConfigFrame" or frameName == "ChatConfigChannelSettingsLeft" then
+					return false, "unavailable"
+				end
+			else
+				if not QuestTogether:CanAccessForeignFrame(frame) then return false, "inaccessible" end
+				local ok, shown = Call(Trusted(frame, "IsShown"), frame)
+				if not ok or not Accessible(shown) or type(shown) ~= "boolean" then return false, "inaccessible" end
+				-- A hidden parent may leave its settings child locally shown.
+				if shown and frameName ~= "ChatConfigChannelSettingsLeft" then return false, "busy" end
+			end
+		end
+		if not Accessible(ACTIVE_CHAT_EDIT_BOX) then return false, "inaccessible" end
+		if ACTIVE_CHAT_EDIT_BOX ~= nil then return false, "busy" end
+		local destinations, seen, frameCount = {}, {}, 0
+		for _, frameName in pairs(CHAT_FRAMES) do
+			frameCount = frameCount + 1
+			if frameCount > 128 or not Name(frameName) then return false, "inaccessible" end
+			local frame = _G[frameName]
+			if not QuestTogether:CanAccessForeignFrame(frame) then return false, "inaccessible" end
+			local box = frame.editBox
+			if not QuestTogether:CanAccessForeignFrame(box) then return false, "inaccessible" end
+			if not seen[box] then
+				seen[box] = true
+				local focusedOK, focused = Call(Trusted(box, "HasFocus"), box)
+				local lengthOK, length = Call(Trusted(box, "GetNumLetters"), box)
+				if not focusedOK or not Accessible(focused) or type(focused) ~= "boolean"
+					or not lengthOK or not Accessible(length) or type(length) ~= "number" then
+					return false, "inaccessible"
+				end
+				if focused or length ~= 0 then return false, "busy" end
+				local getAttribute, getTarget = Trusted(box, "GetAttribute"), Trusted(box, "GetChannelTarget")
+				local targetOK, target = Call(getAttribute, box, "channelTarget")
+				if not getTarget or not targetOK or not Accessible(target) then return false, "inaccessible" end
+				if target ~= nil and target ~= 0 and target ~= "" then
+					if type(target) ~= "number" and type(target) ~= "string" then return false, "inaccessible" end
+					local id, name = Channel(target)
+					local numericTarget = type(target) == "number" and target
+						or (target:match("^%d+$") and tonumber(target))
+					if (numericTarget == first or numericTarget == second) and id ~= numericTarget then
+						return false, "inaccessible"
+					end
+					if id == first or id == second then
+						if name ~= (id == first and firstName or secondName) then return false, "inaccessible" end
+						local setter = Trusted(box, "SetChannelTarget")
+						if not setter then return false, "unavailable" end
+						destinations[#destinations + 1] = { box = box, name = name, before = id,
+							after = id == first and second or first, getAttribute = getAttribute,
+							getTarget = getTarget, setter = setter }
+					end
+				end
+			end
+		end
+		if frameCount == 0 then return false, "unavailable" end
+		local function DestinationMatches(destination, expected, requireName)
+			if not QuestTogether:CanAccessForeignFrame(destination.box) then return false end
+			local ok, raw = Call(destination.getAttribute, destination.box, "channelTarget")
+			if not ok or not Accessible(raw) then return false end
+			if raw ~= destination.name and (requireName or raw ~= expected) then return false end
+			local targetOK, target = Call(destination.getTarget, destination.box)
+			if not targetOK or not Accessible(target) or target ~= expected then return false end
+			local id, name = Channel(target)
+			return id == expected and name == destination.name
+		end
+		-- Pin every affected destination before touching channel numbers. A failed
+		-- preparation leaves equivalent name-based destinations and no reorder.
+		for _, destination in ipairs(destinations) do
+			local ok = Call(destination.setter, destination.box, destination.name)
+			if not ok or not DestinationMatches(destination, destination.before, true) then return false, "prepare" end
+		end
+		if Restricted() then return false, "restricted" end
+		if not ChannelMatches(firstName, first) or not ChannelMatches(secondName, second)
+			or not InfoMatches(firstInfo, secondInfo) then
+			return false, "prepare"
+		end
+		for _, destination in ipairs(destinations) do
+			if not DestinationMatches(destination, destination.before, true) then return false, "prepare" end
+		end
+		dispatched = true
+		Call(swap, first, second)
+		-- A native UI refresh can fail after the swap, and secure dispatch can
+		-- absorb that error. Actual identity, never a void return, is authoritative.
+		if not ChannelMatches(firstName, second) or not ChannelMatches(secondName, first)
+			or not InfoMatches(secondInfo, firstInfo)
+			or not SameInfo(firstInfo, firstFields, firstCount)
+			or not SameInfo(secondInfo, secondFields, secondCount) then return false, "inconsistent" end
+		for _, destination in ipairs(destinations) do
+			-- Native headers may normalize a name to the new number. No QT repair
+			-- after the swap is required or attempted.
+			if not DestinationMatches(destination, destination.after, false) then return false, "inconsistent" end
+		end
+		return true
+	end
+	local ok, swapped, reason = pcall(Run)
+	if not ok then return false, dispatched and "inconsistent" or "inaccessible" end
+	return swapped, reason
+end
+
 -- Social discovery only exposes character addresses. Never return Battle.net
 -- account identities, friend notes, or chat contents to the network layer.
 local function MeshSocialCall(owner, method, ...)
@@ -1208,6 +1412,7 @@ QuestTogether.API = QuestTogether.API
 			end
 			return { GetChannelList() }
 		end,
+		SwapChatChannelsPreservingState = SwapChatChannelsPreservingState,
 		GetNumChatWindows = function()
 			return NUM_CHAT_WINDOWS or 0
 		end,

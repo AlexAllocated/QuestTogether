@@ -1057,6 +1057,227 @@ return pushable end or nil,
 			assert(not queued and reason == "invalid")
 		end
 
+
+		-- Native channel sorting must carry the whole chat type record and bind
+		-- remembered destinations by identity before any channel number changes.
+		-- These contracts model secure dispatch, not the engine's taint tracking.
+		do
+			local keys = { "C_ChatInfo", "GetChannelList", "GetChannelName", "ChatTypeInfo", "CHAT_FRAMES",
+				"NUM_CHAT_WINDOWS", "ChatFrame1", "ChatFrame12", "ChatFrame1EditBox", "ChatFrame12EditBox",
+				"ChatConfigChannelSettings_SwapChannelsByIndex", "securecallfunction", "issecurevariable",
+				"ChannelFrame", "ChatConfigFrame", "ChatConfigChannelSettingsLeft", "ColorPickerFrame",
+				"ACTIVE_CHAT_EDIT_BOX", "InCombatLockdown", "GetCurrentKeyBoardFocus" }
+			local saved = {}
+			for _, key in ipairs(keys) do saved[key] = _G[key] end
+			local oldBlocked, oldRestricted, oldRestriction = addon.IsWorkBlocked, addon.IsRuntimeRestricted,
+				addon.IsRuntimeRestrictionTypeActive
+			local oldEnabled, oldRunning, oldLoggingOut = addon.isEnabled, addon.isRunningTests, addon.isLoggingOut
+			local ok, err = pcall(function()
+				local state, boxes, records, active
+				local function Reset()
+					state = { channels = { "QuestTogether3", "General", "Trade" }, swaps = 0, helperCalls = 0 }
+					addon.isEnabled, addon.isRunningTests, addon.isLoggingOut = true, nil, nil
+					records = {
+						{ r = 1, g = 1, b = 1, id = 31, sticky = 0, flashTab = false },
+						{ r = 0.2, g = 0.4, b = 1, id = 32, sticky = 1, flashTab = true },
+						{ r = 1, g = 0.5, b = 0.2, id = 33, sticky = 1, colorNameByClass = true },
+					}
+					ChatTypeInfo = { CHANNEL1 = records[1], CHANNEL2 = records[2], CHANNEL3 = records[3] }
+					GetChannelName = function(target)
+						if state.failNumericLookup and type(target) == "number" then return 0, nil end
+						for id, name in pairs(state.channels) do
+							if target == id or target == name then return id, name end
+						end
+						return 0, nil
+					end
+					GetChannelList = function()
+						local result = {}
+						for id = 1, 12 do
+							if state.channels[id] then
+								result[#result + 1], result[#result + 2], result[#result + 3] = id, state.channels[id], false
+							end
+						end
+						return (table.unpack or unpack)(result)
+					end
+					boxes = {}
+					for index, target in ipairs({ 2, 1 }) do
+						local box = { target = target, text = "", focused = false, shown = false }
+						function box:IsForbidden() return false end
+						function box:IsProtected() return false end
+						function box:IsShown() return self.shown end
+						function box:HasFocus() return self.focused end
+						function box:GetText() error("sorting must not inspect draft contents") end
+						function box:GetNumLetters() return #self.text end
+						function box:GetAttribute(key)
+							if key == "channelTarget" then return self.target end
+							if key == "chatType" or key == "stickyType" then return "CHANNEL" end
+						end
+						function box:GetChannelTarget() return GetChannelName(self.target) end
+						function box:SetChannelTarget(value)
+							assert(active == self.SetChannelTarget, "dispatch the native setter, never an addon closure")
+							if self.reject then error("target unavailable") end
+							self.target = self.normalize and GetChannelName(value) or value
+						end
+						function box:UpdateHeader() self.target = GetChannelName(self.target) end
+						boxes[index] = box
+					end
+					-- Temporary chat windows live beyond NUM_CHAT_WINDOWS but still
+					-- own a destination that must survive a reorder.
+					CHAT_FRAMES, NUM_CHAT_WINDOWS = { "ChatFrame1", "ChatFrame12" }, 1
+					ChatFrame1, ChatFrame12 = { editBox = boxes[1] }, { editBox = boxes[2] }
+					ChatFrame1EditBox, ChatFrame12EditBox = boxes[1], boxes[2]
+					ChannelFrame, ColorPickerFrame, ACTIVE_CHAT_EDIT_BOX = nil, nil, nil
+					ChatConfigFrame = { IsShown = function() return false end }
+					ChatConfigChannelSettingsLeft = { IsShown = function() return false end }
+					GetCurrentKeyBoardFocus = function()
+						for _, box in ipairs(boxes) do if box.focused then return box end end
+					end
+					InCombatLockdown = function() return state.blocked == true end
+					addon.IsWorkBlocked = function() return state.blocked == true end
+					addon.IsRuntimeRestricted = function() return state.blocked == true end
+					addon.IsRuntimeRestrictionTypeActive = function() return state.blocked == true end
+					issecurevariable = function(owner, key)
+						if state.tainted then return false end
+						if state.taintKind and (not state.taintAfter or state.helperCalls > 0) then
+							if state.taintKind == "slot" and owner == ChatTypeInfo and key == "CHANNEL1" then return false end
+							if state.taintKind == "field" and owner == records[2] and key == "r" then return false end
+						end
+						return true
+					end
+					C_ChatInfo = { SwapChatChannelsByChannelIndex = function(first, second)
+						assert(active == ChatConfigChannelSettings_SwapChannelsByIndex,
+							"raw C swaps bypass the metadata-preserving native helper")
+						assert(type(boxes[1].target) == "string" and type(boxes[2].target) == "string",
+							"pin every affected destination before native mutation")
+						if state.failure == "before" then error("native swap refused") end
+						state.swaps = state.swaps + 1
+						state.channels[first], state.channels[second] = state.channels[second], state.channels[first]
+						if state.refreshHeaders then
+							for _, box in ipairs(boxes) do box:UpdateHeader() end
+						end
+						if state.failure == "after" then error("UI refresh failed") end
+					end }
+					ChatConfigChannelSettings_SwapChannelsByIndex = function(first, second)
+						assert(active == ChatConfigChannelSettings_SwapChannelsByIndex,
+							"the Blizzard helper must enter through securecallfunction")
+						state.helperCalls = state.helperCalls + 1
+						ChatTypeInfo["CHANNEL" .. first], ChatTypeInfo["CHANNEL" .. second] =
+							ChatTypeInfo["CHANNEL" .. second], ChatTypeInfo["CHANNEL" .. first]
+						C_ChatInfo.SwapChatChannelsByChannelIndex(first, second)
+					end
+					securecallfunction = function(fn, ...)
+						local previous = active
+						active = fn
+						local function Pack(...) return { n = select("#", ...), ... } end
+						local result = Pack(pcall(fn, ...))
+						active = previous
+						-- The native dispatcher can absorb errors. The adapter must
+						-- validate outcomes instead of trusting the dispatch return.
+						if result[1] then return (table.unpack or unpack)(result, 2, result.n) end
+					end
+				end
+				Reset()
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true)
+				assert(state.channels[1] == "General" and state.channels[2] == "QuestTogether3")
+				assert(ChatTypeInfo.CHANNEL1 == records[2] and ChatTypeInfo.CHANNEL2 == records[1],
+					"full record identity, not just RGB, must follow each channel")
+				assert(GetChannelName(boxes[1].target) == 1 and GetChannelName(boxes[2].target) == 2)
+				assert(state.swaps == 1 and state.helperCalls == 1)
+				boxes[1]:UpdateHeader(); boxes[2]:UpdateHeader()
+				assert(boxes[1].target == 1 and boxes[2].target == 2,
+					"later native header normalization must retain the same channels")
+
+				Reset()
+				boxes[1].shown, state.refreshHeaders = true, true
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true,
+					"idle visible IM editboxes may refresh their headers after the native swap")
+				assert(boxes[1].target == 1 and boxes[2].target == 2)
+
+				for _, kind in ipairs({ "focus", "draft", "blocked", "channel-ui", "settings-ui", "reject", "normalize", "tainted" }) do
+					Reset()
+					if kind == "focus" then boxes[2].focused = true
+					elseif kind == "draft" then boxes[2].text = "/2 unfinished message"
+					elseif kind == "blocked" then state.blocked = true
+					elseif kind == "channel-ui" then ChannelFrame = { IsShown = function() return true end }
+					elseif kind == "settings-ui" then ChatConfigFrame = { IsShown = function() return true end }
+					elseif kind == "reject" then boxes[2].reject = true
+					elseif kind == "normalize" then boxes[2].normalize = true
+					elseif kind == "tainted" then state.tainted = true end
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == false, kind)
+					assert(state.helperCalls == 0 and state.swaps == 0, kind .. " must defer before any swap")
+					assert(GetChannelName(boxes[1].target) == 2 and GetChannelName(boxes[2].target) == 1)
+				end
+				for _, value in ipairs({ false, secret, inaccessible }) do
+					Reset()
+					ChatConfigChannelSettings_SwapChannelsByIndex = value or nil
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == false)
+					assert(state.swaps == 0, "missing helper cannot fall back to raw channel swaps")
+					Reset()
+					boxes[2].target = value
+					local before = inaccessibleReads
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == false)
+					assert(state.swaps == 0 and inaccessibleReads == before)
+				end
+				for _, field in ipairs({ "metadata", "frame", "method" }) do
+					Reset()
+					local before = inaccessibleReads
+					if field == "metadata" then ChatTypeInfo = inaccessible
+					elseif field == "frame" then ChatFrame12 = inaccessible
+					else boxes[2].GetAttribute = inaccessible end
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == false)
+					assert(state.swaps == 0 and inaccessibleReads == before,
+						"unreadable " .. field .. " must fail before mutation or field inspection")
+				end
+				Reset()
+				state.failure = "before"
+				local swapped, reason = addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General")
+				assert(swapped == false and reason == "inconsistent")
+				assert(state.swaps == 0 and state.helperCalls == 1, "never blindly reverse a partial failure")
+				assert(GetChannelName(boxes[1].target) == 2 and GetChannelName(boxes[2].target) == 1,
+					"even a partial native failure must leave sends bound to their original channel names")
+				Reset()
+				state.failure = "after"
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true,
+					"an error after a completed native swap must be judged by the verified state")
+				assert(state.swaps == 1 and state.helperCalls == 1)
+
+				Reset()
+				state.failNumericLookup = true
+				local accepted, detail = addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General")
+				assert(accepted == false and detail == "inaccessible")
+				assert(state.helperCalls == 0 and state.swaps == 0,
+					"failed numeric lookup cannot silently omit an affected remembered destination")
+
+				for _, kind in ipairs({ "slot", "field" }) do
+					for _, after in ipairs({ false, true }) do
+						Reset()
+						state.taintKind, state.taintAfter = kind, after
+						local accepted, detail = addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General")
+						assert(accepted == false and detail == (after and "inconsistent" or "inaccessible"))
+						assert(state.swaps == (after and 1 or 0), "metadata taint must stop the transaction")
+						assert(state.helperCalls == (after and 1 or 0), "taint must not trigger a blind repair")
+					end
+				end
+				Reset()
+				InCombatLockdown = function() return nil end
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true,
+					"native nil combat-lockdown result means out of combat")
+
+				Reset()
+				state.channels[7], state.channels[1] = state.channels[1], nil
+				ChatTypeInfo.CHANNEL7, ChatTypeInfo.CHANNEL1 = ChatTypeInfo.CHANNEL1, nil
+				boxes[2].target = 7
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true)
+				assert(GetChannelName(boxes[1].target) == 7 and GetChannelName(boxes[2].target) == 2,
+					"look up current IDs by name rather than reusing an earlier index")
+			end)
+			for _, key in ipairs(keys) do _G[key] = saved[key] end
+			addon.IsWorkBlocked, addon.IsRuntimeRestricted, addon.IsRuntimeRestrictionTypeActive =
+				oldBlocked, oldRestricted, oldRestriction
+			addon.isEnabled, addon.isRunningTests, addon.isLoggingOut = oldEnabled, oldRunning, oldLoggingOut
+			assert(ok, err)
+		end
+
 		-- Shared Mainline exports do not imply that Forever has War Mode.
 		-- Keep native API probes in this offline process, not the live test suite.
 		do

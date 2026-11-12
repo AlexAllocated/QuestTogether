@@ -68,6 +68,10 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	Add("comms.globalChannel.cachedID", self.announcementChannelLocalID or "not joined")
 	local channelOK, channelID = pcall(self.GetAnnouncementChannelLocalID, self, self.announcementChannelName)
 	Add("comms.globalChannel.currentID", channelOK and (channelID or "not joined") or "unavailable")
+	local channelOrder = rawget(self, "chatChannelOrderState") or {}
+	Add("comms.channelOrder.status", channelOrder.lastResult or "not checked")
+	Add("comms.channelOrder.swaps", channelOrder.swaps or 0)
+	Add("comms.channelOrder.suspended", channelOrder.suspended == true)
 	local keys = {}
 	for key in pairs(pending) do
 		keys[#keys + 1] = key

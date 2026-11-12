@@ -916,8 +916,64 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 	return false
 end
 
--- Directory membership is resolved by name. Leave native channel ordering,
--- colors and sticky chat destinations to Blizzard and the player.
+-- Keep hidden directories behind human channels. RuntimeCoordinator owns the
+-- cadence; every step resolves names again instead of retaining native indices.
+function QuestTogether:UpdateAnnouncementChannelOrder()
+	local api = self.API or {}
+	if not self.isEnabled or self.isLoggingOut
+		or not api.GetChatChannelList or not api.SwapChatChannelsPreservingState
+		or self:IsRuntimeRestricted() or self:IsRuntimeRestrictionTypeActive("chat") then
+		return
+	end
+	local state = rawget(self, "chatChannelOrderState")
+	if not state then
+		state = {}
+		self.chatChannelOrderState = state
+	end
+	local now = SafeNumber(self, api.GetTime and api.GetTime()) or 0
+	if state.suspended or now < (state.nextAt or 0) then return end
+	state.nextAt = now + 1
+	local ok, list = pcall(api.GetChatChannelList)
+	if not ok or not self:CanAccessTable(list) or #list > 90 or #list % 3 ~= 0 then return end
+	local rows, ids, names = {}, {}, {}
+	for index = 1, #list, 3 do
+		local id = SafeChannelNumber(self, list[index])
+		local name = SafeTrimAddonString(self, list[index + 1], "")
+		if not id or id < 1 or id > 30 or id ~= math.floor(id) or name == "" or ids[id] or names[name] then return end
+		ids[id], names[name] = true, true
+		rows[#rows + 1] = { id = id, name = name,
+			qt = MatchesAnnouncementChannelName(self, name) or self:IsGeographicChannelName(name) }
+	end
+	table.sort(rows, function(a, b) return a.id < b.id end)
+	for index = 2, #rows do
+		if rows[index - 1].qt and not rows[index].qt then
+			local called, swapped, reason = pcall(api.SwapChatChannelsPreservingState, rows[index - 1].name, rows[index].name)
+			-- A native swap may synchronously deliver a channel event.
+			state.nextAt = now + 1
+			state.lastResult = swapped == true and "swapped" or "deferred"
+			if called and swapped ~= true and (reason == "busy" or reason == "restricted"
+				or reason == "invalid" or reason == "inaccessible" or reason == "prepare") then
+				state.lastResult = reason
+			end
+			if not called or reason == "inconsistent" then
+				-- Never guess at a rollback after a partial native operation. The
+				-- adapter pins chat destinations to names before changing any index.
+				state.suspended = true
+				state.lastResult = "inconsistent"
+				self:RecordDiagnosticError("chat channel ordering", "Unexpected native reorder result; further sorting is suspended until reload.")
+			elseif swapped ~= true and reason == "unavailable" then
+				state.nextAt = now + 30
+				state.lastResult = "unavailable"
+			elseif swapped == true then
+				state.swaps = (state.swaps or 0) + 1
+			end
+			return
+		end
+	end
+	state.lastResult = "ordered"
+	state.nextAt = now + 5
+end
+
 function QuestTogether:CHANNEL_COUNT_UPDATE()
 	local state = rawget(self, "geographicCommsState")
 	if state then

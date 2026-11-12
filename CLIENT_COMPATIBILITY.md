@@ -259,10 +259,16 @@ receive-scope and output settings. Display strips user-supplied UI markup.
 Public delivery is progressive and finite-lived; a disconnected client cannot
 reach every QT user. Old-protocol messages are rejected without fallback.
 
-QT leaves channel ordering to Blizzard and the player. Directory reconciliation
-reads `GetChannelList` and resolves membership by name; it never swaps channel
-numbers or rewrites chat colors or sticky chat-box destinations. Channel count
-changes invalidate reconciliation so stale QT memberships can still be removed.
+QT keeps its hidden directories after human channels using Blizzard's reorder
+helper through `securecallfunction`. The adapter preserves full native channel
+metadata and binds affected chat destinations to names before moving indices;
+it never uses the bare index-swap API or writes `ChatTypeInfo` itself. Sorting
+waits during typing, channel configuration and restricted states. Missing native
+support leaves the order unchanged, and inconsistent results stop sorting until
+reload. RuntimeCoordinator paces one swap per second without an extra timer.
+Directory reconciliation reads `GetChannelList` and resolves membership by name.
+Channel count changes invalidate reconciliation so stale QT memberships can
+still be removed. Current-client taint and reload persistence require live checks.
 Roster enumeration uses guarded display-list APIs, distinct native channel IDs,
 asynchronous loading and selection restoration. QT defers when the user is
 interacting with the channel UI or native access is unsafe.
