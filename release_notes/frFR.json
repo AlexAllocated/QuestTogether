@@ -1,14 +1,14 @@
 {
-  "source_sha256": "2fdd427dd8bce2a25f3018d7e719c097c906e305922bdd3cf436bf740a44ec21",
+  "source_sha256": "270afef981eb3da135f6cdf8e0359ca375364af4bd32e159d634b9e6e9ae8fc1",
   "notes": {
-    "version": "9.0.12",
-    "welcome": "Vos canaux de discussion gardent leur ordre habituel.",
+    "version": "9.0.13",
+    "welcome": "Les canaux de QuestTogether retrouvent leur place en fin de liste, tout en préservant vos réglages de discussion.",
     "sections": [
       {
-        "title": "Ordre des canaux de discussion",
+        "title": "Canaux de discussion",
         "items": [
-          "QuestTogether ne déplace plus automatiquement ses canaux masqués en fin de liste. QT ne change donc plus les numéros des canaux, ce qui évite de mélanger leurs couleurs ou d’envoyer des messages dans le mauvais canal.",
-          "Cette mise à jour ne rétablit pas les couleurs ou les destinations déjà modifiées. Si vous êtes concerné, sélectionnez à nouveau le canal souhaité et réglez sa couleur dans les paramètres de discussion de WoW."
+          "Les canaux masqués utilisés par QuestTogether pour trouver d’autres joueurs sont de nouveau placés après les canaux de discussion habituels. Chaque canal garde ses couleurs et ses réglages, et chaque fenêtre conserve le canal mémorisé pour envoyer vos messages.",
+          "Les canaux ne sont pas réorganisés pendant que vous écrivez, lorsque leurs réglages sont ouverts ou que le jeu limite les modifications. En cas de problème inattendu, la réorganisation est suspendue jusqu’au rechargement de l’interface."
         ]
       }
     ]

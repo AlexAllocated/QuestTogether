@@ -4,6 +4,15 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.13
+
+QuestTogether’s channels stay at the bottom of your channel list while keeping your chat setup intact.
+
+### Chat channels
+
+- QT’s hidden discovery channels move below your other channels without changing their colors, settings, or the channel your chat windows remember.
+- Sorting waits while you type, adjust channel settings, or WoW restricts changes. If a reorder produces an unexpected result, further sorting stops until you reload.
+
 ## 9.0.12
 
 A fix for chat channels changing unexpectedly.

@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.13
+
+I canali di QuestTogether tornano in fondo all’elenco, mantenendo le tue impostazioni della chat.
+
+### Canali di chat
+
+- I canali nascosti con cui QuestTogether trova altri giocatori vengono di nuovo spostati dopo i normali canali di chat. Colori e impostazioni restano associati al rispettivo canale e ogni finestra conserva il canale memorizzato per l’invio dei messaggi.
+- Il riordino attende mentre scrivi, tieni aperte le impostazioni dei canali o il gioco limita le modifiche. Se viene rilevato un problema imprevisto, si interrompe fino al ricaricamento dell’interfaccia.
+
 ## 9.0.12
 
 I tuoi canali di chat mantengono il loro ordine abituale.

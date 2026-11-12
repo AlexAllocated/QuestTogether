@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.0.12",
+        "welcome": "A fix for chat channels changing unexpectedly.",
+        "sections": [
+          {
+            "title": "Chat channels",
+            "items": [
+              "QuestTogether no longer automatically rearranges your chat channels. This prevents its channel sorting from changing chat colors or sending typed messages to the wrong channel.",
+              "If your chat was already affected, select your intended channel again and restore its color in WoW’s chat settings."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.0.12",
+        "welcome": "Deine Chatkanäle bleiben in ihrer gewohnten Reihenfolge.",
+        "sections": [
+          {
+            "title": "Reihenfolge der Chatkanäle",
+            "items": [
+              "QuestTogether verschiebt seine ausgeblendeten Kanäle nicht mehr automatisch ans Ende der Kanalliste. Dadurch ändert QT keine Kanalnummern mehr und verhindert, dass Chatfarben durcheinandergeraten oder Nachrichten im falschen Kanal landen.",
+              "Bereits veränderte Farben oder Sendeziele werden durch das Update nicht zurückgesetzt. Falls du betroffen bist, wähle den gewünschten Chatkanal erneut aus und stelle seine Farbe in den Chateinstellungen von WoW wieder ein."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.0.12",
+        "welcome": "Vos canaux de discussion gardent leur ordre habituel.",
+        "sections": [
+          {
+            "title": "Ordre des canaux de discussion",
+            "items": [
+              "QuestTogether ne déplace plus automatiquement ses canaux masqués en fin de liste. QT ne change donc plus les numéros des canaux, ce qui évite de mélanger leurs couleurs ou d’envoyer des messages dans le mauvais canal.",
+              "Cette mise à jour ne rétablit pas les couleurs ou les destinations déjà modifiées. Si vous êtes concerné, sélectionnez à nouveau le canal souhaité et réglez sa couleur dans les paramètres de discussion de WoW."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.0.12",
+        "welcome": "Tus canales de chat conservan su orden habitual.",
+        "sections": [
+          {
+            "title": "Orden de los canales de chat",
+            "items": [
+              "QuestTogether ya no mueve automáticamente sus canales ocultos al final de la lista. Así, QT deja de cambiar los números de los canales y evita que se mezclen sus colores o que tus mensajes se envíen al canal equivocado.",
+              "La actualización no restaura los colores ni los canales de envío que ya hayan cambiado. Si te ha afectado este problema, vuelve a seleccionar el canal que quieras usar y ajusta su color en la configuración del chat de WoW."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.0.12",
+        "welcome": "Tus canales de chat mantienen su orden habitual.",
+        "sections": [
+          {
+            "title": "Orden de los canales de chat",
+            "items": [
+              "QuestTogether ya no mueve automáticamente sus canales ocultos al final de la lista. Esto evita que QT cambie los números de los canales y que sus colores se mezclen o tus mensajes terminen en el canal equivocado.",
+              "Esta actualización no restablece los colores ni los canales de envío que ya cambiaron. Si tuviste este problema, selecciona de nuevo el canal que quieres usar y ajusta su color en la configuración del chat de WoW."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.0.12",
+        "welcome": "O QuestTogether deixa de reorganizar os canais para evitar problemas no bate-papo.",
+        "sections": [
+          {
+            "title": "Ordem dos canais de bate-papo",
+            "items": [
+              "O QT não move mais seus canais ocultos para o fim da lista. Isso evita que a reorganização altere os números dos canais e cause confusão nas cores ou no canal usado para enviar mensagens. A descoberta de jogadores continua funcionando como antes.",
+              "A atualização não restaura cores nem canais de envio que já tenham sido alterados. Se você foi afetado, selecione novamente o canal desejado e ajuste a cor nas configurações de bate-papo do WoW."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.0.12",
+        "welcome": "QuestTogether больше не меняет порядок каналов, чтобы не мешать обычному чату.",
+        "sections": [
+          {
+            "title": "Порядок каналов чата",
+            "items": [
+              "QT больше не переносит свои скрытые каналы в конец списка. Это предотвращает перенумерацию из-за такой перестановки, при которой цвета могли сбиваться, а сообщения — уходить не в тот канал. Поиск других игроков работает по-прежнему.",
+              "Уже изменённые цвета и выбранный канал для отправки сообщений автоматически не восстанавливаются. Если проблема уже возникла, заново выберите нужный канал и настройте его цвет в настройках чата WoW."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.0.12",
+        "welcome": "I tuoi canali di chat mantengono il loro ordine abituale.",
+        "sections": [
+          {
+            "title": "Ordine dei canali di chat",
+            "items": [
+              "QuestTogether non sposta più automaticamente i propri canali nascosti in fondo all’elenco. QT non cambia quindi più i numeri dei canali, evitando che i colori si confondano o che i messaggi finiscano nel canale sbagliato.",
+              "L’aggiornamento non ripristina i colori o i canali di invio già modificati. Se hai riscontrato il problema, seleziona di nuovo il canale desiderato e reimposta il suo colore nelle impostazioni della chat di WoW."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.0.12",
+        "welcome": "일반 채팅에 문제가 생기지 않도록 QuestTogether의 채널 자동 정렬을 제거했습니다.",
+        "sections": [
+          {
+            "title": "채팅 채널 순서",
+            "items": [
+              "이제 QT가 숨겨진 자체 채널을 목록 끝으로 옮기지 않습니다. 이 과정에서 채널 번호가 바뀌어 색상이 맞지 않거나 메시지가 엉뚱한 채널로 전송되는 문제를 방지합니다. 다른 플레이어를 찾는 기능은 그대로 작동합니다.",
+              "업데이트 전에 바뀐 색상이나 메시지를 보낼 채널은 자동으로 복구되지 않습니다. 이미 문제가 생겼다면 원하는 채널을 다시 선택하고 WoW 채팅 설정에서 색상을 조정해 주세요."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.0.12",
+        "welcome": "QuestTogether 不再自动调整频道顺序，避免影响日常聊天。",
+        "sections": [
+          {
+            "title": "聊天频道顺序",
+            "items": [
+              "QT 不再把自身的隐藏频道移到列表末尾，避免由此造成频道编号变动、颜色错位或消息发到错误的频道。寻找其他玩家的功能仍照常运行。",
+              "更新不会自动恢复此前已变动的频道颜色或发言频道。如果你已遇到问题，请重新选择想要发言的频道，并在 WoW 聊天设置中调整频道颜色。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.0.12",
+        "welcome": "QuestTogether 不再自動調整頻道順序，避免影響日常聊天。",
+        "sections": [
+          {
+            "title": "聊天頻道順序",
+            "items": [
+              "QT 不再將自身的隱藏頻道移到清單末尾，避免因此造成頻道編號變動、顏色錯置，或訊息傳到錯誤的頻道。尋找其他玩家的功能仍照常運作。",
+              "更新不會自動還原先前已變動的頻道顏色或發話頻道。如果你已遇到問題，請重新選擇想要發話的頻道，並在 WoW 聊天設定中調整頻道顏色。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.0.11",
         "welcome": "Party Quest Log fixes and reduced background work.",
         "sections": [

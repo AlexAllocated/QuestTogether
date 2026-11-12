@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.13
+
+QuestTogether hält seine Kanäle wieder am Ende der Liste und bewahrt dabei deine Chateinstellungen.
+
+### Chatkanäle
+
+- Die ausgeblendeten Kanäle, über die QuestTogether andere Spieler findet, werden wieder hinter die normalen Chatkanäle verschoben. Farben und Einstellungen bleiben beim jeweiligen Kanal; jedes Chatfenster merkt sich weiterhin denselben Kanal zum Schreiben.
+- Während du tippst, die Kanaleinstellungen geöffnet hast oder das Spiel Änderungen einschränkt, wartet die Umsortierung. Bei einem unerwarteten Problem wird sie bis zum Neuladen der Oberfläche ausgesetzt.
+
 ## 9.0.12
 
 Deine Chatkanäle bleiben in ihrer gewohnten Reihenfolge.

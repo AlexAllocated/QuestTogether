@@ -1,12 +1,12 @@
 {
-  "version": "9.0.12",
-  "welcome": "A fix for chat channels changing unexpectedly.",
+  "version": "9.0.13",
+  "welcome": "QuestTogether’s channels stay at the bottom of your channel list while keeping your chat setup intact.",
   "sections": [
     {
       "title": "Chat channels",
       "items": [
-        "QuestTogether no longer automatically rearranges your chat channels. This prevents its channel sorting from changing chat colors or sending typed messages to the wrong channel.",
-        "If your chat was already affected, select your intended channel again and restore its color in WoW’s chat settings."
+        "QT’s hidden discovery channels move below your other channels without changing their colors, settings, or the channel your chat windows remember.",
+        "Sorting waits while you type, adjust channel settings, or WoW restricts changes. If a reorder produces an unexpected result, further sorting stops until you reload."
       ]
     }
   ]

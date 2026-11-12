@@ -1,14 +1,14 @@
 {
-  "source_sha256": "2fdd427dd8bce2a25f3018d7e719c097c906e305922bdd3cf436bf740a44ec21",
+  "source_sha256": "270afef981eb3da135f6cdf8e0359ca375364af4bd32e159d634b9e6e9ae8fc1",
   "notes": {
-    "version": "9.0.12",
-    "welcome": "I tuoi canali di chat mantengono il loro ordine abituale.",
+    "version": "9.0.13",
+    "welcome": "I canali di QuestTogether tornano in fondo all’elenco, mantenendo le tue impostazioni della chat.",
     "sections": [
       {
-        "title": "Ordine dei canali di chat",
+        "title": "Canali di chat",
         "items": [
-          "QuestTogether non sposta più automaticamente i propri canali nascosti in fondo all’elenco. QT non cambia quindi più i numeri dei canali, evitando che i colori si confondano o che i messaggi finiscano nel canale sbagliato.",
-          "L’aggiornamento non ripristina i colori o i canali di invio già modificati. Se hai riscontrato il problema, seleziona di nuovo il canale desiderato e reimposta il suo colore nelle impostazioni della chat di WoW."
+          "I canali nascosti con cui QuestTogether trova altri giocatori vengono di nuovo spostati dopo i normali canali di chat. Colori e impostazioni restano associati al rispettivo canale e ogni finestra conserva il canale memorizzato per l’invio dei messaggi.",
+          "Il riordino attende mentre scrivi, tieni aperte le impostazioni dei canali o il gioco limita le modifiche. Se viene rilevato un problema imprevisto, si interrompe fino al ricaricamento dell’interfaccia."
         ]
       }
     ]

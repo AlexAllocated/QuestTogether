@@ -1,14 +1,14 @@
 {
-  "source_sha256": "2fdd427dd8bce2a25f3018d7e719c097c906e305922bdd3cf436bf740a44ec21",
+  "source_sha256": "270afef981eb3da135f6cdf8e0359ca375364af4bd32e159d634b9e6e9ae8fc1",
   "notes": {
-    "version": "9.0.12",
-    "welcome": "Deine Chatkanäle bleiben in ihrer gewohnten Reihenfolge.",
+    "version": "9.0.13",
+    "welcome": "QuestTogether hält seine Kanäle wieder am Ende der Liste und bewahrt dabei deine Chateinstellungen.",
     "sections": [
       {
-        "title": "Reihenfolge der Chatkanäle",
+        "title": "Chatkanäle",
         "items": [
-          "QuestTogether verschiebt seine ausgeblendeten Kanäle nicht mehr automatisch ans Ende der Kanalliste. Dadurch ändert QT keine Kanalnummern mehr und verhindert, dass Chatfarben durcheinandergeraten oder Nachrichten im falschen Kanal landen.",
-          "Bereits veränderte Farben oder Sendeziele werden durch das Update nicht zurückgesetzt. Falls du betroffen bist, wähle den gewünschten Chatkanal erneut aus und stelle seine Farbe in den Chateinstellungen von WoW wieder ein."
+          "Die ausgeblendeten Kanäle, über die QuestTogether andere Spieler findet, werden wieder hinter die normalen Chatkanäle verschoben. Farben und Einstellungen bleiben beim jeweiligen Kanal; jedes Chatfenster merkt sich weiterhin denselben Kanal zum Schreiben.",
+          "Während du tippst, die Kanaleinstellungen geöffnet hast oder das Spiel Änderungen einschränkt, wartet die Umsortierung. Bei einem unerwarteten Problem wird sie bis zum Neuladen der Oberfläche ausgesetzt."
         ]
       }
     ]

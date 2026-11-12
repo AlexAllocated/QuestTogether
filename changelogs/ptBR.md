@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.13
+
+Os canais do QT voltam para o fim da lista, preservando suas preferências de bate-papo.
+
+### Ordem dos canais de bate-papo
+
+- O QT volta a manter seus canais ocultos depois dos canais de conversa, preservando as cores, as configurações e o canal de envio escolhido em cada janela.
+- A reorganização aguarda enquanto você digita, usa as configurações de canais ou o WoW limita essas alterações. Se o jogo retornar um resultado inesperado, o QT interrompe a reorganização até a interface ser recarregada.
+
 ## 9.0.12
 
 O QuestTogether deixa de reorganizar os canais para evitar problemas no bate-papo.

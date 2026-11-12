@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.13
+
+Les canaux de QuestTogether retrouvent leur place en fin de liste, tout en préservant vos réglages de discussion.
+
+### Canaux de discussion
+
+- Les canaux masqués utilisés par QuestTogether pour trouver d’autres joueurs sont de nouveau placés après les canaux de discussion habituels. Chaque canal garde ses couleurs et ses réglages, et chaque fenêtre conserve le canal mémorisé pour envoyer vos messages.
+- Les canaux ne sont pas réorganisés pendant que vous écrivez, lorsque leurs réglages sont ouverts ou que le jeu limite les modifications. En cas de problème inattendu, la réorganisation est suspendue jusqu’au rechargement de l’interface.
+
 ## 9.0.12
 
 Vos canaux de discussion gardent leur ordre habituel.

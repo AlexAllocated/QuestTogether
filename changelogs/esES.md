@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.13
+
+Los canales de QuestTogether vuelven al final de la lista, conservando tus ajustes del chat.
+
+### Canales de chat
+
+- Los canales ocultos que QuestTogether usa para encontrar a otros jugadores vuelven a situarse después de los canales de chat habituales. Cada canal conserva sus colores y ajustes, y cada ventana mantiene el canal que tenía guardado para enviar mensajes.
+- La reordenación espera mientras escribes, tienes abiertos los ajustes de canales o el juego restringe los cambios. Si se detecta un problema inesperado, se detiene hasta que recargues la interfaz.
+
 ## 9.0.12
 
 Tus canales de chat conservan su orden habitual.

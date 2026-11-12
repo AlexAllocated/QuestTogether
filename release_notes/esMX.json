@@ -1,14 +1,14 @@
 {
-  "source_sha256": "2fdd427dd8bce2a25f3018d7e719c097c906e305922bdd3cf436bf740a44ec21",
+  "source_sha256": "270afef981eb3da135f6cdf8e0359ca375364af4bd32e159d634b9e6e9ae8fc1",
   "notes": {
-    "version": "9.0.12",
-    "welcome": "Tus canales de chat mantienen su orden habitual.",
+    "version": "9.0.13",
+    "welcome": "QuestTogether vuelve a dejar sus canales al final de la lista sin perder tu configuración del chat.",
     "sections": [
       {
-        "title": "Orden de los canales de chat",
+        "title": "Canales de chat",
         "items": [
-          "QuestTogether ya no mueve automáticamente sus canales ocultos al final de la lista. Esto evita que QT cambie los números de los canales y que sus colores se mezclen o tus mensajes terminen en el canal equivocado.",
-          "Esta actualización no restablece los colores ni los canales de envío que ya cambiaron. Si tuviste este problema, selecciona de nuevo el canal que quieres usar y ajusta su color en la configuración del chat de WoW."
+          "Los canales ocultos de QuestTogether que permiten encontrar a otros jugadores vuelven a colocarse después de los canales de chat habituales. Se conservan los colores y la configuración de cada canal, así como el canal que cada ventana recuerda para enviar mensajes.",
+          "El reordenamiento se pospone mientras escribes, tienes abierta la configuración de los canales o el juego restringe los cambios. Ante un problema inesperado, se suspende hasta que recargues la interfaz."
         ]
       }
     ]
