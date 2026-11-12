@@ -916,104 +916,13 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 	return false
 end
 
--- Stable partition using the public channel-order API, never ChatTypeInfo or
--- Blizzard frame fields. Non-QT channels retain their relative ordering.
-function QuestTogether:MoveAnnouncementChannelsToEnd()
-	if not self.isEnabled or self:IsRuntimeRestricted() or self:IsRuntimeRestrictionTypeActive("chat") then
-		return false
-	end
-	local api = self.API or {}
-	if not api.GetChatChannelList or not api.SwapChatChannelIndices then
-		return false
-	end
-	local ok, list = pcall(api.GetChatChannelList)
-	if not ok or not self:CanAccessTable(list) or #list > 90 or #list % 3 ~= 0 then
-		return false
-	end
-	local channels, seen = {}, {}
-	for i = 1, #list, 3 do
-		local id, name = SafeChannelNumber(self, list[i]), SafeTrimAddonString(self, list[i + 1], "")
-		if not id or id < 1 or id > 30 or id ~= math.floor(id) or name == "" or seen[id] then
-			return false
-		end
-		seen[id] = true
-		channels[#channels + 1] = {
-			id = id,
-			name = name,
-			qt = MatchesAnnouncementChannelName(self, name) or self:IsGeographicChannelName(name),
-		}
-	end
-	table.sort(channels, function(a, b)
-		return a.id < b.id
-	end)
-	for i = 2, #channels do
-		local j = i
-		while j > 1 and not channels[j].qt and channels[j - 1].qt do
-			if self:IsRuntimeRestricted() then
-				return false
-			end
-			local swapped, result = pcall(api.SwapChatChannelIndices, channels[j - 1].id, channels[j].id)
-			-- Native channel indices can change; never retain a stale receive fallback.
-			self.announcementChannelLocalID = nil
-			if not swapped or result ~= true then
-				return false
-			end
-			channels[j - 1].qt, channels[j].qt = channels[j].qt, channels[j - 1].qt
-			channels[j - 1].name, channels[j].name = channels[j].name, channels[j - 1].name
-			j = j - 1
-		end
-	end
-	-- Keep the global discovery directory before the zone directories.
-	local firstQT, current
-	for _, channel in ipairs(channels) do
-		if channel.qt and not firstQT then
-			firstQT = channel.id
-		end
-		if channel.name == self.announcementChannelName then
-			current = channel.id
-		end
-	end
-	if firstQT and current and current ~= firstQT then
-		local swapped, result = pcall(api.SwapChatChannelIndices, current, firstQT)
-		self.announcementChannelLocalID = nil
-		if not swapped or result ~= true then
-			return false
-		end
-	end
-	self.announcementChannelLocalID = self:GetAnnouncementChannelLocalID()
-	return true
-end
-
-function QuestTogether:ScheduleAnnouncementChannelOrder()
-	if
-		not self.isEnabled
-		or not self.API.GetChatChannelList
-		or not self.API.SwapChatChannelIndices
-		or not self.API.Delay
-		or rawget(self, "channelOrderWork")
-	then
-		return
-	end
-	local work = {}
-	self.channelOrderWork = work
-	self.API.Delay(0.2, function()
-		if rawget(self, "channelOrderWork") ~= work then
-			return
-		end
-		self:MoveAnnouncementChannelsToEnd()
-		self.channelOrderWork = nil
-	end)
-end
-
+-- Directory membership is resolved by name. Leave native channel ordering,
+-- colors and sticky chat destinations to Blizzard and the player.
 function QuestTogether:CHANNEL_COUNT_UPDATE()
 	local state = rawget(self, "geographicCommsState")
 	if state then
 		state.reconciledChannels = nil
 	end
-	self:ScheduleAnnouncementChannelOrder()
-end
-function QuestTogether:CHANNEL_UI_UPDATE()
-	self:ScheduleAnnouncementChannelOrder()
 end
 
 function QuestTogether:LeaveAnnouncementChannel()
@@ -1046,7 +955,6 @@ function QuestTogether:ResetCommsState()
 	if self.ResetGeographicComms then
 		self:ResetGeographicComms()
 	end
-	self.channelOrderWork = nil
 	self.announcementChannelBindings = nil
 	self:ResetLocalizedQuestTitles()
 	if self.ResetPartyJoin then

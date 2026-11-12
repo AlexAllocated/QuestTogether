@@ -192,10 +192,7 @@ function QT:UpdateGeographicSubscriptions()
 	end
 	for name in pairs(desired) do
 		s.subscriptions[name] = true
-		local joined = self:GetAnnouncementChannelLocalID(name) ~= nil
-		if self:EnsureMeshDirectoryJoined(name) and not joined then
-			self:ScheduleAnnouncementChannelOrder()
-		end
+		self:EnsureMeshDirectoryJoined(name)
 	end
 	s.currentZone = current
 	local channel = current and ("QuestTogether3Z" .. current) or nil

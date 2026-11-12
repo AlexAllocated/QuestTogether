@@ -4128,70 +4128,120 @@ QuestTogether:RegisterTest("protocol upgrade rejects all addon channels and reti
 	Equal(seen, 1)
 end)
 
-QuestTogether:RegisterTest(
-	"QT channels sort last in human chat then regional order without disturbing other channel order",
-	function()
-		local addon = NewCommsFixture()
-		addon:InitializeGeographicComms()
-		addon.geographicCommsState.subscriptions.QuestTogether3Z12 = true
-		local names = { "QuestTogether3Z12", "General", addon.announcementChannelName, "Trade", "MyFriends" }
-		local swaps = 0
-		function addon:IsRuntimeRestricted()
-			return self.blocked == true
-		end
-		function addon:IsRuntimeRestrictionTypeActive()
-			return false
-		end
-		addon.API.GetChatChannelList = function()
-			local list = {}
-			for i, name in ipairs(names) do
-				list[#list + 1], list[#list + 2], list[#list + 3] = i, name, false
-			end
-			return list
-		end
-		addon.API.GetChannelName = function(name)
-			for i, value in ipairs(names) do
-				if name == value then
-					return i
-				end
-			end
-		end
-		addon.API.SwapChatChannelIndices = function(a, b)
-			names[a], names[b] = names[b], names[a]
-			swaps = swaps + 1
-			addon:CHANNEL_UI_UPDATE()
-			return true
-		end
-		addon:CHANNEL_COUNT_UPDATE()
-		addon:CHANNEL_UI_UPDATE()
-		Equal(#addon.delayed, 1)
-		addon.delayed[1]()
-		Equal(table.concat(names, ","), "General,Trade,MyFriends,QuestTogether3,QuestTogether3Z12")
-		Equal(addon.announcementChannelLocalID, 4)
-		Equal(#addon.delayed, 1) -- swap events do not create a feedback timer loop
-		local prior = swaps
-		Equal(addon:MoveAnnouncementChannelsToEnd(), true)
-		Equal(swaps, prior)
-		names = { "QuestTogether3Z12", addon.announcementChannelName }
-		Equal(addon:MoveAnnouncementChannelsToEnd(), true)
-		Equal(names[1], addon.announcementChannelName)
-		-- Channels joining later go ahead of both QT channels.
-		names[3] = "General"
-		addon.blocked = true
-		Equal(addon:MoveAnnouncementChannelsToEnd(), false)
-		Equal(names[1], addon.announcementChannelName)
-		addon.blocked = false
-		Equal(addon:MoveAnnouncementChannelsToEnd(), true)
-		Equal(names[1], "General")
-		Equal(names[2], addon.announcementChannelName)
-		Equal(names[3], "QuestTogether3Z12")
-		addon:ScheduleAnnouncementChannelOrder()
-		addon.channelOrderWork = nil -- reset/disable invalidates queued work
-		prior = swaps
-		addon.delayed[#addon.delayed]()
-		Equal(swaps, prior)
+QuestTogether:RegisterTest("directory lifecycle preserves human channel colors destinations and visible messages", function()
+	local addon = NewCommsFixture()
+	addon.db = { profile = {} }
+	addon.mapID = 12
+	addon:InitializeGeographicComms()
+	local channels = { "QuestTogether3", "General", "QuestTogether3Z12", "Trade", "MyFriends", "QuestTogether3Z45", "QuestTogether" }
+	local colors = { [2] = "general-gold", [4] = "trade-pink", [5] = "friends-green" }
+	local frames = { { target = 5, channels = {} }, { target = 4, channels = {} } }
+	local leaves, swaps = {}, 0
+	for _, frame in ipairs(frames) do
+		for _, name in ipairs(channels) do frame.channels[name] = true end
 	end
-)
+	function addon:IsRuntimeRestricted() return self.blocked == true end
+	function addon:IsRuntimeRestrictionTypeActive() return false end
+	function addon:GetViewedQuestTogetherMapID() return nil end
+	-- Do not install callbacks on the live client's global chat frames.
+	function addon:RegisterAnnouncementChannelChatFilters() end
+	addon.API.GetBestMapForUnit = function() return addon.mapID end
+	addon.API.GetMapInfo = function() return { mapType = 3 } end
+	addon.API.GetChannelName = function(name)
+		for id, channel in pairs(channels) do
+			if channel == name then return id end
+		end
+	end
+	addon.API.GetChatChannelList = function()
+		local rows = {}
+		for id = 1, 12 do
+			if channels[id] then
+				rows[#rows + 1], rows[#rows + 2], rows[#rows + 3] = id, channels[id], false
+			end
+		end
+		return rows
+	end
+	addon.API.JoinPermanentChannel = function(name)
+		for id = 1, 12 do
+			if not channels[id] then
+				channels[id] = name
+				for _, frame in ipairs(frames) do frame.channels[name] = true end
+				return
+			end
+		end
+		error("fixture channel capacity exceeded")
+	end
+	addon.API.LeaveChannelByName = function(name)
+		leaves[name] = (leaves[name] or 0) + 1
+		channels[assert(addon.API.GetChannelName(name))] = nil
+	end
+	addon.API.GetNumChatWindows = function() return #frames end
+	addon.API.GetChatFrameByID = function(id) return frames[id] end
+	addon.API.RemoveChatWindowChannel = function(frame, name) frame.channels[name] = nil end
+	-- Model the native operation that caused issue #15: names move, while
+	-- colors and the chat edit boxes still refer to their numeric indices.
+	addon.API.SwapChatChannelIndices = function(one, two)
+		swaps = swaps + 1
+		channels[one], channels[two] = channels[two], channels[one]
+		return true
+	end
+	local function CheckHumanChat()
+		local pending = addon.delayed
+		addon.delayed = {}
+		for _, callback in ipairs(pending) do callback() end
+		Equal(swaps, 0)
+		Equal(channels[2], "General")
+		Equal(channels[4], "Trade")
+		Equal(channels[5], "MyFriends")
+		Equal(colors[addon.API.GetChannelName("General")], "general-gold")
+		Equal(colors[addon.API.GetChannelName("Trade")], "trade-pink")
+		Equal(colors[addon.API.GetChannelName("MyFriends")], "friends-green")
+		for index, destination in ipairs({ "MyFriends", "Trade" }) do
+			local frame = frames[index]
+			Equal(channels[frame.target], destination)
+			Equal(frame.channels[destination], true)
+			Equal(addon:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL", "QuestTogether is useful", "Friend", "",
+				frame.target .. ". " .. destination), false)
+			Equal(frame.channels.QuestTogether3, nil)
+		end
+	end
+	Equal(addon:EnsureMeshDirectoryJoined(addon.announcementChannelName), true)
+	addon:CHANNEL_COUNT_UPDATE()
+	addon:UpdateGeographicSubscriptions()
+	Equal(leaves.QuestTogether, 1)
+	Equal(leaves.QuestTogether3Z45, 1)
+	Equal(addon.geographicCommsState.currentChannel, "QuestTogether3Z12")
+	Equal(frames[1].channels.QuestTogether3Z12, nil)
+	Equal(addon:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL", "directory message", "Friend", "", "3. QuestTogether3Z12"), true)
+	CheckHumanChat()
+
+	-- Zone changes must leave and join only QT directories.
+	addon.mapID, addon.now = 13, addon.now + 3
+	addon:UpdateGeographicSubscriptions()
+	Equal(leaves.QuestTogether3Z12, 1)
+	Equal(addon.geographicCommsState.currentChannel, "QuestTogether3Z13")
+	Equal(frames[1].channels.QuestTogether3Z13, nil)
+	CheckHumanChat()
+
+	-- Native channel IDs can change independently. Refresh cached bindings by
+	-- name, and reconcile newly observed stale directories on the count event.
+	channels[9], channels[1] = channels[1], nil
+	channels[10], channels[3] = channels[3], nil
+	channels[11] = "QuestTogether3Z99"
+	addon:CHANNEL_COUNT_UPDATE()
+	Equal(addon.geographicCommsState.reconciledChannels, nil)
+	addon.blocked, addon.now = true, addon.now + 3
+	addon:UpdateGeographicSubscriptions()
+	Equal(leaves.QuestTogether3Z99, nil)
+	addon.blocked = false
+	Equal(addon:EnsureMeshDirectoryJoined(addon.announcementChannelName), true)
+	addon:UpdateGeographicSubscriptions()
+	Equal(addon.announcementChannelLocalID, 9)
+	Equal(addon.announcementChannelBindings.QuestTogether3Z13, 10)
+	Equal(addon:GetAnnouncementChannelLocalID("QuestTogether3Z13"), 10)
+	Equal(leaves.QuestTogether3Z99, 1)
+	CheckHumanChat()
+end)
 
 QuestTogether:RegisterTest("QT slash chat emits one global mesh event and echoes only admitted text", function()
 	local addon, sends, echoes = NewCommsFixture(), {}, {}
@@ -4224,44 +4274,6 @@ QuestTogether:RegisterTest("QT slash chat emits one global mesh event and echoes
 	addon.blocked, addon.isEnabled = false, false
 	Equal(addon:SendQTChannelChat("disabled"), false)
 	Equal(#sends, 3)
-end)
-
-QuestTogether:RegisterTest("channel ordering rejects inaccessible metadata and stops on failed swaps", function()
-	local addon = NewCommsFixture()
-	function addon:IsRuntimeRestricted()
-		return false
-	end
-	function addon:IsRuntimeRestrictionTypeActive()
-		return false
-	end
-	local secret = setmetatable({}, {
-		__tostring = function()
-			error("unreadable channel name")
-		end,
-	})
-	function addon:CanAccessValue(value)
-		return value ~= secret
-	end
-	local swaps = 0
-	addon.API.GetChatChannelList = function()
-		return { 1, secret, false, 2, "General", false }
-	end
-	addon.API.SwapChatChannelIndices = function()
-		swaps = swaps + 1
-		return false
-	end
-	Equal(addon:MoveAnnouncementChannelsToEnd(), false)
-	Equal(swaps, 0)
-	addon.API.GetChatChannelList = function()
-		return { 1, addon.announcementChannelName, false, 2, "General", false }
-	end
-	Equal(addon:MoveAnnouncementChannelsToEnd(), false)
-	Equal(swaps, 1)
-	Equal(addon.announcementChannelLocalID, nil)
-	addon.API.SwapChatChannelIndices = nil
-	Equal(addon:MoveAnnouncementChannelsToEnd(), false)
-	Equal(swaps, 1)
-	Equal(addon:AnnouncementChannelChatFilter(nil, nil, "hi", "Friend", "", "4. questtogether3"), true)
 end)
 
 QuestTogether:RegisterTest("nearby range uses physical map proportions keeps minimum and covers entire zone", function()

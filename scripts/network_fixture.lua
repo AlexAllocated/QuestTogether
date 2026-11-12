@@ -728,7 +728,6 @@ function QT:CreateTestNetwork(options)
 			"UpdatePlayerLocationHover",
 			"RegisterAnnouncementChannelChatFilters",
 			"HideAnnouncementChannelFromChatWindows",
-			"ScheduleAnnouncementChannelOrder",
 			"GetPlayerLocationPriorityOrigin",
 			"GetLocationPinSurface",
 			"RenderPartyChatReminder",

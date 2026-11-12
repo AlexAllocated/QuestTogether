@@ -404,7 +404,6 @@ function QuestTogether:ADDON_RESTRICTION_STATE_CHANGED()
 	-- and after deactivation. Retire the hover while native object permissions
 	-- may still allow clearing it; combat has its own visibility driver.
 	self:HideLocationTargetButton()
-	self:ScheduleAnnouncementChannelOrder()
 	self:FlushDeferredWork("ADDON_RESTRICTION_STATE_CHANGED")
 end
 

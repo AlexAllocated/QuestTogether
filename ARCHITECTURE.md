@@ -492,6 +492,8 @@ is never authority for the claimed origin.
 
 Generation-3 `QuestTogether3` and `QuestTogether3Z<zone>` channels are membership
 directories only. Display-list indices and native channel IDs remain distinct.
+Membership is resolved by name. QT does not reorder channels or rewrite native
+chat colors and sticky destinations; those belong to Blizzard and the player.
 Directory selection is guarded, restored and deferred while unsafe. Missing,
 suspended or incomplete directories are degraded discovery, not a reason to send
 channel payloads. `Transport` does not admit the CHANNEL distribution. Bootstrap
