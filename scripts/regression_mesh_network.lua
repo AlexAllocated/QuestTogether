@@ -10,7 +10,7 @@ local function Count(values)
 end
 local function Peer(net, name, settings)
 	local peer = net:AddPeer(name, settings)
-	peer.announcementChannelName = "QuestTogether3"
+	peer.announcementChannelName = "QuestTogether"
 	peer.API.GetPlayerNotesNamespace = function()
 		return "test:US:realm"
 	end
@@ -996,7 +996,7 @@ QT:RegisterTest("mesh contact roster scans share the row budget and coalesce fri
 	for index = 1, 100 do
 		directory[index] = "Directory" .. index .. "-Realm"
 	end
-	net:SetChannelDirectory(peer, "QuestTogether3", directory)
+	net:SetChannelDirectory(peer, "QuestTogether", directory)
 	peer.API.GetNumGuildMembers = function()
 		return 100
 	end
@@ -1096,7 +1096,7 @@ QT:RegisterTest("mesh directory refresh never mistakes a shifted display row for
 	net:SetChannelDirectory(peer, "AAA", { "Unrelated-Realm" })
 	net:StartPeer(peer)
 	net:Advance(2.4)
-	assert(peer.meshNetworkState.directory and peer.meshNetworkState.directory.selectedName == "QuestTogether3")
+	assert(peer.meshNetworkState.directory and peer.meshNetworkState.directory.selectedName == "QuestTogether")
 	-- A simultaneous unrelated channel join shifts the directory's display
 	-- index before the asynchronous names arrive.
 	net:Join(peer, "AAA", true)
@@ -1111,12 +1111,12 @@ end, { offline = true })
 QT:RegisterTest("mesh directory waits for names after count and avoids selecting channel headers", function()
 	local net = QT:CreateTestNetwork({ fps = 20, directoryDelay = 5 })
 	local peer = Peer(net, "Owner-Realm")
-	net:SetChannelDirectory(peer, "QuestTogether3", { "Ready-Realm" })
+	net:SetChannelDirectory(peer, "QuestTogether", { "Ready-Realm" })
 	local info, selectChannel = peer.API.GetChannelDisplayInfo, peer.API.SetSelectedDisplayChannel
 	local selected = {}
 	peer.API.GetChannelDisplayInfo = function(index)
 		local name, header, collapsed, id, count, active = info(index)
-		if name == "QuestTogether3" then
+		if name == "QuestTogether" then
 			count = 1
 		else
 			header = true
@@ -1299,7 +1299,7 @@ QT:RegisterTest(
 			joins = joins + 1
 			return true
 		end
-		assert(not alice:EnsureMeshDirectoryJoined("QuestTogether3"))
+		assert(not alice:EnsureMeshDirectoryJoined("QuestTogether"))
 		assert(joins == 0, "a delayed directory callback cannot join after the communication lifetime ended")
 	end,
 	{ offline = true }
@@ -1349,7 +1349,7 @@ QT:RegisterTest("mesh directory cycles rotate oversized roster rows and share th
 	for index = 1, 2000 do
 		global[index], zone[index] = "Global" .. index .. "-Realm", "Zone" .. index .. "-Realm"
 	end
-	net:SetChannelDirectory(peer, "QuestTogether3", global)
+	net:SetChannelDirectory(peer, "QuestTogether", global)
 	net:SetChannelDirectory(peer, "QuestTogether3Z12", zone)
 	local getRow = peer.API.GetChannelRosterInfo
 	local cycles, seen, frameReads, at = {}, {}, 0, nil
@@ -1375,13 +1375,13 @@ QT:RegisterTest("mesh directory cycles rotate oversized roster rows and share th
 		local cycle = cycles[index]
 		assert(cycle.total == 1500, "crowded directories must share and fill the bounded refresh budget")
 		assert(
-			(cycle.QuestTogether3 or 0) > 0 and (cycle.QuestTogether3Z12 or 0) > 0,
+			(cycle.QuestTogether or 0) > 0 and (cycle.QuestTogether3Z12 or 0) > 0,
 			"a crowded first directory must not starve a later directory"
 		)
 	end
 	assert(cycles[1].first ~= cycles[2].first, "the first directory must rotate each refresh")
 	assert(
-		seen.QuestTogether3[1501] and seen.QuestTogether3Z12[1501],
+		seen.QuestTogether[1501] and seen.QuestTogether3Z12[1501],
 		"later refreshes must discover rows beyond the first cycle's truncation"
 	)
 	assert(Count(peer.meshNetworkState.directoryCursors) <= 8)
@@ -1396,7 +1396,7 @@ QT:RegisterTest("mesh directory sampling is bounded and yields to the visible ch
 	for i = 1, 1800 do
 		names[i] = "Candidate" .. i .. "-Realm"
 	end
-	net:SetChannelDirectory(alice, "QuestTogether3", names)
+	net:SetChannelDirectory(alice, "QuestTogether", names)
 	alice.API.GetNumGuildMembers = function()
 		return 50
 	end

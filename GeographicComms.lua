@@ -148,8 +148,8 @@ function QT:UpdateGeographicSubscriptions()
 	if s.viewZone and s.viewZone ~= current then
 		desired["QuestTogether3Z" .. s.viewZone] = true
 	end
-	-- Permanent channels can outlive a reload. Leave protocol-2 subscriptions
-	-- and stale protocol-3 zone directories, never unrelated player channels.
+	-- Permanent channels can outlive a reload. Retire the former versioned global
+	-- directory and old/stale zone directories, never the current global directory.
 	if not s.reconciledChannels and self.API.GetChatChannelList then
 		local listed, channels = pcall(self.API.GetChatChannelList)
 		if listed and self:CanAccessTable(channels) and #channels <= 90 and #channels % 3 == 0 then
@@ -157,7 +157,7 @@ function QT:UpdateGeographicSubscriptions()
 			for index = 2, #channels, 3 do
 				local name = self:SafeToString(channels[index], "")
 				local lower = name:lower()
-				local legacy = lower == "questtogether" or lower:match("^questtogetherz[1-9]%d*$") ~= nil
+				local legacy = lower == "questtogether3" or lower:match("^questtogetherz[1-9]%d*$") ~= nil
 				local zone = tonumber(lower:match("^questtogether3z([1-9]%d*)$"))
 				if
 					(
@@ -167,6 +167,7 @@ function QT:UpdateGeographicSubscriptions()
 							and not desired["QuestTogether3Z" .. zone]
 							and not s.subscriptions["QuestTogether3Z" .. zone]
 					)
+					and lower ~= self.announcementChannelName:lower()
 					and self.API.LeaveChannelByName
 				then
 					local left, result = pcall(self.API.LeaveChannelByName, name)

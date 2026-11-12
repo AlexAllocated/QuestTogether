@@ -15,9 +15,9 @@ local function Peer(name)
 		partyRosterFingerprint = "",
 		sent = {},
 		timers = {},
-		joined = { QuestTogether3 = 6 },
+		joined = { QuestTogether = 6 },
 		recentCommMessageSignatures = {},
-		announcementChannelName = "QuestTogether3",
+		announcementChannelName = "QuestTogether",
 		announcementChannelLocalID = 6,
 		db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} },
 	}, { __index = QT })

@@ -2104,15 +2104,15 @@ QuestTogether:RegisterTest("directory refusals retain membership and never claim
 	local function Notice(token, name)
 		return addon:CHAT_MSG_CHANNEL_NOTICE(nil, token, nil, nil, name)
 	end
-	for _ = 1, 20 do Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether3"), true) end
+	for _ = 1, 20 do Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "7. QuestTogether"), true) end
 	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether3Z12"), true)
-	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether"), false)
-	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether3Other"), false)
-	Equal(Notice("YOU_JOINED", "QuestTogether3"), false)
-	addon.isEnabled = false
 	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether3"), false)
+	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether3Other"), false)
+	Equal(Notice("YOU_JOINED", "QuestTogether"), false)
+	addon.isEnabled = false
+	Equal(Notice("NOT_ALLOWED_IN_CHANNEL", "QuestTogether"), false)
 	Equal(#refused, 21)
-	Equal(refused[1], "QuestTogether3")
+	Equal(refused[1], "QuestTogether")
 	Equal(errors, 0)
 	Equal(addon:GetCommsDiagnostics().meshDirectoryRefusals, 21)
 	Equal(addon:GetCommsDiagnostics().lastFailure, nil)
@@ -4133,7 +4133,7 @@ local function NewChannelOrderingFixture()
 	addon.db = { profile = {} }
 	addon.mapID = 12
 	addon:InitializeGeographicComms()
-	addon.channels = { "QuestTogether3", "General", "QuestTogether3Z12", "Trade", "MyFriends", "QuestTogether3Z45", "QuestTogether", "QuestTogether3ZFriends" }
+	addon.channels = { "QuestTogether", "General", "QuestTogether3Z12", "Trade", "MyFriends", "QuestTogether3Z45", "QuestTogether3", "QuestTogether3ZFriends" }
 	addon.colors = { [2] = "general-gold", [4] = "trade-pink", [5] = "friends-green", [8] = "community-blue" }
 	addon.chatFrames = { { target = 5, channels = {} }, { target = 4, channels = {} } }
 	addon.leaves, addon.swaps = {}, {}
@@ -4194,6 +4194,35 @@ local function NewChannelOrderingFixture()
 	return addon
 end
 
+QuestTogether:RegisterTest("global directory rename frees a full channel list and retries failed retirement", function()
+	for _, failFirst in ipairs({ false, true }) do
+		local addon = NewChannelOrderingFixture()
+		addon.channels[1] = "QuestTogether3Other"
+		for id = 9, 16 do addon.channels[id] = "HumanChannel" .. id end
+		local leave, attempts = addon.API.LeaveChannelByName, 0
+		addon.API.LeaveChannelByName = function(name)
+			attempts = attempts + 1
+			Equal(name, "QuestTogether3")
+			if failFirst and attempts == 1 then return false end
+			leave(name)
+		end
+		local joined = addon:EnsureMeshDirectoryJoined(addon.announcementChannelName)
+		Equal(joined, not failFirst)
+		if failFirst then
+			Equal(addon:EnsureMeshDirectoryJoined(addon.announcementChannelName), false)
+			Equal(attempts, 1)
+			addon.now = addon.meshNetworkState.joins[addon.announcementChannelName].retryAt
+			Equal(addon:EnsureMeshDirectoryJoined(addon.announcementChannelName), true)
+		end
+		Equal(addon.API.GetChannelName("QuestTogether3"), nil)
+		Equal(addon.API.GetChannelName("QuestTogether"), 7)
+		Equal(addon.API.GetChannelName("QuestTogether3Other"), 1)
+		Equal(addon.API.GetChannelName("QuestTogether3Z12"), 3)
+		Equal(addon.API.GetChannelName("QuestTogether3ZFriends"), 8)
+		Equal(addon.commPrefix, "QuestTogether3")
+	end
+end)
+
 QuestTogether:RegisterTest("QT-last directory lifecycle preserves human channel colors destinations and visible messages", function()
 	local addon = NewChannelOrderingFixture()
 	local channels, frames, leaves = addon.channels, addon.chatFrames, addon.leaves
@@ -4212,7 +4241,7 @@ QuestTogether:RegisterTest("QT-last directory lifecycle preserves human channel 
 			if channels[id] then ordered[#ordered + 1] = channels[id] end
 		end
 		Equal(table.concat(ordered, ","), "General,Trade,MyFriends,QuestTogether3ZFriends," .. (extra or "")
-			.. "QuestTogether3," .. addon.geographicCommsState.currentChannel)
+			.. "QuestTogether," .. addon.geographicCommsState.currentChannel)
 		Equal(addon.colors[addon.API.GetChannelName("General")], "general-gold")
 		Equal(addon.colors[addon.API.GetChannelName("Trade")], "trade-pink")
 		Equal(addon.colors[addon.API.GetChannelName("MyFriends")], "friends-green")
@@ -4223,14 +4252,14 @@ QuestTogether:RegisterTest("QT-last directory lifecycle preserves human channel 
 			Equal(frame.channels[destination], true)
 			Equal(addon:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL", "QuestTogether is useful", "Friend", "",
 				addon.API.GetChannelName(destination) .. ". " .. destination), false)
-			Equal(frame.channels.QuestTogether3, nil)
+			Equal(frame.channels.QuestTogether, nil)
 		end
 		Equal(addon:AnnouncementChannelChatFilter(nil, "CHAT_MSG_CHANNEL", "community message", "Friend", "", "QuestTogether3ZFriends"), false)
 	end
 	Equal(addon:EnsureMeshDirectoryJoined(addon.announcementChannelName), true)
 	addon:CHANNEL_COUNT_UPDATE()
 	addon:UpdateGeographicSubscriptions()
-	Equal(leaves.QuestTogether, 1)
+	Equal(leaves.QuestTogether3, 1)
 	Equal(leaves.QuestTogether3Z45, 1)
 	Equal(addon.geographicCommsState.currentChannel, "QuestTogether3Z12")
 	Equal(frames[1].channels.QuestTogether3Z12, nil)
@@ -4249,7 +4278,7 @@ QuestTogether:RegisterTest("QT-last directory lifecycle preserves human channel 
 
 	-- A human channel arriving later belongs before the directories. At the
 	-- same time native IDs change; the next pass must use the new name mapping.
-	local globalID, zoneID = addon.API.GetChannelName("QuestTogether3"), addon.API.GetChannelName("QuestTogether3Z13")
+	local globalID, zoneID = addon.API.GetChannelName("QuestTogether"), addon.API.GetChannelName("QuestTogether3Z13")
 	channels[9], channels[globalID] = channels[globalID], nil
 	channels[10], channels[zoneID] = channels[zoneID], nil
 	channels[11], channels[12] = "QuestTogether3Z99", "AfterLogin"
@@ -4282,10 +4311,11 @@ QuestTogether:RegisterTest("channel ordering paces retries and respects stopped 
 			-- Native channel callbacks can run before the adapter returns.
 			addon:CHANNEL_COUNT_UPDATE()
 			addon:UpdateAnnouncementChannelOrder()
-			return false, case[1]
+			return false, case[1], "channel_metadata"
 		end
 		addon:UpdateAnnouncementChannelOrder()
 		Equal(calls, 1)
+		Equal(addon.chatChannelOrderState.lastStage, "channel_metadata")
 		addon.now = addon.now + 0.5
 		addon:CHANNEL_COUNT_UPDATE()
 		addon:UpdateAnnouncementChannelOrder()
@@ -4612,7 +4642,7 @@ QuestTogether:RegisterTest(
 			iconTag:find("QuestTogetherPartnerIcon", 1, true),
 			"LFQP uses local glow artwork with a legacy-safe wire icon"
 		)
-		receiver:OnCommReceived(sender.commPrefix, wire, "WHISPER", "Friend-Realm", 7, "QuestTogether")
+		receiver:OnCommReceived(sender.commPrefix, wire, "WHISPER", "Friend-Realm", 7, receiver.announcementChannelName)
 		receiver:OnCommReceived(sender.commPrefix, wire, "PARTY", "Friend-Realm")
 		assert(#receiver.printed == 1, "remote partner search should print once across routes")
 		Equal(receiver.printed[1], QuestTogether.Translate("Looking for questing partners") .. " :)")

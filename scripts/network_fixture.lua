@@ -527,7 +527,7 @@ function QT:CreateTestNetwork(options)
 			restricted = false,
 			regional = settings.regional == true,
 			commPrefix = QT.commPrefix,
-			announcementChannelName = QT.announcementChannelName or "QuestTogether3",
+			announcementChannelName = QT.announcementChannelName or "QuestTogether",
 			LibChev = QT.LibChev,
 			Ed25519 = QT.Ed25519,
 			DEFAULTS = QT.DEFAULTS,

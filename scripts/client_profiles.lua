@@ -1075,7 +1075,7 @@ return pushable end or nil,
 			local ok, err = pcall(function()
 				local state, boxes, records, active
 				local function Reset()
-					state = { channels = { "QuestTogether3", "General", "Trade" }, swaps = 0, helperCalls = 0 }
+					state = { channels = { "QuestTogether", "General", "Trade" }, swaps = 0, helperCalls = 0 }
 					addon.isEnabled, addon.isRunningTests, addon.isLoggingOut = true, nil, nil
 					records = {
 						{ r = 1, g = 1, b = 1, id = 31, sticky = 0, flashTab = false },
@@ -1086,7 +1086,9 @@ return pushable end or nil,
 					GetChannelName = function(target)
 						if state.failNumericLookup and type(target) == "number" then return 0, nil end
 						for id, name in pairs(state.channels) do
-							if target == id or target == name then return id, name end
+							local canonical = state.canonicalNames and state.canonicalNames[name] or name
+							if state.failCanonicalLookup and target == canonical and canonical ~= name then return 0, nil end
+							if target == id or target == name or target == canonical then return id, canonical end
 						end
 						return 0, nil
 					end
@@ -1177,8 +1179,8 @@ return pushable end or nil,
 					end
 				end
 				Reset()
-				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true)
-				assert(state.channels[1] == "General" and state.channels[2] == "QuestTogether3")
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
+				assert(state.channels[1] == "General" and state.channels[2] == "QuestTogether")
 				assert(ChatTypeInfo.CHANNEL1 == records[2] and ChatTypeInfo.CHANNEL2 == records[1],
 					"full record identity, not just RGB, must follow each channel")
 				assert(GetChannelName(boxes[1].target) == 1 and GetChannelName(boxes[2].target) == 2)
@@ -1189,9 +1191,27 @@ return pushable end or nil,
 
 				Reset()
 				boxes[1].shown, state.refreshHeaders = true, true
-				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true,
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
 					"idle visible IM editboxes may refresh their headers after the native swap")
 				assert(boxes[1].target == 1 and boxes[2].target == 2)
+
+				for alias, canonical in pairs({ General = "General - Ironforge", LocalDefense = "LocalDefense - Ironforge",
+					Services = "Trade (Services) - English 43", TradeLocal = "Trade (Local) - Ironforge" }) do
+					Reset()
+					state.channels[2], state.canonicalNames = alias, { [alias] = canonical }
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", alias) == true,
+						"native channel aliases must preserve canonical identity: " .. alias)
+					assert(state.channels[1] == alias and state.channels[2] == "QuestTogether")
+					assert(boxes[1].target == canonical and boxes[2].target == "QuestTogether")
+					assert(GetChannelName(boxes[1].target) == 1 and GetChannelName(boxes[2].target) == 2)
+					assert(ChatTypeInfo.CHANNEL1 == records[2] and ChatTypeInfo.CHANNEL2 == records[1])
+				end
+				Reset()
+				state.canonicalNames, state.failCanonicalLookup = { General = "General - Ironforge" }, true
+				local resolved, resolutionReason, resolutionStage = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+				assert(resolved == false and resolutionReason == "invalid" and resolutionStage == "channel_identity")
+				assert(state.helperCalls == 0 and state.swaps == 0 and boxes[1].target == 2,
+					"an unresolvable canonical identity must not mutate remembered destinations or channel ordering")
 
 				for _, kind in ipairs({ "focus", "draft", "blocked", "channel-ui", "settings-ui", "reject", "normalize", "tainted" }) do
 					Reset()
@@ -1203,19 +1223,25 @@ return pushable end or nil,
 					elseif kind == "reject" then boxes[2].reject = true
 					elseif kind == "normalize" then boxes[2].normalize = true
 					elseif kind == "tainted" then state.tainted = true end
-					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == false, kind)
+					local swapped, _, stage = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+					assert(swapped == false, kind)
+					local expectedStage = ({ focus = "chat_edit_box_state", draft = "chat_edit_box_state",
+						blocked = "restrictions", ["channel-ui"] = "channel_configuration",
+						["settings-ui"] = "channel_configuration", reject = "destination_preparation",
+						normalize = "destination_preparation", tainted = "secure_dispatch" })[kind]
+					assert(stage == expectedStage, "channel ordering must identify its blocked stage: " .. kind)
 					assert(state.helperCalls == 0 and state.swaps == 0, kind .. " must defer before any swap")
 					assert(GetChannelName(boxes[1].target) == 2 and GetChannelName(boxes[2].target) == 1)
 				end
 				for _, value in ipairs({ false, secret, inaccessible }) do
 					Reset()
 					ChatConfigChannelSettings_SwapChannelsByIndex = value or nil
-					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == false)
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
 					assert(state.swaps == 0, "missing helper cannot fall back to raw channel swaps")
 					Reset()
 					boxes[2].target = value
 					local before = inaccessibleReads
-					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == false)
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
 					assert(state.swaps == 0 and inaccessibleReads == before)
 				end
 				for _, field in ipairs({ "metadata", "frame", "method" }) do
@@ -1224,35 +1250,35 @@ return pushable end or nil,
 					if field == "metadata" then ChatTypeInfo = inaccessible
 					elseif field == "frame" then ChatFrame12 = inaccessible
 					else boxes[2].GetAttribute = inaccessible end
-					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == false)
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
 					assert(state.swaps == 0 and inaccessibleReads == before,
 						"unreadable " .. field .. " must fail before mutation or field inspection")
 				end
 				Reset()
 				state.failure = "before"
-				local swapped, reason = addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General")
+				local swapped, reason = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
 				assert(swapped == false and reason == "inconsistent")
 				assert(state.swaps == 0 and state.helperCalls == 1, "never blindly reverse a partial failure")
 				assert(GetChannelName(boxes[1].target) == 2 and GetChannelName(boxes[2].target) == 1,
 					"even a partial native failure must leave sends bound to their original channel names")
 				Reset()
 				state.failure = "after"
-				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true,
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
 					"an error after a completed native swap must be judged by the verified state")
 				assert(state.swaps == 1 and state.helperCalls == 1)
 
 				Reset()
 				state.failNumericLookup = true
-				local accepted, detail = addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General")
-				assert(accepted == false and detail == "inaccessible")
+				local accepted, detail = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+				assert(accepted == false and detail == "invalid")
 				assert(state.helperCalls == 0 and state.swaps == 0,
-					"failed numeric lookup cannot silently omit an affected remembered destination")
+					"failed numeric identity lookup must stop before preparing remembered destinations")
 
 				for _, kind in ipairs({ "slot", "field" }) do
 					for _, after in ipairs({ false, true }) do
 						Reset()
 						state.taintKind, state.taintAfter = kind, after
-						local accepted, detail = addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General")
+						local accepted, detail = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
 						assert(accepted == false and detail == (after and "inconsistent" or "inaccessible"))
 						assert(state.swaps == (after and 1 or 0), "metadata taint must stop the transaction")
 						assert(state.helperCalls == (after and 1 or 0), "taint must not trigger a blind repair")
@@ -1260,14 +1286,14 @@ return pushable end or nil,
 				end
 				Reset()
 				InCombatLockdown = function() return nil end
-				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true,
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
 					"native nil combat-lockdown result means out of combat")
 
 				Reset()
 				state.channels[7], state.channels[1] = state.channels[1], nil
 				ChatTypeInfo.CHANNEL7, ChatTypeInfo.CHANNEL1 = ChatTypeInfo.CHANNEL1, nil
 				boxes[2].target = 7
-				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether3", "General") == true)
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
 				assert(GetChannelName(boxes[1].target) == 7 and GetChannelName(boxes[2].target) == 2,
 					"look up current IDs by name rather than reusing an earlier index")
 			end)

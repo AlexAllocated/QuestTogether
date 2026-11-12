@@ -907,6 +907,18 @@ function QT:EnsureMeshDirectoryJoined(channelName)
 	end
 	Retry(join, now)
 	Metric(s, "directoryJoinAttempts")
+	-- Free the former global directory's slot before attempting its replacement.
+	-- A full channel list must not delay discovery until a failed join backs off.
+	if channelName == self.announcementChannelName and channelName == "QuestTogether" then
+		local previous = Native(self, "GetChannelName", "QuestTogether3")
+		local previousID = previous and self:SafeToNumber(previous[1])
+		if previousID and previousID > 0 then
+			Native(self, "LeaveChannelByName", "QuestTogether3")
+			previous = Native(self, "GetChannelName", "QuestTogether3")
+			previousID = previous and self:SafeToNumber(previous[1])
+			if not previous or (previousID and previousID > 0) then return false end
+		end
+	end
 	return self:EnsureAnnouncementChannelJoined(channelName)
 end
 function QT:RecordMeshDirectoryRefusal(channelName)

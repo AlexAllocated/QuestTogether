@@ -34,7 +34,7 @@ local function BaseFixture(name)
 		reads = 0,
 		position = { x = 0.4, y = 0.6 },
 		mapID = 12,
-		announcementChannelName = "QuestTogether3",
+		announcementChannelName = "QuestTogether",
 		announcementChannelLocalID = 7,
 	}, { __index = QT })
 	function a:AnnounceQuestPartnerSearch() end
@@ -103,7 +103,7 @@ local function BaseFixture(name)
 		end
 		local other = a.peersByRoute and a.peersByRoute[route] or a.other
 		if other then
-			other:OnCommReceived(prefix, message, route, a.name, 7, "QuestTogether3")
+			other:OnCommReceived(prefix, message, route, a.name, 7, "QuestTogether")
 		end
 		return 0
 	end
@@ -154,7 +154,7 @@ end
 
 local function Fixture(name)
 	local a = BaseFixture(name)
-	a.joined, a.left, a.timers = { QuestTogether3 = 6 }, {}, {}
+	a.joined, a.left, a.timers = { QuestTogether = 6 }, {}, {}
 	a.EnsureAnnouncementChannelJoined = QT.EnsureAnnouncementChannelJoined
 	a.API.GetChannelName = function(channel)
 		return a.joined[channel]
@@ -261,7 +261,7 @@ local function DeliverState(a, b, frames)
 	local accepted = false
 	for _, wire in ipairs(frames or StateFrames(a)) do
 		accepted =
-			b:ReceiveCommunication(b.commPrefix, wire, "WHISPER", a.name, b.joined.QuestTogether3, "QuestTogether3")
+			b:ReceiveCommunication(b.commPrefix, wire, "WHISPER", a.name, b.joined.QuestTogether, "QuestTogether")
 	end
 	return accepted
 end
@@ -443,14 +443,14 @@ QT:RegisterTest("reload leaves retired protocol directories and stale zones with
 	local a = Fixture()
 	a.joined.QuestTogether3Z45 = 8
 	a.joined.QuestTogether3Z99 = 9
-	a.joined.QuestTogether, a.joined.QuestTogetherZ12 = 11, 12
+	a.joined.QuestTogether3, a.joined.QuestTogetherZ12 = 11, 12
 	a.API.GetChatChannelList = function()
 		return {
 			1,
 			"General",
 			false,
 			6,
-			"QuestTogether3",
+			"QuestTogether",
 			false,
 			7,
 			"QuestTogether3Z12",
@@ -464,7 +464,7 @@ QT:RegisterTest("reload leaves retired protocol directories and stale zones with
 			10,
 			"QuestTogether3ZFriends",
 			false,
-			11, "QuestTogether", false,
+			11, "QuestTogether3", false,
 			12, "QuestTogetherZ12", false,
 		}
 	end
@@ -474,9 +474,9 @@ QT:RegisterTest("reload leaves retired protocol directories and stale zones with
 	a.restricted = false
 	a:UpdateGeographicSubscriptions()
 	Equal(#a.left, 4)
-	assert(a.joined.QuestTogether3 and a.joined.QuestTogether3Z12)
+	assert(a.joined.QuestTogether and a.joined.QuestTogether3Z12)
 	for _, name in ipairs(a.left) do
-		assert(name == "QuestTogether3Z45" or name == "QuestTogether3Z99" or name == "QuestTogether" or name == "QuestTogetherZ12")
+		assert(name == "QuestTogether3Z45" or name == "QuestTogether3Z99" or name == "QuestTogether3" or name == "QuestTogetherZ12")
 	end
 	a.now = a.now + 2
 	a:UpdateGeographicSubscriptions()
@@ -613,7 +613,7 @@ QT:RegisterTest(
 		Equal(a:GetGeographicZoneID(13), nil)
 		a:ResetGeographicComms()
 		Equal(a.joined.QuestTogether3Z12, nil)
-		Equal(a.joined.QuestTogether3, 6)
+		Equal(a.joined.QuestTogether, 6)
 	end
 )
 
@@ -662,7 +662,7 @@ QT:RegisterTest(
 		local frames = StateFrames(a)
 		assert(DeliverState(a, b, frames))
 		for _, wire in ipairs(frames) do
-			Equal(b:ReceiveCommunication(b.commPrefix, wire .. "garbage", "WHISPER", a.name, 6, "QuestTogether3"), false)
+			Equal(b:ReceiveCommunication(b.commPrefix, wire .. "garbage", "WHISPER", a.name, 6, "QuestTogether"), false)
 		end
 		Equal(
 			a:CopyCommRecord(
@@ -801,7 +801,7 @@ QT:RegisterTest("duplicate signature memory is bounded during a many sender burs
 		if i % 32 == 1 then
 			a:UpdateCommunicationRuntime()
 		end
-		a:ReceiveCommunication(a.commPrefix, frames[1], "WHISPER", "Player" .. i .. "-Realm", 6, "QuestTogether3")
+		a:ReceiveCommunication(a.commPrefix, frames[1], "WHISPER", "Player" .. i .. "-Realm", 6, "QuestTogether")
 	end
 	local count = 0
 	for _ in pairs(a.communicationState.seen) do
@@ -809,7 +809,7 @@ QT:RegisterTest("duplicate signature memory is bounded during a many sender burs
 	end
 	Equal(count, 2048)
 	local before = a.qtPlayerPresenceState.peers["Player10000-Realm"]
-	Equal(a:ReceiveCommunication(a.commPrefix, frames[1], "WHISPER", "Player10000-Realm", 6, "QuestTogether3"), false)
+	Equal(a:ReceiveCommunication(a.commPrefix, frames[1], "WHISPER", "Player10000-Realm", 6, "QuestTogether"), false)
 	Equal(a.qtPlayerPresenceState.peers["Player10000-Realm"], before)
 end, { offline = true })
 

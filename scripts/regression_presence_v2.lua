@@ -34,8 +34,8 @@ local function Fixture()
 		currentMap = 1,
 		options = { showPlayerLocations = true, lookingForQuestPartners = false },
 		sharing = true,
-		announcementChannelName = "QuestTogether3",
-		channels = { QuestTogether3 = 1 },
+		announcementChannelName = "QuestTogether",
+		channels = { QuestTogether = 1 },
 		partyRosterFingerprint = "solo",
 		sample = { mapID = 1, x = 0.4, y = 0.5 },
 	}, { __index = QT })

@@ -308,7 +308,7 @@ operation, route, queue, fairness, transfer and privacy contracts. All native
 traffic—including nearby whispers—shares one paced transport; queue admission is
 not native acceptance, and native acceptance is not remote delivery.
 
-The global `QuestTogether3` directory and regional
+The global `QuestTogether` directory and regional
 `QuestTogether3Z<zoneMapID>` directories discover candidates for a bounded mesh.
 Current and viewed zones receive priority after the existing four-second view
 dwell. Correlated native whisper handshakes establish neighbors; expiring scoped

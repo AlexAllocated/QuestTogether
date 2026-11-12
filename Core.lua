@@ -289,7 +289,7 @@ local tostring = SafeText
 
 QuestTogether.addonName = addonName or "QuestTogether"
 QuestTogether.commPrefix = "QuestTogether3"
-QuestTogether.announcementChannelName = "QuestTogether3"
+QuestTogether.announcementChannelName = "QuestTogether"
 QuestTogether.retiredAnnouncementChannelName = "QuestTogetherAnnounce1"
 QuestTogether.questLogWindowName = "QuestTogether"
 QuestTogether.CHAT_BUBBLE_SIZE_MIN = 80
@@ -824,6 +824,7 @@ end
 -- ChatTypeInfo exchange; QT never assigns its entries or rewrites RGB colors.
 local function SwapChatChannelsPreservingState(firstName, secondName)
 	local dispatched = false
+	local stage = "arguments"
 	local function Run()
 		local function Accessible(value) return CanAccessForeignValue(value) end
 		local function Name(value)
@@ -834,6 +835,7 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 			return false, "invalid"
 		end
 		if QuestTogether.isRunningTests then return false, "restricted" end
+		stage = "secure_dispatch"
 		local securityCheck, dispatch = issecurevariable, securecallfunction
 		if not Accessible(securityCheck) or type(securityCheck) ~= "function"
 			or not Accessible(dispatch) or type(dispatch) ~= "function" then
@@ -865,7 +867,9 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 				or QuestTogether:IsRuntimeRestrictionTypeActive("chat")
 				or QuestTogether:IsWorkBlocked("foreign_frame_mutation")
 		end
+		stage = "restrictions"
 		if Restricted() then return false, "restricted" end
+		stage = "native_helpers"
 		local getChannel = Trusted(_G, "GetChannelName")
 		local swap = Trusted(_G, "ChatConfigChannelSettings_SwapChannelsByIndex")
 		if not getChannel or not swap or not CanAccessForeignTable(C_ChatInfo)
@@ -883,11 +887,23 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 			local id, canonical = Channel(name)
 			return id == expected and canonical == name
 		end
-		local first, firstCanonical = Channel(firstName)
-		local second, secondCanonical = Channel(secondName)
-		if not first or not second or first == second
-			or firstCanonical ~= firstName or secondCanonical ~= secondName then return false, "invalid" end
+		local function ResolveChannel(value)
+			local id, canonical = Channel(value)
+			if not id then return nil end
+			-- Enumeration uses aliases such as General or Services; native lookup
+			-- returns General - Ironforge or Trade (Services) - English 43. Require
+			-- that the canonical name and numeric ID both resolve to that identity.
+			local numericID, numericName = Channel(id)
+			if numericID ~= id or numericName ~= canonical or not ChannelMatches(canonical, id) then return nil end
+			return id, canonical
+		end
+		stage = "channel_identity"
+		local first, firstCanonical = ResolveChannel(firstName)
+		local second, secondCanonical = ResolveChannel(secondName)
+		if not first or not second or first == second then return false, "invalid" end
+		firstName, secondName = firstCanonical, secondCanonical
 		local firstKey, secondKey = "CHANNEL" .. first, "CHANNEL" .. second
+		stage = "channel_metadata"
 		if not Secure(ChatTypeInfo, firstKey) or not Secure(ChatTypeInfo, secondKey) then
 			return false, "inaccessible"
 		end
@@ -923,6 +939,7 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 			return CanAccessForeignTable(currentFirst) and CanAccessForeignTable(currentSecond)
 				and currentFirst == expectedFirst and currentSecond == expectedSecond
 		end
+		stage = "channel_configuration"
 		for _, frameName in ipairs({ "ChatConfigFrame", "ChatConfigChannelSettingsLeft", "ChannelFrame", "ColorPickerFrame" }) do
 			local frame = _G[frameName]
 			if not Accessible(frame) then return false, "inaccessible" end
@@ -938,10 +955,12 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 				if shown and frameName ~= "ChatConfigChannelSettingsLeft" then return false, "busy" end
 			end
 		end
+		stage = "active_chat_input"
 		if not Accessible(ACTIVE_CHAT_EDIT_BOX) then return false, "inaccessible" end
 		if ACTIVE_CHAT_EDIT_BOX ~= nil then return false, "busy" end
 		local destinations, seen, frameCount = {}, {}, 0
 		for _, frameName in pairs(CHAT_FRAMES) do
+			stage = "chat_edit_boxes"
 			frameCount = frameCount + 1
 			if frameCount > 128 or not Name(frameName) then return false, "inaccessible" end
 			local frame = _G[frameName]
@@ -950,6 +969,7 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 			if not QuestTogether:CanAccessForeignFrame(box) then return false, "inaccessible" end
 			if not seen[box] then
 				seen[box] = true
+				stage = "chat_edit_box_state"
 				local focusedOK, focused = Call(Trusted(box, "HasFocus"), box)
 				local lengthOK, length = Call(Trusted(box, "GetNumLetters"), box)
 				if not focusedOK or not Accessible(focused) or type(focused) ~= "boolean"
@@ -957,6 +977,7 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 					return false, "inaccessible"
 				end
 				if focused or length ~= 0 then return false, "busy" end
+				stage = "chat_destination"
 				local getAttribute, getTarget = Trusted(box, "GetAttribute"), Trusted(box, "GetChannelTarget")
 				local targetOK, target = Call(getAttribute, box, "channelTarget")
 				if not getTarget or not targetOK or not Accessible(target) then return false, "inaccessible" end
@@ -992,6 +1013,7 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 		end
 		-- Pin every affected destination before touching channel numbers. A failed
 		-- preparation leaves equivalent name-based destinations and no reorder.
+		stage = "destination_preparation"
 		for _, destination in ipairs(destinations) do
 			local ok = Call(destination.setter, destination.box, destination.name)
 			if not ok or not DestinationMatches(destination, destination.before, true) then return false, "prepare" end
@@ -1005,9 +1027,11 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 			if not DestinationMatches(destination, destination.before, true) then return false, "prepare" end
 		end
 		dispatched = true
+		stage = "native_reorder"
 		Call(swap, first, second)
 		-- A native UI refresh can fail after the swap, and secure dispatch can
 		-- absorb that error. Actual identity, never a void return, is authoritative.
+		stage = "result_validation"
 		if not ChannelMatches(firstName, second) or not ChannelMatches(secondName, first)
 			or not InfoMatches(secondInfo, firstInfo)
 			or not SameInfo(firstInfo, firstFields, firstCount)
@@ -1020,8 +1044,8 @@ local function SwapChatChannelsPreservingState(firstName, secondName)
 		return true
 	end
 	local ok, swapped, reason = pcall(Run)
-	if not ok then return false, dispatched and "inconsistent" or "inaccessible" end
-	return swapped, reason
+	if not ok then return false, dispatched and "inconsistent" or "inaccessible", stage end
+	return swapped, reason, not swapped and stage or nil
 end
 
 -- Social discovery only exposes character addresses. Never return Battle.net

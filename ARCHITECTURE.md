@@ -490,8 +490,13 @@ Only its verified entry into `CommunicationCoordinator` can apply a relayed
 record to the existing domain stores. A copied confirmation from another peer
 is never authority for the claimed origin.
 
-Generation-3 `QuestTogether3` and `QuestTogether3Z<zone>` channels are membership
-directories only. Display-list indices and native channel IDs remain distinct.
+The global `QuestTogether` and regional `QuestTogether3Z<zone>` channels are
+membership directories only. The global directory name is independent of the
+`QuestTogether3` wire prefix; changing its name does not change protocol framing.
+The former `QuestTogether3` global membership is retired on reload. Existing
+protocol-3 clients can still meet through regional directories, social contacts
+and remembered peers, but clients using different global directories do not
+share that one discovery source. Display-list indices and native channel IDs remain distinct.
 Membership is resolved by name. RuntimeCoordinator paces QT-last channel ordering
 through a guarded native adapter: chat destinations are bound to channel names
 before Blizzard's secure-dispatched reorder helper moves the full channel metadata.

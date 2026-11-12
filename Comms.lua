@@ -947,10 +947,11 @@ function QuestTogether:UpdateAnnouncementChannelOrder()
 	table.sort(rows, function(a, b) return a.id < b.id end)
 	for index = 2, #rows do
 		if rows[index - 1].qt and not rows[index].qt then
-			local called, swapped, reason = pcall(api.SwapChatChannelsPreservingState, rows[index - 1].name, rows[index].name)
+			local called, swapped, reason, stage = pcall(api.SwapChatChannelsPreservingState, rows[index - 1].name, rows[index].name)
 			-- A native swap may synchronously deliver a channel event.
 			state.nextAt = now + 1
 			state.lastResult = swapped == true and "swapped" or "deferred"
+			state.lastStage = called and stage or nil
 			if called and swapped ~= true and (reason == "busy" or reason == "restricted"
 				or reason == "invalid" or reason == "inaccessible" or reason == "prepare") then
 				state.lastResult = reason
@@ -971,6 +972,7 @@ function QuestTogether:UpdateAnnouncementChannelOrder()
 		end
 	end
 	state.lastResult = "ordered"
+	state.lastStage = nil
 	state.nextAt = now + 5
 end
 

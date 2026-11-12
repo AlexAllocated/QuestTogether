@@ -18,7 +18,7 @@ local function Fixture(name)
 		reads = 0,
 		position = { x = 0.4, y = 0.6 },
 		mapID = 12,
-		announcementChannelName = "QuestTogether3",
+		announcementChannelName = "QuestTogether",
 		announcementChannelLocalID = 7,
 	}, { __index = QT })
 	function a:AnnounceQuestPartnerSearch() end
