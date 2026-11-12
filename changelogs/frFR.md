@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.12
+
+Vos canaux de discussion gardent leur ordre habituel.
+
+### Ordre des canaux de discussion
+
+- QuestTogether ne déplace plus automatiquement ses canaux masqués en fin de liste. QT ne change donc plus les numéros des canaux, ce qui évite de mélanger leurs couleurs ou d’envoyer des messages dans le mauvais canal.
+- Cette mise à jour ne rétablit pas les couleurs ou les destinations déjà modifiées. Si vous êtes concerné, sélectionnez à nouveau le canal souhaité et réglez sa couleur dans les paramètres de discussion de WoW.
+
 ## 9.0.11
 
 Ce correctif améliore la comparaison des quêtes du groupe, corrige les commandes de ciblage sur la carte et réduit le travail effectué en continu par l’addon.

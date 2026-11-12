@@ -3,29 +3,14 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "9.0.11",
-	welcome = "Party Quest Log fixes and reduced background work.",
+	version = "9.0.12",
+	welcome = "A fix for chat channels changing unexpectedly.",
 	sections = {
 		{
-			title = "Party and map fixes",
+			title = "Chat channels",
 			items = {
-				"Request Share now works for the player you select, including when several party members have the quest or comparison filters hide its row.",
-				"Collapsed player columns stay collapsed when you refresh the Party Quest Log or the party roster changes.",
-				"Quest titles and objective text received from other players are cleaned up before display to prevent embedded formatting from disrupting the Party Quest Log or Party Objective Tracker.",
-				"Improved cleanup of map targeting controls when the UI becomes restricted.",
-			},
-		},
-		{
-			title = "Performance",
-			items = {
-				"Reduced repeated minimap work and unnecessary allocations while tracking nearby players.",
-				"Party quest requests reuse unchanged quest-log data while explicit refreshes and objective details still read current information.",
-			},
-		},
-		{
-			title = "In-game tests",
-			items = {
-				"Tests now load only when you run /qt test, reducing memory use during normal play. Keep the bundled QuestTogether Tests addon enabled to use this command.",
+				"QuestTogether no longer automatically rearranges your chat channels. This prevents its channel sorting from changing chat colors or sending typed messages to the wrong channel.",
+				"If your chat was already affected, select your intended channel again and restore its color in WoW’s chat settings.",
 			},
 		},
 	},

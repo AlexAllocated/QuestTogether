@@ -1,29 +1,14 @@
 {
-  "source_sha256": "8d4663118c8c793c673f5631230e5b390e8ac74f03bcc5c03d0be55e792f1dfa",
+  "source_sha256": "2fdd427dd8bce2a25f3018d7e719c097c906e305922bdd3cf436bf740a44ec21",
   "notes": {
-    "version": "9.0.11",
-    "welcome": "Correções nas missões do grupo e no mapa, menos tarefas repetidas e testes carregados apenas quando solicitados.",
+    "version": "9.0.12",
+    "welcome": "O QuestTogether deixa de reorganizar os canais para evitar problemas no bate-papo.",
     "sections": [
       {
-        "title": "Correções no grupo e no mapa",
+        "title": "Ordem dos canais de bate-papo",
         "items": [
-          "Solicitar Compartilhamento agora verifica o integrante escolhido, mesmo quando vários jogadores têm a missão ou há filtros ativos na comparação.",
-          "As colunas recolhidas no Registro de missões do grupo continuam recolhidas ao usar Atualizar ou quando a composição do grupo muda, desde que os jogadores permaneçam no grupo.",
-          "O Registro de missões do grupo e o Rastreador de objetivos do grupo removem códigos de formatação dos títulos e objetivos recebidos de outros jogadores antes de exibi-los. Os dados originais são preservados.",
-          "Os controles para selecionar jogadores pelo mapa são retirados quando as restrições da interface mudam, se o WoW permitir. A ocultação durante o combate foi mantida."
-        ]
-      },
-      {
-        "title": "Desempenho",
-        "items": [
-          "Os indicadores do minimapa fazem menos verificações e alterações repetidas. A apresentação e as conversões de coordenadas dos jogadores próximos também são reaproveitadas quando os dados não mudam.",
-          "As respostas sobre missões do grupo reaproveitam brevemente a leitura da lista de missões para reduzir trabalho duplicado. Atualizar faz uma nova leitura, e os objetivos continuam sendo consultados a cada pedido de detalhes."
-        ]
-      },
-      {
-        "title": "Testes dentro do jogo",
-        "items": [
-          "Os testes passam a ser carregados ao executar /qt test, reduzindo o uso de memória durante o jogo normal. Para usar o comando, ative o addon opcional QuestTogether Tests incluído no pacote e recarregue a interface. O QuestTogether funciona sem ele."
+          "O QT não move mais seus canais ocultos para o fim da lista. Isso evita que a reorganização altere os números dos canais e cause confusão nas cores ou no canal usado para enviar mensagens. A descoberta de jogadores continua funcionando como antes.",
+          "A atualização não restaura cores nem canais de envio que já tenham sido alterados. Se você foi afetado, selecione novamente o canal desejado e ajuste a cor nas configurações de bate-papo do WoW."
         ]
       }
     ]

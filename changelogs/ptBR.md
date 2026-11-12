@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.12
+
+O QuestTogether deixa de reorganizar os canais para evitar problemas no bate-papo.
+
+### Ordem dos canais de bate-papo
+
+- O QT não move mais seus canais ocultos para o fim da lista. Isso evita que a reorganização altere os números dos canais e cause confusão nas cores ou no canal usado para enviar mensagens. A descoberta de jogadores continua funcionando como antes.
+- A atualização não restaura cores nem canais de envio que já tenham sido alterados. Se você foi afetado, selecione novamente o canal desejado e ajuste a cor nas configurações de bate-papo do WoW.
+
 ## 9.0.11
 
 Correções nas missões do grupo e no mapa, menos tarefas repetidas e testes carregados apenas quando solicitados.

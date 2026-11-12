@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.12
+
+Deine Chatkanäle bleiben in ihrer gewohnten Reihenfolge.
+
+### Reihenfolge der Chatkanäle
+
+- QuestTogether verschiebt seine ausgeblendeten Kanäle nicht mehr automatisch ans Ende der Kanalliste. Dadurch ändert QT keine Kanalnummern mehr und verhindert, dass Chatfarben durcheinandergeraten oder Nachrichten im falschen Kanal landen.
+- Bereits veränderte Farben oder Sendeziele werden durch das Update nicht zurückgesetzt. Falls du betroffen bist, wähle den gewünschten Chatkanal erneut aus und stelle seine Farbe in den Chateinstellungen von WoW wieder ein.
+
 ## 9.0.11
 
 Dieser Patch verbessert den Questvergleich deiner Gruppe, behebt ein Kartenproblem und verringert den laufenden Aufwand des Addons.

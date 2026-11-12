@@ -2,6 +2,15 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.0.12
+
+Tus canales de chat mantienen su orden habitual.
+
+### Orden de los canales de chat
+
+- QuestTogether ya no mueve automáticamente sus canales ocultos al final de la lista. Esto evita que QT cambie los números de los canales y que sus colores se mezclen o tus mensajes terminen en el canal equivocado.
+- Esta actualización no restablece los colores ni los canales de envío que ya cambiaron. Si tuviste este problema, selecciona de nuevo el canal que quieres usar y ajusta su color en la configuración del chat de WoW.
+
 ## 9.0.11
 
 Esta actualización corrige detalles de las misiones del grupo y del mapa, reduce tareas repetidas y carga las pruebas solo cuando se solicitan.

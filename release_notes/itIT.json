@@ -1,29 +1,14 @@
 {
-  "source_sha256": "8d4663118c8c793c673f5631230e5b390e8ac74f03bcc5c03d0be55e792f1dfa",
+  "source_sha256": "2fdd427dd8bce2a25f3018d7e719c097c906e305922bdd3cf436bf740a44ec21",
   "notes": {
-    "version": "9.0.11",
-    "welcome": "Questo aggiornamento corregge il confronto delle missioni del gruppo e i controlli di selezione sulla mappa, riducendo anche il lavoro continuo dell’addon.",
+    "version": "9.0.12",
+    "welcome": "I tuoi canali di chat mantengono il loro ordine abituale.",
     "sections": [
       {
-        "title": "Correzioni per gruppo e mappa",
+        "title": "Ordine dei canali di chat",
         "items": [
-          "«Richiedi condivisione» verifica correttamente il membro del gruppo selezionato, anche quando più giocatori hanno la stessa missione o sono attivi dei filtri nel Registro missioni del gruppo.",
-          "Le colonne compresse dei giocatori restano compresse dopo un aggiornamento o una modifica alla composizione del gruppo, finché quei giocatori rimangono nel gruppo.",
-          "Il Registro missioni del gruppo e il Tracciamento obiettivi del gruppo ripuliscono la visualizzazione dei titoli e degli obiettivi ricevuti, senza modificare i dati ricevuti.",
-          "I controlli di selezione sulla mappa non più validi vengono rimossi quando cambiano le restrizioni dell’interfaccia, appena WoW lo consente. Rimane attivo il sistema protetto che li nasconde in combattimento."
-        ]
-      },
-      {
-        "title": "Prestazioni",
-        "items": [
-          "La visualizzazione dei giocatori sulla minimappa richiede meno controlli e aggiornamenti ripetuti. I dati visualizzati e le conversioni delle coordinate vengono riutilizzati quando la posizione dei giocatori vicini resta invariata.",
-          "La preparazione degli elenchi delle missioni del gruppo riutilizza brevemente i dati comuni, scartandoli quando cambiano le missioni. Un aggiornamento manuale legge di nuovo lo stato attuale; gli obiettivi vengono comunque riletti a ogni richiesta."
-        ]
-      },
-      {
-        "title": "Test nel gioco",
-        "items": [
-          "I test vengono caricati solo quando servono tramite QuestTogether Tests, l’addon facoltativo incluso. QuestTogether usa così meno memoria durante il normale gioco. Per eseguire /qt test occorre abilitare QuestTogether Tests; non è necessario per giocare."
+          "QuestTogether non sposta più automaticamente i propri canali nascosti in fondo all’elenco. QT non cambia quindi più i numeri dei canali, evitando che i colori si confondano o che i messaggi finiscano nel canale sbagliato.",
+          "L’aggiornamento non ripristina i colori o i canali di invio già modificati. Se hai riscontrato il problema, seleziona di nuovo il canale desiderato e reimposta il suo colore nelle impostazioni della chat di WoW."
         ]
       }
     ]

@@ -1,29 +1,14 @@
 {
-  "source_sha256": "8d4663118c8c793c673f5631230e5b390e8ac74f03bcc5c03d0be55e792f1dfa",
+  "source_sha256": "2fdd427dd8bce2a25f3018d7e719c097c906e305922bdd3cf436bf740a44ec21",
   "notes": {
-    "version": "9.0.11",
-    "welcome": "Correcciones en las misiones del grupo y el mapa, menos trabajo repetido y pruebas que solo se cargan cuando las necesitas.",
+    "version": "9.0.12",
+    "welcome": "Tus canales de chat conservan su orden habitual.",
     "sections": [
       {
-        "title": "Correcciones del grupo y el mapa",
+        "title": "Orden de los canales de chat",
         "items": [
-          "Solicitar compartir comprueba ahora al compañero que has elegido, aunque varios tengan la misma misión o haya filtros activos en la comparación.",
-          "Las columnas contraídas del Registro de misiones del grupo se mantienen así al pulsar Actualizar o cambiar la composición del grupo, mientras esos jugadores sigan presentes.",
-          "El Registro de misiones del grupo y el Seguimiento de objetivos del grupo limpian los códigos de formato de los títulos y objetivos recibidos de otros jugadores antes de mostrarlos, sin alterar los datos originales.",
-          "Los controles para seleccionar jugadores en el mapa se retiran al cambiar las restricciones de la interfaz, siempre que WoW lo permita. Se mantiene su ocultación durante el combate."
-        ]
-      },
-      {
-        "title": "Rendimiento",
-        "items": [
-          "Se reducen las comprobaciones y los cambios repetidos al mover los indicadores del minimapa. También se reutilizan los datos de presentación y las conversiones de coordenadas de jugadores cercanos cuando no han cambiado.",
-          "Las respuestas sobre misiones del grupo comparten temporalmente la lectura de la lista de misiones para evitar trabajo duplicado. Actualizar toma una lectura nueva y los objetivos se siguen consultando de nuevo en cada solicitud de detalles."
-        ]
-      },
-      {
-        "title": "Pruebas dentro del juego",
-        "items": [
-          "Las pruebas se cargan al ejecutar /qt test, lo que reduce el uso de memoria durante el juego normal. Para usar el comando, activa el addon opcional QuestTogether Tests incluido en el paquete y recarga la interfaz. QuestTogether funciona sin él."
+          "QuestTogether ya no mueve automáticamente sus canales ocultos al final de la lista. Así, QT deja de cambiar los números de los canales y evita que se mezclen sus colores o que tus mensajes se envíen al canal equivocado.",
+          "La actualización no restaura los colores ni los canales de envío que ya hayan cambiado. Si te ha afectado este problema, vuelve a seleccionar el canal que quieras usar y ajusta su color en la configuración del chat de WoW."
         ]
       }
     ]

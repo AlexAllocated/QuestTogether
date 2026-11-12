@@ -1,29 +1,14 @@
 {
-  "source_sha256": "8d4663118c8c793c673f5631230e5b390e8ac74f03bcc5c03d0be55e792f1dfa",
+  "source_sha256": "2fdd427dd8bce2a25f3018d7e719c097c906e305922bdd3cf436bf740a44ec21",
   "notes": {
-    "version": "9.0.11",
-    "welcome": "Ce correctif améliore la comparaison des quêtes du groupe, corrige les commandes de ciblage sur la carte et réduit le travail effectué en continu par l’addon.",
+    "version": "9.0.12",
+    "welcome": "Vos canaux de discussion gardent leur ordre habituel.",
     "sections": [
       {
-        "title": "Corrections du groupe et de la carte",
+        "title": "Ordre des canaux de discussion",
         "items": [
-          "« Demander le partage » vérifie correctement le membre du groupe sélectionné, même si plusieurs joueurs possèdent la quête ou si des filtres sont actifs dans le Journal de quêtes du groupe.",
-          "Les colonnes réduites restent réduites après une actualisation ou une modification du groupe, pour les joueurs toujours présents.",
-          "Le Journal de quêtes du groupe et le Suivi des objectifs du groupe nettoient l’affichage des titres et des objectifs de quête reçus, sans modifier les données reçues.",
-          "Les commandes de ciblage devenues obsolètes sur la carte sont retirées lors des changements de restrictions de l’interface, dès que WoW l’autorise. Le masquage sécurisé en combat est conservé."
-        ]
-      },
-      {
-        "title": "Performances",
-        "items": [
-          "L’affichage des joueurs sur la minicarte évite des vérifications et des mises à jour redondantes. Les données d’affichage et les conversions de coordonnées sont réutilisées lorsque la position des joueurs proches ne change pas.",
-          "La préparation des listes de quêtes du groupe réutilise brièvement des données communes, invalidées dès que les quêtes changent. Une actualisation manuelle relit l’état actuel et les objectifs sont toujours relus à chaque demande."
-        ]
-      },
-      {
-        "title": "Tests en jeu",
-        "items": [
-          "Les tests se chargent désormais à la demande grâce à QuestTogether Tests, l’addon facultatif fourni avec QuestTogether. Cela réduit la mémoire utilisée pendant le jeu normal. Pour utiliser /qt test, activez QuestTogether Tests ; il n’est pas nécessaire pour jouer."
+          "QuestTogether ne déplace plus automatiquement ses canaux masqués en fin de liste. QT ne change donc plus les numéros des canaux, ce qui évite de mélanger leurs couleurs ou d’envoyer des messages dans le mauvais canal.",
+          "Cette mise à jour ne rétablit pas les couleurs ou les destinations déjà modifiées. Si vous êtes concerné, sélectionnez à nouveau le canal souhaité et réglez sa couleur dans les paramètres de discussion de WoW."
         ]
       }
     ]

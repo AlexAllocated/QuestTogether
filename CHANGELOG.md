@@ -4,6 +4,15 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.0.12
+
+A fix for chat channels changing unexpectedly.
+
+### Chat channels
+
+- QuestTogether no longer automatically rearranges your chat channels. This prevents its channel sorting from changing chat colors or sending typed messages to the wrong channel.
+- If your chat was already affected, select your intended channel again and restore its color in WoW’s chat settings.
+
 ## 9.0.11
 
 Party Quest Log fixes and reduced background work.
