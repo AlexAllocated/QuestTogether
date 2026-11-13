@@ -64,6 +64,14 @@ local function Fixture()
 			Check(self)
 			return self.scale
 		end
+		function f:GetFrameLevel()
+			Check(self)
+			return self.level or 1
+		end
+		function f:SetFrameLevel(level)
+			Check(self, true)
+			self.level = level
+		end
 		function f:GetUnit()
 			Check(self)
 			a.reads = a.reads + 1
