@@ -4,6 +4,12 @@
 
 QuestTogether helps you quest with other players: compare quest logs, share eligible quests, follow party progress, and find people looking for company. Progress bubbles, an interactive chat log, map information, and party navigation work alongside WoW’s questing UI.
 
+## Try the controller beta
+
+Play WoW Forever with a controller? Try QuestTogether's optional native Gamepad UI beta and help us improve it. It adds controller navigation for Party Quest Log and QT menus, plus world-map crosshair hover over QT markers.
+
+In the CurseForge app, **right-click QuestTogether → Release Type → Beta**, then update the addon and `/reload` in WoW. Enable WoW Forever's Gamepad UI to try it, and share your feedback. Controller support remains in the beta; the stable release only announces its availability.
+
 ## Getting started
 
 Install QuestTogether and have your questing partners install it too. Shared QT information and interactive comparisons require the other player to use QT. Required dependencies are included; TomTom is optional.
