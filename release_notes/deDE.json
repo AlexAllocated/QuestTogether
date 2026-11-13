@@ -1,15 +1,15 @@
 {
-  "source_sha256": "2b9572ab1333bb326ead725e6c65afbb2e083018439539200a97e526ed686760",
+  "source_sha256": "f17a94f7c63252150307da234c8bbe3de22f669d2606bf3a181c8c196d3adbaa",
   "notes": {
-    "version": "9.1.0",
-    "welcome": "Du spielst WoW Forever mit Controller? Teste die Controller-Beta von QuestTogether mit uns!",
+    "version": "9.2.0-beta.1",
+    "welcome": "Dieses kleine Beta-Update verbessert die Bedienung der Patchnotes mit dem Controller.",
     "sections": [
       {
-        "title": "Controller-Beta ausprobieren",
+        "title": "Patchnotes mit dem Controller",
         "items": [
-          "Die optionale Beta nutzt die native Gamepad UI für das Gruppenquestlog und QT-Menüs. Mit dem Fadenkreuz auf der Weltkarte lassen sich außerdem QT-Markierungen ansehen. Dieses stabile Update kündigt die Beta nur an; die Controller-Unterstützung bleibt vorerst dort.",
-          "Klicke in der CurseForge-App mit der rechten Maustaste auf QuestTogether und wähle \"Release Type\" → \"Beta\". Aktualisiere danach das Addon und gib im Spiel /reload ein.",
-          "Lass die Gamepad UI von WoW Forever eingeschaltet und probiere die Beta aus. Sag uns gern, was gut funktioniert und wo es noch hakt. So hilfst du uns bei der Vorbereitung der stabilen Version."
+          "Automatisch eingeblendete Patchnotes erhalten jetzt den Controller-Fokus. Du kannst sie direkt lesen oder mit Zurück schließen.",
+          "Beim Scrollen mit dem rechten Stick bewegt sich nun auch der Scrollbalken. Die gespeicherte Leseposition bleibt dabei aktuell.",
+          "Beim Wechsel im Verlauf wird die Auswahl sicher versetzt, wenn ein Bedienelement verschwindet oder deaktiviert wird. Nach einem Seitenwechsel wird die Navigation aktualisiert."
         ]
       }
     ]

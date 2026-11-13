@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0-beta.1
+
+Esta pequeña actualización de la beta mejora la lectura de las notas del parche con mando.
+
+### Notas del parche con mando
+
+- Cuando las notas se abren automáticamente tras una actualización, ahora reciben el foco del mando. Puedes cerrarlas directamente con Atrás.
+- Al desplazarte con el stick derecho, la barra se mueve junto con el texto y la posición de lectura guardada se mantiene al día.
+- Al navegar por el Historial, la selección pasa a un control válido si el botón seleccionado desaparece o deja de estar disponible. Los controles se actualizan al cambiar de página.
+
 ## 9.1.0
 
 ¿Juegas a WoW Forever con mando? ¡Ayúdanos a probar la beta de QuestTogether!

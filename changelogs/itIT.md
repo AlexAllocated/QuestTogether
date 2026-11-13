@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0-beta.1
+
+Questo piccolo aggiornamento della beta migliora la lettura delle note della patch con il controller.
+
+### Correzioni alle note della patch
+
+- Le note aperte automaticamente dopo un aggiornamento ora ricevono il focus del controller. Puoi quindi chiuderle subito con Indietro.
+- Lo stick destro ora sposta anche la barra di scorrimento e mantiene aggiornata la posizione di lettura memorizzata.
+- Nella Cronologia, la selezione passa a un controllo valido quando un pulsante scompare o viene disattivato. La navigazione si aggiorna dopo ogni cambio di pagina.
+
 ## 9.1.0
 
 Giochi a WoW Forever con un controller? Aiutaci a provare la beta di QuestTogether!

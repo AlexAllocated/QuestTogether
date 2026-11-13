@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0-beta.1
+
+Esta actualización de la beta mejora el uso de las notas del parche con control.
+
+### Correcciones en las notas del parche
+
+- Las notas que aparecen automáticamente después de una actualización ahora reciben el foco del control. Puedes cerrarlas de inmediato con Atrás.
+- Al usar el stick derecho, la barra de desplazamiento acompaña al texto y se actualiza la posición de lectura guardada.
+- La navegación del Historial conserva una selección válida cuando un botón se oculta o se desactiva, y actualiza los controles después de cambiar de página.
+
 ## 9.1.0
 
 ¿Juegas WoW Forever con control? ¡Te invitamos a probar la beta de QuestTogether!

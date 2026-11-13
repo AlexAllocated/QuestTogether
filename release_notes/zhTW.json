@@ -1,15 +1,15 @@
 {
-  "source_sha256": "2b9572ab1333bb326ead725e6c65afbb2e083018439539200a97e526ed686760",
+  "source_sha256": "f17a94f7c63252150307da234c8bbe3de22f669d2606bf3a181c8c196d3adbaa",
   "notes": {
-    "version": "9.1.0",
-    "welcome": "你在 WoW Forever 使用控制器遊玩嗎？歡迎一起測試 QuestTogether 的控制器支援！",
+    "version": "9.2.0-beta.1",
+    "welcome": "這次控制器 Beta 版小更新改善了更新說明視窗的閱讀與操作。",
     "sections": [
       {
-        "title": "試用控制器 Beta 版",
+        "title": "更新說明視窗修正",
         "items": [
-          "Beta 版透過 WoW Forever 原生 Gamepad UI，讓你用控制器瀏覽隊伍任務日誌與 QT 選單，也能用世界地圖準星查看 QT 標記資訊。這次穩定版更新只發布測試邀請；控制器功能仍在 Beta 版中提供。",
-          "在 CurseForge 應用程式中，以滑鼠右鍵點選 QuestTogether，選擇 \"Release Type\"，再選 \"Beta\"。更新插件後，在 WoW 輸入 /reload。",
-          "是否參加測試由你決定。開啟 WoW Forever 的 Gamepad UI 後試玩看看，並告訴我們哪些操作順暢、哪些地方還需要調整，協助我們準備穩定版本。"
+          "更新後自動開啟的說明視窗現在會取得控制器焦點，可以直接按返回鍵關閉。",
+          "使用右類比搖桿捲動內文時，捲軸也會同步移動，儲存的閱讀位置會一併更新。",
+          "瀏覽歷史紀錄時，若選取的按鈕隱藏或停用，焦點會移至可用控制項；換頁後也會更新導覽項目。"
         ]
       }
     ]

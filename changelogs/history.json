@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.1.0",
+        "welcome": "Play with a controller in WoW Forever? Help us test QuestTogether’s controller beta!",
+        "sections": [
+          {
+            "title": "Try the controller beta",
+            "items": [
+              "The optional beta adds native Gamepad UI navigation for Party Quest Log and QT menus, plus crosshair hover over QT markers on the world map. This stable update is an invitation; controller support remains in the beta.",
+              "In the CurseForge app, right-click QuestTogether, choose \"Release Type\", then select \"Beta\". Update QuestTogether and type /reload in WoW.",
+              "Keep WoW Forever’s Gamepad UI enabled, give it a try, and let us know what works or needs attention. Your feedback will help us get it ready for a stable release."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.1.0",
+        "welcome": "Du spielst WoW Forever mit Controller? Teste die Controller-Beta von QuestTogether mit uns!",
+        "sections": [
+          {
+            "title": "Controller-Beta ausprobieren",
+            "items": [
+              "Die optionale Beta nutzt die native Gamepad UI für das Gruppenquestlog und QT-Menüs. Mit dem Fadenkreuz auf der Weltkarte lassen sich außerdem QT-Markierungen ansehen. Dieses stabile Update kündigt die Beta nur an; die Controller-Unterstützung bleibt vorerst dort.",
+              "Klicke in der CurseForge-App mit der rechten Maustaste auf QuestTogether und wähle \"Release Type\" → \"Beta\". Aktualisiere danach das Addon und gib im Spiel /reload ein.",
+              "Lass die Gamepad UI von WoW Forever eingeschaltet und probiere die Beta aus. Sag uns gern, was gut funktioniert und wo es noch hakt. So hilfst du uns bei der Vorbereitung der stabilen Version."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.1.0",
+        "welcome": "Vous jouez à WoW Forever à la manette ? Venez essayer la bêta de QuestTogether !",
+        "sections": [
+          {
+            "title": "Essayez la bêta pour manette",
+            "items": [
+              "Cette bêta facultative s’appuie sur la Gamepad UI native pour parcourir le Journal de quêtes du groupe et les menus QT. Le réticule de la carte du monde permet aussi de survoler les marqueurs QT. Cette mise à jour stable annonce la bêta ; elle n’ajoute pas encore ces commandes.",
+              "Dans l’application CurseForge, faites un clic droit sur QuestTogether, choisissez \"Release Type\", puis \"Beta\". Mettez l’addon à jour et saisissez /reload dans WoW.",
+              "Activez la Gamepad UI de WoW Forever, puis faites un essai. Vos retours sur ce qui fonctionne et ce qui reste à améliorer nous aideront à préparer la version stable."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.1.0",
+        "welcome": "¿Juegas a WoW Forever con mando? ¡Ayúdanos a probar la beta de QuestTogether!",
+        "sections": [
+          {
+            "title": "Prueba la beta para mando",
+            "items": [
+              "La beta opcional utiliza la Gamepad UI nativa para navegar por el Registro de misiones del grupo y los menús de QT. También permite consultar los marcadores de QT con la retícula del mapa del mundo. Esta actualización estable solo anuncia la beta; todavía no incorpora estas funciones.",
+              "En la aplicación CurseForge, haz clic derecho en QuestTogether, elige \"Release Type\" y selecciona \"Beta\". Actualiza el addon y escribe /reload en WoW.",
+              "Mantén activada la Gamepad UI de WoW Forever y anímate a probarla. Cuéntanos qué funciona bien y qué habría que mejorar para preparar la versión estable."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.1.0",
+        "welcome": "¿Juegas WoW Forever con control? ¡Te invitamos a probar la beta de QuestTogether!",
+        "sections": [
+          {
+            "title": "Prueba la beta para control",
+            "items": [
+              "La beta opcional usa la Gamepad UI nativa para recorrer el Registro de misiones del grupo y los menús de QT. También puedes consultar los marcadores de QT con el cursor en cruz del mapa del mundo. Esta actualización estable solo anuncia la beta; las funciones de control siguen siendo parte de ella.",
+              "En la app de CurseForge, haz clic derecho en QuestTogether, elige \"Release Type\" y después \"Beta\". Actualiza el addon y escribe /reload dentro de WoW.",
+              "Deja activada la Gamepad UI de WoW Forever y pruébala. Nos ayudará mucho que nos cuentes qué funciona y qué necesita ajustes antes de lanzar una versión estable."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.1.0",
+        "welcome": "Joga WoW Forever com controle? Venha testar a versão beta do QuestTogether!",
+        "sections": [
+          {
+            "title": "Experimente a beta para controle",
+            "items": [
+              "A beta opcional usa a Gamepad UI nativa para navegar pelo Registro de missões do grupo e pelos menus do QT. A mira do mapa-múndi também permite consultar os marcadores do QT. Esta atualização estável apenas anuncia a beta; os recursos de controle só estão disponíveis na beta.",
+              "No aplicativo CurseForge, clique com o botão direito em QuestTogether, escolha \"Release Type\" e depois \"Beta\". Atualize o addon e digite /reload no WoW.",
+              "Mantenha a Gamepad UI do WoW Forever ativada e experimente. Conte o que funcionou e o que precisa melhorar para nos ajudar a preparar a versão estável."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.1.0",
+        "welcome": "Играете в WoW Forever с геймпадом? Приглашаем попробовать бета-версию QuestTogether!",
+        "sections": [
+          {
+            "title": "Попробуйте управление с геймпада",
+            "items": [
+              "В бета-версии можно пользоваться Журналом заданий группы и меню QT через встроенную Gamepad UI, а также наводить перекрестие карты мира на отметки QT. Эта стабильная версия только сообщает о бете: само управление с геймпада пока доступно только в бета-версии.",
+              "В приложении CurseForge нажмите правой кнопкой на QuestTogether, выберите \"Release Type\", затем \"Beta\". Обновите аддон и введите /reload в WoW.",
+              "Для тестирования включите Gamepad UI в WoW Forever. Участие добровольное: попробуйте и расскажите, что работает хорошо, а что нужно исправить. Ваши отзывы помогут подготовить стабильный выпуск."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.1.0",
+        "welcome": "Giochi a WoW Forever con un controller? Aiutaci a provare la beta di QuestTogether!",
+        "sections": [
+          {
+            "title": "Prova la beta per controller",
+            "items": [
+              "La beta facoltativa usa la Gamepad UI nativa per navigare nel Registro missioni del gruppo e nei menu di QT. Puoi anche consultare gli indicatori di QT con il mirino della mappa del mondo. Questo aggiornamento stabile annuncia soltanto la beta: le funzioni per controller restano nella versione di prova.",
+              "Nell’app CurseForge, fai clic destro su QuestTogether, scegli \"Release Type\" e poi \"Beta\". Aggiorna l’addon e digita /reload in WoW.",
+              "Tieni attiva la Gamepad UI di WoW Forever e fai una prova. Raccontaci cosa funziona e cosa richiede ancora attenzione: i tuoi riscontri ci aiuteranno a preparare la versione stabile."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.1.0",
+        "welcome": "WoW Forever를 컨트롤러로 플레이하시나요? QuestTogether 컨트롤러 베타를 함께 테스트해 주세요!",
+        "sections": [
+          {
+            "title": "컨트롤러 베타 참여 방법",
+            "items": [
+              "선택적으로 설치할 수 있는 베타에서는 WoW Forever의 기본 Gamepad UI로 파티 퀘스트 목록과 QT 메뉴를 탐색하고, 세계 지도의 십자선으로 QT 표시의 정보를 확인할 수 있습니다. 이번 안정 버전은 베타를 알리는 업데이트이며, 컨트롤러 기능은 아직 베타에서 제공됩니다.",
+              "CurseForge 앱에서 QuestTogether를 마우스 오른쪽 버튼으로 클릭한 뒤 \"Release Type\" → \"Beta\"를 선택하세요. 애드온을 업데이트하고 WoW에서 /reload를 입력하면 됩니다.",
+              "WoW Forever의 Gamepad UI를 켠 상태로 사용해 보세요. 잘 작동하는 부분이나 개선이 필요한 부분을 알려 주시면 안정 버전을 준비하는 데 도움이 됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.1.0",
+        "welcome": "在 WoW Forever 中使用手柄游玩？欢迎试用 QuestTogether 手柄支持测试版！",
+        "sections": [
+          {
+            "title": "如何参加手柄测试",
+            "items": [
+              "测试版使用 WoW Forever 原生 Gamepad UI，让你用手柄浏览队伍任务日志和 QT 菜单，也能用世界地图准星查看 QT 标记信息。本次稳定版仅发布测试邀请；手柄功能仍需安装测试版才能使用。",
+              "在 CurseForge 应用中右键点击 QuestTogether，选择 \"Release Type\"，再选择 \"Beta\"。更新插件后，在 WoW 中输入 /reload。",
+              "参加测试完全自愿。请开启 WoW Forever 的 Gamepad UI 后体验，并告诉我们哪些地方顺手、哪些地方需要改进，帮助我们完善正式版本。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.1.0",
+        "welcome": "你在 WoW Forever 使用控制器遊玩嗎？歡迎一起測試 QuestTogether 的控制器支援！",
+        "sections": [
+          {
+            "title": "試用控制器 Beta 版",
+            "items": [
+              "Beta 版透過 WoW Forever 原生 Gamepad UI，讓你用控制器瀏覽隊伍任務日誌與 QT 選單，也能用世界地圖準星查看 QT 標記資訊。這次穩定版更新只發布測試邀請；控制器功能仍在 Beta 版中提供。",
+              "在 CurseForge 應用程式中，以滑鼠右鍵點選 QuestTogether，選擇 \"Release Type\"，再選 \"Beta\"。更新插件後，在 WoW 輸入 /reload。",
+              "是否參加測試由你決定。開啟 WoW Forever 的 Gamepad UI 後試玩看看，並告訴我們哪些操作順暢、哪些地方還需要調整，協助我們準備穩定版本。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.1.0-beta.1",
         "welcome": "Try QuestTogether with Forever’s native Gamepad UI. This beta brings controller navigation to QT’s windows while we continue testing the remaining interactions.",
         "sections": [

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0-beta.1
+
+Dieses kleine Beta-Update verbessert die Bedienung der Patchnotes mit dem Controller.
+
+### Patchnotes mit dem Controller
+
+- Automatisch eingeblendete Patchnotes erhalten jetzt den Controller-Fokus. Du kannst sie direkt lesen oder mit Zurück schließen.
+- Beim Scrollen mit dem rechten Stick bewegt sich nun auch der Scrollbalken. Die gespeicherte Leseposition bleibt dabei aktuell.
+- Beim Wechsel im Verlauf wird die Auswahl sicher versetzt, wenn ein Bedienelement verschwindet oder deaktiviert wird. Nach einem Seitenwechsel wird die Navigation aktualisiert.
+
 ## 9.1.0
 
 Du spielst WoW Forever mit Controller? Teste die Controller-Beta von QuestTogether mit uns!

@@ -1,15 +1,15 @@
 {
-  "source_sha256": "2b9572ab1333bb326ead725e6c65afbb2e083018439539200a97e526ed686760",
+  "source_sha256": "f17a94f7c63252150307da234c8bbe3de22f669d2606bf3a181c8c196d3adbaa",
   "notes": {
-    "version": "9.1.0",
-    "welcome": "Joga WoW Forever com controle? Venha testar a versão beta do QuestTogether!",
+    "version": "9.2.0-beta.1",
+    "welcome": "Esta pequena atualização da beta melhora a leitura das notas com controle.",
     "sections": [
       {
-        "title": "Experimente a beta para controle",
+        "title": "Controle nas notas da atualização",
         "items": [
-          "A beta opcional usa a Gamepad UI nativa para navegar pelo Registro de missões do grupo e pelos menus do QT. A mira do mapa-múndi também permite consultar os marcadores do QT. Esta atualização estável apenas anuncia a beta; os recursos de controle só estão disponíveis na beta.",
-          "No aplicativo CurseForge, clique com o botão direito em QuestTogether, escolha \"Release Type\" e depois \"Beta\". Atualize o addon e digite /reload no WoW.",
-          "Mantenha a Gamepad UI do WoW Forever ativada e experimente. Conte o que funcionou e o que precisa melhorar para nos ajudar a preparar a versão estável."
+          "As notas que abrem automaticamente após uma atualização agora recebem o foco do controle. Assim, você pode fechá-las diretamente com Voltar.",
+          "A rolagem pelo analógico direito agora move a barra junto com o texto e atualiza a posição de leitura guardada.",
+          "A navegação no Histórico passa a seleção para um controle válido quando um botão desaparece ou fica indisponível. Os controles também são atualizados ao trocar de página."
         ]
       }
     ]

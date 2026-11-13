@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.2.0-beta.1
+
+A small controller-beta update makes Patch Notes easier to read and close.
+
+### Patch Notes controller fixes
+
+- Patch Notes opened automatically after an update now take controller focus, so you can use Back to close them immediately.
+- Right-stick scrolling now moves the scrollbar with the text and keeps the remembered reading position in sync.
+- History navigation now moves selection safely when buttons disappear or become unavailable, and refreshes the controls after changing pages.
+
 ## 9.1.0
 
 Play with a controller in WoW Forever? Help us test QuestTogether’s controller beta!

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0-beta.1
+
+Esta pequena atualização da beta melhora a leitura das notas com controle.
+
+### Controle nas notas da atualização
+
+- As notas que abrem automaticamente após uma atualização agora recebem o foco do controle. Assim, você pode fechá-las diretamente com Voltar.
+- A rolagem pelo analógico direito agora move a barra junto com o texto e atualiza a posição de leitura guardada.
+- A navegação no Histórico passa a seleção para um controle válido quando um botão desaparece ou fica indisponível. Os controles também são atualizados ao trocar de página.
+
 ## 9.1.0
 
 Joga WoW Forever com controle? Venha testar a versão beta do QuestTogether!

@@ -5,7 +5,7 @@
 ## Interface-TBC: 20506
 ## Interface-Mists: 50504
 ## Interface-Titan: 38001, 38002
-## Version: 9.1.0
+## Version: 9.2.0-beta.1
 ## Title: QuestTogether Tests
 ## Notes: Optional on-demand isolated checks for /qt test.
 ## LoadOnDemand: 1

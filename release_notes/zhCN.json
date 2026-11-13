@@ -1,15 +1,15 @@
 {
-  "source_sha256": "2b9572ab1333bb326ead725e6c65afbb2e083018439539200a97e526ed686760",
+  "source_sha256": "f17a94f7c63252150307da234c8bbe3de22f669d2606bf3a181c8c196d3adbaa",
   "notes": {
-    "version": "9.1.0",
-    "welcome": "在 WoW Forever 中使用手柄游玩？欢迎试用 QuestTogether 手柄支持测试版！",
+    "version": "9.2.0-beta.1",
+    "welcome": "本次手柄测试版小更新修复了更新说明窗口的操作问题。",
     "sections": [
       {
-        "title": "如何参加手柄测试",
+        "title": "更新说明窗口修复",
         "items": [
-          "测试版使用 WoW Forever 原生 Gamepad UI，让你用手柄浏览队伍任务日志和 QT 菜单，也能用世界地图准星查看 QT 标记信息。本次稳定版仅发布测试邀请；手柄功能仍需安装测试版才能使用。",
-          "在 CurseForge 应用中右键点击 QuestTogether，选择 \"Release Type\"，再选择 \"Beta\"。更新插件后，在 WoW 中输入 /reload。",
-          "参加测试完全自愿。请开启 WoW Forever 的 Gamepad UI 后体验，并告诉我们哪些地方顺手、哪些地方需要改进，帮助我们完善正式版本。"
+          "更新后自动打开的说明窗口现在会获得手柄焦点，可以直接用返回键关闭。",
+          "右摇杆滚动正文时，滚动条会同步移动，保存的阅读位置也会随之更新。",
+          "浏览历史页面时，如果当前按钮隐藏或不可用，选择焦点会安全地移到可用控件；切换页面后也会刷新导航。"
         ]
       }
     ]

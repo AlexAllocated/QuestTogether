@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0-beta.1
+
+Cette petite mise à jour de la bêta facilite la lecture des notes à la manette.
+
+### Corrections des notes de mise à jour
+
+- Les notes qui s’ouvrent automatiquement après une mise à jour prennent désormais le focus de la manette. Vous pouvez les fermer directement avec Retour.
+- Le défilement au stick droit déplace maintenant la barre de défilement et met à jour la position de lecture mémorisée.
+- Dans l’Historique, la sélection passe à un élément disponible lorsqu’un bouton disparaît ou devient indisponible. La navigation est actualisée après chaque changement de page.
+
 ## 9.1.0
 
 Vous jouez à WoW Forever à la manette ? Venez essayer la bêta de QuestTogether !
