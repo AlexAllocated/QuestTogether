@@ -3,35 +3,15 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "9.1.0-beta.1",
-	welcome = "Try QuestTogether with Forever’s native Gamepad UI. This beta brings controller navigation to QT’s windows while we continue testing the remaining interactions.",
+	version = "9.1.0",
+	welcome = "Play with a controller in WoW Forever? Help us test QuestTogether’s controller beta!",
 	sections = {
 		{
-			title = "Native controller beta",
+			title = "Try the controller beta",
 			items = {
-				"Supported on Forever 1.60.1 builds 70888 and 70938 with Gamepad UI enabled. Enable native gamepad navigation is on by default in QT’s General settings. Other clients keep their existing mouse and keyboard controls.",
-				"Navigate Party Quest Log with the D-pad, expand quests with Select, and close with Back. Selection scrolls into view. Action menus and dropdowns have familiar styling, and incoming requests wait for you to open them.",
-			},
-		},
-		{
-			title = "PQL launcher and actions",
-			items = {
-				"With the default layout, a quest-book PQL macro appears at LT + RT + D-pad Up on normal action page 1 if the slot is empty. Move or remove it with WoW’s action-bar editor; QT leaves occupied slots alone.",
-				"Removing just the button keeps it removed. Deleting the macro lets QT recreate it and place it in the empty default slot. Assign Open QuestTogether menu in Key Bindings for contextual actions and Pending Requests; it has no default binding.",
-			},
-		},
-		{
-			title = "Quest browsing and maps",
-			items = {
-				"Browse Blizzard’s objective tracker to show party progress in POT without changing your quest focus. Your existing display and tooltip preferences still apply.",
-				"The map crosshair shows QT player and cluster tooltips, with QT’s tooltip above overlapping quest tips. Automatic A-button map menus are not included yet: A keeps Blizzard’s map action, and native map bindings can mask a controller binding assigned to QT’s menu.",
-				"On supported builds, world-map party markers use QT’s player details and VIP/developer icons. Turning QT map overlays off restores Blizzard’s markers. The minimap is unchanged.",
-			},
-		},
-		{
-			title = "Help test the beta",
-			items = {
-				"Basic PQL, launcher, menu and map-hover checks have passed in game. Broader POT, settings, window lifecycle, reconnect, combat and crowded-map testing is still underway. If something goes wrong, include what you did, your client build and /qt diagnostics in your report.",
+				"The optional beta adds native Gamepad UI navigation for Party Quest Log and QT menus, plus crosshair hover over QT markers on the world map. This stable update is an invitation; controller support remains in the beta.",
+				"In the CurseForge app, right-click QuestTogether, choose \"Release Type\", then select \"Beta\". Update QuestTogether and type /reload in WoW.",
+				"Keep WoW Forever’s Gamepad UI enabled, give it a try, and let us know what works or needs attention. Your feedback will help us get it ready for a stable release.",
 			},
 		},
 	},

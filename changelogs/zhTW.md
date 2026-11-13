@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0
+
+你在 WoW Forever 使用控制器遊玩嗎？歡迎一起測試 QuestTogether 的控制器支援！
+
+### 試用控制器 Beta 版
+
+- Beta 版透過 WoW Forever 原生 Gamepad UI，讓你用控制器瀏覽隊伍任務日誌與 QT 選單，也能用世界地圖準星查看 QT 標記資訊。這次穩定版更新只發布測試邀請；控制器功能仍在 Beta 版中提供。
+- 在 CurseForge 應用程式中，以滑鼠右鍵點選 QuestTogether，選擇 "Release Type"，再選 "Beta"。更新插件後，在 WoW 輸入 /reload。
+- 是否參加測試由你決定。開啟 WoW Forever 的 Gamepad UI 後試玩看看，並告訴我們哪些操作順暢、哪些地方還需要調整，協助我們準備穩定版本。
+
 ## 9.1.0-beta.1
 
 這次 Beta 將 WoW Forever 的原生控制器導覽整合進 QuestTogether。遊戲內測試仍在進行中。

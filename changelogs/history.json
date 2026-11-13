@@ -3,6 +3,382 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.1.0-beta.1",
+        "welcome": "Try QuestTogether with Forever’s native Gamepad UI. This beta brings controller navigation to QT’s windows while we continue testing the remaining interactions.",
+        "sections": [
+          {
+            "title": "Native controller beta",
+            "items": [
+              "Supported on Forever 1.60.1 builds 70888 and 70938 with Gamepad UI enabled. Enable native gamepad navigation is on by default in QT’s General settings. Other clients keep their existing mouse and keyboard controls.",
+              "Navigate Party Quest Log with the D-pad, expand quests with Select, and close with Back. Selection scrolls into view. Action menus and dropdowns have familiar styling, and incoming requests wait for you to open them."
+            ]
+          },
+          {
+            "title": "PQL launcher and actions",
+            "items": [
+              "With the default layout, a quest-book PQL macro appears at LT + RT + D-pad Up on normal action page 1 if the slot is empty. Move or remove it with WoW’s action-bar editor; QT leaves occupied slots alone.",
+              "Removing just the button keeps it removed. Deleting the macro lets QT recreate it and place it in the empty default slot. Assign Open QuestTogether menu in Key Bindings for contextual actions and Pending Requests; it has no default binding."
+            ]
+          },
+          {
+            "title": "Quest browsing and maps",
+            "items": [
+              "Browse Blizzard’s objective tracker to show party progress in POT without changing your quest focus. Your existing display and tooltip preferences still apply.",
+              "The map crosshair shows QT player and cluster tooltips, with QT’s tooltip above overlapping quest tips. Automatic A-button map menus are not included yet: A keeps Blizzard’s map action, and native map bindings can mask a controller binding assigned to QT’s menu.",
+              "On supported builds, world-map party markers use QT’s player details and VIP/developer icons. Turning QT map overlays off restores Blizzard’s markers. The minimap is unchanged."
+            ]
+          },
+          {
+            "title": "Help test the beta",
+            "items": [
+              "Basic PQL, launcher, menu and map-hover checks have passed in game. Broader POT, settings, window lifecycle, reconnect, combat and crowded-map testing is still underway. If something goes wrong, include what you did, your client build and /qt diagnostics in your report."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.1.0-beta.1",
+        "welcome": "Diese Beta bringt die native Gamepad-Bedienung von WoW Forever zu QuestTogether. Die Erprobung im Spiel läuft noch.",
+        "sections": [
+          {
+            "title": "Native Gamepad-Bedienung",
+            "items": [
+              "Benötigt die Gamepad-Oberfläche von Forever 1.60.1, Build 70888 oder 70938. „Native Gamepad-Navigation aktivieren“ ist in den allgemeinen QT-Einstellungen standardmäßig eingeschaltet. Andere Clients behalten ihre Maus- und Tastaturbedienung.",
+              "Das Gruppenquestlog unterstützt Auswahl, automatisches Scrollen und Zurück. Aktionsmenüs und Auswahllisten nutzen Steuerelemente im vertrauten Blizzard-Stil. Eingehende Anfragen übernehmen nicht automatisch den Eingabefokus."
+            ]
+          },
+          {
+            "title": "Gruppenquestlog öffnen",
+            "items": [
+              "Bei der Standardbelegung legt QT ein Makro mit Questbuch-Symbol auf LT + RT + Steuerkreuz oben auf der normalen Aktionsseite 1, sofern der Platz frei ist. Vorhandene Aktionen bleiben erhalten; das Makro lässt sich im Aktionsleisten-Editor verschieben oder entfernen.",
+              "Wird nur die Aktion entfernt, setzt QT sie nicht zurück. Wird das Makro selbst gelöscht, kann QT es neu anlegen und wieder auf den freien Standardplatz setzen. „QuestTogether-Menü öffnen“ lässt sich in WoWs Tastenbelegung zuweisen; es hat keine Standardtaste und bietet Kontextaktionen sowie „Offene Anfragen“."
+            ]
+          },
+          {
+            "title": "Quests und Karte",
+            "items": [
+              "Wenn du in Blizzards Zielverfolgung eine Quest mit dem Controller auswählst, zeigt die Gruppen-Zielverfolgung sie wie beim Darüberfahren mit der Maus an. Questfokus und Fokusfolgen ändern sich dabei nicht; die bestehenden Anzeige- und Tooltip-Einstellungen gelten weiterhin.",
+              "Das Kartenfadenkreuz zeigt Tooltips für QT-Spieler und zusammengefasste Markierungen; QT liegt dabei über einem überlappenden Questtooltip. Automatische Kartenmenüs per A sind noch ein privater Versuch und nicht Teil dieser Beta. A behält seine Kartenfunktion. Die Kartensteuerung kann auch selbst zugewiesene QT-Menükombinationen abfangen.",
+              "Auf unterstützten Builds kann QT die Gruppenmarkierungen der Weltkarte samt VIP- und Entwicklersymbolen darstellen. Ohne QT-Kartenanzeigen erscheinen wieder Blizzards Gruppenmarkierungen. Die Minikarte bleibt unverändert."
+            ]
+          },
+          {
+            "title": "Hinweise zum Betatest",
+            "items": [
+              "Der PQL-Startknopf, die grundlegende Navigation, kompakte Menüs und Auswahllisten sowie das Kartenfadenkreuz wurden im Spiel bestätigt. Weitere Tests für Gruppen-Zielverfolgung, Einstellungen, Fensterwechsel, erneutes Verbinden des Controllers, Kampf und volle Karten stehen aus. Bitte melde Probleme mit Schritten zum Nachstellen, Client-Build und dem Bericht aus /qt diagnostics."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.1.0-beta.1",
+        "welcome": "Cette bêta ajoute à QuestTogether la navigation native à la manette de WoW Forever. Les essais en jeu se poursuivent.",
+        "sections": [
+          {
+            "title": "Navigation native à la manette",
+            "items": [
+              "L’interface manette de Forever 1.60.1 est requise, sur les builds 70888 ou 70938. Dans les réglages généraux de QT, « Activer la navigation native à la manette » est coché par défaut. Les autres clients conservent leur fonctionnement à la souris et au clavier.",
+              "Le Journal de quêtes du groupe propose la sélection, le défilement automatique et le retour. Les menus d’actions et listes de choix reprennent l’apparence des contrôles Blizzard. Les demandes reçues ne prennent pas automatiquement le contrôle de la navigation."
+            ]
+          },
+          {
+            "title": "Ouvrir le journal du groupe",
+            "items": [
+              "Avec la configuration par défaut, QT place une macro à l’icône de livre de quêtes sur LT + RT + haut de la croix directionnelle, sur la page d’actions normale 1, uniquement si cet emplacement est libre. Déplacez-la ou retirez-la avec l’éditeur de barres d’action ; aucune action existante n’est remplacée.",
+              "Retirer seulement le bouton ne le fait pas revenir. Supprimer la macro permet à QT de la recréer et de la replacer si l’emplacement par défaut est libre. Attribuez une touche à « Ouvrir le menu QuestTogether » dans les raccourcis WoW pour accéder aux actions contextuelles et aux « Demandes en attente » ; aucun raccourci n’est défini d’avance."
+            ]
+          },
+          {
+            "title": "Quêtes et carte",
+            "items": [
+              "Parcourir les quêtes dans le suivi d’objectifs Blizzard affiche aussi le Suivi des objectifs du groupe, selon ses réglages de survol. Cela ne change ni la quête focalisée ni le suivi du focus d’un autre joueur.",
+              "Le réticule de la carte affiche les infobulles des joueurs QT et des groupes de marqueurs. L’infobulle QT passe devant celle d’une quête superposée. L’ouverture automatique des menus avec A reste un essai privé, absent de cette bêta : A conserve son action de carte. Les raccourcis natifs de la carte peuvent également intercepter une combinaison attribuée au menu QT.",
+              "Sur les builds pris en charge, QT peut afficher les membres du groupe sur la carte du monde avec leurs icônes VIP ou développeur. Désactiver les affichages QT de la carte rétablit les marqueurs Blizzard. La minicarte ne change pas."
+            ]
+          },
+          {
+            "title": "Participer aux essais",
+            "items": [
+              "Le lanceur PQL, la navigation de base, les menus compacts, les listes de choix et le survol au réticule ont été confirmés en jeu. Le suivi d’objectifs, les réglages, les transitions entre fenêtres, la reconnexion de la manette, le combat et les cartes très chargées restent à tester plus largement. Pour signaler un problème, joignez les étapes, le build du client et le rapport /qt diagnostics."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.1.0-beta.1",
+        "welcome": "Esta beta incorpora a QuestTogether la navegación nativa con mando de WoW Forever. Las pruebas dentro del juego siguen en curso.",
+        "sections": [
+          {
+            "title": "Navegación nativa con mando",
+            "items": [
+              "Requiere la interfaz de mando de Forever 1.60.1, compilación 70888 o 70938. «Activar navegación nativa con mando» viene activado en los ajustes generales de QT. Los demás clientes mantienen el uso de ratón y teclado.",
+              "El Registro de misiones del grupo permite seleccionar controles, desplazarse automáticamente y volver atrás. Los menús de acciones y las listas desplegables usan controles con el estilo de Blizzard. Las solicitudes entrantes no capturan automáticamente el foco del mando."
+            ]
+          },
+          {
+            "title": "Acceso al registro del grupo",
+            "items": [
+              "Con la distribución predeterminada, QT coloca una macro con icono de libro de misiones en LT + RT + arriba de la cruceta, en la página de acciones normal 1, solo si la casilla está libre. Puedes moverla o quitarla con el editor de barras; no se sustituye ninguna acción existente.",
+              "Si quitas solo el botón, QT no lo vuelve a colocar. Si borras la macro, QT puede recrearla y asignarla de nuevo cuando la casilla predeterminada esté libre. «Abrir el menú de QuestTogether» no tiene una tecla asignada: configúrala en los atajos de WoW para acceder a acciones contextuales y «Solicitudes pendientes»."
+            ]
+          },
+          {
+            "title": "Misiones y mapa",
+            "items": [
+              "Seleccionar una misión en el seguimiento de objetivos de Blizzard también cuenta como pasar el cursor para el Seguimiento de objetivos del grupo. Se respetan sus ajustes de visualización e información emergente; no cambia el foco de misión ni el seguimiento del foco de otro jugador.",
+              "La mirilla del mapa muestra información emergente de jugadores QT y agrupaciones de marcadores. La de QT queda por encima de la de una misión superpuesta. Abrir menús del mapa automáticamente con A sigue siendo una prueba privada y no se incluye en esta beta: A conserva su acción nativa. Los controles del mapa también pueden interceptar combinaciones asignadas al menú QT.",
+              "En compilaciones compatibles, QT puede representar a los miembros del grupo en el mapa del mundo con sus iconos VIP o de desarrollador. Al desactivar las marcas de QT vuelven las de Blizzard. El minimapa no cambia."
+            ]
+          },
+          {
+            "title": "Pruebas de la beta",
+            "items": [
+              "El acceso al PQL, la navegación básica, los menús y desplegables compactos y la información emergente de la mirilla se han probado en el juego. Queda por ampliar las pruebas del seguimiento de objetivos, los ajustes, los cambios de ventana, la reconexión del mando, el combate y los mapas con muchos jugadores. Al informar de un problema, incluye los pasos, la compilación del cliente y el informe de /qt diagnostics."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.1.0-beta.1",
+        "welcome": "Esta beta integra la navegación nativa con control de WoW Forever en QuestTogether. Todavía estamos ampliando las pruebas dentro del juego.",
+        "sections": [
+          {
+            "title": "Navegación nativa con control",
+            "items": [
+              "Necesitas la interfaz de control de Forever 1.60.1, compilación 70888 o 70938. La opción «Activar navegación nativa con control» está habilitada de forma predeterminada en los ajustes generales de QT. Los otros clientes conservan sus controles de mouse y teclado.",
+              "El Registro de misiones del grupo admite selección, desplazamiento automático y regreso. Los menús de acciones y las listas de opciones tienen el estilo visual de Blizzard. Las solicitudes que recibes no toman automáticamente el foco del control."
+            ]
+          },
+          {
+            "title": "Abrir el registro del grupo",
+            "items": [
+              "Con la distribución predeterminada, QT agrega una macro con un libro de misiones a LT + RT + arriba en la cruceta, en la página de acciones normal 1, únicamente si el espacio está vacío. Puedes moverla o quitarla en el editor de barras de acción; tus acciones existentes se conservan.",
+              "Quitar solo el botón no hace que QT lo vuelva a colocar. Si eliminas la macro, QT puede crearla de nuevo y asignarla si el espacio predeterminado está libre. Asigna una tecla a «Abrir el menú de QuestTogether» en las combinaciones de WoW para usar las acciones contextuales y «Solicitudes pendientes»; no hay una asignación predeterminada."
+            ]
+          },
+          {
+            "title": "Explorar misiones y mapas",
+            "items": [
+              "Al recorrer las misiones en el seguimiento de objetivos de Blizzard, el Seguimiento de objetivos del grupo responde como si pasaras el cursor sobre ellas. Conserva tus preferencias de visualización e información emergente, sin cambiar la misión enfocada ni el seguimiento del foco de otro jugador.",
+              "La mira del mapa muestra información emergente de jugadores QT y grupos de marcadores; la de QT aparece por encima de la de una misión superpuesta. Los menús automáticos con A siguen en pruebas privadas y no forman parte de esta beta. A mantiene su función normal del mapa, cuyos controles también pueden bloquear combinaciones asignadas al menú QT.",
+              "En las compilaciones compatibles, QT puede mostrar los marcadores del grupo en el mapa del mundo con sus iconos VIP o de desarrollador. Cuando desactivas las marcas QT del mapa, vuelven las de Blizzard. El minimapa sigue igual."
+            ]
+          },
+          {
+            "title": "Ayúdanos a probar",
+            "items": [
+              "Ya se confirmó en el juego el acceso al PQL, la navegación básica, los menús y listas compactos y la información emergente de la mira. Aún faltan más pruebas del seguimiento de objetivos, los ajustes, las transiciones de ventanas, la reconexión del control, el combate y los mapas concurridos. Si algo falla, comparte los pasos, la compilación del cliente y el reporte de /qt diagnostics."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.1.0-beta.1",
+        "welcome": "Esta beta traz ao QuestTogether a navegação nativa por controle do WoW Forever. Os testes dentro do jogo continuam.",
+        "sections": [
+          {
+            "title": "Navegação nativa por controle",
+            "items": [
+              "Requer a interface de controle do Forever 1.60.1, build 70888 ou 70938. A opção “Ativar navegação nativa por controle”, nos ajustes gerais do QT, vem ativada. Outros clientes mantêm o funcionamento com mouse e teclado.",
+              "O Registro de missões do grupo oferece seleção, rolagem automática e Voltar. Menus de ações e listas de opções usam controles com a aparência da Blizzard. Solicitações recebidas não assumem automaticamente o foco do controle."
+            ]
+          },
+          {
+            "title": "Abrir o registro do grupo",
+            "items": [
+              "No layout padrão, o QT coloca uma macro com ícone de livro de missões em LT + RT + direcional para cima, na página de ações normal 1, somente se o espaço estiver vazio. Você pode movê-la ou removê-la no editor de barras de ação; nenhuma ação existente é substituída.",
+              "Remover apenas o botão não faz o QT colocá-lo de volta. Se você excluir a macro, o QT poderá recriá-la e atribuí-la novamente quando o espaço padrão estiver livre. “Abrir o menu do QuestTogether” não tem atalho padrão: configure-o nas teclas de atalho do WoW para acessar ações contextuais e “Solicitações pendentes”."
+            ]
+          },
+          {
+            "title": "Missões e mapa",
+            "items": [
+              "A seleção de missões no rastreador da Blizzard também funciona como passar o cursor para o Rastreador de objetivos do grupo. Suas preferências de exibição e dicas continuam valendo, sem alterar o foco de missão ou o acompanhamento do foco de outro jogador.",
+              "A mira do mapa mostra dicas de jogadores QT e grupos de marcadores. A dica do QT fica acima de uma dica de missão sobreposta. Abrir menus do mapa automaticamente com A ainda é um teste privado, fora desta beta. A mantém sua ação normal no mapa, cujos atalhos também podem interceptar combinações atribuídas ao menu QT.",
+              "Em builds compatíveis, o QT pode representar os membros do grupo no mapa-múndi com os ícones VIP ou de desenvolvedor. Desativar os marcadores QT restaura os marcadores de grupo da Blizzard. O minimapa não muda."
+            ]
+          },
+          {
+            "title": "Testes da beta",
+            "items": [
+              "O botão do PQL, a navegação básica, os menus e listas compactos e as dicas da mira já foram confirmados no jogo. Ainda faltam testes mais amplos do rastreador, ajustes, transições de janelas, reconexão do controle, combate e mapas lotados. Ao relatar um problema, inclua os passos para reproduzi-lo, o build do cliente e o relatório de /qt diagnostics."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.1.0-beta.1",
+        "welcome": "В этой бета-версии QuestTogether использует встроенную навигацию с геймпада в WoW Forever. Проверки в игре продолжаются.",
+        "sections": [
+          {
+            "title": "Встроенная навигация с геймпада",
+            "items": [
+              "Нужен интерфейс геймпада Forever 1.60.1, сборка 70888 или 70938. В общих настройках QT параметр «Включить встроенную навигацию с геймпада» включён по умолчанию. На остальных клиентах сохраняется управление мышью и клавиатурой.",
+              "В Журнале заданий группы доступны выбор элементов, автоматическая прокрутка и возврат. Меню действий и списки выбора оформлены в стиле Blizzard. Входящие запросы не перехватывают управление автоматически."
+            ]
+          },
+          {
+            "title": "Открытие журнала группы",
+            "items": [
+              "При стандартной раскладке QT помещает макрос со значком книги заданий на LT + RT + вверх на крестовине, на обычной странице действий 1, только если ячейка пуста. Его можно переместить или убрать через редактор панелей; существующие действия не заменяются.",
+              "Если убрать только кнопку, QT не вернёт её обратно. Если удалить сам макрос, QT сможет создать его заново и назначить на свободную стандартную ячейку. Для «Открыть меню QuestTogether» нет клавиши по умолчанию: назначьте её в настройках клавиш WoW, чтобы открывать контекстные действия и «Ожидающие запросы»."
+            ]
+          },
+          {
+            "title": "Задания и карта",
+            "items": [
+              "Выбор задания в списке целей Blizzard действует для Отслеживания целей группы так же, как наведение мыши. Настройки отображения и подсказок сохраняются; выбранное задание и следование за фокусом другого игрока не меняются.",
+              "Прицел карты показывает подсказки игроков QT и скоплений меток. Подсказка QT отображается поверх пересекающейся подсказки задания. Автоматическое открытие меню карты кнопкой A пока проходит закрытые испытания и не входит в эту бету. A сохраняет обычное действие карты; её встроенные назначения могут также перехватывать комбинации меню QT.",
+              "На поддерживаемых сборках QT может отображать участников группы на карте мира, в том числе со значками VIP и разработчика. При отключении меток QT возвращаются метки группы Blizzard. Миникарта не меняется."
+            ]
+          },
+          {
+            "title": "Тестирование бета-версии",
+            "items": [
+              "В игре подтверждена работа кнопки PQL, базовой навигации, компактных меню и списков, а также подсказок прицела. Полная проверка отслеживания целей, настроек, переходов между окнами, переподключения геймпада, боя и заполненных карт ещё не завершена. В сообщении о проблеме укажите шаги воспроизведения, сборку клиента и отчёт /qt diagnostics."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.1.0-beta.1",
+        "welcome": "Questa beta integra in QuestTogether la navigazione nativa con controller di WoW Forever. Le prove in gioco sono ancora in corso.",
+        "sections": [
+          {
+            "title": "Navigazione nativa con controller",
+            "items": [
+              "È richiesta l’interfaccia controller di Forever 1.60.1, build 70888 o 70938. “Abilita la navigazione nativa con controller” è attivo per impostazione predefinita nelle opzioni generali di QT. Gli altri client mantengono i controlli con mouse e tastiera.",
+              "Il Registro missioni del gruppo supporta selezione, scorrimento automatico e Indietro. Menu delle azioni e liste di scelta usano controlli dall’aspetto Blizzard. Le richieste in arrivo non acquisiscono automaticamente il controllo della navigazione."
+            ]
+          },
+          {
+            "title": "Aprire il registro del gruppo",
+            "items": [
+              "Con la disposizione predefinita, QT colloca una macro con l’icona di un libro di missioni su LT + RT + Su del tasto direzionale, nella pagina azioni normale 1, solo se lo spazio è libero. Puoi spostarla o rimuoverla dall’editor delle barre; le azioni esistenti non vengono sostituite.",
+              "Rimuovere soltanto il pulsante non lo fa ricomparire. Se elimini la macro, QT può ricrearla e riassegnarla quando lo spazio predefinito è libero. “Apri il menu di QuestTogether” non ha un tasto predefinito: assegnalo nelle combinazioni di WoW per accedere alle azioni contestuali e alle “Richieste in attesa”."
+            ]
+          },
+          {
+            "title": "Missioni e mappa",
+            "items": [
+              "Scorrere le missioni nel tracciamento obiettivi Blizzard attiva il Tracciamento obiettivi del gruppo come il passaggio del mouse. Restano valide le preferenze di visualizzazione e dei suggerimenti, senza cambiare la missione attiva né lo stato di “Segui la missione attiva”.",
+              "Il mirino della mappa mostra i suggerimenti dei giocatori QT e dei gruppi di indicatori; quello di QT appare sopra un suggerimento di missione sovrapposto. L’apertura automatica dei menu con A è ancora una prova privata, esclusa da questa beta. A conserva la funzione della mappa; i controlli nativi possono anche intercettare le combinazioni assegnate al menu QT.",
+              "Sulle build supportate, QT può mostrare i membri del gruppo sulla mappa del mondo con le icone VIP o sviluppatore. Disattivando gli indicatori QT ricompaiono quelli di Blizzard. La minimappa non cambia."
+            ]
+          },
+          {
+            "title": "Prove della beta",
+            "items": [
+              "Il pulsante PQL, la navigazione di base, i menu e le liste compatti e i suggerimenti del mirino sono stati verificati in gioco. Restano da ampliare le prove su tracciamento obiettivi, impostazioni, transizioni delle finestre, riconnessione del controller, combattimento e mappe affollate. Per segnalare problemi, includi i passaggi, la build del client e il rapporto di /qt diagnostics."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.1.0-beta.1",
+        "welcome": "이번 베타에서는 WoW Forever의 기본 게임패드 탐색을 QuestTogether에서도 사용할 수 있습니다. 게임 내 검증은 계속 진행 중입니다.",
+        "sections": [
+          {
+            "title": "기본 게임패드 탐색",
+            "items": [
+              "Forever 1.60.1 빌드 70888 또는 70938의 게임패드 UI가 필요합니다. QT 일반 설정의 “기본 게임패드 탐색 사용”은 기본으로 켜져 있습니다. 지원하지 않는 클라이언트에서는 기존 마우스와 키보드 조작을 유지합니다.",
+              "파티 퀘스트 목록에서 항목 선택, 자동 스크롤, 선택 및 뒤로 가기를 지원합니다. 동작 메뉴와 드롭다운 목록에는 블리자드와 비슷한 모양의 컨트롤을 사용합니다. 다른 플레이어의 요청이 도착해도 조작 포커스를 자동으로 가져가지 않습니다."
+            ]
+          },
+          {
+            "title": "파티 퀘스트 목록 열기",
+            "items": [
+              "기본 배치에서는 일반 행동 페이지 1의 LT + RT + 방향 패드 위쪽 칸이 비어 있을 때만 퀘스트 책 아이콘 매크로를 배치합니다. 기존 행동은 덮어쓰지 않으며, 행동 단축바 편집기에서 매크로를 옮기거나 제거할 수 있습니다.",
+              "버튼만 제거하면 QT가 다시 배치하지 않습니다. 매크로 자체를 삭제하면 기본 칸이 비어 있을 때 다시 만들고 배치할 수 있습니다. “QuestTogether 메뉴 열기”에는 기본 단축키가 없습니다. WoW 단축키 설정에서 지정하면 상황별 동작과 “대기 중인 요청”을 열 수 있습니다."
+            ]
+          },
+          {
+            "title": "퀘스트 탐색과 지도",
+            "items": [
+              "블리자드 목표 추적기에서 컨트롤러로 퀘스트를 선택하면 파티 목표 추적기에서도 마우스를 올린 것처럼 표시합니다. 기존 표시 및 툴팁 설정을 따르며, 실제 퀘스트 집중이나 집중 따라가기는 변경하지 않습니다.",
+              "세계 지도 조준점으로 QT 플레이어와 묶인 표식의 툴팁을 볼 수 있습니다. 퀘스트 툴팁과 겹칠 때는 QT 툴팁이 위에 표시됩니다. A 버튼으로 지도 메뉴를 자동으로 여는 기능은 아직 비공개 시험 중이며 이번 베타에는 포함되지 않습니다. A는 기존 지도 동작을 유지하고, 지도의 기본 입력이 QT 메뉴에 지정한 컨트롤러 조합보다 우선할 수도 있습니다.",
+              "지원되는 빌드에서는 세계 지도 파티 표식에 QT 표시와 VIP·개발자 아이콘을 사용할 수 있습니다. QT 지도 표시를 끄면 블리자드 파티 표식이 돌아옵니다. 미니맵 동작은 바뀌지 않습니다."
+            ]
+          },
+          {
+            "title": "베타 테스트 안내",
+            "items": [
+              "PQL 실행 버튼, 기본 탐색, 간결한 메뉴와 드롭다운, 조준점 툴팁은 게임 내에서 동작을 확인했습니다. 목표 추적기, 설정, 창 전환, 컨트롤러 재연결, 전투 및 플레이어가 많은 지도에 대한 검증은 아직 끝나지 않았습니다. 문제가 생기면 재현 방법, 클라이언트 빌드와 /qt diagnostics 보고서를 함께 알려 주세요."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.1.0-beta.1",
+        "welcome": "本次测试版将 WoW Forever 的原生手柄导航接入 QuestTogether。游戏内验证仍在进行中。",
+        "sections": [
+          {
+            "title": "原生手柄导航",
+            "items": [
+              "需要启用 Forever 1.60.1 的手柄界面，支持已核查的构建 70888 和 70938。QT 常规设置中的“启用原生手柄导航”默认开启。其他客户端仍使用原有的鼠标和键盘操作。",
+              "队伍任务日志支持选择控件、自动滚动、确认和返回。操作菜单及下拉选项采用与暴雪控件相近的外观。收到其他玩家的请求时，不会自动抢占手柄焦点。"
+            ]
+          },
+          {
+            "title": "打开队伍任务日志",
+            "items": [
+              "使用默认布局时，QT 仅在普通动作栏第 1 页中 LT + RT + 方向键向上对应的槽位为空时，放入带任务书图标的宏。不会覆盖现有动作；可以在动作栏编辑器中移动或移除它。",
+              "只移除按钮时，QT 不会自动放回。若删除宏本身，默认槽位为空时可以重新创建并放置。请在 WoW 按键设置中为“打开 QuestTogether 菜单”指定按键，以使用上下文操作和“待处理请求”；该功能没有默认绑定。"
+            ]
+          },
+          {
+            "title": "任务浏览与地图",
+            "items": [
+              "用手柄在暴雪目标追踪器中选择任务，也会触发小队目标追踪器的悬停显示。仍遵循原有显示和提示设置，不会改变任务焦点或跟随他人焦点的状态。",
+              "世界地图准星可显示 QT 玩家和聚合标记的提示；与任务提示重叠时，QT 提示显示在上层。按 A 自动打开地图菜单仍在私人测试中，不包含在本测试版内。A 保留原有地图功能，地图的原生按键也可能优先于自行绑定的 QT 菜单手柄组合。",
+              "在支持的构建中，世界地图上的队伍标记可使用 QT 样式及 VIP、开发者图标。关闭 QT 地图显示后，会恢复暴雪队伍标记。小地图行为不变。"
+            ]
+          },
+          {
+            "title": "测试说明",
+            "items": [
+              "PQL 启动按钮、基础导航、紧凑菜单及下拉选项、准星悬停提示已在游戏内确认可用。目标追踪器、设置、窗口切换、手柄重连、战斗和密集地图的完整验证尚未完成。反馈问题时，请提供复现步骤、客户端构建号和 /qt diagnostics 报告。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.1.0-beta.1",
+        "welcome": "這次 Beta 將 WoW Forever 的原生控制器導覽整合進 QuestTogether。遊戲內測試仍在進行中。",
+        "sections": [
+          {
+            "title": "原生控制器導覽",
+            "items": [
+              "需要啟用 Forever 1.60.1 的控制器介面，支援已查核的組建 70888 與 70938。QT 一般設定中的「啟用原生控制器導覽」預設開啟。其他客戶端維持原有滑鼠與鍵盤操作。",
+              "隊伍任務日誌支援選取控制項、自動捲動、確認及返回。動作選單與下拉選項採用接近暴雪控制項的外觀。收到其他玩家的請求時，不會自動搶走控制器焦點。"
+            ]
+          },
+          {
+            "title": "開啟隊伍任務日誌",
+            "items": [
+              "使用預設配置時，QT 只會在一般動作頁面 1 上對應 LT + RT + 方向鍵向上的欄位空白時，放入任務書圖示的巨集。既有動作不會被覆蓋；可透過動作列編輯器移動或移除巨集。",
+              "只移除按鈕時，QT 不會重新放回。若刪除巨集本身，預設欄位空白時可重新建立並放置。請在 WoW 按鍵設定中指定「開啟 QuestTogether 選單」，即可使用情境動作與「待處理請求」；此功能沒有預設按鍵。"
+            ]
+          },
+          {
+            "title": "任務瀏覽與地圖",
+            "items": [
+              "以控制器在暴雪目標追蹤器中選取任務，也會觸發隊伍目標追蹤器的滑鼠懸停顯示。既有顯示與提示設定仍然適用，不會改變任務焦點或跟隨他人焦點的狀態。",
+              "世界地圖準星可顯示 QT 玩家與群集標記的提示；與任務提示重疊時，QT 提示會顯示在上層。按 A 自動開啟地圖選單仍在私人測試中，不包含在這次 Beta。A 保留原有地圖動作，地圖的原生按鍵也可能優先於自行設定的 QT 選單控制器組合。",
+              "在支援的組建中，世界地圖隊伍標記可採用 QT 樣式，包括 VIP 與開發者圖示。關閉 QT 地圖顯示後，會恢復暴雪的隊伍標記。小地圖行為不變。"
+            ]
+          },
+          {
+            "title": "Beta 測試說明",
+            "items": [
+              "PQL 啟動按鈕、基本導覽、精簡選單與下拉選項，以及準星提示已在遊戲內確認可用。目標追蹤器、設定、視窗切換、控制器重新連線、戰鬥與擁擠地圖的完整測試尚未完成。回報問題時，請附上重現步驟、客戶端組建號與 /qt diagnostics 報告。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.0.14",
         "welcome": "QT channels should no longer get in the way of your usual chat channels.",
         "sections": [

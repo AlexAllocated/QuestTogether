@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0
+
+WoW Forever를 컨트롤러로 플레이하시나요? QuestTogether 컨트롤러 베타를 함께 테스트해 주세요!
+
+### 컨트롤러 베타 참여 방법
+
+- 선택적으로 설치할 수 있는 베타에서는 WoW Forever의 기본 Gamepad UI로 파티 퀘스트 목록과 QT 메뉴를 탐색하고, 세계 지도의 십자선으로 QT 표시의 정보를 확인할 수 있습니다. 이번 안정 버전은 베타를 알리는 업데이트이며, 컨트롤러 기능은 아직 베타에서 제공됩니다.
+- CurseForge 앱에서 QuestTogether를 마우스 오른쪽 버튼으로 클릭한 뒤 "Release Type" → "Beta"를 선택하세요. 애드온을 업데이트하고 WoW에서 /reload를 입력하면 됩니다.
+- WoW Forever의 Gamepad UI를 켠 상태로 사용해 보세요. 잘 작동하는 부분이나 개선이 필요한 부분을 알려 주시면 안정 버전을 준비하는 데 도움이 됩니다.
+
 ## 9.1.0-beta.1
 
 이번 베타에서는 WoW Forever의 기본 게임패드 탐색을 QuestTogether에서도 사용할 수 있습니다. 게임 내 검증은 계속 진행 중입니다.
