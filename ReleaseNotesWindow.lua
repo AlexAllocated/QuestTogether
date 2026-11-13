@@ -68,7 +68,7 @@ end
 local function PrepareControlChange(addon, frame, control)
 	if addon.IsGamepadWindowRegistered and addon:IsGamepadWindowRegistered(frame)
 		and not addon:PrepareGamepadControlHide(control, frame.navigation[3] or frame.close) then
-		error("release notes control change unavailable", 0)
+		error("release_notes_control_change_unavailable", 0)
 	end
 end
 
