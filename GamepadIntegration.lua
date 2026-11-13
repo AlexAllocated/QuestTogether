@@ -711,8 +711,9 @@ function QT:PresentGamepadWindow(frame, intent)
 	end
 	local record = records[frame]
 	local explicit = intent == "user" or (type(intent) == "table" and intent.userInitiated == true)
+	local automatic = intent == "automatic" and record and record.policy.allowAutomaticFocus == true
 	if
-		not explicit
+		(not explicit and not automatic)
 		or not record
 		or state.failed
 		or not state.enabled

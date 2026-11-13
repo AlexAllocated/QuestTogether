@@ -333,6 +333,7 @@ local function newHarness(options)
 	function nav:SetScrollFrameForFrame(frame, scroll)
 		call("SetScrollFrameForFrame", frame)
 		frame.scrollTarget = scroll
+		if self.active == frame then self.rightStickScrolling = scroll ~= nil end
 	end
 	function nav:SetGridHeightCompensation()
 		call("SetGridHeightCompensation")
@@ -377,6 +378,7 @@ local function newHarness(options)
 				nav.anchor = nav.button
 			end
 			nav.shown = frame ~= nil
+			nav.rightStickScrolling = frame ~= nil and frame.scrollTarget ~= nil
 		end
 		nav.bindingActive = nav.active ~= nil
 		if frame and frame.FocusGamepad then
@@ -764,6 +766,7 @@ do
 	local root, first = panel(h, "Root")
 	local writes = #h.calls
 	assert(not h.qt:PresentGamepadWindow(root, { userInitiated = false }))
+	assert(not h.qt:PresentGamepadWindow(root, "automatic"))
 	assert(#h.calls == writes, "Automatic presentation registered")
 	present(h, root)
 	local popup, cancel = panel(h, "Popup", root)
@@ -1278,5 +1281,35 @@ do
 	h:event("ACTIONBAR_SLOT_CHANGED"); h:flushAll()
 	assert(attempts == 5 and slotChecks == 2, "An emptied slot did not resume missing-macro setup")
 	print("PASS: default launcher waits for world entry, coalesces native events, defers combat, cancels on departure/disable and becomes idle")
+end
+
+do
+	local h = newHarness()
+	h:load("GamepadWindows.lua")
+	local frame = h.env.CreateFrame("Frame", "AdapterNotes", h.env.UIParent)
+	frame.close = h.env.CreateFrame("Button", nil, frame)
+	frame.scroll = h.env.CreateFrame("ScrollFrame", nil, frame)
+	assert(h.qt:PresentStandardGamepadWindow(frame, "release_notes", nil, frame.close, frame.scroll, "automatic"))
+	assert(h.nav.button == frame.close and frame.scrollTarget == frame.scroll and h.nav.rightStickScrolling,
+		"Full-content window did not enable native right-stick scrolling")
+	local popup = panel(h, "NotesPopup", frame)
+	present(h, popup, frame)
+	assert(not h.nav.rightStickScrolling, "Notes scrolling leaked into a popup")
+	popup:Hide()
+	assert(h.nav.active == frame and h.nav.rightStickScrolling, "Returning to notes lost scrolling")
+	frame:SmartNavigationCloseHandler()
+	h:flushAll()
+	assert(not frame:IsShown() and not h.nav.rightStickScrolling and not h.nav.bindingActive,
+		"Back left the notes window or its input active")
+	assert(not h.qt:GetGamepadIntegrationStatus().failed)
+	assert(h.qt:PresentStandardGamepadWindow(frame, "release_notes", nil, frame.close, frame.scroll, "automatic") == false,
+		"Automatic focus resurrected closed notes")
+	frame:Show()
+	assert(h.qt:PresentStandardGamepadWindow(frame, "release_notes", nil, frame.close, frame.scroll))
+	frame:Hide()
+	local other = h.env.CreateFrame("Frame", "AdapterOther", h.env.UIParent)
+	assert(not h.qt:PresentStandardGamepadWindow(other, "notes", nil, nil, nil, "automatic"),
+		"Automatic focus escaped patch-notes policy")
+	print("PASS: automatic patch notes opt in to focus/scrolling, return from popups and release input on Back; other windows stay passive")
 end
 print("OFFLINE ONLY: no WoW taint, protected API, physical input, cursor geometry or production live proof")

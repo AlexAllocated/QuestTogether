@@ -66,6 +66,9 @@ controls, dialogs and native Select/Back prompts retain their original styling.
   save notes, accept requests or change reminder preferences.
 - Settings categories remain under Blizzard's navigation. QT dropdown choices
   use compact owned menus. Standard Select/Back prompts use your native mappings.
+- In **Patch Notes**, use the right stick to scroll the text and the D-pad to
+  select buttons or browse History. Back closes the window. Notes opened
+  automatically after an update take controller focus too.
 - Text entry, moving/resizing HUD elements, and window corner resizing retain
   their existing controls. No on-screen keyboard is supplied.
 

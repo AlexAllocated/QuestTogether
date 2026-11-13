@@ -60,6 +60,16 @@ local function Script(addon, frame, region, event, callback)
 			pcall(callback, ...)
 		end
 	end)
+	if event == "OnClick" and addon.GuardGamepadWindowActions then
+		addon:GuardGamepadWindowActions(frame, { region })
+	end
+end
+
+local function PrepareControlChange(addon, frame, control)
+	if addon.IsGamepadWindowRegistered and addon:IsGamepadWindowRegistered(frame)
+		and not addon:PrepareGamepadControlHide(control, frame.navigation[3] or frame.close) then
+		error("release notes control change unavailable", 0)
+	end
 end
 
 local function Button(addon, frame, parent, text, callback, arrow, jump)
@@ -123,15 +133,22 @@ local function Button(addon, frame, parent, text, callback, arrow, jump)
 	return button
 end
 
-local function SetScroll(addon, frame, value)
+local function SyncScroll(addon, frame, value)
 	value = addon:SafeToNumber(value)
 	if not value then
 		return
 	end
 	value = math.max(0, math.min(frame.maximumScroll or 0, value))
-	Call(addon, frame.scroll, "SetVerticalScroll", value)
 	frame.scrollOffset = value
 	addon:UpdateOwnedScrollBar(frame.scrollBar, value, frame.maximumScroll, frame.viewportHeight, 36)
+	return value
+end
+
+local function SetScroll(addon, frame, value)
+	value = SyncScroll(addon, frame, value)
+	if value then
+		Call(addon, frame.scroll, "SetVerticalScroll", value)
+	end
 end
 
 local function CreateTipExample(addon, parent)
@@ -316,6 +333,9 @@ local function Create(addon, parent)
 			addon:DismissManagedWindow(frame)
 		end
 	end)
+	if addon.GuardGamepadWindowActions then
+		addon:GuardGamepadWindowActions(frame, { frame.close })
+	end
 	frame.settings = Button(addon, frame, frame, L("Settings"), function()
 		if addon:OpenOptionsWindow() == true then
 			Call(addon, frame, "Hide")
@@ -373,6 +393,11 @@ local function Create(addon, parent)
 		end
 	end
 	Script(addon, frame, frame.scroll, "OnMouseWheel", Wheel)
+	-- Native right-stick navigation changes the ScrollFrame directly. Mirror
+	-- that position into our scrollbar and layout state without setting it again.
+	Script(addon, frame, frame.scroll, "OnVerticalScroll", function(value)
+		SyncScroll(addon, frame, value)
+	end)
 	Call(addon, frame, "SetMovable", true)
 	Call(addon, frame, "SetResizable", true)
 	frame.dragHandle = New(addon, "Frame", frame)
@@ -525,6 +550,9 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 					and (index == 2 and browser.index < #browser.entries or index == 4 and browser.index > 1)
 				)
 			)
+		if not enabled then
+			PrepareControlChange(addon, frame, button)
+		end
 		Call(addon, button, "SetEnabled", enabled)
 		-- A click can disable its own navigation button at a history boundary.
 		-- Do not retain the previous press across that page/enable transition.
@@ -534,9 +562,6 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 		end
 	end
 	Call(addon, frame.navigation[3], "SetText", history and L("Back") or L("History"))
-	for _, row in ipairs(frame.historyRows) do
-		Call(addon, row, "Hide")
-	end
 	Call(addon, frame, "SetScale", scale)
 	Call(addon, frame.title, "SetWidth", width - 134)
 	Call(addon, frame.title, "SetText", "QuestTogether " .. addon:SafeTrimString(entry and entry.displayVersion or version, ""))
@@ -725,6 +750,13 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 	for index = count + 1, #frame.labels do
 		Call(addon, frame.labels[index], "Hide")
 	end
+	-- Keep surviving rows visible during reflow. Hiding a selected row, even
+	-- temporarily, would also hide Blizzard's cursor anchored to that control.
+	for index = (history and #browser.entries or 0) + 1, #frame.historyRows do
+		local row = frame.historyRows[index]
+		PrepareControlChange(addon, frame, row)
+		Call(addon, row, "Hide")
+	end
 	local contentHeight = math.max(1, offset)
 	local height = math.min(
 		maximumHeight,
@@ -737,15 +769,21 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 	Call(addon, frame.scrollBar, "SetHeight", viewportHeight)
 	frame.maximumScroll = math.max(0, contentHeight - viewportHeight)
 	frame.viewportHeight = viewportHeight
+	if frame.maximumScroll <= 0 then
+		PrepareControlChange(addon, frame, frame.scrollBar)
+	end
 	Call(addon, frame.scrollBar, frame.maximumScroll > 0 and "Show" or "Hide")
 	SetScroll(addon, frame, oldScroll or 0)
 	ApplyTheme(addon, frame)
 	frame.rendering = nil
 	addon:ApplyWindowLayout(frame)
-	if layoutOnly then
-		return true
+	if not layoutOnly then
+		Call(addon, frame, "Show")
 	end
-	Call(addon, frame, "Show")
+	if addon.IsGamepadWindowRegistered and addon:IsGamepadWindowRegistered(frame) then
+		addon:RefreshGamepadNavigation(frame)
+	end
+	if layoutOnly then return true end
 	local visible = Call(addon, frame, "IsVisible")
 	return addon:CanAccessValue(visible) and visible == true
 end

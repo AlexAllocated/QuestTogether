@@ -82,6 +82,29 @@ local function Fixture(version, global)
 	return addon
 end
 
+QT:RegisterTest("release notes automatic and manual presentation request controller focus only after successful rendering", function()
+	for _, automatic in ipairs({ true, false }) do
+		local a = Fixture()
+		a.hasLoggedIn = true
+		a.releaseNotesWindow = { close = {}, scroll = {} }
+		local calls = 0
+		function a:PresentStandardGamepadWindow(frame, role, close, initial, scroll, intent)
+			calls = calls + 1
+			Equal(frame, self.releaseNotesWindow)
+			Equal(role, "release_notes")
+			Equal(initial, frame.close)
+			Equal(scroll, frame.scroll)
+			Equal(intent, automatic and "automatic" or "user")
+		end
+		a.renderResult = false
+		Equal(a:OpenReleaseNotes(automatic), false)
+		Equal(calls, 0)
+		a.renderResult = true
+		assert(a:OpenReleaseNotes(automatic))
+		Equal(calls, 1)
+	end
+end)
+
 QT:RegisterTest("release notes first use is account wide and replaces the chat welcome", function()
 	local a = Fixture()
 	a:OnLogin()

@@ -1166,7 +1166,12 @@ states, tooltips, overflow paging and nested Back/focus return still require
 live checks; the basic confirmation does not establish every presentation case.
 
 `GamepadWindows.lua` provides explicit ordinary-window policies, virtual companion
-selection and on-demand access to existing live request records.
+selection and on-demand access to existing live request records. Release notes
+alone opt in to automatic focus when their startup presentation succeeds;
+incoming requests still require deliberate opening. Their complete-content
+ScrollFrame uses native right-stick scrolling, with an owned OnVerticalScroll
+callback synchronizing the scrollbar and stored offset. History changes park
+selection before hiding/disabling controls and refresh navigation after layout.
 
 `QuestCompareGamepad.lua` owns quest/player/control identities and virtual-list
 navigation. It shares existing quest geometry/actions with keyboard navigation;

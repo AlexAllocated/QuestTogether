@@ -735,4 +735,112 @@ Register("minor release pages append patch text tips and repeated illustrations 
 	Equal(a.db.global.releaseNotesSeenVersion, "5.9.2")
 end)
 
+Register("release notes native scrolling updates layout memory and scrollbar without recursive scrolling", function()
+	local a = Fixture()
+	local notes = Notes(40)
+	assert(a:RenderReleaseNotesWindow(notes, "5.9.2", false))
+	local frame = a.releaseNotesWindow
+	local original, writes, inside = frame.scroll.SetVerticalScroll, 0, false
+	function frame.scroll:SetVerticalScroll(value)
+		assert(not inside, "OnVerticalScroll recursively changed the native scroll position")
+		inside, writes = true, writes + 1
+		original(self, value)
+		self.scripts.OnVerticalScroll(self, value)
+		inside = false
+	end
+	frame.scroll:SetVerticalScroll(120)
+	Equal(writes, 1)
+	Equal(frame.scrollOffset, 120)
+	Equal(frame.scrollBar:GetScrollPercentage(), 120 / frame.maximumScroll)
+	assert(a:RenderReleaseNotesWindow(notes, "5.9.2", false, true, true))
+	Equal(frame.scrollOffset, 120)
+	Equal(frame.scroll.offset, 120)
+	frame.scroll.scripts.OnMouseWheel({}, -1)
+	Equal(frame.scrollOffset, 156)
+	Equal(frame.scroll.offset, 156)
+	local priorWrites, offset = writes, frame.scrollOffset
+	frame.scroll.scripts.OnVerticalScroll({}, "unavailable")
+	Equal(frame.scrollOffset, offset)
+	Equal(writes, priorWrites)
+	a.blocked = true
+	frame.scroll.scripts.OnVerticalScroll({}, 80)
+	Equal(frame.scrollOffset, offset)
+	a.blocked = false
+	assert(a:RenderReleaseNotesWindow(Notes(1), "5.9.2", false, true))
+	Equal(frame.scrollOffset, 0)
+	Equal(frame.scroll.offset, 0)
+	Equal(frame.scrollBar:GetScrollPercentage(), 0)
+end)
+
+Register("release notes controller history parks disappearing selections and refreshes the completed layout", function()
+	local a = Fixture()
+	a.hasLoggedIn, a.db = true, { global = {} }
+	a.GetAddonVersion = function() return "5.9.2" end
+	a.releaseNotes = Notes(40)
+	local older = Notes(1)
+	older.version = "5.8.1"
+	a.releaseNotesHistory = { {version = older.version, locales = {enUS = older}} }
+	assert(a:OpenReleaseNotes())
+	local frame = a.releaseNotesWindow
+	a.controllerActive, a.navigationRefreshes = true, 0
+	function a:IsGamepadWindowRegistered(window) return window == frame end
+	function a:IsNativeGamepadMode() return true end
+	function a:GetGamepadIntegrationStatus() return {failed = false} end
+	function a:IsGamepadActionCurrent(window) return self.controllerActive and window == frame end
+	function a:PrepareGamepadControlHide(control, fallback)
+		if self.selection == control then
+			assert(control:IsShown(), "selection was hidden before parking")
+			assert(control.enabled ~= false, "selection was disabled before parking")
+			self.selection, self.parked = fallback, (self.parked or 0) + 1
+		end
+		return true
+	end
+	function a:RefreshGamepadNavigation(window)
+		Equal(window, frame)
+		assert(not frame.rendering and frame.scroll.height == frame.viewportHeight)
+		self.navigationRefreshes = self.navigationRefreshes + 1
+	end
+	a.selection = frame.navigation[2]
+	frame.navigation[2].scripts.OnClick({})
+	assert(a.releaseNotesBrowser.index == 2, "controller older action did not change page")
+	Equal(a.selection, frame.navigation[3])
+	Equal(a.parked, 1)
+	Equal(a.navigationRefreshes, 1)
+	frame.navigation[3].scripts.OnClick({})
+	assert(a.navigationRefreshes == 2, "controller history action did not refresh")
+	a.selection = frame.historyRows[1]
+	local selected = a.selection
+	local hide = selected.Hide
+	function selected:Hide()
+		assert(a.selection ~= self, "selected history row hidden before parking")
+		return hide(self)
+	end
+	assert(a:RenderReleaseNotesWindow(older, older.version, false, true, true))
+	Equal(a.selection, selected)
+	Equal(a.navigationRefreshes, 3)
+	selected.scripts.OnClick({})
+	Equal(a.releaseNotesBrowser.index, 1)
+	Equal(a.releaseNotesBrowser.history, false)
+	Equal(a.selection, frame.navigation[3])
+	assert(a.parked == 2, "history selection was not parked")
+	Equal(a.navigationRefreshes, 4)
+	assert(not selected:IsShown())
+	-- A covered panel cannot execute retained controller actions, including
+	-- dynamically created history rows and the footer's settings button.
+	a.controllerActive = false
+	frame.navigation[2].scripts.OnClick({})
+	frame.historyRows[2].scripts.OnClick({})
+	frame.settings.scripts.OnClick({})
+	frame.discord.scripts.OnClick({})
+	frame.close.scripts.OnClick({})
+	Equal(a.releaseNotesBrowser.index, 1)
+	Equal(a.settingsOpened, 0)
+	Equal(a.discordOpened, nil)
+	assert(frame:IsShown())
+	Equal(a.navigationRefreshes, 4)
+	a.controllerActive = true
+	frame.close.scripts.OnClick({})
+	assert(not frame:IsShown())
+end)
+
 _G.QuestTogether:RecordTestModule("scripts/regression_release_notes_window.lua")
