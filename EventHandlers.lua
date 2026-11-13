@@ -545,6 +545,9 @@ function QuestTogether:ResolvePendingQuestRemoval(questId)
 end
 
 function QuestTogether:HandleGroupRosterChanged(reason)
+	-- Native party tokens may be reused immediately. Retire cosmetic identity
+	-- before the next paced roster sample rather than showing the old VIP star.
+	if self.HidePartyMapPins then self:HidePartyMapPins() end
 	-- Read native membership immediately, before any roster/network refresh.
 	if self.RefreshOwnAnnouncementBubbleVisibility then self:RefreshOwnAnnouncementBubbleVisibility() end
 	local previousFingerprint = self.partyRosterFingerprint

@@ -202,6 +202,16 @@ end
 function QuestTogether:OpenQuickMenu()
 	if self:IsRuntimeRestricted() then return false end
 	self:HideMinimapTooltip()
+	if self.IsNativeGamepadMode and self:IsNativeGamepadMode() then
+		local context = self.GetPartyQuestGamepadContext and self:GetPartyQuestGamepadContext()
+		if not context and self.GetGamepadMapContext then context = self:GetGamepadMapContext() end
+		return self:ShowGamepadContextMenu(context and context.owner or self:GetGamepadLauncherAnchor(), function(_, root)
+			if context and context.populate then context.populate(root); root:CreateDivider()
+			elseif context and self.PopulateGamepadMapContext then self:PopulateGamepadMapContext(root, context); root:CreateDivider() end
+			self:PopulateMinimapMenu(root)
+			self:PopulateGamepadPendingRequests(root)
+		end)
+	end
 	return self:ShowMinimapMenu(self:GetOwnedUIParent())
 end
 

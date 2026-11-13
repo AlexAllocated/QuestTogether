@@ -290,9 +290,13 @@ QT:RegisterTest("focus dialogs cancel each retired choice once and never cancel 
 	a:ShowPartyFocusChangeDialog("First-Realm", function() end, false, false, function()
 		oldCancelled = oldCancelled + 1
 	end)
+	local staleConfirm = a.partyFocusChangeDialog.confirm:GetScript("OnClick")
+	local staleCancel = a.partyFocusChangeDialog.cancel:GetScript("OnClick")
 	a:ShowPartyFocusChangeDialog("Second-Realm", function() end, false, false, function()
 		newCancelled = newCancelled + 1
 	end)
+	staleConfirm(); staleCancel()
+	assert(a.partyFocusChangeDialog.focusChoice and a.partyFocusChangeDialog:IsShown(), "retired callbacks affected the successor choice")
 	assert(oldCancelled == 1 and newCancelled == 0)
 	a.partyFocusChangeDialog.escapeAction()
 	assert(oldCancelled == 1 and newCancelled == 1)

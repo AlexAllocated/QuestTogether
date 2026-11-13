@@ -64,6 +64,9 @@ jobs:
         if: matrix.lua == '5.1'
       - run: lua${{ matrix.lua }} scripts/test.lua
       - run: lua${{ matrix.lua }} scripts/test_loader.lua
+      - run: lua${{ matrix.lua }} scripts/regression_gamepad_adapter.lua
+      - run: lua${{ matrix.lua }} scripts/regression_gamepad_launcher.lua
+      - run: lua${{ matrix.lua }} scripts/regression_party_map_native.lua
       - run: python3 scripts/test_developer_crypto.py lua${{ matrix.lua }}
       - run: |
           python3 -m venv /tmp/qt-vip-tests

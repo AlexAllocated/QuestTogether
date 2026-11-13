@@ -156,6 +156,7 @@ function QT:ShowLocationTargetButton(owner, name, isCurrent, onEnter, onLeave, o
 end
 
 function QT:PopulateLocationTargetMenu(root, name, isCurrent)
+	if root.qtOwnedActionPanel then return end
 	local entry = root:CreateButton(L("Target"))
 	entry:SetEnabled(self:GetLocationTargetMacro(name) ~= nil)
 	entry:SetOnEnter(function(frame)

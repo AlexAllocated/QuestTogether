@@ -200,6 +200,10 @@ function Addon:OpenReleaseNotes(automatic)
 		global.releaseNotesSeenVersion = version
 	end
 	self:StopReleaseNotesWakeup()
+	if not automatic and self.PresentStandardGamepadWindow then
+		local frame = rawget(self, "releaseNotesWindow")
+		if frame then self:PresentStandardGamepadWindow(frame, "release_notes", nil, frame.close, frame.scroll) end
+	end
 	return true
 end
 

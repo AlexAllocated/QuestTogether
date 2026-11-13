@@ -320,6 +320,53 @@
       "World Quest Completed: ",
       "World Quest Entered: "
     ],
+    "GamepadActions.lua": [
+      "ADD",
+      "ARTWORK",
+      "Action description unavailable",
+      "BLEND",
+      "BOTTOMLEFT",
+      "Background",
+      "Button",
+      "CENTER",
+      "DIALOG",
+      "Decrement",
+      "Frame",
+      "GAMEPAD",
+      "HIGHLIGHT",
+      "Increment",
+      "LEFT",
+      "OVERLAY",
+      "RIGHT",
+      "TOPLEFT",
+      "TOPRIGHT",
+      "gamepad action capacity"
+    ],
+    "GamepadIntegration.lua": [
+      "; reload required",
+      "After",
+      "DOWN",
+      "Finalize",
+      "Frame",
+      "LEFT",
+      "RIGHT"
+    ],
+    "GamepadLauncher.lua": [
+      "/qt pql",
+      "GAMEPADLEFTMOD",
+      "GAMEPADRIGHTMOD",
+      "PADDUP",
+      "PADLTRIGGER",
+      "PADRTRIGGER",
+      "QT PQL",
+      "QT PQL ",
+      "^QT PQL [2-9]$"
+    ],
+    "GamepadWindows.lua": [
+      "CENTER",
+      "DOWN",
+      "Frame"
+    ],
     "GeographicComms.lua": [
       "LOC",
       "MESH",
@@ -549,6 +596,15 @@
       "WHISPER",
       "party join prompt"
     ],
+    "PartyMapNative.lua": [
+      "; replacement suspended; native restoration pending"
+    ],
+    "PartyMapPins.lua": [
+      "Hide",
+      "Party marker replacement stopped; native markers restored where available. Reload to retry.",
+      "Party marker tooltip stopped after an unexpected UI failure; reload to retry.",
+      "Show"
+    ],
     "PartyNavigation.lua": [
       "PARTY"
     ],
@@ -698,6 +754,11 @@
       "Have",
       "Missing",
       "Ready"
+    ],
+    "QuestCompareGamepad.lua": [
+      "DOWN",
+      "LEFT",
+      "RIGHT"
     ],
     "QuestCompareInteraction.lua": [
       "DOWN",
@@ -1030,6 +1091,7 @@
       "BOTTOM",
       "BOTTOMLEFT",
       "BOTTOMRIGHT",
+      "Button",
       "CENTER",
       "DIALOG",
       "Frame",

@@ -172,6 +172,8 @@ function QT:RefreshRecentCompanionsWindow()
 	end
 	local entries = self:GetRecentCompanions()
 	local offset = math.max(0, math.min(math.max(0, #entries - ROWS), math.floor(frame.offset or 0)))
+	offset = self:PrepareRecentCompanionsGamepadRefresh(frame, entries, offset, ROWS)
+	if offset == nil then return false end
 	frame.offset = offset
 	for index, row in ipairs(frame.rows) do
 		local entry = entries[offset + index]
@@ -188,6 +190,7 @@ function QT:RefreshRecentCompanionsWindow()
 	frame.clear:SetEnabled(#entries > 0)
 	frame.count:SetText(string.format(L("%d recent companions"), #entries))
 	self:UpdateOwnedScrollBar(frame.scrollBar, offset, math.max(0, #entries - ROWS), ROWS, 1)
+	self:RefreshRecentCompanionsGamepad(frame)
 	return true
 end
 
@@ -244,6 +247,7 @@ local function Create(addon)
 	end
 	frame.scrollBar = Track(addon:CreateOwnedScrollBar(addon.CreateOwnedWindowFrame, frame, false, function(offset)
 		if Current(addon, frame, frame.session) then
+			frame.gamepadCompanionIdentity, frame.gamepadCompanionIndex = nil, nil
 			frame.offset = math.floor(offset + 0.5)
 			addon:RefreshRecentCompanionsWindow()
 		end
@@ -252,6 +256,7 @@ local function Create(addon)
 	frame.scrollBar:SetHeight(ROWS * ROW_HEIGHT)
 	frame.list:SetScript("OnMouseWheel", function(_, delta)
 		if Current(addon, frame, frame.session) then
+			frame.gamepadCompanionIdentity, frame.gamepadCompanionIndex = nil, nil
 			frame.offset = (frame.offset or 0) - (addon:SafeToNumber(delta) or 0) * 3
 			addon:RefreshRecentCompanionsWindow()
 		end
@@ -303,11 +308,14 @@ function QT:OpenRecentCompanions()
 	if not frame or not Guard(self, frame) then return false end
 	for _, region in ipairs(frame.regions) do if not Guard(self, region) then return false end end
 	frame.session, frame.offset = {}, 0
+	frame.gamepadCompanionIdentity, frame.gamepadCompanionIndex = nil, nil
 	if not self:ApplyScrollDialogTheme(frame) then return false end
 	self:RefreshRecentCompanionsWindow()
 	frame:LayoutManagedWindow()
 	frame:Show()
 	frame:Raise()
+	self:ConfigureRecentCompanionsGamepad(frame)
+	self:PresentGamepadWindow(frame, "user")
 	return true
 end
 

@@ -211,6 +211,12 @@ function QT:QueueOwnedUICleanup(region, cleanup, complete, canMutate)
 	return state.pending[region] == nil
 end
 
-function QT:HideOwnedUI(region)
-	return self:QueueOwnedUICleanup(region)
+function QT:HideOwnedUI(region, complete)
+	if self.HideGamepadWindow then
+		local handled, done = self:HideGamepadWindow(region, complete)
+		if handled then
+			return done
+		end
+	end
+	return self:QueueOwnedUICleanup(region, nil, complete)
 end

@@ -765,11 +765,12 @@ local function HoverSourceCurrent(addon, hover, x, y)
 		and addon:IsPlayerLocationPinUnderCursor(pin, x, y)
 end
 
-local function AcquireTooltipHover(addon, state, pin)
-	local x, y = addon:GetPlayerLocationHoverCursorPosition()
+local function AcquireTooltipHover(addon, state, pin, source, x, y)
+	source = source or "mouse"
+	if source == "mouse" then x, y = addon:GetPlayerLocationHoverCursorPosition() end
 	if not x or not y then return pin end
 	local previous = state.locationHover
-	if previous and previous.cursorX == x and previous.cursorY == y then
+	if source == "mouse" and previous and previous.source == "mouse" and previous.cursorX == x and previous.cursorY == y then
 		-- Another moving marker crossing the stationary pointer cannot replace
 		-- the subject the user is still reading.
 		previous.mousePin = pin
@@ -784,7 +785,7 @@ local function AcquireTooltipHover(addon, state, pin)
 		name = pin.name, selected = pin.selected, presentationGeneration = pin.presentationGeneration,
 		cursorPosition = { x = x, y = y },
 	}
-	local hover = { pin = pin, mousePin = pin, anchor = anchor, cursorX = x, cursorY = y,
+	local hover = { pin = pin, source = source, mousePin = source == "mouse" and pin or nil, anchor = anchor, cursorX = x, cursorY = y,
 		key = pin.cluster and pin.cluster.key or pin.name, generation = pin.presentationGeneration }
 	anchor.locationHover = hover
 	if pin.cluster then
@@ -800,6 +801,7 @@ end
 
 local function LeaveTooltipHover(addon, state, pin)
 	local hover = state.locationHover
+	if hover and hover.source == "gamepad" then return end
 	if hover then
 		if hover.mousePin == pin then hover.mousePin = nil end
 		if hover.pin ~= pin then return end
@@ -815,9 +817,11 @@ local function LeaveTooltipHover(addon, state, pin)
 end
 
 function QuestTogether:UpdatePlayerLocationHover()
+	if self.UpdateGamepadMapHover then self:UpdateGamepadMapHover() end
 	local state = rawget(self, "locationPinState")
 	local hover = state and state.locationHover
 	if not hover then return end
+	if hover.source == "gamepad" then return end
 	local ok = pcall(function()
 		if not self.isEnabled or self.isLoggingOut or self:IsRuntimeRestricted()
 			or Method(self, hover.anchor.frame, "IsVisible") ~= true then
@@ -1089,7 +1093,7 @@ local function ClusterTooltip(addon, state, pin, deferHighlights)
 	if pin.locationHover then
 		local hover = pin.locationHover
 		local x, y = addon:GetPlayerLocationHoverCursorPosition()
-		actionable = not hover.detached and x and y and HoverSourceCurrent(addon, hover, x, y)
+		actionable = hover.source ~= "gamepad" and not hover.detached and x and y and HoverSourceCurrent(addon, hover, x, y)
 	end
 	local lines = {}
 	local first = active and info.first or 1
@@ -1142,6 +1146,173 @@ local function OpenCluster(addon, state, pin, pageDelta)
 		end
 	end
 	return true
+end
+
+function QuestTogether:ClearPlayerLocationGamepadHover()
+	local state = rawget(self, "locationPinState")
+	if state and state.locationHover and state.locationHover.source == "gamepad" then HideTooltip(self, state) end
+end
+
+function QuestTogether:IsPlayerLocationGamepadHoverCurrent(checkObservation)
+	local state = rawget(self, "locationPinState")
+	local hover = state and state.locationHover
+	if not hover or hover.source ~= "gamepad" then return false end
+	-- The ordinary 0.2s surface refresh already revalidates observations and
+	-- renders changed data. The per-frame cursor pass only checks its lease.
+	if not checkObservation then return self.isEnabled and not self.isLoggingOut
+		and not self:IsRuntimeRestricted() and Method(self, hover.anchor.frame, "IsVisible") == true end
+	if hover.anchor.cluster then return CurrentCluster(self, hover.anchor) ~= nil end
+	return FreshRow(self, hover.anchor) ~= nil
+end
+
+function QuestTogether:PresentPlayerLocationGamepadHover(pin, x, y)
+	local state = rawget(self, "locationPinState")
+	if not state or pin.surface ~= "map" then return false end
+	local row = not pin.cluster and FreshRow(self, pin)
+	if not row and not (pin.cluster and CurrentCluster(self, pin)) then return false end
+	local anchor = AcquireTooltipHover(self, state, pin, "gamepad", x, y)
+	local surface = state.surfaces.map
+	if pin.cluster then
+		state.clusterHoverGeneration = surface.geometryGeneration
+		return ClusterTooltip(self, state, anchor)
+	end
+	state.mapHoverGeneration = surface.geometryGeneration
+	self:RequestPlayerPhaseComparison(row.name)
+	return Tooltip(self, state, anchor, row)
+end
+
+-- Action menus retain logical identities, never pooled marker frames. The
+-- context stays usable while its owned panel has focus, but cannot outlive the
+-- map, profile, eligibility, or complete set of members it described.
+function QuestTogether:GetGamepadMapContext()
+	self:UpdateGamepadMapHover()
+	if not self:GetGamepadMapCursor() or not self:IsPlayerLocationGamepadHoverCurrent(true) then return end
+	local state = self.locationPinState
+	local hover = state.locationHover
+	local anchor = {}
+	for _, key in ipairs({ "frame", "surface", "parent", "mapID", "name", "selected", "presentationGeneration" }) do
+		anchor[key] = hover.anchor[key]
+	end
+	anchor.locationHover = { source = "gamepad" }
+	local context = { anchor = anchor, mapID = anchor.mapID, name = anchor.name,
+		kind = anchor.name and "player" or "cluster", profile = self.db and self.db.profile,
+		state = state, owner = anchor.frame }
+	if hover.members then
+		anchor.cluster = { key = hover.key }
+		anchor.locationHover.members = {}
+		context.memberNames = {}
+		for name in pairs(hover.members) do
+			anchor.locationHover.members[name] = true
+			context.memberNames[#context.memberNames + 1] = name
+		end
+		table.sort(context.memberNames)
+		context.key = hover.key
+	end
+	context.isCurrent = function() return self:ValidateGamepadMapContext(context) end
+	context.populate = function(root) return self:PopulateGamepadMapContext(root, context) end
+	return context
+end
+
+function QuestTogether:ValidateGamepadMapContext(context)
+	local controller = rawget(self, "gamepadMap")
+	if not context or context.state ~= rawget(self, "locationPinState") or context.profile ~= (self.db and self.db.profile)
+		or not self.isEnabled or self.isLoggingOut or self:IsWorkBlocked("foreign_frame_mutation")
+		or not controller or not controller.available or not self:IsNativeGamepadMode() then return false end
+	if context.kind == "player" then return FreshRow(self, context.anchor) ~= nil end
+	local cluster = CurrentCluster(self, context.anchor)
+	if not cluster then return false end
+	local count = 0
+	for _ in pairs(context.anchor.locationHover.members) do count = count + 1 end
+	return count == #cluster.members
+end
+
+function QuestTogether:ActivateGamepadMapContext(context, action)
+	if not self:ValidateGamepadMapContext(context) then return false end
+	local anchor, state = context.anchor, context.state
+	if context.kind == "player" then
+		local row = FreshRow(self, anchor)
+		if not row then return false end
+		if action == "menu" then return self:OpenLocationPinPlayerMenu(anchor.frame, row.name, anchor) end
+		if action == "open" then return ActivatePlayerMapPin(self, anchor, row) end
+	else
+		-- Expansion requires a current cluster with exactly these members. If
+		-- movement regrouped them, discard the stale action instead of expanding
+		-- new people that entered the former pooled marker.
+		local cluster, geometry, markers = CurrentCluster(self, anchor, true)
+		if not cluster then return false end
+		local current
+		for _, marker in ipairs(markers or {}) do
+			if marker.key == context.key and marker.members and #marker.members == #cluster.members then
+				local same = true
+				for _, member in ipairs(marker.members) do
+					if not anchor.locationHover.members[member.name] then same = false; break end
+				end
+				if same then current = marker; break end
+			end
+		end
+		if not current then return false end
+		cluster = current
+		local delta = action == "next" and 1 or action == "previous" and -1 or nil
+		if delta then return OpenCluster(self, state, anchor, delta) end
+		if action == "zoom" then
+			if not self:TryNavigatePlayerLocationCluster(cluster, geometry) then return false end
+		elseif action == "expand" then
+			self:TogglePlayerLocationClusterExpansion(cluster, geometry)
+		else return false end
+		HideTooltip(self, state)
+		self:RefreshPlayerLocationPins()
+		return true
+	end
+	return false
+end
+
+function QuestTogether:PopulateGamepadMapContext(root, context)
+	if not self:ValidateGamepadMapContext(context) then return false end
+	if context.kind == "player" then
+		root:CreateTitle(self:GetShortDisplayName(context.name))
+		root:CreateButton(L("Player actions"), function() self:ActivateGamepadMapContext(context, "menu") end)
+		root:CreateButton(L("Find on Map"), function() self:ActivateGamepadMapContext(context, "open") end)
+	else
+		local cluster, geometry, markers = CurrentCluster(self, context.anchor, true)
+		if not cluster then return false end
+		root:CreateTitle(string.format(L("%d players"), #cluster.members))
+		root:CreateButton(L("Zoom to players"), function() self:ActivateGamepadMapContext(context, "zoom") end)
+		local _, expanded, info = self:GetPlayerLocationClusterExpansion(markers, geometry)
+		root:CreateButton(expanded and expanded.key == context.key and L("Collapse cluster") or L("Expand cluster"),
+			function() self:ActivateGamepadMapContext(context, "expand") end)
+		if expanded and expanded.key == context.key and info.pages > 1 then
+			root:CreateButton(L("Previous players"), function() self:ActivateGamepadMapContext(context, "previous") end)
+			root:CreateButton(L("Next players"), function() self:ActivateGamepadMapContext(context, "next") end)
+		end
+		root:CreateButton(L("Players"), function() self:ShowGamepadMapClusterMembers(context, 1) end)
+	end
+	return true
+end
+
+
+-- Generate one small member page at a time. Large clusters must not exhaust the
+-- shared description budget or allocate a submenu tree for hundreds of players.
+function QuestTogether:ShowGamepadMapClusterMembers(context, page)
+	if not self:ValidateGamepadMapContext(context) or context.kind ~= "cluster"
+		or type(context.memberNames) ~= "table" then return false end
+	local names, pageSize = context.memberNames, 8
+	local pages = math.ceil(#names / pageSize)
+	if type(page) ~= "number" or page ~= math.floor(page) or page < 1 or page > pages then return false end
+	return self:ShowGamepadContextMenu(context.owner, function(_, root)
+		for index = (page - 1) * pageSize + 1, math.min(#names, page * pageSize) do
+			local name = names[index]
+			root:CreateButton(self:GetShortDisplayName(name), function()
+				if not self:ValidateGamepadMapContext(context) then return end
+				self:OpenLocationPinPlayerMenu(context.owner, name, context.anchor)
+			end)
+		end
+		if page > 1 then
+			root:CreateButton(L("Previous players"), function() self:ShowGamepadMapClusterMembers(context, page - 1) end)
+		end
+		if page < pages then
+			root:CreateButton(L("Next players"), function() self:ShowGamepadMapClusterMembers(context, page + 1) end)
+		end
+	end, context.isCurrent)
 end
 
 local MARKER_GLOW_COLORS = {
@@ -1275,6 +1446,7 @@ local function CreatePin(addon, state, surface)
 		if button ~= "LeftButton" and button ~= "RightButton" then
 			return
 		end
+		if addon.NotifyGamepadMapMouseInput then addon:NotifyGamepadMapMouseInput(true) end
 		if pin.cluster then OpenCluster(addon, state, pin); return end
 		local ok, row = pcall(FreshRow, addon, pin)
 		HideTooltip(addon, state)
@@ -1287,6 +1459,8 @@ local function CreatePin(addon, state, surface)
 		end
 	end)
 	pin.enterTooltip = function()
+		if addon.NotifyGamepadMapMouseInput then addon:NotifyGamepadMapMouseInput(false) end
+		if state.locationHover and state.locationHover.source == "gamepad" then return end
 		if pin.cluster then
 			local anchor = AcquireTooltipHover(addon, state, pin)
 			if not anchor then return end
@@ -1388,6 +1562,7 @@ local function RefreshSurface(addon, state, name, rows)
 		return false
 	end
 	surface = addon:AcquireMapOverlaySurface(state, name, geometry, 50, function(old) HideSurface(addon, state, old) end)
+	if surface then surface.gamepadGeneration = (surface.gamepadGeneration or 0) + 1 end
 	if not surface then return false end
 	if name == "map" and not surface.refreshMapGeometry then
 		surface.canShowMapGeometry = function() return addon:GetOption("showPlayerLocations") == true end

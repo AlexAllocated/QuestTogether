@@ -262,6 +262,7 @@ function QT:ShowQuestDetails(questID, fallbackTitle)
 		Call(self, frame, "Show")
 		Call(self, frame, "Raise")
 		Refresh(self, frame, session)
+		self:PresentStandardGamepadWindow(frame, "details", nil, frame.close, frame.scroll)
 		self:ScheduleRuntimeWork("foreign_frame_mutation", "quest_details_timeout", function()
 			if frame.session == session and session.active then
 				session.timedOut = true

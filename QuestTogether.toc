@@ -43,6 +43,10 @@ Ads.lua
 Hints.lua
 OwnedUI.lua
 WindowController.lua
+GamepadIntegration.lua
+GamepadLauncher.lua
+GamepadActions.lua
+GamepadWindows.lua
 WindowTheme.lua
 HUDEditDialog.lua
 WindowLayout.lua
@@ -63,6 +67,7 @@ QuestObservations.lua
 TaskArea.lua
 Nameplates.lua
 PartyState.lua
+PartyMapRoster.lua
 PeerState.lua
 PeerLifecycle.lua
 Comms.lua
@@ -88,6 +93,7 @@ QuestCompareObjectives.lua
 PartyQuestProgress.lua
 PartyQuestSync.lua
 QuestCompareInteraction.lua
+QuestCompareGamepad.lua
 QuestProgressStyle.lua
 QuestCompareWindow.lua
 PartyChatReminder.lua
@@ -98,6 +104,7 @@ PartyNavigation.lua
 PartyFocusIndicators.lua
 QuestFocusWindow.lua
 QuestFocusTooltip.lua
+GamepadTracker.lua
 QuestFocusEditMode.lua
 QuestComparePreview.lua
 Minimap.lua
@@ -113,6 +120,9 @@ MapOverlayPool.lua
 PlayerTooltipPresenter.lua
 MapOverlayControls.lua
 LocationPins.lua
+PartyMapNative.lua
+PartyMapPins.lua
+GamepadMap.lua
 PartyWaypointPins.lua
 NearbyStreams.lua
 PlayerDetails.lua

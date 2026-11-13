@@ -378,6 +378,7 @@ QuestTogether.DEFAULTS = {
 		compareHideOtherQuests = false,
 		lightMode = false,
 		windowScale = 100,
+		nativeGamepadNavigation = true,
 		questTrackerMode = "hover",
 		questTrackerHideSolo = true,
 		questTrackerSnapToBlizzard = true,
@@ -2836,6 +2837,8 @@ QuestTogether.API = QuestTogether.API
 			return Minimap
 		end,
 		IsPartyQuestKeyboardInputBlocked = function(frame)
+			if QuestTogether.IsGamepadActionPanelOpen and QuestTogether:IsGamepadActionPanelOpen()
+				or QuestTogether.IsGamepadWindowFocused and QuestTogether:IsGamepadWindowFocused(frame) then return true end
 			if not QuestTogether:CanMutateOwnedUI(frame) or QuestTogether:IsRuntimeRestricted() then
 				return true
 			end
@@ -3066,6 +3069,9 @@ QuestTogether.API = QuestTogether.API
 				and QuestTogether:CanAccessForeignFrame(QuestMapFrame, true)
 		end,
 		CreateContextMenu = function(ownerFrame, generator)
+			if QuestTogether.IsNativeGamepadMode and QuestTogether:IsNativeGamepadMode() then
+				return QuestTogether.ShowGamepadContextMenu and QuestTogether:ShowGamepadContextMenu(ownerFrame, generator) == true or false
+			end
 			if not MenuUtil or type(MenuUtil.CreateContextMenu) ~= "function" then
 				return false
 			end
@@ -6050,14 +6056,9 @@ function QuestTogether:PrintConsoleAnnouncement(
 end
 
 function QuestTogether:ShowChatLogSpeakerMenu(ownerFrame, speakerName, firstAction)
-	if not MenuUtil or not MenuUtil.CreateContextMenu then
-		return false
-	end
-
-	MenuUtil.CreateContextMenu(ownerFrame, function(_, rootDescription)
+	return self.API.CreateContextMenu(ownerFrame, function(_, rootDescription)
 		self:PopulateChatLogSpeakerMenu(rootDescription, ownerFrame, speakerName, firstAction)
 	end)
-	return true
 end
 
 function QuestTogether:IsIgnoredPlayerName(playerName)
@@ -7472,6 +7473,9 @@ end
 
 function QuestTogether:OnInitialize()
 	self:InitializeDatabase()
+	if self.InitializeGamepadIntegration then self:InitializeGamepadIntegration() end
+	if self.InitializeGamepadTracker then self:InitializeGamepadTracker() end
+	if self.InitializeGamepadMap then self:InitializeGamepadMap() end
 	if self.EnsureRuntimeStateStore then
 		self:EnsureRuntimeStateStore()
 	end
@@ -7514,6 +7518,7 @@ end
 
 -- Bootstrap event handlers always registered.
 function QuestTogether:ADDON_LOADED(_, loadedAddonName)
+	if self.isInitialized and self.InitializeGamepadIntegration then self:InitializeGamepadIntegration() end
 	if self.hasLoggedIn then
 		self:RefreshDataBroker()
 	end

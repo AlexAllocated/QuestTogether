@@ -55,6 +55,9 @@ function QT:InitializeRuntimeCoordinator()
 		-- updates. Follow the current canvas each frame without accelerating
 		-- data sampling, clustering, or communication producers below.
 		self:RefreshWorldMapOverlayGeometry()
+		-- Native group positioning runs in the engine. Only retirement needs
+		-- frame-level attention; identity and tooltip work retain the paced tick.
+		if self.RetireUnavailablePartyMapPins then self:RetireUnavailablePartyMapPins() end
 		-- The minimap camera moves every frame even when every peer stands still.
 		self:RefreshMinimapLocationGeometry()
 		self:UpdatePlayerLocationHover()
@@ -77,6 +80,7 @@ function QT:InitializeRuntimeCoordinator()
 		self:UpdatePlayerCommunications()
 		self:PrunePlayerLocations()
 		self:RefreshPlayerLocationPins()
+		if self.RefreshPartyMapPins then self:RefreshPartyMapPins(); self:UpdatePartyMapHover() end
 		self:UpdatePlayerTooltipBadge()
 		self:UpdateChatLogPlayerTooltip()
 	end)
@@ -85,6 +89,7 @@ function QT:InitializeRuntimeCoordinator()
 end
 
 function QT:ResetRuntimeCoordinator()
+	if self.HidePartyMapPins then self:HidePartyMapPins() end
 	self:HideQuestTogetherMapControl()
 	self:ResetPartyNavigation()
 	self:ResetPartyQuestFocusIndicators()

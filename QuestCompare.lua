@@ -191,6 +191,7 @@ function QuestTogether:OpenPartyQuestCompare(preferredName)
 		return false
 	end
 	self.partyQuestCompareWindow:Show()
+	if self.RequestPartyQuestGamepadFocus then self:RequestPartyQuestGamepadFocus(self.partyQuestCompareWindow) end
 	self:RequestPartyQuestKeyboardFocus(self.partyQuestCompareWindow)
 	return true
 end
@@ -220,6 +221,7 @@ function QuestTogether:OpenPlayerQuestCompare(name)
 		return false
 	end
 	self.partyQuestCompareWindow:Show()
+	if self.RequestPartyQuestGamepadFocus then self:RequestPartyQuestGamepadFocus(self.partyQuestCompareWindow) end
 	self:RequestPartyQuestKeyboardFocus(self.partyQuestCompareWindow)
 	return true
 end

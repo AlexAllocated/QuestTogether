@@ -279,7 +279,25 @@ private `.local` notes are historical context, not the source of truth.
   saved player filters or sharing preferences, revives expired coordinates or reveals
   a hidden diagnostic location. Clicking a visible dot preserves its visibility rules,
   including developer-only diagnostic rows, through the existing visible-row query.
-  Own-party markers remain native. Profile replacement, restriction, withdrawal,
+  Own-party positions remain native. `PartyMapRoster` reads a bounded current
+  native roster without persisting coordinates or claiming QT presence.
+  `PartyMapPins` uses a QT-owned bare `UnitPositionFrame` for world-map class dots,
+  verified VIP stars and developer gears, including members without QT. The
+  engine positions these units; no additional position loop or network request
+  is introduced. This separate passive overlay does not cluster party members
+  or replace map input. Hover identity is revalidated against the native token.
+  `PartyMapNative` alone suppresses/restores native party/raid artwork through
+  the primitive-only secure appearance delegate, never a shared provider table.
+  It is gated to audited Forever 1.60.1 builds 70888 and 70938; other clients retain
+  native markers. Native visibility settings, the self arrow and minimap remain
+  unchanged. The existing runtime and shared owned-UI cleanup own refresh and
+  restoration, including disable, restriction and roster-token reuse. Unknown
+  capabilities/incomplete rosters retain native markers; delegate failure stops
+  further takeover until reload. The provider, map canvas, unit-position secure
+  delegate/XML and map API contracts were source-compared and are unchanged in
+  70938. Basic replacement, tooltip and overlay-off restoration passed live on
+  70888; 70938 behavior, live combat and map transitions remain required
+  acceptance checks. Profile replacement, restriction, withdrawal,
   ignore and departure retire selection through normal presentation refresh.
 - Developer map identity comes only from the existing signature-verified announcement
   lease, checked against the peer session, departure and expiry. Authenticating that
@@ -958,8 +976,9 @@ Cleanup can outlive addon disable; stale feature work cannot.
 Bindings declare an explicit localized category instead of a legacy header row.
 Existing action IDs remain stable so saved assignments survive. Keybindings
 dispatch through existing feature operations; they never assign keys or duplicate
-action logic. The quick-menu binding uses the ordinary native menu and remains
-available when the minimap icon is hidden.
+action logic. The quick-menu binding remains available when the minimap icon is
+hidden. It uses compact QT-owned menus while Gamepad UI is active and the ordinary
+native menu in the mouse/keyboard interface style.
 
 Use native settings controls through the shared constructors. Player-facing
 text is localized at presentation; wire facts and diagnostic identifiers stay
@@ -1076,3 +1095,97 @@ working-tree builds are previews. See [RELEASING.md](RELEASING.md).
 Offline success proves these contracts under fixtures. It does not establish
 in-client rendering, taint safety, SavedVariables migration with real data,
 network delivery or behavior with other addons. Keep those checks explicit.
+
+## Native gamepad ownership
+
+`GamepadIntegration.lua` is the sole caller of Forever's audited wrapped
+registration, popup, navigation-refresh and selection APIs. It owns capability
+and build checks, input ownership, visual-only prompts, interface transitions,
+read-only selection observers and native retirement. Explicit WindowController
+policies identify participating QT frames; merely showing a HUD or incoming
+prompt grants no controller ownership. Owned frame hiding retires native focus
+before actual Hide, deferring during restrictions or inherited invisibility.
+Session generations and a failure latch prevent stale cleanup and repeated
+blocked native calls. The exact build allowlist is Forever 1.60.1 builds 70888
+and 70938; relevant native interfaces in 70938 were source-compared with the
+audited 70888 implementation. The tester confirmed basic PQL navigation and
+owned dropdown/quick-menu operation on 70938. Remaining production acceptance
+is pending; earlier 70888 fixture results are not upgraded by source comparison.
+Unsupported clients do not install native integration. Bounded status fields
+report the client version/build, build support and whether unavailable native
+integration comes from the build gate, missing functions or security wrappers.
+
+`GamepadLauncher.lua` alone owns default normal action-bar setup. After world
+entry, the existing integration owner coalesces its work; there is no separate
+input listener or timer. It resolves normal page 1, slot 26 through native
+storage APIs, verifies the default trigger/D-pad mapping and an empty slot/cursor,
+and creates or reuses a character macro with the built-in `INV_Misc_Book_09`
+icon, also used by PQL's journal button. Only this normal action storage is
+changed; no native keybinding, targeting button, navigation table or
+stance/possess slot is replaced.
+
+Character-scoped setup records and macro identity tracking remain separate from
+profiles. Removing or moving only the action button must not trigger a rebind
+while the macro still exists. Deleting the macro itself permits recreation and
+rebinding only into the empty default slot. Existing actions and edited macros
+are preserved. Native macro/action readback establishes placement. Manually
+saving a built-in icon through Blizzard's editor has been confirmed to make the
+existing PQL macro bind and open PQL. The tester subsequently confirmed automatic
+quest-book launcher recreation/binding after deleting the macro and reloading,
+plus basic PQL navigation. Button-only removal and the remaining production
+navigation cases still require live validation.
+
+`GamepadActions.lua` renders existing feature menu descriptions into bounded,
+reused QT-owned menus. Flat native-style rows, checkmarks and submenu arrows keep
+the presentation compact; dimensions follow the contents, with paging for
+overflow. Native navigation retains input ownership, and nested Back/focus return
+uses the same guarded popup retirement as other owned windows. Menu subjects and
+manual actions are revalidated; protected targeting is excluded.
+
+`WindowTheme.lua` owns the shared visual equivalents: `CreateOwnedDropdownButton`
+creates a plain QT button with Style 1 artwork for HUD options or Style 2 for
+Settings; `ApplyOwnedMenuArtwork` supplies the matching popup background.
+`UsesClassicMenuArtwork` reads the audited constant-only native style getter to
+identify the loaded artwork family, without creating a native menu or retaining
+its tables. `GamepadActions.lua` owns choice/menu interaction, native-looking
+check/radio/highlight presentation and below-field dropdown placement. Setting
+help and clipped-label tooltips remain attached to the replacement receiver.
+Existing checkboxes, sliders, PQL controls, dialogs and native visual prompts are
+not reskinned. Artwork setup does not modify native mixins, global tables or
+binding ownership.
+
+The original native-menu path failed live testing on audited Forever build 70888;
+no safe supported repair was found in that build's public menu interfaces. This
+is a build-specific finding, not a claim that native menus can never be supported.
+Shared menu routing and the intrinsic dropdown replacement avoid that path
+whenever Gamepad UI is active, including mouse-opened menus. Ordinary native
+mouse menus remain unchanged when that interface mode is off. The tester
+accepted the revised POT Display dropdown and quick menu with Select/Back on
+70938. Settings' distinct style, alternate artwork families, individual control
+states, tooltips, overflow paging and nested Back/focus return still require
+live checks; the basic confirmation does not establish every presentation case.
+
+`GamepadWindows.lua` provides explicit ordinary-window policies, virtual companion
+selection and on-demand access to existing live request records.
+
+`QuestCompareGamepad.lua` owns quest/player/control identities and virtual-list
+navigation. It shares existing quest geometry/actions with keyboard navigation;
+pooled frames alone never identify an action. `GamepadTracker.lua` adds native
+tracker browsing as a hover source without changing supertracking. `GamepadMap.lua`
+observes the native map crosshair using the existing presentation update, retaining
+native map input and reusing QT's tooltip and marker presentation.
+During map crosshair hover, the owned player/cluster tooltip reads the visible
+native quest tooltip's level and places itself above it. Only the owned tooltip
+is changed; ordinary hover restores its original level, and unchanged levels do
+not trigger writes or content rebuilding. Crosshair hover and the overlap fix
+have passed live checks on 70938.
+
+Automatic map Select handoff remains an excluded private experiment. Production
+retains native map Select, and native overrides may mask the user's ordinary QT
+menu binding. A successful private player-menu test is not evidence that the
+startup handoff or cluster path is ready for production.
+
+`GAMEPAD.md` documents beta setup and the remaining live-test boundaries and is
+included in installation packages.
+Offline adapter tests live outside the in-game test manifest; safe domain/owned
+frame regressions are included in the optional test companion.

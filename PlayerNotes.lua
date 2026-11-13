@@ -376,6 +376,9 @@ function QT:OpenPlayerNote(name)
 	-- SetText can deliver cursor metrics while the dialog is hidden. Reset the
 	-- real native caret after Show so it starts inside the visible viewport.
 	frame.box:SetCursorPosition(0)
-	frame.box:SetFocus()
+	if self:IsNativeGamepadMode() then
+		frame.box:ClearFocus()
+		self:PresentStandardGamepadWindow(frame, "note", Cancel, frame.cancel, frame.scroll)
+	else frame.box:SetFocus() end
 	return true
 end

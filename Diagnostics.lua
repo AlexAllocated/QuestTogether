@@ -158,6 +158,14 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 			end
 		end
 	end
+	local gamepad = self.GetGamepadIntegrationStatus and self:GetGamepadIntegrationStatus()
+	for key, value in pairs(gamepad or {}) do Add("gamepad." .. key, value) end
+	local launcher = self.GetGamepadLauncherStatus and self:GetGamepadLauncherStatus()
+	for key, value in pairs(launcher or {}) do Add("gamepad.launcher." .. key, value) end
+	local partyMap = self.GetPartyMapPresentationStatus and self:GetPartyMapPresentationStatus()
+	for key, value in pairs(partyMap or {}) do Add("partyMap." .. key, value) end
+	local nativePartyMap = self.GetPartyMapNativeStatus and self:GetPartyMapNativeStatus()
+	for key, value in pairs(nativePartyMap or {}) do Add("partyMap.native." .. key, value) end
 	Add("log.lines", #self:GetDebugLogStore())
 	Add("log.limit", self.DEBUG_LOG_MAX_LINES)
 	Add("log.dropped", self.diagnosticDroppedLogLines or 0)

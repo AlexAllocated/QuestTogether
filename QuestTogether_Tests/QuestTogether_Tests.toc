@@ -11,12 +11,13 @@
 ## Notes: Optional on-demand isolated checks for /qt test.
 ## LoadOnDemand: 1
 ## RequiredDeps: QuestTogether
-## X-QT-TestModules: 62
+## X-QT-TestModules: 66
 
 ..\QuestTogether\scripts\test_bootstrap.lua
 ..\QuestTogether\Libs\libchev\SelfTests.lua
 ..\QuestTogether\Tests.lua
 ..\QuestTogether\scripts\ui_fixture.lua
+..\QuestTogether\scripts\regression_gamepad_actions.lua
 ..\QuestTogether\scripts\regression_audio.lua
 ..\QuestTogether\scripts\regression_data_broker.lua
 ..\QuestTogether\scripts\regression_player_notes.lua
@@ -51,6 +52,7 @@
 ..\QuestTogether\scripts\regression_quest_focus.lua
 ..\QuestTogether\scripts\regression_quest_completion.lua
 ..\QuestTogether\scripts\regression_compare_interaction.lua
+..\QuestTogether\scripts\regression_compare_gamepad.lua
 ..\QuestTogether\scripts\regression_minimap.lua
 ..\QuestTogether\scripts\regression_keybindings.lua
 ..\QuestTogether\scripts\regression_hints.lua
@@ -60,6 +62,8 @@
 ..\QuestTogether\scripts\regression_peer_state.lua
 ..\QuestTogether\scripts\regression_peer_lifecycle.lua
 ..\QuestTogether\scripts\regression_location_pins.lua
+..\QuestTogether\scripts\regression_party_map_roster.lua
+..\QuestTogether\scripts\regression_party_map_pins.lua
 ..\QuestTogether\scripts\regression_location_targeting.lua
 ..\QuestTogether\scripts\regression_location_ignores.lua
 ..\QuestTogether\scripts\regression_player_plates.lua

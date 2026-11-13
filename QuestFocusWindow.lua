@@ -82,39 +82,41 @@ function QT:GetQuestFocusHoverSources()
 		}
 end
 
+function QT:ResolveQuestTrackerHoverFrame(frame, modules)
+	for _ = 1, 12 do
+		if not self:CanAccessForeignFrame(frame, true) then return end
+		local module = self:GetAccessibleFrameMember(frame, "parentModule")
+		if module then
+			for _, allowed in pairs(modules) do
+				if module == allowed and self:CanAccessForeignFrame(module, true) then
+					return self:NormalizeQuestID(self:GetAccessibleFrameMember(frame, "id")), frame,
+						module == modules.quest or module == modules.campaign
+				end
+			end
+		end
+		local parent = self:GetAccessibleFrameMember(frame, "GetParent")
+		if type(parent) ~= "function" then return end
+		local read, value = pcall(parent, frame)
+		if not read or not self:CanAccessValue(value) or value == frame then return end
+		frame = value
+	end
+end
+
 function QT:GetHoveredTrackerQuestID()
 	if self:IsWorkBlocked("foreign_frame_mutation") then
 		return nil
 	end
 	local ok, foci, modules = pcall(self.GetQuestFocusHoverSources, self)
-	if not ok or not self:CanAccessValue(foci) or type(foci) ~= "table" then
+	if not ok or not self:CanAccessTable(foci) or not self:CanAccessTable(modules) then
 		return nil
 	end
+	if self.GetGamepadTrackerQuestHover then
+		local id, block, native, ownsHover = self:GetGamepadTrackerQuestHover(modules)
+		if ownsHover then return id, block, native end
+	end
 	for i = 1, math.min(#foci, 8) do
-		local frame = foci[i]
-		for _ = 1, 12 do
-			if not self:CanAccessForeignFrame(frame, true) then
-				break
-			end
-			local module = self:GetAccessibleFrameMember(frame, "parentModule")
-			if module then
-				for _, allowed in pairs(modules) do
-					if module == allowed and self:CanAccessForeignFrame(module, true) then
-						return self:NormalizeQuestID(self:GetAccessibleFrameMember(frame, "id")), frame,
-							module == modules.quest or module == modules.campaign
-					end
-				end
-			end
-			local parent = self:GetAccessibleFrameMember(frame, "GetParent")
-			if type(parent) ~= "function" then
-				break
-			end
-			local read, value = pcall(parent, frame)
-			if not read or not self:CanAccessValue(value) or value == frame then
-				break
-			end
-			frame = value
-		end
+		local id, block, native = self:ResolveQuestTrackerHoverFrame(foci[i], modules)
+		if id then return id, block, native end
 	end
 end
 

@@ -422,8 +422,8 @@ function QT:GetPlayerMapVisibilityChoice()
 	return self:GetOption("onlyShowQuestPartners") == true and 2 or 1
 end
 
--- Blizzard owns our party's map indicators. Every QT location consumer uses
--- this same rule, including temporary developer dots and nearby streams.
+-- Native group positions own our party's indicators (with optional QT world-map
+-- artwork). Network observations must never add duplicate group dots or streams.
 function QT:ShouldShowPlayerLocation(name)
 	if
 		not self.isEnabled

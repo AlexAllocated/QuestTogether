@@ -82,8 +82,9 @@ function QuestTogether:ShowDiscordLinkDialog(url)
 	frame.box:SetText(url)
 	frame:Show()
 	frame:Raise()
-	frame.box:SetFocus()
+	if not self:IsNativeGamepadMode() then frame.box:SetFocus() end
 	frame.box:HighlightText()
+	self:PresentStandardGamepadWindow(frame, "discord", nil, frame.close)
 	return true
 end
 
@@ -187,7 +188,8 @@ local function CreateFocusDialog(self, key, title, confirmLabel, remember)
 			-- because the callback may synchronously open another choice.
 			frame.confirmAction, frame.cancelAction, frame.focusChoice = nil, nil, nil
 			Close()
-			if action then
+			local status = self.GetGamepadIntegrationStatus and self:GetGamepadIntegrationStatus()
+			if action and not frame:IsShown() and not (status and status.failed) then
 				action(checked)
 			end
 		end)
@@ -203,6 +205,9 @@ local function CreateFocusDialog(self, key, title, confirmLabel, remember)
 			frame.remember.label:SetText(L("Do not ask again"))
 			self:AddScrollDialogLabel(frame, frame.remember.label)
 		end
+		self:ConfigureWindowController(frame, { gamepad = { role = "focus_confirmation", kind = "popup", footer = true,
+			defaultFocus = frame.cancel, close = Close } })
+		self:GuardGamepadWindowActions(frame, {frame.cancel, frame.confirm, frame.close})
 		frame.LayoutManagedWindow = function()
 			frame.message:SetHeight(frame.message:GetStringHeight())
 			local extra = frame.remember and math.max(26, frame.remember.label:GetStringHeight()) + 16 or 0
@@ -223,6 +228,14 @@ local function SetFocusDialogChoice(self, frame, callback, cancel)
 	-- A retiring callback may itself have shown or dismissed a successor.
 	if frame.focusChoice ~= choice then return false end
 	frame.confirmAction, frame.cancelAction = callback, cancel
+	frame.focusChoiceScripts = frame.focusChoiceScripts or {}
+	for _, control in ipairs({frame.confirm, frame.cancel, frame.close}) do
+		local original = frame.focusChoiceScripts[control] or control:GetScript("OnClick")
+		frame.focusChoiceScripts[control] = original
+		control:SetScript("OnClick", function(...)
+			if frame.focusChoice == choice then return original(...) end
+		end)
+	end
 	return true
 end
 
@@ -247,6 +260,7 @@ function QuestTogether:ShowPartyFocusChangeDialog(name, callback, preview, liveN
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
 	frame:Raise()
+	if self:PresentGamepadWindow(frame, "user") then self:RefreshGamepadNavigation(frame, frame.cancel) end
 	self:PlayPromptAttentionAudio(frame, frame.focusChoice, preview)
 	return true
 end
@@ -261,6 +275,7 @@ function QuestTogether:ShowPartyFocusFollowDialog(name, callback, cancel)
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
 	frame:Raise()
+	if self:PresentGamepadWindow(frame, "user") then self:RefreshGamepadNavigation(frame, frame.cancel) end
 	self:PlayPromptAttentionAudio(frame, frame.focusChoice)
 	return true
 end

@@ -53,7 +53,7 @@ end
 
 local function MapLegend()
 	return {
-		{ kind = "player", label = L("QT players (class color)") },
+		{ kind = "player", label = L("Players (class color)") },
 		{ kind = "vip", label = L("QuestTogether VIP") },
 		{ kind = "developer", label = L("QuestTogether developer") },
 		{ kind = "partners", label = L("Looking for Questing Partners") },

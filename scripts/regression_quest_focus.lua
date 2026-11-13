@@ -1167,4 +1167,68 @@ QT:RegisterTest("native quest hover events coalesce and revalidate after leave d
 	Equal(tip:IsShown(), true)
 end)
 
+QT:RegisterTest("controller tracker browsing follows native selected POIs without changing focus and restores mouse hover deliberately", function()
+	local a = Fixture()
+	local module = a:CreateTestUIRegion(a, a.root)
+	local block = a:CreateTestUIRegion(a, module)
+	block.parentModule, block.id = module, 51
+	local poi = a:CreateTestUIRegion(a, block)
+	local mouseBlock = a:CreateTestUIRegion(a, module)
+	mouseBlock.parentModule, mouseBlock.id = module, 52
+	a.mouseX, a.mouseY = 10, 20
+	function a:GetPlayerLocationHoverCursorPosition() return self.mouseX, self.mouseY end
+	function a:IsNativeGamepadMode() return true end
+	function a:RegisterGamepadObserver(owner, callback) self.observerOwner, self.observer = owner, callback end
+	function a:UnregisterGamepadObserver(owner) Equal(owner, self.observerOwner); self.observer = nil end
+	function a:GetQuestFocusHoverSources() return { mouseBlock }, { quest = module } end
+	a.GetHoveredTrackerQuestID = QT.GetHoveredTrackerQuestID
+	a:InitializeGamepadTracker()
+	local notify = a.observer
+	notify({ available = true, uiFocused = true, frame = module, button = poi })
+	Equal(a:GetHoveredTrackerQuestID(), 51)
+	Equal(a.focus, 42, "previewing a selected header never sets tracked focus")
+	block.id = 53
+	Equal(a:GetHoveredTrackerQuestID(), 53, "pooled native blocks must resolve their current identity")
+	a.mouseX = 11
+	Equal(a:GetHoveredTrackerQuestID(), 52)
+	notify({ available = true, uiFocused = true, frame = module, button = poi })
+	Equal(a:GetHoveredTrackerQuestID(), 52, "an unchanged focus snapshot must not steal mouse hover")
+	notify({ available = true, uiFocused = true, frame = module, button = block })
+	Equal(a:GetHoveredTrackerQuestID(), 53)
+	block:Hide()
+	Equal(a:GetHoveredTrackerQuestID(), nil)
+	block:Show()
+	notify({ available = false, uiFocused = false })
+	Equal(a:GetHoveredTrackerQuestID(), 52)
+	a:ResetGamepadTracker()
+	notify({ available = true, uiFocused = true, frame = module, button = poi })
+	Equal(a:GetHoveredTrackerQuestID(), 52, "retired observer cannot restore a controller hover")
+end)
+
+QT:RegisterTest("controller tracker hover preserves mode eligibility and never adopts unrelated or forbidden native frames", function()
+	local a = Fixture()
+	local module = a:CreateTestUIRegion(a, a.root)
+	local block = a:CreateTestUIRegion(a, module)
+	block.parentModule, block.id = module, 51
+	function a:IsNativeGamepadMode() return true end
+	function a:GetPlayerLocationHoverCursorPosition() return 0, 0 end
+	function a:GetQuestFocusHoverSources() return {}, { quest = module } end
+	a.GetHoveredTrackerQuestID = QT.GetHoveredTrackerQuestID
+	a.gamepadTracker = { available = true, uiFocused = true, button = block, mouseX = 0, mouseY = 0 }
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(a.questFocusState.id, 51)
+	a.db.profile.questTrackerMode = "focus"
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(a.questFocusState.id, 42)
+	a.db.profile.questTrackerMode = "hover"
+	block.parentModule = a:CreateTestUIRegion(a, a.root)
+	a:UpdateQuestFocusWindow(); a:Drain()
+	Equal(a.questFocusState, nil)
+	block.parentModule, block.forbidden = module, true
+	Equal(a:GetHoveredTrackerQuestID(), nil)
+	block.forbidden = false
+	a.restricted = true
+	Equal(a:GetHoveredTrackerQuestID(), nil)
+end)
+
 _G.QuestTogether:RecordTestModule("scripts/regression_quest_focus.lua")

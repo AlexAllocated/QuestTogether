@@ -519,7 +519,7 @@ function QT:GetHintCatalog()
 		{ id = "hint060", text = L("Hover a player's QT dot to check their addon version when it is known.") },
 		{
 			id = "hint061",
-			text = L("QT leaves your own party's location markers to WoW instead of drawing duplicate player dots."),
+			text = L("QT can style your party's world-map markers. The minimap keeps WoW's normal party markers."),
 		},
 		{
 			id = "hint062",

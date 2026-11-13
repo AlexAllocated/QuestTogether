@@ -222,5 +222,6 @@ function QT:OpenVIPWindow()
 	self:RefreshVIPWindow()
 	frame:LayoutManagedWindow()
 	frame:Raise()
+	self:PresentStandardGamepadWindow(frame, "vip", nil, frame.close, frame.scroll)
 	return true
 end

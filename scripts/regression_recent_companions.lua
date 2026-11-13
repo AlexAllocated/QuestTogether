@@ -274,4 +274,50 @@ QT:RegisterTest("recent companions UI stops before mutating a forbidden child", 
 	assert((a.invalidCalls or 0) == 0)
 end)
 
+QT:RegisterTest("recent companion gamepad selection survives sorting and pooled row replacement", function()
+	local a = Fixture()
+	function a:IsNativeGamepadMode() return true end
+	function a:ConfigureGamepadWindow(frame, policy) frame.gamepadPolicy = policy end
+	function a:PresentGamepadWindow(frame)
+		self.focused = frame
+		self.selected = frame.gamepadPolicy.defaultFocus()
+		frame.gamepadPolicy.onSelection(frame, self.selected)
+		return true
+	end
+	function a:IsGamepadWindowFocused(frame) return self.focused == frame end
+	function a:IsGamepadActionCurrent(frame) return self.focused == frame and frame:IsVisible() end
+	function a:GetNativeGamepadFocus() return self.focused, self.focused, self.selected end
+	function a:SetGamepadDirectionOverride(button, direction, action)
+		button.directions = button.directions or {}; button.directions[direction] = action
+		return true
+	end
+	function a:RefreshGamepadNavigation(frame, target)
+		self.selected = target
+		frame.gamepadPolicy.onSelection(frame, target)
+		return true
+	end
+	function a:PrepareGamepadControlHide(_, fallback)
+		return self:RefreshGamepadNavigation(self.focused, fallback)
+	end
+	local entries = {}
+	for i = 1, 12 do entries[i] = {name = "Person" .. i .. "-HomeRealm", lastGrouped = a.now, classFile = "MAGE"} end
+	function a:GetRecentCompanions() return entries end
+	function a:ShowRecentCompanionMenu(_, name) self.openedName = name end
+	assert(a:OpenRecentCompanions())
+	local frame = a.recentCompanionsWindow
+	a:RefreshGamepadNavigation(frame, frame.rows[4])
+	local chosen, oldRow = frame.rows[4].identity, frame.rows[4]
+	local moved = table.remove(entries, 4); entries[#entries + 1] = moved
+	assert(a:RefreshRecentCompanionsWindow())
+	assert(frame.gamepadCompanionIdentity == chosen and a.selected.identity == chosen and frame.offset == 4)
+	oldRow.OnSmartNavClick()
+	assert(a.openedName == nil, "recycled control redirected an old selection")
+	a.selected.OnSmartNavClick()
+	assert(a.openedName == chosen)
+	-- A removal falls back to the closest surviving row, not a stale identity.
+	table.remove(entries)
+	assert(a:RefreshRecentCompanionsWindow())
+	assert(a.selected.identity == entries[#entries].name)
+end)
+
 _G.QuestTogether:RecordTestModule("scripts/regression_recent_companions.lua")

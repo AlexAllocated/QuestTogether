@@ -10,12 +10,13 @@
 ## Notes: Optional on-demand isolated checks for /qt test.
 ## LoadOnDemand: 1
 ## RequiredDeps: QuestTogether
-## X-QT-TestModules: 62
+## X-QT-TestModules: 66
 
 scripts/test_bootstrap.lua
 Libs/libchev/SelfTests.lua
 Tests.lua
 scripts/ui_fixture.lua
+scripts/regression_gamepad_actions.lua
 scripts/regression_audio.lua
 scripts/regression_data_broker.lua
 scripts/regression_player_notes.lua
@@ -50,6 +51,7 @@ scripts/regression_quest_compare.lua
 scripts/regression_quest_focus.lua
 scripts/regression_quest_completion.lua
 scripts/regression_compare_interaction.lua
+scripts/regression_compare_gamepad.lua
 scripts/regression_minimap.lua
 scripts/regression_keybindings.lua
 scripts/regression_hints.lua
@@ -59,6 +61,8 @@ scripts/regression_player_locations.lua
 scripts/regression_peer_state.lua
 scripts/regression_peer_lifecycle.lua
 scripts/regression_location_pins.lua
+scripts/regression_party_map_roster.lua
+scripts/regression_party_map_pins.lua
 scripts/regression_location_targeting.lua
 scripts/regression_location_ignores.lua
 scripts/regression_player_plates.lua

@@ -92,6 +92,19 @@ function QT:ApplyWindowLayout(frame, restore)
 	then
 		return false
 	end
+	-- Transient menus own their content size and owner-relative anchor. They
+	-- still share lifecycle/Escape handling, but never restore dialog geometry.
+	if type(info.layout) == "function" then
+		info.applying = true
+		local ok, result = pcall(info.layout, frame, restore)
+		info.applying = nil
+		if not ok then error(result) end
+		if result ~= false then
+			info.profile = self.db and self.db.profile
+			info.resetRequested = nil
+		end
+		return result ~= false
+	end
 	local root = self:GetOwnedUIParent()
 	if not self:CanAccessForeignFrame(root) then
 		return false
@@ -156,7 +169,7 @@ function QT:ApplyWindowLayout(frame, restore)
 	info.applying = nil
 	return true
 end
-function QT:RegisterManagedWindow(frame, key, minWidth, minHeight, defaultPosition)
+function QT:RegisterManagedWindow(frame, key, minWidth, minHeight, defaultPosition, layout)
 	if self:IsWorkBlocked("foreign_frame_mutation") or not self.LibChev.CanMutateOwnedRegion(frame) then
 		return
 	end
@@ -166,6 +179,7 @@ function QT:RegisterManagedWindow(frame, key, minWidth, minHeight, defaultPositi
 	end
 	self.managedWindows[frame] = {
 		key = key,
+		layout = layout,
 		defaultX = defaultPosition and defaultPosition.x,
 		defaultY = defaultPosition and defaultPosition.y,
 		minWidth = minWidth,

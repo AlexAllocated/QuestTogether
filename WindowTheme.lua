@@ -23,6 +23,122 @@ function QuestTogether:GetScrollWindowTheme()
 	return self:GetOption("lightMode") == true and LIGHT or DARK
 end
 
+function QuestTogether:UsesClassicMenuArtwork()
+	-- The audited style getter returns constants only; do not create a native
+	-- menu or retain its table merely to discover the client's loaded artwork.
+	local mixin = MenuStyle1Mixin
+	if not self:CanAccessTable(mixin) then return false end
+	local ok, getter = pcall(function() return mixin.GetInset end)
+	if not ok or not self:CanAccessValue(getter) or type(getter) ~= "function" then return false end
+	local read, inset = pcall(getter, mixin)
+	if not read or not self:CanAccessTable(inset) then return false end
+	local values, left, top, right, bottom = pcall(function()
+		return self:SafeToNumber(inset.left), self:SafeToNumber(inset.top), self:SafeToNumber(inset.right), self:SafeToNumber(inset.bottom)
+	end)
+	return values and left == 16 and top == 10 and right == 16 and bottom == 10
+end
+
+-- Visual equivalents of Blizzard's dropdowns on a plain QT-owned Button.
+-- No DropdownButton intrinsic, menu mixin, native scripts, or input bindings.
+function QuestTogether:CreateOwnedDropdownButton(parent, style, classic)
+	local button = self:CreateOwnedWindowFrame("Button", nil, parent)
+	if not self:CanMutateOwnedUI(button) then return nil end
+	local settings = style == "settings"
+	button.dropdownStyle, button.dropdownClassic = settings and "settings" or "standard", classic == true
+	button:EnableMouse(true)
+	button:RegisterForClicks("LeftButtonUp")
+	button:SetMotionScriptsWhileDisabled(true)
+	button.Background = button:CreateTexture(nil, "BACKGROUND")
+	button.Arrow = button:CreateTexture(nil, "OVERLAY")
+	button.Text = button:CreateFontString(nil, "OVERLAY", settings and "GameFontNormal"
+		or classic and "GameFontHighlightSmall" or "GameFontHighlight")
+	button.Text:SetWordWrap(false)
+	button:SetFontString(button.Text)
+	if settings then
+		button.Background:SetPoint("TOPLEFT", -7, 7)
+		button.Background:SetPoint("BOTTOMRIGHT", 7, -7)
+		button.Arrow:SetAtlas("common-dropdown-c-button-hover-arrow", true)
+		button.Arrow:SetPoint("BOTTOM", 0, -5)
+		button.Text:SetJustifyH("CENTER"); button.Text:SetHeight(20)
+	else
+		button.Background:SetPoint("TOPLEFT", classic and -9 or -8, classic and 8 or 7)
+		button.Background:SetPoint("BOTTOMRIGHT", 8, -9)
+		button.Arrow:SetPoint("RIGHT", classic and -1 or 1, classic and 0 or -3)
+		button.Text:SetJustifyH(classic and "RIGHT" or "LEFT"); button.Text:SetHeight(10)
+		button.Text:SetPoint("TOPRIGHT", button.Arrow, "LEFT")
+		button.Text:SetPoint("TOPLEFT", classic and 9 or 8, classic and -7 or -8)
+	end
+	local function Refresh()
+		if self:IsWorkBlocked("foreign_frame_mutation") or not self:CanMutateOwnedUI(button) then return end
+		local enabled, over, down = button:IsEnabled(), button.dropdownOver, button.dropdownDown
+		if not enabled then down, over = false, false; button.dropdownDown, button.dropdownOver = false, false end
+		if settings then
+			local suffix = not enabled and "-disabled" or down and over and "-pressedhover-1"
+				or over and "-hover-1" or down and "-pressed-1" or button.dropdownMenuOpen and "-open" or ""
+			button.Background:SetAtlas("common-dropdown-c-button" .. suffix)
+			button.Arrow:SetShown(over == true); button.Arrow:SetDesaturated(not enabled)
+			button.Text:ClearAllPoints()
+			button.Text:SetPoint("LEFT", down and 15 or 13, down and -1 or 0)
+			button.Text:SetPoint("RIGHT", down and -11 or -13, down and -1 or 0)
+		else
+			local suffix = not enabled and "-disabled" or down and over and "-pressedhover"
+				or over and "-hover" or down and "-pressed" or (not classic and button.dropdownMenuOpen) and "-open" or ""
+			button.Background:SetAtlas(classic and (button:GetWidth() <= 100 and "common-dropdown-classic-textholder-small"
+				or "common-dropdown-classic-textholder") or "common-dropdown-textholder")
+			button.Arrow:SetAtlas((classic and "common-dropdown-classic-a-buttonDown" or "common-dropdown-a-button") .. suffix, true)
+			button.Arrow:Show()
+		end
+		if not enabled then button.Text:SetTextColor(0.5, 0.5, 0.5)
+		elseif settings then button.Text:SetTextColor(1, 0.82, 0)
+		else button.Text:SetTextColor(1, 1, 1) end
+	end
+	button.RefreshVisualState = Refresh
+	function button:SetOwnedMenuOpen(open)
+		self.dropdownMenuOpen = open == true
+		Refresh()
+	end
+	button:SetScript("OnEnter", function() button.dropdownOver = button:IsEnabled() == true; Refresh() end)
+	button:SetScript("OnLeave", function() button.dropdownOver = false; Refresh() end)
+	button:SetScript("OnMouseDown", function(_, key)
+		if key == "LeftButton" and button:IsEnabled() then button.dropdownDown = true; Refresh() end
+	end)
+	button:SetScript("OnMouseUp", function() button.dropdownDown = false; Refresh() end)
+	button:SetScript("OnEnable", Refresh)
+	button:SetScript("OnDisable", function() button.dropdownDown, button.dropdownOver = false, false; Refresh() end)
+	button:SetScript("OnHide", function()
+		button.dropdownOver, button.dropdownDown, button.dropdownMenuOpen = false, false, false
+		Refresh()
+	end)
+	button:SetScript("OnShow", Refresh)
+	button:SetScript("OnSizeChanged", Refresh)
+	Refresh()
+	return button
+end
+
+function QuestTogether:ApplyOwnedMenuArtwork(frame, style, classic)
+	if not self:CanMutateOwnedUI(frame) then return end
+	local background = frame.menuBackground or frame:CreateTexture(nil, "BACKGROUND", nil, -6)
+	frame.menuBackground = background
+	background:ClearAllPoints()
+	if classic then
+		background:SetAtlas(style == "settings" and "common-dropdown-classic-b-bg" or "common-dropdown-classic-bg")
+		background:SetPoint("TOPLEFT", -3, style == "settings" and 1 or 3)
+		background:SetPoint("BOTTOMRIGHT", 3, -4); background:SetAlpha(1)
+		frame.menuUnderlay = frame.menuUnderlay or frame:CreateTexture(nil, "BACKGROUND", nil, -7)
+		frame.menuUnderlay:SetColorTexture(0, 0, 0, 0.8)
+		frame.menuUnderlay:ClearAllPoints()
+		frame.menuUnderlay:SetPoint("TOPLEFT", background, "TOPLEFT", style == "settings" and 7 or 6, style == "settings" and -4 or -6)
+		frame.menuUnderlay:SetPoint("BOTTOMRIGHT", background, "BOTTOMRIGHT", style == "settings" and -8 or -6, style == "settings" and 8 or 6)
+		frame.menuUnderlay:Show()
+	else
+		if frame.menuUnderlay then frame.menuUnderlay:Hide() end
+		background:SetAtlas(style == "settings" and "common-dropdown-c-bg" or "common-dropdown-bg")
+		background:SetPoint("TOPLEFT", style == "settings" and -17 or -10, style == "settings" and 12 or 3)
+		background:SetPoint("BOTTOMRIGHT", style == "settings" and 17 or 10, style == "settings" and -22 or -3)
+		background:SetAlpha(style == "settings" and 1 or 0.925)
+	end
+end
+
 -- Use the rendered position and physical cursor delta. Native StartMoving can
 -- reanchor scaled/attached windows on pickup and leave the cursor offset.
 function QuestTogether:GetWindowDragCursor()

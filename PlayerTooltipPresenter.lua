@@ -19,6 +19,9 @@ end
 function QuestTogether:CreatePlayerTooltipPresentationFrame(...)
 	return self:CreateLocationPinFrame(...)
 end
+function QuestTogether:GetPlayerMapNativeTooltip()
+	return GameTooltip
+end
 local function New(addon, kind, parent)
 	return addon:CreateOwnedUIFrame(addon.CreatePlayerTooltipPresentationFrame, kind, parent)
 end
@@ -261,7 +264,7 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 		local info = self:GetHintActionInfo(row.tipAction)
 		return { title = info and info.label or "", text = info and info.tooltip or "", color = { 1, 0.82, 0 }, members = {} }
 	end
-	if not row.questID then
+	if not row.questID and not row.nativeParty then
 		row = addon:GetPlayerDetailsTooltipRow(row)
 	end
 	local classColor = addon:GetClassColorCode(row.classFile)
@@ -336,12 +339,14 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 		local note = addon:GetPlayerNoteTooltipText(row.name)
 		if note then text = text .. "\n\n" .. note end
 		text = text:gsub("^\n+", "")
-		text = text
-			.. (text ~= "" and "\n\n" or "")
-			.. "|cff909090"
-			.. (lastUpdate and (lastUpdate .. "\n") or "")
-			.. (version and ("v" .. Text(addon, version)) or L("Unknown"))
-			.. "|r"
+		if not row.nativeParty or version or addon:HasQTPlayerDisplayEvidence(row.name) then
+			text = text
+				.. (text ~= "" and "\n\n" or "")
+				.. "|cff909090"
+				.. (lastUpdate and (lastUpdate .. "\n") or "")
+				.. (version and ("v" .. Text(addon, version)) or L("Unknown"))
+				.. "|r"
+		end
 		if addon:IsVerifiedDeveloper(row.name) then
 			introText = introText .. "\n|cffffd200" .. L("QuestTogether developer") .. "|r"
 		elseif addon:IsVerifiedVIP(row.name) then
@@ -505,6 +510,26 @@ local function TooltipPresentation(model)
 	return copy
 end
 
+local function UpdateTooltipLevel(addon, state, anchor)
+	local level = state.tooltipBaseLevel
+	-- Native map selection can show a quest tooltip underneath the same
+	-- crosshair. Raise only this owned hover presentation, not the map markers,
+	-- windows, or native tooltip. Its quest prompts are inline tooltip text.
+	if anchor.surface == "map" and anchor.locationHover and anchor.locationHover.source == "gamepad" then
+		local native = addon:GetPlayerMapNativeTooltip()
+		if addon:CanAccessForeignFrame(native, true) and Method(addon, native, "IsVisible") == true then
+			local nativeLevel = Number(addon, Method(addon, native, "GetFrameLevel"))
+			if nativeLevel and nativeLevel >= 0 and nativeLevel < 10000 and nativeLevel == math.floor(nativeLevel) then
+				level = math.max(level, nativeLevel + 1)
+			end
+		end
+	end
+	if state.tooltipFrameLevel ~= level then
+		Call(addon, state.tooltip, "SetFrameLevel", level)
+		state.tooltipFrameLevel = level
+	end
+end
+
 function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 	local addon, pin = self, anchor
 	local parent = addon:GetPlayerTooltipPresentationParent()
@@ -524,6 +549,8 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 		state.tooltip = tooltip
 		state.tooltipParent = parent
 		Call(addon, tooltip, "SetFrameStrata", "TOOLTIP")
+		state.tooltipBaseLevel = Number(addon, Call(addon, tooltip, "GetFrameLevel")) or 1
+		state.tooltipFrameLevel = state.tooltipBaseLevel
 		Call(addon, tooltip, "SetClampedToScreen", true)
 		local background = Call(addon, tooltip, "CreateTexture", nil, "BACKGROUND")
 		Call(addon, background, "SetAllPoints")
@@ -561,6 +588,7 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 		Call(addon, tooltip, "SetParent", parent)
 		state.tooltipParent = parent
 	end
+	UpdateTooltipLevel(addon, state, pin)
 	local unchanged = previous and previous.tooltip == tooltip and previous.parent == parent
 		and SameTooltipPresentation(previous.model, model)
 	if not unchanged then
@@ -627,7 +655,7 @@ function QuestTogether:RenderPlayerTooltip(state, anchor, model)
 			Call(addon, state.tooltipLabel, "SetPoint", "TOPLEFT", state.tooltipTitle, "BOTTOMLEFT", 0, -18)
 		end
 		Call(addon, state.tooltipLabel, "SetText", text)
-		local height = Positive(addon, Call(addon, state.tooltipLabel, "GetStringHeight"))
+		local height = text == "" and 0 or Positive(addon, Call(addon, state.tooltipLabel, "GetStringHeight"))
 		if not height then
 			HideTooltip(addon, state)
 			return
@@ -686,7 +714,8 @@ function QuestTogether:PresentPlayerTooltip(state, anchor, row)
 		return
 	end
 	self:RenderPlayerTooltip(state, anchor, self:BuildPlayerTooltipModel(row))
-	if not row.questID and not row.tipAction and Current() then
+	if not row.questID and not row.tipAction
+		and (not row.nativeParty or self:HasQTPlayerDisplayEvidence(row.name)) and Current() then
 		self:SetPlayerDetailsInterest(state, name, Current)
 	else
 		self:ClearPlayerDetailsInterest(state)

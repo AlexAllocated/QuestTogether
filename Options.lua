@@ -429,12 +429,16 @@ local function CreateDropdown(parent, titleText, tooltipText, x, y, width, initi
 	for _, region in ipairs({ dropdown, control.DecrementButton, control.IncrementButton }) do
 		QuestTogether:AttachSettingsTooltip(region, titleText, tooltipText)
 	end
-	dropdown:SetupMenu(function(_, root)
+	local function Populate(_, root)
 		root:SetMinimumWidth(dropdown:GetWidth())
 		for _, entry in ipairs(BuildDropdownEntries(control)) do
 			root:CreateHighlightRadio(entry.text, entry.checked, entry.func)
 		end
-	end)
+	end
+	control.gamepadGenerator = Populate
+	local choice = QuestTogether:ConfigureGamepadDropdown(dropdown, Populate, nil, "settings")
+	if choice then QuestTogether:AttachSettingsTooltip(choice, titleText, tooltipText) end
+	QuestTogether:ConfigureGamepadDropdownSteppers(control, function() return BuildDropdownEntries(control) end)
 	return control
 end
 
@@ -629,6 +633,7 @@ local function CreateNameplateIconStyleDropdown(parent, x, y, playerPlates)
 end
 
 local CHECKBOX_OPTION_KEYS = {
+	"nativeGamepadNavigation",
 	"questTrackerHideSolo",
 	"questTrackerHideBlizzardTooltip",
 	"announceQuestPartners",
@@ -694,14 +699,17 @@ local function RefreshCheckboxOptions(controls, addon)
 end
 
 local function RefreshDropdownControl(dropdown, labelText)
+	if dropdown.gamepadGenerator then QuestTogether:ConfigureGamepadDropdown(dropdown.Dropdown, dropdown.gamepadGenerator) end
 	dropdown.Dropdown:SetDefaultText(labelText)
-	dropdown.Dropdown:GenerateMenu()
+	if not QuestTogether:IsNativeGamepadMode() then dropdown.Dropdown:GenerateMenu()
+	else dropdown:UpdateSteppers() end
 end
 
 local function SetLabeledControlShown(control, shown)
 	if not control then
 		return
 	end
+	if not shown and not QuestTogether:PrepareGamepadControlHide(control) then return end
 
 	if control.SetShown then
 		control:SetShown(shown)
@@ -991,7 +999,8 @@ function QuestTogether:RefreshHomeWindow()
 		controls.statusText:SetText(self:GetHomeStatusText())
 		-- Text can wrap for long profile names, translations, or an update notice.
 		controls.content:SetHeight(controls.description:GetStringHeight() + controls.statusText:GetStringHeight()
-			+ controls.dataBrokerHint:GetStringHeight() + 496)
+			+ controls.dataBrokerHint:GetStringHeight() + controls.gamepadHint:GetStringHeight()
+			+ controls.nativeGamepadNavigation:GetHeight() + controls.gamepadBindings:GetHeight() + 520)
 	end
 end
 
@@ -1025,7 +1034,7 @@ function QuestTogether:RefreshWhereToAnnounceWindow()
 		controls.personalBubbleEditHint:SetShown(showBubbleControls)
 	end
 	if controls.openHudEditMode then
-		controls.openHudEditMode:SetShown(showBubbleControls)
+		SetLabeledControlShown(controls.openHudEditMode, showBubbleControls)
 	end
 
 	local showChatLogControls = self:GetOption("showChatLogs")
@@ -1071,7 +1080,9 @@ function QuestTogether:RefreshQuestPlatesWindow(playerPlates)
 
 	if controls.resetNameplateQuestHealthColor then
 		if IsColorOptionAtDefault("nameplateQuestHealthColor", self.NAMEPLATE_QUEST_HEALTH_COLOR) then
-			controls.resetNameplateQuestHealthColor:Hide()
+			if self:PrepareGamepadControlHide(controls.resetNameplateQuestHealthColor, controls.nameplateQuestHealthColor) then
+				controls.resetNameplateQuestHealthColor:Hide()
+			end
 		else
 			controls.resetNameplateQuestHealthColor:Show()
 		end
@@ -2376,7 +2387,18 @@ function QuestTogether:InitializeOptionsWindow()
 		16, 0, 140, { false, true }, function(value) return value and L("Light") or L("Dark") end,
 		"lightMode", function() return QuestTogether:GetOption("lightMode") end)
 	themeDropdown.title:ClearAllPoints()
-	themeDropdown.title:SetPoint("TOPLEFT", showStartupTips, "BOTTOMLEFT", 0, -14)
+	local gamepad = CreateCheckbox(content, "nativeGamepadNavigation", L("Enable native gamepad navigation"),
+		L("Use the game's controller navigation in QT windows when Gamepad UI is enabled. Existing controller keybindings are preserved."), 16, 0)
+	gamepad:ClearAllPoints(); gamepad:SetPoint("TOPLEFT", showStartupTips, "BOTTOMLEFT", 0, -8)
+	local gamepadHint = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	gamepadHint:SetPoint("TOPLEFT", gamepad, "BOTTOMLEFT", 0, -8)
+	gamepadHint:SetWidth(620); gamepadHint:SetJustifyH("LEFT"); gamepadHint:SetWordWrap(true)
+	gamepadHint:SetText(L("With Forever's default controls, QT adds a PQL macro with a quest-book icon to LT + RT + D-pad Up on action page 1 if empty. Moving or removing only its button keeps your layout. Deleting the macro itself lets QT recreate and rebind it if that slot is empty. Existing actions and edited macros are preserved.") .. "\n\n" .. L("Assign Open QuestTogether Menu in WoW Key Bindings for actions on the selected quest or map marker and for pending requests. Text entry and HUD placement keep their existing controls."))
+	local gamepadBindings = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+	gamepadBindings:SetPoint("TOPLEFT", gamepadHint, "BOTTOMLEFT", 0, -8); gamepadBindings:SetSize(240, 26)
+	gamepadBindings:SetText(L("Key Bindings")); gamepadBindings:SetScript("OnClick", function() QuestTogether.API.OpenKeyBindings() end)
+	frame:HookScript("OnShow", function() gamepad:SetChecked(QuestTogether:GetOption("nativeGamepadNavigation") ~= false) end)
+	themeDropdown.title:SetPoint("TOPLEFT", gamepadBindings, "BOTTOMLEFT", 0, -14)
 
 	local dataBrokerHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	dataBrokerHeader:SetPoint("TOPLEFT", themeDropdown, "BOTTOMLEFT", 0, -20)
@@ -2436,6 +2458,9 @@ function QuestTogether:InitializeOptionsWindow()
 		statusText = statusText,
 		showMinimapButton = showMinimapButton,
 		showStartupTips = showStartupTips,
+		nativeGamepadNavigation = gamepad,
+		gamepadHint = gamepadHint,
+		gamepadBindings = gamepadBindings,
 		themeDropdown = themeDropdown,
 		dataBrokerHeader = dataBrokerHeader,
 		dataBrokerHint = dataBrokerHint,

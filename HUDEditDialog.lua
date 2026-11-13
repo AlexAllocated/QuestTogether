@@ -51,13 +51,18 @@ end
 
 function QuestTogether:ConfigureHUDEditDropdown(setting, label, options, getValue, onChanged)
 	setting.Label:SetText(label)
-	setting.Dropdown:SetupMenu(function(_, root)
+	local selectedText, selectedValue = label, getValue()
+	for _, option in ipairs(options) do
+		if option.value == selectedValue then selectedText = option.text; break end
+	end
+	local function Populate(_, root)
 		for _, option in ipairs(options) do
 			local value = option.value
 			root:CreateRadio(option.text, function() return getValue() == value end,
 				function() onChanged(value) end)
 		end
-	end)
+	end
+	self:ConfigureGamepadDropdown(setting.Dropdown, Populate, selectedText)
 	setting:Show()
 end
 
@@ -289,6 +294,8 @@ function QuestTogether:CreateHUDEditDialog(title, sliderKeys, callbacks)
 		addon:LayoutHUDEditDialog(dialog)
 	end
 
+	addon:ConfigureStandardGamepadWindow(dialog, "hud_options", callbacks.close, closeButton)
+	addon:PresentOnExplicitShow(dialog)
 	return dialog
 end
 

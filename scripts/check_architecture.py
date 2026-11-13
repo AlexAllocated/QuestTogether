@@ -18,6 +18,14 @@ def check(root=ROOT, source_overrides=None):
          "native quest classification belongs to QuestObservations")
     only(r"\b[A-Za-z_]\w*\.API\.SendAddonMessage\b", {"Transport.lua"}, "native addon sends belong to Transport")
     only(r"\b(?:PlaySoundFile|StopSound)\s*\(", {"Audio.lua"}, "native QT audio playback belongs to Audio")
+    only(r"(?:SmartNavigation|FrameControlsManager)\s*[:.]\s*(?:FrameShown|FrameHidden|HandlePopupShown|SetTargetButtonForFrame|RefreshButtonGroups|SetScrollFrameForFrame)\s*\(",
+         {"GamepadIntegration.lua"}, "native controller ownership belongs to GamepadIntegration")
+    only(r"\b(?:SetOverrideBinding|SetBindingClick|SetBinding|SetGamePadCursorControl)\s*\(",
+         set(), "QT must not assign native keyboard or gamepad controls")
+    only(r"\b(?:CreateMacro|EditMacro|DeleteMacro|PickupMacro|PlaceAction)\b",
+         {"GamepadLauncher.lua"}, "one-time default action-bar setup belongs to GamepadLauncher")
+    only(r'"SetAppearanceField"|"UpdateShownUnits"', {"PartyMapNative.lua"},
+         "native group marker appearance belongs to PartyMapNative")
     only(r"peerUpdateContext|WithPeerUpdateContext", set(), "peer observations must be explicit")
     only(r"function (?:QuestTogether|QT):(?:ConfigureWindowController|DismissManagedWindow)\(",
          {"WindowController.lua"}, "window lifecycle belongs to WindowController")
@@ -82,6 +90,9 @@ def check(root=ROOT, source_overrides=None):
     order.extend([("PlayerNotes.lua", "RecentCompanions.lua"),
                   ("PlayerLocations.lua", "MapLocationPresentation.lua"),
                   ("MapLocationPresentation.lua", "LocationPins.lua"),
+                  ("PartyState.lua", "PartyMapRoster.lua"),
+                  ("PartyMapRoster.lua", "PartyMapPins.lua"),
+                  ("PartyMapNative.lua", "PartyMapPins.lua"),
                   ("ObjectiveAnnouncements.lua", "EventHandlers.lua")])
     for before, after in order:
         if before not in combined or after not in combined or combined.index(before) >= combined.index(after):

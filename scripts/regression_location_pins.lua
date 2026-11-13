@@ -92,6 +92,7 @@ local function Frame(addon, parent, kind)
 	function frame:SetFrameLevel(level)
 		self:Check()
 		self.level = level
+		self.levelWrites = (self.levelWrites or 0) + 1
 	end
 	function frame:GetFrameLevel()
 		self:CheckRead()
@@ -326,6 +327,9 @@ local function Fixture()
 	end
 	function a:GetLocationPinTooltipParent()
 		return self.tooltipParent
+	end
+	function a:GetPlayerMapNativeTooltip()
+		return self.nativeMapTooltip
 	end
 	function a:GetPlayerLocationHoverCursorPosition()
 		return nil
@@ -4728,6 +4732,312 @@ Register("minimap native write failures retire cached coordinates and retry on t
 	assert(attempts > 1 and surface.frame:IsVisible())
 	assert(pin.minimapX and pin.minimapY)
 	Equal(a.invalidCalls or 0, 0)
+end)
+
+local function GamepadFixture(count)
+	local a = ClusterFixture(count or 0)
+	a.db = { profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile) }
+	a.controller = true
+	function a:IsNativeGamepadMode() return self.controller end
+	function a:IsWorkBlocked() return self.blocked == true end
+	function a:RegisterGamepadObserver(owner, callback)
+		self.controllerObserver = callback
+		callback({ available = true })
+	end
+	function a:UnregisterGamepadObserver() self.controllerObserver = nil end
+	InstallLocationHoverCursor(a)
+	a.hoverCursorX, a.hoverCursorY = 5, 5
+	function a:GetGamepadMapCursor()
+		if not self.controller or self.noCanvasFocus or self.blocked or not self.isEnabled then return end
+		local geometry = self:GetLocationPinSurface("map")
+		if not geometry then return end
+		return { parent = geometry.parent, mapID = geometry.mapID, x = self.crossX or 500, y = self.crossY or 300,
+			cursorX = self.crossX or 500, cursorY = self.crossY or 300, geometry = geometry, moving = true }
+	end
+	a:InitializeGamepadMap()
+	return a
+end
+
+Register("controller map player and cluster tooltips stay above native quest text without raising other UI", function()
+	for _, count in ipairs({ 0, 3 }) do
+		local a = GamepadFixture(count)
+		if count == 0 then a.rows.map = { Row("Alice-Realm", 0.5, 0.5) } end
+		local native = Frame(a)
+		a.nativeMapTooltip, native.level = native, 48
+		a:RefreshPlayerLocationPins()
+		a:UpdatePlayerLocationHover()
+		local state = a.locationPinState
+		local shown = count == 0 and state or state.clusterTooltip
+		assert(shown.tooltip:IsVisible())
+		Equal(shown.tooltip.level, 49)
+		local levelWrites = shown.tooltip.levelWrites
+		for _ = 1, 10 do a:RefreshPlayerLocationPins() end
+		Equal(shown.tooltip.levelWrites, levelWrites, "unchanged tooltip layering must not rewrite frames")
+		native.level = 90
+		a:RefreshPlayerLocationPins()
+		Equal(shown.tooltip.level, 91, "layering must update even when tooltip content is unchanged")
+		Equal(native.writes, 0, "native quest tooltip remains untouched")
+		Equal(a.mapParent.writes, 0)
+		native.shown = false
+		a:RefreshPlayerLocationPins()
+		Equal(shown.tooltip.level, shown.tooltipBaseLevel)
+		native.shown = true
+		a:RefreshPlayerLocationPins()
+		Equal(shown.tooltip.level, 91)
+		a.noCanvasFocus = true
+		a:UpdatePlayerLocationHover()
+		assert(not shown.tooltip:IsVisible())
+		local pin = Pin(a, "map")
+		a.controller = false
+		pin.enterTooltip()
+		Equal(shown.tooltip.level, shown.tooltipBaseLevel, "mouse reuse must restore ordinary tooltip priority")
+		Equal(native.writes, 0)
+	end
+end)
+
+Register("controller map tooltip layering safely rejects inaccessible and invalid native levels", function()
+	local a = GamepadFixture()
+	a.rows.map = { Row("Alice-Realm", 0.5, 0.5) }
+	local native = Frame(a)
+	a.nativeMapTooltip, native.level = native, 48
+	a:RefreshPlayerLocationPins()
+	a:UpdatePlayerLocationHover()
+	local state = a.locationPinState
+	Equal(state.tooltip.level, 49)
+	native.forbidden = true
+	a:RefreshPlayerLocationPins()
+	Equal(state.tooltip.level, state.tooltipBaseLevel)
+	native.forbidden = nil
+	-- Real NaN rejection belongs to offline_numeric_tests.lua's SafeToNumber
+	-- coverage: Forever can reject zero division before the live test runs.
+	for _, level in ipairs({ -1, 10000, math.huge, 1.5, false, "bad" }) do
+		function native:GetFrameLevel() return level end
+		a:RefreshPlayerLocationPins()
+		Equal(state.tooltip.level, state.tooltipBaseLevel)
+	end
+	local writes = state.tooltip.levelWrites
+	a.blocked = true
+	a:RefreshPlayerLocationPins()
+	Equal(state.tooltip.levelWrites, writes)
+	assert(not state.tooltip:IsVisible())
+	Equal(native.writes, 0)
+end)
+
+Register("controller map hover holds identities while moving markers and hands back to deliberate mouse motion", function()
+	local a = GamepadFixture()
+	a.clusterOptions.clusterPlayerLocations = false
+	a.rows.map = { Row("Alice-Realm", 0.5, 0.5), Row("Bob-Realm", 0.51, 0.5) }
+	a:RefreshPlayerLocationPins()
+	a:UpdatePlayerLocationHover()
+	local hover = assert(a.locationPinState.locationHover)
+	Equal(hover.source, "gamepad")
+	Equal(hover.anchor.name, "Alice-Realm")
+	Equal(a.targetHover, nil)
+	local reads, requests = a.reads.map, #a.requests
+	for _ = 1, 120 do a:UpdatePlayerLocationHover() end
+	Equal(a.reads.map, reads, "idle crosshair must not rescan domain observations each frame")
+	Equal(#a.requests, requests)
+	a.rows.map[1].x = 0.8
+	a:RefreshPlayerLocationPins(); a:UpdatePlayerLocationHover()
+	Equal(a.locationPinState.locationHover.anchor.name, "Alice-Realm")
+	a.crossX = 510
+	a:UpdatePlayerLocationHover()
+	Equal(a.locationPinState.locationHover.anchor.name, "Bob-Realm")
+	a.hoverCursorX = 7
+	a:UpdatePlayerLocationHover()
+	Equal(a.locationPinState.locationHover, nil)
+	a:UpdatePlayerLocationHover()
+	Equal(a.locationPinState.locationHover, nil, "stationary crosshair must not steal the mouse back")
+	a.crossX = 511
+	a:UpdatePlayerLocationHover()
+	Equal(a.locationPinState.locationHover.source, "gamepad")
+	a.noCanvasFocus = true
+	a:UpdatePlayerLocationHover()
+	Equal(a.locationPinState.locationHover, nil)
+	Equal(a.mapParent.writes, 0)
+end)
+
+Register("controller map selection is deterministic and excludes hidden clipped and different-map markers", function()
+	local a = GamepadFixture()
+	a.clusterOptions.clusterPlayerLocations = false
+	a.rows.map = { Row("Zoe-Realm", 0.49, 0.5), Row("Amy-Realm", 0.51, 0.5) }
+	a:RefreshPlayerLocationPins()
+	local cursor = a:GetGamepadMapCursor()
+	local pin = a:FindGamepadMapMarker(cursor)
+	Equal(pin.name, "Amy-Realm")
+	pin.frame:Hide()
+	Equal(a:FindGamepadMapMarker(cursor).name, "Zoe-Realm")
+	pin.frame:Show(); pin.mapID = 999
+	Equal(a:FindGamepadMapMarker(cursor).name, "Zoe-Realm")
+	cursor.x = 300
+	Equal(a:FindGamepadMapMarker(cursor), nil)
+end)
+
+Register("controller map cursor requires actual native ownership and reads scaled canvas coordinates without native writes", function()
+	local a = GamepadFixture()
+	local map, crosshair = Frame(a), Frame(a)
+	a.nativeManager = map
+	function a:GetNativeGamepadFocus() return self.nativeManager end
+	function a:GetGamepadMapNativeFrames() return map, crosshair end
+	function map:IsCanvasGamepadFocus() return not a.questListFocused end
+	function map:GetNormalizedGamepadCursorPosition() return a.nx or 0.5, 0.5 end
+	function a.mapParent:GetLeft() return 100 end
+	function a.mapParent:GetTop() return 800 end
+	function a.mapParent:GetEffectiveScale() return 0.8 end
+	function a.tooltipParent:GetEffectiveScale() return 1 end
+	a.GetGamepadMapCursor = QuestTogether.GetGamepadMapCursor
+	local cursor = assert(a:GetGamepadMapCursor())
+	Equal(cursor.x, 500); Equal(cursor.y, 300)
+	Equal(cursor.cursorX, 480); Equal(cursor.cursorY, 400)
+	a.nativeManager = Frame(a)
+	Equal(a:GetGamepadMapCursor(), nil, "map internal focus may remain set while an unrelated panel owns navigation")
+	a.nativeManager, a.questListFocused = map, true
+	Equal(a:GetGamepadMapCursor(), nil)
+	a.questListFocused = false
+	crosshair:Hide()
+	Equal(a:GetGamepadMapCursor(), nil)
+	crosshair:Show()
+	a.nx = 2
+	Equal(a:GetGamepadMapCursor(), nil)
+	a.nx = 0.5
+	a.controllerObserver({ available = false })
+	Equal(a:GetGamepadMapCursor(), nil)
+	a.controllerObserver({ available = true })
+	map.forbidden = true
+	Equal(a:GetGamepadMapCursor(), nil)
+	Equal(map.writes, 0)
+	Equal(a.mapParent.writes, 0)
+end)
+
+Register("controller map actions freeze logical players through pool reuse but reject map privacy and profile changes", function()
+	local a = GamepadFixture()
+	a.clusterOptions.clusterPlayerLocations = false
+	a.rows.map = { Row("Alice-Realm", 0.5, 0.5) }
+	a:RefreshPlayerLocationPins(); a:UpdatePlayerLocationHover()
+	local context = assert(a:GetGamepadMapContext())
+	a.noCanvasFocus = true
+	a:UpdatePlayerLocationHover()
+	assert(a:ValidateGamepadMapContext(context), "owned context panel may have taken native map focus")
+	local recycled = Pin(a, "map")
+	recycled.name, recycled.presentationGeneration = "NewPerson-Realm", 100
+	assert(a:ActivateGamepadMapContext(context, "menu"))
+	Equal(a.menus[1].name, "Alice-Realm")
+	Equal(a.menus[1].firstAction, nil, "controller map context must never expose protected minimap targeting")
+	a.ignored = "Alice-Realm"
+	Equal(a:ActivateGamepadMapContext(context, "menu"), false)
+	a.ignored = nil
+	a.geometry.map.mapID = 2
+	Equal(a:ValidateGamepadMapContext(context), false)
+	a.geometry.map.mapID = 1
+	a.db.profile = {}
+	Equal(a:ValidateGamepadMapContext(context), false)
+	a.db.profile = context.profile
+	a.rows.map = {}
+	Equal(a:ValidateGamepadMapContext(context), false)
+end)
+
+Register("controller cluster context exposes separate navigation expansion and member actions without stale membership", function()
+	local a = GamepadFixture(3)
+	a:RefreshPlayerLocationPins(); a:UpdatePlayerLocationHover()
+	local context = assert(a:GetGamepadMapContext())
+	Equal(context.kind, "cluster")
+	local buttons = {}
+	local function Menu()
+		local root = { children = {} }
+		function root:CreateTitle() end
+		function root:CreateButton(text, callback)
+			local button = Menu(); button.text, button.callback = text, callback
+			self.children[#self.children + 1], buttons[text] = button, button
+			return button
+		end
+		return root
+	end
+	assert(a:PopulateGamepadMapContext(Menu(), context))
+	assert(buttons[QuestTogether.Translate("Zoom to players")])
+	assert(buttons[QuestTogether.Translate("Expand cluster")])
+	function a:ShowGamepadContextMenu(_, generator)
+		self.memberMenu = self:BuildGamepadActionDescription(nil, generator)
+		return true
+	end
+	buttons[QuestTogether.Translate("Players")].callback()
+	Equal(#a.memberMenu.children, 3)
+	a.memberMenu.children[2].action()
+	Equal(a.menus[1].name, "Peer002-Realm")
+	assert(a:ActivateGamepadMapContext(context, "expand"))
+	assert(a.playerLocationClusterExpansion)
+	a.rows.map[2] = Row("Replacement-Realm")
+	Equal(a:ActivateGamepadMapContext(context, "expand"), false)
+	Equal(#a.menus, 1)
+end)
+
+
+Register("controller crowded cluster member pages stay bounded and reach every frozen member", function()
+	local a = GamepadFixture(320)
+	a:RefreshPlayerLocationPins(); a:UpdatePlayerLocationHover()
+	local context = assert(a:GetGamepadMapContext())
+	Equal(#context.memberNames, 320)
+	local root = a:BuildGamepadActionDescription(nil, function(_, menu)
+		assert(a:PopulateGamepadMapContext(menu, context))
+		for index = 1, 200 do menu:CreateButton(tostring(index)) end
+	end)
+	assert(root.count < 210, "cluster construction consumed the shared action budget")
+	local currentPredicate, built = nil, 0
+	function a:ShowGamepadContextMenu(_, generator, current)
+		self.memberMenu = self:BuildGamepadActionDescription(nil, generator)
+		assert(self.memberMenu.count <= 10, "member page exceeds eight players plus navigation")
+		currentPredicate, built = current, built + 1
+		return true
+	end
+	assert(a:ShowGamepadMapClusterMembers(context, 1))
+	local visited, oldAction, previous = {}, nil, nil
+	while true do
+		local nextPage
+		for _, entry in ipairs(a.memberMenu.children) do
+			if entry.text == QuestTogether.Translate("Next players") then nextPage = entry.action
+			elseif entry.text == QuestTogether.Translate("Previous players") then previous = entry.action
+			else
+				oldAction = oldAction or entry.action
+				entry.action()
+				local name = a.menus[#a.menus].name
+				assert(not visited[name], "pagination repeated a member")
+				visited[name] = true
+			end
+		end
+		if not nextPage then break end
+		nextPage()
+	end
+	Equal(#a.menus, 320); Equal(built, 40)
+	assert(currentPredicate())
+	previous(); Equal(built, 41)
+	Equal(a.memberMenu.children[1].text, a:GetShortDisplayName("Peer305-Realm"))
+	-- Reordering observations never changes the frozen page identities.
+	a.rows.map[1], a.rows.map[320] = a.rows.map[320], a.rows.map[1]
+	assert(a:ShowGamepadMapClusterMembers(context, 1))
+	Equal(a.memberMenu.children[1].text, a:GetShortDisplayName("Peer001-Realm"))
+	a.ignored = "Peer001-Realm"
+	assert(not currentPredicate())
+	oldAction(); Equal(#a.menus, 320)
+	assert(not a:ShowGamepadMapClusterMembers(context, 2))
+end)
+
+Register("controller cluster actions tolerate invalidation between validation and layout reads", function()
+	for _, action in ipairs({"populate", "expand"}) do
+		local a = GamepadFixture(3)
+		a:RefreshPlayerLocationPins(); a:UpdatePlayerLocationHover()
+		local context = assert(a:GetGamepadMapContext())
+		local original, reads = a.GetLocationPinSurface, 0
+		function a:GetLocationPinSurface(surface)
+			reads = reads + 1
+			if reads == 2 then return nil end
+			return original(self, surface)
+		end
+		if action == "populate" then
+			local model = a:BuildGamepadActionDescription(nil, function(_, root)
+				assert(not a:PopulateGamepadMapContext(root, context))
+			end)
+			Equal(model.count, 0)
+		else assert(not a:ActivateGamepadMapContext(context, action)) end
+	end
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_location_pins.lua")

@@ -157,6 +157,13 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 			self.shown = false
 		end)
 	end
+	function frame:SetShown(shown)
+		if shown then
+			self:Show()
+		else
+			self:Hide()
+		end
+	end
 	function frame:SetParent(value)
 		self:Check()
 		VisibilityMutation(self, function()
@@ -255,9 +262,20 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 	function frame:SetText(v)
 		self:Check()
 		self.text = v
+		if self.fontString then
+			self.fontString:SetText(v)
+		end
 		if self.scripts.OnTextChanged then
 			self.scripts.OnTextChanged(self, false)
 		end
+	end
+	function frame:SetFontString(fontString)
+		self:Check()
+		self.fontString = fontString
+	end
+	function frame:GetFontString()
+		self:CheckRead()
+		return self.fontString
 	end
 	function frame:GetText()
 		self:CheckRead()
@@ -266,6 +284,10 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 	function frame:SetFontObject(v)
 		self:Check()
 		self.font = v
+	end
+	function frame:SetWordWrap(value)
+		self:Check()
+		self.wordWrap = value == true
 	end
 	function frame:GetStringWidth()
 		self:CheckRead()
@@ -283,6 +305,13 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 			lines = lines + math.max(1, math.ceil(#line / columns))
 		end
 		return math.max(1, lines) * size
+	end
+	function frame:IsTruncated()
+		self:CheckRead()
+		if self.wordWrap then
+			return self:GetStringHeight() > self:GetHeight()
+		end
+		return self:GetStringWidth() > self:GetWidth()
 	end
 	function frame:CreateTexture(_, _, template)
 		self:Check()
@@ -353,7 +382,15 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 	end
 	function frame:SetEnabled(v)
 		self:Check()
+		local changed = self.enabled ~= v
 		self.enabled = v
+		if changed then
+			self:RunScript(v and "OnEnable" or "OnDisable")
+		end
+	end
+	function frame:SetMotionScriptsWhileDisabled(value)
+		self:Check()
+		self.motionScriptsWhileDisabled = value == true
 	end
 	function frame:SetTexture(v)
 		self:Check()
@@ -374,6 +411,10 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 	function frame:SetResizeBounds(...)
 		self:Check()
 		self.resizeBounds = { ... }
+	end
+	function frame:SetClampRectInsets(...)
+		self:Check()
+		self.clampRectInsets = { ... }
 	end
 	function frame:StartMoving()
 		self:Check()
@@ -478,7 +519,6 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 		"AddMaskTexture",
 		"SetJustifyH",
 		"SetJustifyV",
-		"SetWordWrap",
 		"EnableMouseWheel",
 		"SetOrientation",
 		"SetValueStep",
@@ -526,14 +566,7 @@ function QT:ApplyTestUITemplate(frame, template)
 		function frame:ShowSelected() self.isSelected = true; self:Show() end
 	elseif template == "UIPanelButtonTemplate" then
 		local text = Child("FontString")
-		function frame:GetFontString()
-			return text
-		end
-		local setText = frame.SetText
-		function frame:SetText(value)
-			setText(self, value)
-			text:SetText(value)
-		end
+		frame:SetFontString(text)
 	elseif template == "SearchBoxTemplate" then
 		frame.Instructions, frame.searchIcon, frame.clearButton = Child("FontString"), Child("Texture"), Child("Button")
 		frame.Instructions:SetText("Search")

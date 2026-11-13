@@ -502,6 +502,7 @@ local function ScrollCompare(self, frame, session, pixels, force)
 	then
 		return
 	end
+	if self.ParkPartyQuestGamepadSelection and not self:ParkPartyQuestGamepadSelection(frame) then return end
 	local rows = frame.displayRows
 	local heights, seen = DetailHeights(rows), {}
 	local maximum = math.max(0, CompareHeight(frame) - frame.rowsViewport:GetHeight())
@@ -560,6 +561,43 @@ local function ScrollCompare(self, frame, session, pixels, force)
 	frame.scrolling = true
 	self:UpdateOwnedScrollBar(frame.vertical, pixels, maximum, frame.rowsViewport:GetHeight(), ROW_HEIGHT)
 	frame.scrolling = false
+	if self.RefreshPartyQuestGamepad then self:RefreshPartyQuestGamepad(frame) end
+end
+
+-- Keyboard and native directional navigation use this same logical geometry;
+-- the ScrollFrame itself contains only the currently materialized row slice.
+function QuestTogether:ScrollPartyQuestCompareToQuest(frame, questID)
+	local session = self.partyQuestCompareSession
+	if not session or frame.displaySession ~= session or self:IsWorkBlocked("foreign_frame_mutation") then return false end
+	for _, selected in ipairs(frame.navigationRows or {}) do
+		if selected.questId == questID then
+			frame.wheelTarget = nil
+			frame:SetScript("OnUpdate", nil)
+			local pixels, height = session.scrollPixels or 0, frame.rowsViewport:GetHeight()
+			if selected.top < pixels then pixels = selected.top
+			elseif selected.top + selected.height > pixels + height then pixels = selected.top + selected.height - height end
+			ScrollCompare(self, frame, session, pixels, true)
+			return true
+		end
+	end
+	return false
+end
+
+function QuestTogether:RevealPartyQuestGamepadControl(frame, identity)
+	if not identity or self:IsWorkBlocked("foreign_frame_mutation") then return end
+	local left, width
+	if identity.player then
+		for index, member in ipairs(frame.displaySession.members) do
+			if member.name == identity.player then left, width = ColumnLeft(frame, index), ColumnWidth(frame, index); break end
+		end
+	elseif identity.role == "action" then left, width = frame.content:GetWidth() - ACTION_WIDTH, ACTION_WIDTH
+	elseif identity.questId then left, width = 0, QUEST_WIDTH end
+	if not left then return end
+	local offset, visible = frame.horizontalOffset or 0, frame.viewport:GetWidth()
+	if left < offset then offset = left elseif left + width > offset + visible then offset = left + width - visible end
+	local maximum = math.max(0, frame.content:GetWidth() - visible)
+	frame.horizontalOffset = self:UpdateOwnedScrollBar(frame.horizontal, offset, maximum, visible, MEMBER_WIDTH)
+	frame.viewport:SetHorizontalScroll(frame.horizontalOffset)
 end
 
 local function StopExpansion(frame)
@@ -679,6 +717,7 @@ end
 function QuestTogether:SetPartyQuestKeyboardNavigation(frame, active)
 	local session = self.partyQuestCompareSession
 	if active and (not session or frame.displaySession ~= session
+		or (self.IsPartyQuestGamepadInputOwned and self:IsPartyQuestGamepadInputOwned())
 		or self:IsWorkBlocked("foreign_frame_mutation")
 		or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible()
 		or not self.API.IsPartyQuestKeyboardInputBlocked or self.API.IsPartyQuestKeyboardInputBlocked(frame)) then
@@ -705,16 +744,52 @@ function QuestTogether:SetPartyQuestKeyboardNavigation(frame, active)
 	return true
 end
 
-function QuestTogether:ShowPartyQuestKeyboardMenu(frame, selected)
+function QuestTogether:PopulatePartyQuestContextMenu(frame, selected, root)
 	local session, questID = self.partyQuestCompareSession, selected and selected.questId
+	local profile = self.db and self.db.profile
 	if not session or frame.displaySession ~= session or not questID or self:IsWorkBlocked("foreign_frame_mutation")
 		or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible() then return false end
-	self:SetPartyQuestKeyboardNavigation(frame, false)
-	local function Current()
-		return self.partyQuestCompareSession == session and frame.displaySession == session
-			and QuestTogether.LibChev.CanMutateOwnedRegion(frame) and frame:IsVisible()
-			and not self:IsWorkBlocked("foreign_frame_mutation")
+	local function Current(action, owner)
+		if self.partyQuestCompareSession ~= session or frame.displaySession ~= session
+			or (self.db and self.db.profile) ~= profile
+			or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible()
+			or self:IsWorkBlocked("foreign_frame_mutation") then return false end
+		for _, entry in ipairs(frame.navigationRows or {}) do
+			if entry.questId == questID then
+				return not action or (entry.data.action == action and entry.data.owner == owner)
+			end
+		end
+		return false
 	end
+	if not Current() then return false end
+	root:CreateTitle(selected.data.title)
+	root:CreateButton(L("Expand or collapse quest"), function()
+		if Current() then self:TogglePartyQuestObjectives(questID) end
+	end)
+	local own = session.byName and session.byName[session.playerName]
+	if own and own.entries and own.entries[questID] then
+		root:CreateButton(L("Open in Quest Log"), function()
+			if Current() then self:OpenPartyQuestJournal(questID) end
+		end)
+	end
+	if selected.data.action == "share" then
+		local owner = selected.data.owner
+		root:CreateButton(L("Share"), function()
+			if Current("share", owner) then self:SharePartyDiffQuest(questID) end
+		end)
+	elseif selected.data.action == "request" then
+		local owner = selected.data.owner
+		root:CreateButton(L("Request Share"), function()
+			if Current("request", owner) then self:RequestPartyQuestShare(questID, owner) end
+		end)
+	end
+	return true
+end
+
+function QuestTogether:ShowPartyQuestKeyboardMenu(frame, selected)
+	local session, questID = self.partyQuestCompareSession, selected and selected.questId
+	if not session or frame.displaySession ~= session or not questID then return false end
+	self:SetPartyQuestKeyboardNavigation(frame, false)
 	local anchor = frame.rowsViewport
 	for _, row in ipairs(frame.rows) do
 		if row.session == session and row.data and not row.data.kind and row.data.questId == questID and row:IsVisible() then
@@ -723,32 +798,41 @@ function QuestTogether:ShowPartyQuestKeyboardMenu(frame, selected)
 		end
 	end
 	return self:CreatePartyQuestFilterMenu(anchor, function(_, root)
-		if not Current() then return end
-		root:CreateTitle(selected.data.title)
-		root:CreateButton(L("Expand or collapse quest"), function()
-			if Current() then self:TogglePartyQuestObjectives(questID) end
-		end)
-		local own = session.byName and session.byName[session.playerName]
-		if own and own.entries and own.entries[questID] then
-			root:CreateButton(L("Open in Quest Log"), function()
-				if Current() then self:OpenPartyQuestJournal(questID) end
-			end)
-		end
-		if selected.data.action == "share" then
-			root:CreateButton(L("Share"), function()
-				if Current() then self:SharePartyDiffQuest(questID) end
-			end)
-		elseif selected.data.action == "request" then
-			local owner = selected.data.owner
-			root:CreateButton(L("Request Share"), function()
-				if Current() then self:RequestPartyQuestShare(questID, owner) end
-			end)
-		end
+		if self.partyQuestCompareSession == session then self:PopulatePartyQuestContextMenu(frame, selected, root) end
 	end)
+end
+
+function QuestTogether:PopulatePartyQuestPlayerMenu(frame, session, name, root)
+	local profile = self.db and self.db.profile
+	local function Current()
+		return self.partyQuestCompareSession == session and frame.displaySession == session
+			and (self.db and self.db.profile) == profile
+			and session.byName[name] and QuestTogether.LibChev.CanMutateOwnedRegion(frame) and frame:IsVisible()
+			and not self:IsWorkBlocked("foreign_frame_mutation")
+	end
+	if not Current() then return false end
+	root:CreateTitle(name)
+	local collapsed = session.collapsedPlayers and session.collapsedPlayers[name]
+	root:CreateButton(collapsed and L("Expand player column") or L("Collapse player column"), function()
+		if Current() then self:SetPartyQuestColumnCollapsed(name, not collapsed, session) end
+	end)
+	root:CreateButton(L("Restore all player columns"), function()
+		if Current() then self:RestorePartyQuestColumns(session) end
+	end)
+	root:CreateDivider()
+	if not session.byName[name].isLocal then
+		root:CreateButton(L("Refresh this player"), function()
+			if Current() then self:RefreshPartyQuestCompareMember(name) end
+		end)
+		self:PopulatePartyFocusMenu(root, name)
+		if self.PopulatePlayerNotesMenu then self:PopulatePlayerNotesMenu(root, name) end
+	end
+	return true
 end
 
 function QuestTogether:RequestPartyQuestKeyboardFocus(frame)
 	if not self.partyQuestCompareSession or self:IsWorkBlocked("foreign_frame_mutation")
+		or (self.IsPartyQuestGamepadInputOwned and self:IsPartyQuestGamepadInputOwned())
 		or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible() then return end
 	self:SetPartyQuestKeyboardNavigation(frame, false)
 	frame.keyboardFocusPending = self.partyQuestCompareSession
@@ -783,6 +867,7 @@ function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
 	local inherited = frame:GetScript("OnKeyDown")
 	frame:SetScript("OnKeyDown", function(_, key)
 		if not frame.keyboardSession and not self:IsWorkBlocked("foreign_frame_mutation")
+			and not (self.IsPartyQuestGamepadInputOwned and self:IsPartyQuestGamepadInputOwned())
 			and QuestTogether.LibChev.CanMutateOwnedRegion(frame)
 			and not (self.API.IsPartyQuestKeyboardInputBlocked and self.API.IsPartyQuestKeyboardInputBlocked(frame)) then
 			if inherited then inherited(frame, key) end
@@ -790,7 +875,8 @@ function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
 	end)
 	input:SetScript("OnKeyDown", function(_, key)
 		local session = self.partyQuestCompareSession
-		if self:IsWorkBlocked("foreign_frame_mutation") or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
+		if self:IsWorkBlocked("foreign_frame_mutation") or not QuestTogether.LibChev.CanMutateOwnedRegion(frame)
+			or (self.IsPartyQuestGamepadInputOwned and self:IsPartyQuestGamepadInputOwned()) then
 			self:SetPartyQuestKeyboardNavigation(frame, false)
 			return
 		end
@@ -823,12 +909,7 @@ function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
 		if moves then
 			session.keyboardQuestId = selected.questId
 			StopCompareScroll(frame)
-			local pixels = session.scrollPixels or 0
-			if selected.top < pixels then pixels = selected.top
-			elseif selected.top + selected.height > pixels + frame.rowsViewport:GetHeight() then
-				pixels = selected.top + selected.height - frame.rowsViewport:GetHeight()
-			end
-			ScrollCompare(self, frame, session, pixels, true)
+			self:ScrollPartyQuestCompareToQuest(frame, selected.questId)
 		elseif key == "LEFT" or key == "RIGHT" or key == "ENTER" or key == "NUMPADENTER" then
 			local expanded = session.expandedQuestIds and session.expandedQuestIds[selected.questId]
 			if (key == "LEFT" and expanded) or (key == "RIGHT" and not expanded)
@@ -853,7 +934,7 @@ function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
 		end
 	end)
 	input:SetScript("OnUpdate", function()
-		if self:IsWorkBlocked("foreign_frame_mutation") then
+		if self:IsWorkBlocked("foreign_frame_mutation") or (self.IsPartyQuestGamepadInputOwned and self:IsPartyQuestGamepadInputOwned()) then
 			self:SetPartyQuestKeyboardNavigation(frame, false)
 		elseif frame.keyboardFocusPending then
 			local expected = frame.keyboardFocusPending
@@ -1242,6 +1323,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame:Layout()
 	self:RegisterManagedWindow(frame, "partyQuestLog", frame.minimumWidth, 500)
 	self:ConfigurePartyQuestKeyboardNavigation(frame)
+	if self.ConfigurePartyQuestGamepadNavigation then self:ConfigurePartyQuestGamepadNavigation(frame) end
 	return frame
 end
 
@@ -1312,6 +1394,7 @@ function QuestTogether:RenderPartyQuestCompare()
 	if not frame or not session or self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
+	if self.ParkPartyQuestGamepadSelection and not self:ParkPartyQuestGamepadSelection(frame) then return end
 	frame.columns, frame.memberColumnsWidth = self:GetPartyQuestCompareColumns(session)
 	frame:UpdateResizeBounds(#session.members)
 	frame:Layout()
@@ -1460,7 +1543,7 @@ function QuestTogether:RenderPartyQuestCompare()
 					return
 				end
 				self:SetPartyQuestKeyboardNavigation(frame, false)
-				local expectedSession, name, isLocal = button.navSession, button.navName, button.navLocal
+				local expectedSession, name = button.navSession, button.navName
 				local function Current()
 					return self.partyQuestCompareSession == expectedSession and frame.displaySession == expectedSession
 						and QuestTogether.LibChev.CanMutateOwnedRegion(frame) and frame:IsVisible()
@@ -1468,24 +1551,7 @@ function QuestTogether:RenderPartyQuestCompare()
 				end
 				if not Current() then return end
 				self:CreatePartyQuestFilterMenu(button, function(_, root)
-					if Current() then
-						root:CreateTitle(name)
-						local collapsed = expectedSession.collapsedPlayers and expectedSession.collapsedPlayers[name]
-						root:CreateButton(collapsed and L("Expand player column") or L("Collapse player column"), function()
-							if Current() then self:SetPartyQuestColumnCollapsed(name, not collapsed, expectedSession) end
-						end)
-						root:CreateButton(L("Restore all player columns"), function()
-							if Current() then self:RestorePartyQuestColumns(expectedSession) end
-						end)
-						root:CreateDivider()
-						if not isLocal then
-							root:CreateButton(L("Refresh this player"), function()
-								if Current() then self:RefreshPartyQuestCompareMember(name) end
-							end)
-							self:PopulatePartyFocusMenu(root, name)
-							if self.PopulatePlayerNotesMenu then self:PopulatePlayerNotesMenu(root, name) end
-						end
-					end
+					if Current() then self:PopulatePartyQuestPlayerMenu(frame, expectedSession, name, root) end
 				end)
 			end)
 		end
@@ -1627,7 +1693,7 @@ end
 
 local function DismissPreview(addon, frame)
 	if frame.preview then
-		if addon.LibChev.CanMutateOwnedRegion(frame) then frame:Hide() end
+		addon:HideOwnedUI(frame)
 		return true
 	end
 	return false
@@ -1670,6 +1736,12 @@ function QuestTogether:CreatePartyQuestSharePrompt(preview)
 	frame.close:SetPoint("TOPRIGHT", -12, -8)
 	self:ConfigureRequestPrompt(frame, function(request) self:FinishPartyQuestShare(request, "declined") end)
 	frame.close:SetScript("OnClick", function() self:DismissManagedWindow(frame) end)
+	frame.requestKind = "share"
+	if self.ConfigureGamepadWindow and not preview then
+		self:ConfigureGamepadWindow(frame, { role = "share_request", kind = "popup", footer = true,
+			defaultFocus = frame.decline, close = function() self:DismissManagedWindow(frame, "gamepad") end })
+		if self.GuardGamepadWindowActions then self:GuardGamepadWindowActions(frame, { frame.share, frame.decline, frame.close }) end
+	end
 
 	self[key] = frame
 	return frame
@@ -1677,11 +1749,43 @@ end
 
 -- Clearing a retired prompt is owned teardown, not permission to show the
 -- next request or invoke a native share/invite while restricted.
+function QuestTogether:IsPartyRequestPromptCurrent(request, kind)
+	if not request or not self.isEnabled or self.API.GetTime() >= request.expires
+		or self:IsIgnoredPlayerName(request.sender) then return false end
+	if kind == "share" then
+		local state = self.partyQuestShareState
+		return state and state.incoming[request.key] == request and self:IsGroupedSender(request.sender) or false
+	elseif kind == "join" then
+		local state = rawget(self, "partyJoinState")
+		return state and state.incoming[request.sender] == request and self.API.GetTime() >= request.created
+			and request.profile == (self.db and self.db.profile) and request.roster == self.partyRosterFingerprint
+			and self:CanAcceptPartyJoin(request.sender) or false
+	end
+	return false
+end
+
 function QuestTogether:HideRetiredPartyRequestPrompt(frame, request)
+	if frame and frame.requestRetiring then return false end
+	if frame and frame.requestPinned and self:IsPartyRequestPromptCurrent(frame.requestPinned, frame.requestKind) then
+		return true
+	end
 	if frame and (not request or frame.request ~= request) then
 		frame.request = nil
+		frame.requestPinned = nil
+		if self.IsGamepadWindowRegistered and self:IsGamepadWindowRegistered(frame) then
+			frame.requestRetiring = true
+			self:HideOwnedUI(frame, function()
+				frame.requestRetiring = nil
+				-- A successor may render automatically, but never inherits native
+				-- registration or the previous request's confirmation identity.
+				if frame.requestKind == "share" then self:QueuePartyQuestSharePrompt()
+				elseif frame.requestKind == "join" then self:QueuePartyJoinPrompt() end
+			end)
+			return not frame.requestRetiring
+		end
 		self:HideOwnedUI(frame)
 	end
+	return true
 end
 
 function QuestTogether:QueuePartyQuestSharePrompt()
@@ -1697,10 +1801,14 @@ function QuestTogether:QueuePartyQuestSharePrompt()
 	end, 0, "party share prompt")
 end
 
-function QuestTogether:RenderPartyQuestSharePrompt()
-	local request = self.isEnabled and self:GetNextPartyQuestShareRequest() or nil
+function QuestTogether:RenderPartyQuestSharePrompt(requestedRecord)
+	if requestedRecord and not self:IsPartyRequestPromptCurrent(requestedRecord, "share") then return end
 	local frame = self.partyQuestSharePrompt
-	self:HideRetiredPartyRequestPrompt(frame, request)
+	local pinned = frame and frame.requestPinned
+	local request = requestedRecord or (pinned and self:IsPartyRequestPromptCurrent(pinned, "share") and pinned)
+		or (self.isEnabled and self:GetNextPartyQuestShareRequest() or nil)
+	if requestedRecord and frame then frame.requestPinned = nil end
+	if not self:HideRetiredPartyRequestPrompt(frame, request) then return end
 	if self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
@@ -1722,10 +1830,12 @@ function QuestTogether:RenderPartyQuestSharePrompt()
 			)
 		)
 	end
+	if requestedRecord then frame.requestPinned = requestedRecord end
 	frame:LayoutRequest()
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
 	self:PlayPromptAttentionAudio(frame, request, frame.preview)
+	return frame
 end
 
 function QuestTogether:CreatePartyJoinPrompt(preview)
@@ -1774,15 +1884,25 @@ function QuestTogether:CreatePartyJoinPrompt(preview)
 	frame.close:SetPoint("TOPRIGHT", -12, -8)
 	self:ConfigureRequestPrompt(frame, function(request) self:FinishPartyJoin(request, "declined") end)
 	frame.close:SetScript("OnClick", function() self:DismissManagedWindow(frame) end)
+	frame.requestKind = "join"
+	if self.ConfigureGamepadWindow and not preview then
+		self:ConfigureGamepadWindow(frame, { role = "join_request", kind = "popup", footer = true,
+			defaultFocus = frame.decline, close = function() self:DismissManagedWindow(frame, "gamepad") end })
+		if self.GuardGamepadWindowActions then self:GuardGamepadWindowActions(frame, { frame.invite, frame.decline, frame.close }) end
+	end
 
 	self[key] = frame
 	return frame
 end
 
-function QuestTogether:RenderPartyJoinPrompt()
-	local request = self.isEnabled and self:GetNextPartyJoinRequest() or nil
+function QuestTogether:RenderPartyJoinPrompt(requestedRecord)
+	if requestedRecord and not self:IsPartyRequestPromptCurrent(requestedRecord, "join") then return end
 	local frame = rawget(self, "partyJoinPrompt")
-	self:HideRetiredPartyRequestPrompt(frame, request)
+	local pinned = frame and frame.requestPinned
+	local request = requestedRecord or (pinned and self:IsPartyRequestPromptCurrent(pinned, "join") and pinned)
+		or (self.isEnabled and self:GetNextPartyJoinRequest() or nil)
+	if requestedRecord and frame then frame.requestPinned = nil end
+	if not self:HideRetiredPartyRequestPrompt(frame, request) then return end
 	if self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
@@ -1799,10 +1919,12 @@ function QuestTogether:RenderPartyJoinPrompt()
 		frame.lfg:SetChecked(self:GetOption("autoInviteWhileLFG") == true)
 		frame.message:SetText(request.sender .. L(" would like to join your party.\nSend an invitation?"))
 	end
+	if requestedRecord then frame.requestPinned = requestedRecord end
 	frame:LayoutRequest()
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()
 	self:PlayPromptAttentionAudio(frame, request, frame.preview)
+	return frame
 end
 
 function QuestTogether:RenderPartyChatReminder(request)
@@ -1824,7 +1946,7 @@ function QuestTogether:RenderPartyChatReminder(request)
 		and frame:IsShown() then
 		remember = frame.remember:GetChecked() == true
 	end
-	self:HideRetiredPartyRequestPrompt(frame, request)
+	if not self:HideRetiredPartyRequestPrompt(frame, request) then return end
 	if not request or self:IsWorkBlocked("foreign_frame_mutation") then
 		return
 	end
@@ -1899,13 +2021,16 @@ function QuestTogether:RenderPartyChatReminder(request)
 		frame.close:SetScript("OnClick", function()
 			-- Safe dismissal remains available during combat. A restricted close
 			-- does not acknowledge or save preferences; the reminder resumes later.
-			if QuestTogether.LibChev.CanMutateOwnedRegion(frame) then
-				frame:Hide()
-			end
+			self:HideOwnedUI(frame)
 			if self.LibChev.CanMutateOwnedRegion(frame.remember) then
 				self:AcknowledgePartyChatReminder(frame.request, frame.remember:GetChecked() == true, false)
 			end
 		end)
+		if self.ConfigureGamepadWindow and not request.preview then
+			self:ConfigureGamepadWindow(frame, { role = "party_chat_reminder", kind = "popup", footer = true,
+				defaultFocus = frame.close, close = function() frame.close:GetScript("OnClick")(frame.close) end })
+			if self.GuardGamepadWindowActions then self:GuardGamepadWindowActions(frame, { frame.keep, frame.disable, frame.close }) end
+		end
 		for _, region in ipairs({ frame.heading, frame.memberLabel }) do self:AddScrollDialogLabel(frame, region, "heading") end
 		for _, region in ipairs({ frame.preview, frame.hint }) do self:AddScrollDialogLabel(frame, region, "muted") end
 		for _, region in ipairs({ frame.message, frame.members }) do self:AddScrollDialogLabel(frame, region) end
@@ -1967,4 +2092,5 @@ function QuestTogether:RenderPartyChatReminder(request)
 	end
 	frame:Show()
 	self:PlayPromptAttentionAudio(frame, request, request.preview)
+	return frame
 end

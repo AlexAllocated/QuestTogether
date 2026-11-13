@@ -122,6 +122,9 @@ function QuestTogether:GetDebugController()
 				owner.API.ReloadUI()
 			end
 		end,
+		onWindow = function(frame)
+			owner:ConfigureDiagnosticGamepadWindow(frame)
+		end,
 		ui = {
 			parent = UIParent,
 			createFrame = CreateFrame,

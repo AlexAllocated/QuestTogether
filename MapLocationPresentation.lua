@@ -64,7 +64,7 @@ function QT:GetFindPlayerMapLocation(name)
 		return nil, L("No shared location is available for this player.")
 	end
 	if self:IsGroupedSender(name) then
-		return nil, L("Your party members are shown by WoW's own map markers.")
+		return nil, L("Your party members already have markers on the world map.")
 	end
 	if self:GetOption("showPlayerLocations") ~= true or self:GetOption("mapPartyOnly") == true then
 		return nil, L("Enable player locations in QuestTogether settings to find players on the map.")

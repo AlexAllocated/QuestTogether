@@ -58,7 +58,13 @@ function QT:ConfigureWindowController(frame, hooks)
 		end)
 	end
 	for action, callback in pairs(hooks or {}) do
-		controller.hooks[action] = callback
+		if action == "gamepad" then
+			if self.ConfigureGamepadWindow then
+				self:ConfigureGamepadWindow(frame, callback)
+			end
+		else
+			controller.hooks[action] = callback
+		end
 	end
 	return controller
 end
@@ -70,8 +76,16 @@ function QT:DismissManagedWindow(frame, reason)
 		controller.dismissed = true
 		-- A request's dismissal may synchronously show its successor on this
 		-- same frame. Retire the old presentation before invoking that callback.
-		self:HideOwnedUI(frame)
-		Invoke(controller, "dismiss", reason or "close")
+		if self.IsGamepadWindowRegistered and self:IsGamepadWindowRegistered(frame) then
+			self:HideOwnedUI(frame, function()
+				Invoke(controller, "dismiss", reason or "close")
+			end)
+		else
+			-- Preserve ordinary dismissal outside the cleanup queue's flushing
+			-- scope: callbacks can synchronously retire their own child regions.
+			self:HideOwnedUI(frame)
+			Invoke(controller, "dismiss", reason or "close")
+		end
 		return
 	end
 	self:HideOwnedUI(frame)

@@ -552,6 +552,9 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	if Has("questTrackerMode", "questFocusOpacity", "questTrackerHideSolo", "questTrackerSnapToBlizzard", "questTrackerHideBlizzardTooltip", "questTrackerTooltipPlacement") then
 		Invoke(self, "QueueQuestFocusRefresh", true)
 	end
+	if Has("nativeGamepadNavigation") then
+		Invoke(self, "SetGamepadIntegrationEnabled", self:GetOption("nativeGamepadNavigation") ~= false)
+	end
 	if Has("windowScale") then
 		Invoke(self, "RefreshManagedWindowLayouts")
 	end
