@@ -1,14 +1,15 @@
 {
-  "source_sha256": "95cfeb68bc7c318948598034334762977009103ba7350d46283595266583330e",
+  "source_sha256": "2b9572ab1333bb326ead725e6c65afbb2e083018439539200a97e526ed686760",
   "notes": {
-    "version": "9.0.14",
-    "welcome": "Die QT-Kanäle bleiben wieder hinter euren normalen Chatkanälen.",
+    "version": "9.1.0",
+    "welcome": "Du spielst WoW Forever mit Controller? Teste die Controller-Beta von QuestTogether mit uns!",
     "sections": [
       {
-        "title": "Chatkanäle",
+        "title": "Controller-Beta ausprobieren",
         "items": [
-          "Ein Fehler wurde behoben, durch den die versteckten QT-Kanäle vor Allgemein und anderen Chatkanälen stehen bleiben konnten.",
-          "Der globale Kanal zur Spielersuche heißt jetzt QuestTogether."
+          "Die optionale Beta nutzt die native Gamepad UI für das Gruppenquestlog und QT-Menüs. Mit dem Fadenkreuz auf der Weltkarte lassen sich außerdem QT-Markierungen ansehen. Dieses stabile Update kündigt die Beta nur an; die Controller-Unterstützung bleibt vorerst dort.",
+          "Klicke in der CurseForge-App mit der rechten Maustaste auf QuestTogether und wähle \"Release Type\" → \"Beta\". Aktualisiere danach das Addon und gib im Spiel /reload ein.",
+          "Lass die Gamepad UI von WoW Forever eingeschaltet und probiere die Beta aus. Sag uns gern, was gut funktioniert und wo es noch hakt. So hilfst du uns bei der Vorbereitung der stabilen Version."
         ]
       }
     ]

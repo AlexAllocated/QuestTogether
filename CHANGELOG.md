@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.1.0
+
+Play with a controller in WoW Forever? Help us test QuestTogether’s controller beta!
+
+### Try the controller beta
+
+- The optional beta adds native Gamepad UI navigation for Party Quest Log and QT menus, plus crosshair hover over QT markers on the world map. This stable update is an invitation; controller support remains in the beta.
+- In the CurseForge app, right-click QuestTogether, choose "Release Type", then select "Beta". Update QuestTogether and type /reload in WoW.
+- Keep WoW Forever’s Gamepad UI enabled, give it a try, and let us know what works or needs attention. Your feedback will help us get it ready for a stable release.
+
 ## 9.0.14
 
 QT channels should no longer get in the way of your usual chat channels.

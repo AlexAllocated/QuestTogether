@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0
+
+¿Juegas WoW Forever con control? ¡Te invitamos a probar la beta de QuestTogether!
+
+### Prueba la beta para control
+
+- La beta opcional usa la Gamepad UI nativa para recorrer el Registro de misiones del grupo y los menús de QT. También puedes consultar los marcadores de QT con el cursor en cruz del mapa del mundo. Esta actualización estable solo anuncia la beta; las funciones de control siguen siendo parte de ella.
+- En la app de CurseForge, haz clic derecho en QuestTogether, elige "Release Type" y después "Beta". Actualiza el addon y escribe /reload dentro de WoW.
+- Deja activada la Gamepad UI de WoW Forever y pruébala. Nos ayudará mucho que nos cuentes qué funciona y qué necesita ajustes antes de lanzar una versión estable.
+
 ## 9.0.14
 
 Corregimos el orden de los canales de QT para que no desplacen a tus canales de chat habituales.

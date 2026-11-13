@@ -1,14 +1,15 @@
 {
-  "source_sha256": "95cfeb68bc7c318948598034334762977009103ba7350d46283595266583330e",
+  "source_sha256": "2b9572ab1333bb326ead725e6c65afbb2e083018439539200a97e526ed686760",
   "notes": {
-    "version": "9.0.14",
-    "welcome": "Los canales de QT vuelven a quedar detrás de tus canales de chat habituales.",
+    "version": "9.1.0",
+    "welcome": "¿Juegas a WoW Forever con mando? ¡Ayúdanos a probar la beta de QuestTogether!",
     "sections": [
       {
-        "title": "Canales de chat",
+        "title": "Prueba la beta para mando",
         "items": [
-          "Corregido un fallo que podía dejar los canales ocultos de QT por delante de General y de los demás canales de chat.",
-          "El canal global que permite descubrir a otros jugadores ahora se llama QuestTogether."
+          "La beta opcional utiliza la Gamepad UI nativa para navegar por el Registro de misiones del grupo y los menús de QT. También permite consultar los marcadores de QT con la retícula del mapa del mundo. Esta actualización estable solo anuncia la beta; todavía no incorpora estas funciones.",
+          "En la aplicación CurseForge, haz clic derecho en QuestTogether, elige \"Release Type\" y selecciona \"Beta\". Actualiza el addon y escribe /reload en WoW.",
+          "Mantén activada la Gamepad UI de WoW Forever y anímate a probarla. Cuéntanos qué funciona bien y qué habría que mejorar para preparar la versión estable."
         ]
       }
     ]

@@ -3,6 +3,151 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.0.14",
+        "welcome": "QT channels should no longer get in the way of your usual chat channels.",
+        "sections": [
+          {
+            "title": "Chat channels",
+            "items": [
+              "Fixed a case where QT’s hidden channels stayed ahead of General and other chat channels.",
+              "The global discovery channel is now named QuestTogether."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.0.14",
+        "welcome": "Die QT-Kanäle bleiben wieder hinter euren normalen Chatkanälen.",
+        "sections": [
+          {
+            "title": "Chatkanäle",
+            "items": [
+              "Ein Fehler wurde behoben, durch den die versteckten QT-Kanäle vor Allgemein und anderen Chatkanälen stehen bleiben konnten.",
+              "Der globale Kanal zur Spielersuche heißt jetzt QuestTogether."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.0.14",
+        "welcome": "Les canaux de QT retrouvent leur place après vos canaux de discussion habituels.",
+        "sections": [
+          {
+            "title": "Canaux de discussion",
+            "items": [
+              "Correction d’un problème qui pouvait laisser les canaux masqués de QT avant le canal Général et les autres canaux de discussion.",
+              "Le canal global utilisé pour découvrir les autres joueurs s’appelle désormais QuestTogether."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.0.14",
+        "welcome": "Los canales de QT vuelven a quedar detrás de tus canales de chat habituales.",
+        "sections": [
+          {
+            "title": "Canales de chat",
+            "items": [
+              "Corregido un fallo que podía dejar los canales ocultos de QT por delante de General y de los demás canales de chat.",
+              "El canal global que permite descubrir a otros jugadores ahora se llama QuestTogether."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.0.14",
+        "welcome": "Corregimos el orden de los canales de QT para que no desplacen a tus canales de chat habituales.",
+        "sections": [
+          {
+            "title": "Canales de chat",
+            "items": [
+              "Los canales ocultos de QT podían quedarse antes de General y los demás canales de chat. Ese problema quedó corregido.",
+              "El canal global para encontrar a otros jugadores ahora se llama QuestTogether."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.0.14",
+        "welcome": "Os canais do QT voltam a ficar depois dos seus canais de bate-papo habituais.",
+        "sections": [
+          {
+            "title": "Canais de bate-papo",
+            "items": [
+              "Corrigimos um problema que podia deixar os canais ocultos do QT à frente do Geral e dos outros canais de bate-papo.",
+              "O canal global usado para encontrar outros jogadores agora se chama QuestTogether."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.0.14",
+        "welcome": "Каналы QT больше не должны занимать место перед вашими обычными каналами чата.",
+        "sections": [
+          {
+            "title": "Каналы чата",
+            "items": [
+              "Исправлена ошибка, из-за которой скрытые каналы QT могли оставаться перед общим и другими каналами чата.",
+              "Глобальный канал, через который QT находит других игроков, теперь называется QuestTogether."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.0.14",
+        "welcome": "I canali di QT tornano dopo i tuoi normali canali di chat.",
+        "sections": [
+          {
+            "title": "Canali di chat",
+            "items": [
+              "Risolto un problema che poteva lasciare i canali nascosti di QT prima del canale Generale e degli altri canali di chat.",
+              "Il canale globale usato per trovare gli altri giocatori si chiama ora QuestTogether."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.0.14",
+        "welcome": "QT 채널이 일반 채팅 채널보다 앞에 남아 있던 문제를 수정했습니다.",
+        "sections": [
+          {
+            "title": "채팅 채널",
+            "items": [
+              "숨겨진 QT 채널의 순서가 제대로 조정되지 않아 일반 채널보다 앞에 표시되던 경우를 수정했습니다.",
+              "다른 플레이어를 찾는 데 사용하는 전역 채널 이름을 QuestTogether로 변경했습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.0.14",
+        "welcome": "修复了 QT 频道排在常用聊天频道前面的问题。",
+        "sections": [
+          {
+            "title": "聊天频道",
+            "items": [
+              "隐藏的 QT 频道有时无法移到综合等聊天频道之后，现已修复。",
+              "用于发现其他玩家的全局频道现已更名为 QuestTogether。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.0.14",
+        "welcome": "已修正 QT 頻道排在常用聊天頻道前面的問題。",
+        "sections": [
+          {
+            "title": "聊天頻道",
+            "items": [
+              "隱藏的 QT 頻道有時無法移到綜合等聊天頻道之後，現已修正。",
+              "用來尋找其他玩家的全域頻道現已改名為 QuestTogether。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.0.13",
         "welcome": "QuestTogether’s channels stay at the bottom of your channel list while keeping your chat setup intact.",
         "sections": [

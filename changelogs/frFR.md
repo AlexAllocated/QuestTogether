@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0
+
+Vous jouez à WoW Forever à la manette ? Venez essayer la bêta de QuestTogether !
+
+### Essayez la bêta pour manette
+
+- Cette bêta facultative s’appuie sur la Gamepad UI native pour parcourir le Journal de quêtes du groupe et les menus QT. Le réticule de la carte du monde permet aussi de survoler les marqueurs QT. Cette mise à jour stable annonce la bêta ; elle n’ajoute pas encore ces commandes.
+- Dans l’application CurseForge, faites un clic droit sur QuestTogether, choisissez "Release Type", puis "Beta". Mettez l’addon à jour et saisissez /reload dans WoW.
+- Activez la Gamepad UI de WoW Forever, puis faites un essai. Vos retours sur ce qui fonctionne et ce qui reste à améliorer nous aideront à préparer la version stable.
+
 ## 9.0.14
 
 Les canaux de QT retrouvent leur place après vos canaux de discussion habituels.

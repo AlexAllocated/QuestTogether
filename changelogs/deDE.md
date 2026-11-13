@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0
+
+Du spielst WoW Forever mit Controller? Teste die Controller-Beta von QuestTogether mit uns!
+
+### Controller-Beta ausprobieren
+
+- Die optionale Beta nutzt die native Gamepad UI für das Gruppenquestlog und QT-Menüs. Mit dem Fadenkreuz auf der Weltkarte lassen sich außerdem QT-Markierungen ansehen. Dieses stabile Update kündigt die Beta nur an; die Controller-Unterstützung bleibt vorerst dort.
+- Klicke in der CurseForge-App mit der rechten Maustaste auf QuestTogether und wähle "Release Type" → "Beta". Aktualisiere danach das Addon und gib im Spiel /reload ein.
+- Lass die Gamepad UI von WoW Forever eingeschaltet und probiere die Beta aus. Sag uns gern, was gut funktioniert und wo es noch hakt. So hilfst du uns bei der Vorbereitung der stabilen Version.
+
 ## 9.0.14
 
 Die QT-Kanäle bleiben wieder hinter euren normalen Chatkanälen.

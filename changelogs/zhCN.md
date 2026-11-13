@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0
+
+在 WoW Forever 中使用手柄游玩？欢迎试用 QuestTogether 手柄支持测试版！
+
+### 如何参加手柄测试
+
+- 测试版使用 WoW Forever 原生 Gamepad UI，让你用手柄浏览队伍任务日志和 QT 菜单，也能用世界地图准星查看 QT 标记信息。本次稳定版仅发布测试邀请；手柄功能仍需安装测试版才能使用。
+- 在 CurseForge 应用中右键点击 QuestTogether，选择 "Release Type"，再选择 "Beta"。更新插件后，在 WoW 中输入 /reload。
+- 参加测试完全自愿。请开启 WoW Forever 的 Gamepad UI 后体验，并告诉我们哪些地方顺手、哪些地方需要改进，帮助我们完善正式版本。
+
 ## 9.0.14
 
 修复了 QT 频道排在常用聊天频道前面的问题。
