@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0-beta.1
+
+Esta beta traz ao QuestTogether a navegação nativa por controle do WoW Forever. Os testes dentro do jogo continuam.
+
+### Navegação nativa por controle
+
+- Requer a interface de controle do Forever 1.60.1, build 70888 ou 70938. A opção “Ativar navegação nativa por controle”, nos ajustes gerais do QT, vem ativada. Outros clientes mantêm o funcionamento com mouse e teclado.
+- O Registro de missões do grupo oferece seleção, rolagem automática e Voltar. Menus de ações e listas de opções usam controles com a aparência da Blizzard. Solicitações recebidas não assumem automaticamente o foco do controle.
+
+### Abrir o registro do grupo
+
+- No layout padrão, o QT coloca uma macro com ícone de livro de missões em LT + RT + direcional para cima, na página de ações normal 1, somente se o espaço estiver vazio. Você pode movê-la ou removê-la no editor de barras de ação; nenhuma ação existente é substituída.
+- Remover apenas o botão não faz o QT colocá-lo de volta. Se você excluir a macro, o QT poderá recriá-la e atribuí-la novamente quando o espaço padrão estiver livre. “Abrir o menu do QuestTogether” não tem atalho padrão: configure-o nas teclas de atalho do WoW para acessar ações contextuais e “Solicitações pendentes”.
+
+### Missões e mapa
+
+- A seleção de missões no rastreador da Blizzard também funciona como passar o cursor para o Rastreador de objetivos do grupo. Suas preferências de exibição e dicas continuam valendo, sem alterar o foco de missão ou o acompanhamento do foco de outro jogador.
+- A mira do mapa mostra dicas de jogadores QT e grupos de marcadores. A dica do QT fica acima de uma dica de missão sobreposta. Abrir menus do mapa automaticamente com A ainda é um teste privado, fora desta beta. A mantém sua ação normal no mapa, cujos atalhos também podem interceptar combinações atribuídas ao menu QT.
+- Em builds compatíveis, o QT pode representar os membros do grupo no mapa-múndi com os ícones VIP ou de desenvolvedor. Desativar os marcadores QT restaura os marcadores de grupo da Blizzard. O minimapa não muda.
+
+### Testes da beta
+
+- O botão do PQL, a navegação básica, os menus e listas compactos e as dicas da mira já foram confirmados no jogo. Ainda faltam testes mais amplos do rastreador, ajustes, transições de janelas, reconexão do controle, combate e mapas lotados. Ao relatar um problema, inclua os passos para reproduzi-lo, o build do cliente e o relatório de /qt diagnostics.
+
 ## 9.0.14
 
 Os canais do QT voltam a ficar depois dos seus canais de bate-papo habituais.

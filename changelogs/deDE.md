@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0-beta.1
+
+Diese Beta bringt die native Gamepad-Bedienung von WoW Forever zu QuestTogether. Die Erprobung im Spiel läuft noch.
+
+### Native Gamepad-Bedienung
+
+- Benötigt die Gamepad-Oberfläche von Forever 1.60.1, Build 70888 oder 70938. „Native Gamepad-Navigation aktivieren“ ist in den allgemeinen QT-Einstellungen standardmäßig eingeschaltet. Andere Clients behalten ihre Maus- und Tastaturbedienung.
+- Das Gruppenquestlog unterstützt Auswahl, automatisches Scrollen und Zurück. Aktionsmenüs und Auswahllisten nutzen Steuerelemente im vertrauten Blizzard-Stil. Eingehende Anfragen übernehmen nicht automatisch den Eingabefokus.
+
+### Gruppenquestlog öffnen
+
+- Bei der Standardbelegung legt QT ein Makro mit Questbuch-Symbol auf LT + RT + Steuerkreuz oben auf der normalen Aktionsseite 1, sofern der Platz frei ist. Vorhandene Aktionen bleiben erhalten; das Makro lässt sich im Aktionsleisten-Editor verschieben oder entfernen.
+- Wird nur die Aktion entfernt, setzt QT sie nicht zurück. Wird das Makro selbst gelöscht, kann QT es neu anlegen und wieder auf den freien Standardplatz setzen. „QuestTogether-Menü öffnen“ lässt sich in WoWs Tastenbelegung zuweisen; es hat keine Standardtaste und bietet Kontextaktionen sowie „Offene Anfragen“.
+
+### Quests und Karte
+
+- Wenn du in Blizzards Zielverfolgung eine Quest mit dem Controller auswählst, zeigt die Gruppen-Zielverfolgung sie wie beim Darüberfahren mit der Maus an. Questfokus und Fokusfolgen ändern sich dabei nicht; die bestehenden Anzeige- und Tooltip-Einstellungen gelten weiterhin.
+- Das Kartenfadenkreuz zeigt Tooltips für QT-Spieler und zusammengefasste Markierungen; QT liegt dabei über einem überlappenden Questtooltip. Automatische Kartenmenüs per A sind noch ein privater Versuch und nicht Teil dieser Beta. A behält seine Kartenfunktion. Die Kartensteuerung kann auch selbst zugewiesene QT-Menükombinationen abfangen.
+- Auf unterstützten Builds kann QT die Gruppenmarkierungen der Weltkarte samt VIP- und Entwicklersymbolen darstellen. Ohne QT-Kartenanzeigen erscheinen wieder Blizzards Gruppenmarkierungen. Die Minikarte bleibt unverändert.
+
+### Hinweise zum Betatest
+
+- Der PQL-Startknopf, die grundlegende Navigation, kompakte Menüs und Auswahllisten sowie das Kartenfadenkreuz wurden im Spiel bestätigt. Weitere Tests für Gruppen-Zielverfolgung, Einstellungen, Fensterwechsel, erneutes Verbinden des Controllers, Kampf und volle Karten stehen aus. Bitte melde Probleme mit Schritten zum Nachstellen, Client-Build und dem Bericht aus /qt diagnostics.
+
 ## 9.0.14
 
 Die QT-Kanäle bleiben wieder hinter euren normalen Chatkanälen.

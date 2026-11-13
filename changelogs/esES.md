@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0-beta.1
+
+Esta beta incorpora a QuestTogether la navegación nativa con mando de WoW Forever. Las pruebas dentro del juego siguen en curso.
+
+### Navegación nativa con mando
+
+- Requiere la interfaz de mando de Forever 1.60.1, compilación 70888 o 70938. «Activar navegación nativa con mando» viene activado en los ajustes generales de QT. Los demás clientes mantienen el uso de ratón y teclado.
+- El Registro de misiones del grupo permite seleccionar controles, desplazarse automáticamente y volver atrás. Los menús de acciones y las listas desplegables usan controles con el estilo de Blizzard. Las solicitudes entrantes no capturan automáticamente el foco del mando.
+
+### Acceso al registro del grupo
+
+- Con la distribución predeterminada, QT coloca una macro con icono de libro de misiones en LT + RT + arriba de la cruceta, en la página de acciones normal 1, solo si la casilla está libre. Puedes moverla o quitarla con el editor de barras; no se sustituye ninguna acción existente.
+- Si quitas solo el botón, QT no lo vuelve a colocar. Si borras la macro, QT puede recrearla y asignarla de nuevo cuando la casilla predeterminada esté libre. «Abrir el menú de QuestTogether» no tiene una tecla asignada: configúrala en los atajos de WoW para acceder a acciones contextuales y «Solicitudes pendientes».
+
+### Misiones y mapa
+
+- Seleccionar una misión en el seguimiento de objetivos de Blizzard también cuenta como pasar el cursor para el Seguimiento de objetivos del grupo. Se respetan sus ajustes de visualización e información emergente; no cambia el foco de misión ni el seguimiento del foco de otro jugador.
+- La mirilla del mapa muestra información emergente de jugadores QT y agrupaciones de marcadores. La de QT queda por encima de la de una misión superpuesta. Abrir menús del mapa automáticamente con A sigue siendo una prueba privada y no se incluye en esta beta: A conserva su acción nativa. Los controles del mapa también pueden interceptar combinaciones asignadas al menú QT.
+- En compilaciones compatibles, QT puede representar a los miembros del grupo en el mapa del mundo con sus iconos VIP o de desarrollador. Al desactivar las marcas de QT vuelven las de Blizzard. El minimapa no cambia.
+
+### Pruebas de la beta
+
+- El acceso al PQL, la navegación básica, los menús y desplegables compactos y la información emergente de la mirilla se han probado en el juego. Queda por ampliar las pruebas del seguimiento de objetivos, los ajustes, los cambios de ventana, la reconexión del mando, el combate y los mapas con muchos jugadores. Al informar de un problema, incluye los pasos, la compilación del cliente y el informe de /qt diagnostics.
+
 ## 9.0.14
 
 Los canales de QT vuelven a quedar detrás de tus canales de chat habituales.

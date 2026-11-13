@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0-beta.1
+
+Questa beta integra in QuestTogether la navigazione nativa con controller di WoW Forever. Le prove in gioco sono ancora in corso.
+
+### Navigazione nativa con controller
+
+- È richiesta l’interfaccia controller di Forever 1.60.1, build 70888 o 70938. “Abilita la navigazione nativa con controller” è attivo per impostazione predefinita nelle opzioni generali di QT. Gli altri client mantengono i controlli con mouse e tastiera.
+- Il Registro missioni del gruppo supporta selezione, scorrimento automatico e Indietro. Menu delle azioni e liste di scelta usano controlli dall’aspetto Blizzard. Le richieste in arrivo non acquisiscono automaticamente il controllo della navigazione.
+
+### Aprire il registro del gruppo
+
+- Con la disposizione predefinita, QT colloca una macro con l’icona di un libro di missioni su LT + RT + Su del tasto direzionale, nella pagina azioni normale 1, solo se lo spazio è libero. Puoi spostarla o rimuoverla dall’editor delle barre; le azioni esistenti non vengono sostituite.
+- Rimuovere soltanto il pulsante non lo fa ricomparire. Se elimini la macro, QT può ricrearla e riassegnarla quando lo spazio predefinito è libero. “Apri il menu di QuestTogether” non ha un tasto predefinito: assegnalo nelle combinazioni di WoW per accedere alle azioni contestuali e alle “Richieste in attesa”.
+
+### Missioni e mappa
+
+- Scorrere le missioni nel tracciamento obiettivi Blizzard attiva il Tracciamento obiettivi del gruppo come il passaggio del mouse. Restano valide le preferenze di visualizzazione e dei suggerimenti, senza cambiare la missione attiva né lo stato di “Segui la missione attiva”.
+- Il mirino della mappa mostra i suggerimenti dei giocatori QT e dei gruppi di indicatori; quello di QT appare sopra un suggerimento di missione sovrapposto. L’apertura automatica dei menu con A è ancora una prova privata, esclusa da questa beta. A conserva la funzione della mappa; i controlli nativi possono anche intercettare le combinazioni assegnate al menu QT.
+- Sulle build supportate, QT può mostrare i membri del gruppo sulla mappa del mondo con le icone VIP o sviluppatore. Disattivando gli indicatori QT ricompaiono quelli di Blizzard. La minimappa non cambia.
+
+### Prove della beta
+
+- Il pulsante PQL, la navigazione di base, i menu e le liste compatti e i suggerimenti del mirino sono stati verificati in gioco. Restano da ampliare le prove su tracciamento obiettivi, impostazioni, transizioni delle finestre, riconnessione del controller, combattimento e mappe affollate. Per segnalare problemi, includi i passaggi, la build del client e il rapporto di /qt diagnostics.
+
 ## 9.0.14
 
 I canali di QT tornano dopo i tuoi normali canali di chat.

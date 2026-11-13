@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.1.0-beta.1
+
+Cette bêta ajoute à QuestTogether la navigation native à la manette de WoW Forever. Les essais en jeu se poursuivent.
+
+### Navigation native à la manette
+
+- L’interface manette de Forever 1.60.1 est requise, sur les builds 70888 ou 70938. Dans les réglages généraux de QT, « Activer la navigation native à la manette » est coché par défaut. Les autres clients conservent leur fonctionnement à la souris et au clavier.
+- Le Journal de quêtes du groupe propose la sélection, le défilement automatique et le retour. Les menus d’actions et listes de choix reprennent l’apparence des contrôles Blizzard. Les demandes reçues ne prennent pas automatiquement le contrôle de la navigation.
+
+### Ouvrir le journal du groupe
+
+- Avec la configuration par défaut, QT place une macro à l’icône de livre de quêtes sur LT + RT + haut de la croix directionnelle, sur la page d’actions normale 1, uniquement si cet emplacement est libre. Déplacez-la ou retirez-la avec l’éditeur de barres d’action ; aucune action existante n’est remplacée.
+- Retirer seulement le bouton ne le fait pas revenir. Supprimer la macro permet à QT de la recréer et de la replacer si l’emplacement par défaut est libre. Attribuez une touche à « Ouvrir le menu QuestTogether » dans les raccourcis WoW pour accéder aux actions contextuelles et aux « Demandes en attente » ; aucun raccourci n’est défini d’avance.
+
+### Quêtes et carte
+
+- Parcourir les quêtes dans le suivi d’objectifs Blizzard affiche aussi le Suivi des objectifs du groupe, selon ses réglages de survol. Cela ne change ni la quête focalisée ni le suivi du focus d’un autre joueur.
+- Le réticule de la carte affiche les infobulles des joueurs QT et des groupes de marqueurs. L’infobulle QT passe devant celle d’une quête superposée. L’ouverture automatique des menus avec A reste un essai privé, absent de cette bêta : A conserve son action de carte. Les raccourcis natifs de la carte peuvent également intercepter une combinaison attribuée au menu QT.
+- Sur les builds pris en charge, QT peut afficher les membres du groupe sur la carte du monde avec leurs icônes VIP ou développeur. Désactiver les affichages QT de la carte rétablit les marqueurs Blizzard. La minicarte ne change pas.
+
+### Participer aux essais
+
+- Le lanceur PQL, la navigation de base, les menus compacts, les listes de choix et le survol au réticule ont été confirmés en jeu. Le suivi d’objectifs, les réglages, les transitions entre fenêtres, la reconnexion de la manette, le combat et les cartes très chargées restent à tester plus largement. Pour signaler un problème, joignez les étapes, le build du client et le rapport /qt diagnostics.
+
 ## 9.0.14
 
 Les canaux de QT retrouvent leur place après vos canaux de discussion habituels.
