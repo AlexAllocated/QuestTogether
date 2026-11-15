@@ -2,6 +2,25 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0
+
+Nuevos atajos para las misiones del grupo, indicadores más claros y correcciones para las estrellas VIP.
+
+### Atajos para seguir misiones
+
+- Con /qt focus puedes seguir la misión activa del miembro del grupo que tengas seleccionado. Si prefieres usar su nombre, escribe /qt focus <name>. Para detener el seguimiento, usa /qt unfollow.
+- Puedes indicar el nombre completo con apellido en WoW Forever o con reino en Retail. Si hay varios miembros del grupo con el mismo nombre corto, se te pedirá el nombre completo.
+- En las asignaciones de teclas de WoW, dentro de QuestTogether, están «Seguir la misión activa del objetivo» y «Dejar de seguir la misión del compañero». Ninguna tecla se asigna de forma automática. También puedes usar estos comandos en macros; solo siguen las misiones y no mueven a tu personaje.
+
+### Indicadores de misión más claros
+
+- En el seguimiento de objetivos, la misión activa de cada compañero se marca con un anillo grueso y hueco del color de su clase. Al seguirlo, su anillo se rellena con el mismo color y ya no lleva el borde verde. Se conservan los símbolos de cadena que indican quiénes siguen tu misión activa.
+
+### Estabilidad de las estrellas VIP
+
+- Se corrigió un error que permitía que las renovaciones repetidas borraran de la caché el estado VIP aún válido de otro jugador.
+- El estado VIP verificado ahora puede retransmitirse cuando cambian las conexiones entre jugadores, sin extender su vigencia. Esto corrige dos causas que podían hacer que una estrella VIP volviera a verse como un punto normal.
+
 ## 9.1.0
 
 ¿Juegas WoW Forever con control? ¡Te invitamos a probar la beta de QuestTogether!

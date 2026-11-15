@@ -1,15 +1,28 @@
 {
-  "source_sha256": "2b9572ab1333bb326ead725e6c65afbb2e083018439539200a97e526ed686760",
+  "source_sha256": "c62317c9fa35af624a81215db7d0b8e6e044d7eefe9a51f307832420b7690065",
   "notes": {
-    "version": "9.1.0",
-    "welcome": "Du spielst WoW Forever mit Controller? Teste die Controller-Beta von QuestTogether mit uns!",
+    "version": "9.2.0",
+    "welcome": "Neue Questfokus-Befehle, klarere Fokusmarkierungen und Korrekturen für VIP-Sterne.",
     "sections": [
       {
-        "title": "Controller-Beta ausprobieren",
+        "title": "Neue Questfokus-Kurzbefehle",
         "items": [
-          "Die optionale Beta nutzt die native Gamepad UI für das Gruppenquestlog und QT-Menüs. Mit dem Fadenkreuz auf der Weltkarte lassen sich außerdem QT-Markierungen ansehen. Dieses stabile Update kündigt die Beta nur an; die Controller-Unterstützung bleibt vorerst dort.",
-          "Klicke in der CurseForge-App mit der rechten Maustaste auf QuestTogether und wähle \"Release Type\" → \"Beta\". Aktualisiere danach das Addon und gib im Spiel /reload ein.",
-          "Lass die Gamepad UI von WoW Forever eingeschaltet und probiere die Beta aus. Sag uns gern, was gut funktioniert und wo es noch hakt. So hilfst du uns bei der Vorbereitung der stabilen Version."
+          "Mit /qt focus folgst du dem Questfokus des Gruppenmitglieds, das du als Ziel ausgewählt hast. Mit /qt focus <name> wählst du ein Gruppenmitglied per Namen; /qt unfollow beendet das Folgen.",
+          "Vollständige Namen mit Nachnamen in WoW Forever oder Realm in Retail werden unterstützt. Passt ein kurzer Name zu mehreren Gruppenmitgliedern, musst du den vollständigen Namen angeben.",
+          "Unter QuestTogether in der WoW-Tastenbelegung findest du „Dem Questfokus des Ziels folgen“ und „Dem Questfokus nicht mehr folgen“. Es werden keine Tasten automatisch belegt. Die Befehle funktionieren auch in Makros und folgen nur dem Questfokus – sie bewegen deinen Charakter nicht."
+        ]
+      },
+      {
+        "title": "Deutlichere Fokusmarkierungen",
+        "items": [
+          "Die Questfokus-Markierungen der Gruppenmitglieder in der Zielverfolgung sind jetzt kräftige, innen leere Ringe in Klassenfarbe. Folgst du einem Mitglied, wird dessen Ring mit derselben Farbe gefüllt. Das ersetzt die grüne Umrandung; die Kettensymbole für Spieler, die deinem Questfokus folgen, bleiben erhalten."
+        ]
+      },
+      {
+        "title": "Stabilere VIP-Sterne",
+        "items": [
+          "Wiederholte VIP-Erneuerungen konnten den noch gültigen Status eines anderen Spielers aus dem Zwischenspeicher verdrängen. Dieser Fehler ist behoben.",
+          "Nach Änderungen an den Verbindungen zwischen Spielern kann bereits verifizierter VIP-Status wieder weitergegeben werden, ohne seine Gültigkeit zu verlängern. Damit sind zwei Ursachen behoben, durch die VIP-Sterne zu normalen Punkten werden konnten."
         ]
       }
     ]

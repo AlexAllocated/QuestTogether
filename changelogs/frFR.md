@@ -2,6 +2,25 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0
+
+De nouveaux raccourcis pour suivre les quêtes du groupe, des repères plus lisibles et des corrections pour les étoiles VIP.
+
+### Raccourcis de suivi de quête
+
+- Ciblez un membre du groupe et tapez /qt focus pour suivre sa quête active. Vous pouvez aussi le désigner avec /qt focus <name>. La commande /qt unfollow arrête ce suivi.
+- Les noms complets sont acceptés, avec le nom de famille sur WoW Forever ou le royaume sur Retail. Si un nom court correspond à plusieurs membres du groupe, utilisez le nom complet.
+- Les raccourcis « Suivre la quête active de la cible » et « Arrêter le suivi de quête » se trouvent dans la rubrique QuestTogether des raccourcis clavier de WoW. Aucune touche n’est attribuée automatiquement. Les commandes fonctionnent aussi dans les macros : elles suivent les quêtes, sans déplacer votre personnage.
+
+### Repères de quête plus lisibles
+
+- Dans le suivi des objectifs, les repères de quête active des membres du groupe prennent la forme d’anneaux épais et creux de la couleur de leur classe. L’anneau du membre que vous suivez se remplit de cette même couleur, à la place de l’ancien contour vert. Les badges en forme de chaîne qui signalent les joueurs suivant votre quête active sont conservés.
+
+### Stabilité des étoiles VIP
+
+- Correction d’un problème où des renouvellements successifs pouvaient retirer du cache le statut VIP encore valide d’un autre joueur.
+- Un statut VIP déjà vérifié peut désormais être retransmis après un changement de connexion entre joueurs, sans prolonger sa validité. Ces corrections traitent deux causes qui pouvaient transformer les étoiles VIP en points ordinaires.
+
 ## 9.1.0
 
 Vous jouez à WoW Forever à la manette ? Venez essayer la bêta de QuestTogether !

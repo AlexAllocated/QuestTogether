@@ -1,15 +1,27 @@
 {
-  "source_sha256": "2b9572ab1333bb326ead725e6c65afbb2e083018439539200a97e526ed686760",
+  "source_sha256": "c62317c9fa35af624a81215db7d0b8e6e044d7eefe9a51f307832420b7690065",
   "notes": {
-    "version": "9.1.0",
-    "welcome": "Giochi a WoW Forever con un controller? Aiutaci a provare la beta di QuestTogether!",
+    "version": "9.2.0",
+    "welcome": "Nuovi comandi per seguire le missioni del gruppo, indicatori più chiari e correzioni alle stelle VIP.",
     "sections": [
       {
-        "title": "Prova la beta per controller",
+        "title": "Segui la missione di un compagno",
         "items": [
-          "La beta facoltativa usa la Gamepad UI nativa per navigare nel Registro missioni del gruppo e nei menu di QT. Puoi anche consultare gli indicatori di QT con il mirino della mappa del mondo. Questo aggiornamento stabile annuncia soltanto la beta: le funzioni per controller restano nella versione di prova.",
-          "Nell’app CurseForge, fai clic destro su QuestTogether, scegli \"Release Type\" e poi \"Beta\". Aggiorna l’addon e digita /reload in WoW.",
-          "Tieni attiva la Gamepad UI di WoW Forever e fai una prova. Raccontaci cosa funziona e cosa richiede ancora attenzione: i tuoi riscontri ci aiuteranno a preparare la versione stabile."
+          "Seleziona un membro del gruppo e usa /qt focus per seguirne la missione attiva, oppure scegli direttamente il giocatore con /qt focus <name>. Per interrompere, usa /qt unfollow.",
+          "Puoi usare questi comandi nelle macro o assegnare un tasto a «Segui la missione attiva del bersaglio» e «Smetti di seguire la missione» nella sezione QuestTogether delle associazioni tasti di WoW. Nessun tasto viene assegnato automaticamente: si segue la selezione delle missioni, non il personaggio.",
+          "Sono supportati i nomi completi con cognome su Forever e con reame su Retail. Se più compagni hanno lo stesso nome breve, specifica quello completo."
+        ]
+      },
+      {
+        "title": "Indicatori nel colore della classe",
+        "items": [
+          "Nel riepilogo obiettivi, le missioni selezionate dai compagni sono indicate da anelli vuoti al centro, con un bordo spesso nel colore della loro classe. L’anello del giocatore che segui diventa pieno, al posto del vecchio contorno verde. Restano le icone a catena per chi segue le tue missioni."
+        ]
+      },
+      {
+        "title": "Stelle VIP più stabili",
+        "items": [
+          "Corretti due problemi che potevano trasformare una stella VIP in un normale punto: i rinnovi ripetuti potevano rimuovere lo stato ancora valido di un altro giocatore, e alcuni cambi di connessione con i giocatori vicini impedivano di ricevere la conferma VIP aggiornata. I controlli di validità e le scadenze restano invariati."
         ]
       }
     ]

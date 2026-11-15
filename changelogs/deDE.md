@@ -2,6 +2,25 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0
+
+Neue Questfokus-Befehle, klarere Fokusmarkierungen und Korrekturen für VIP-Sterne.
+
+### Neue Questfokus-Kurzbefehle
+
+- Mit /qt focus folgst du dem Questfokus des Gruppenmitglieds, das du als Ziel ausgewählt hast. Mit /qt focus <name> wählst du ein Gruppenmitglied per Namen; /qt unfollow beendet das Folgen.
+- Vollständige Namen mit Nachnamen in WoW Forever oder Realm in Retail werden unterstützt. Passt ein kurzer Name zu mehreren Gruppenmitgliedern, musst du den vollständigen Namen angeben.
+- Unter QuestTogether in der WoW-Tastenbelegung findest du „Dem Questfokus des Ziels folgen“ und „Dem Questfokus nicht mehr folgen“. Es werden keine Tasten automatisch belegt. Die Befehle funktionieren auch in Makros und folgen nur dem Questfokus – sie bewegen deinen Charakter nicht.
+
+### Deutlichere Fokusmarkierungen
+
+- Die Questfokus-Markierungen der Gruppenmitglieder in der Zielverfolgung sind jetzt kräftige, innen leere Ringe in Klassenfarbe. Folgst du einem Mitglied, wird dessen Ring mit derselben Farbe gefüllt. Das ersetzt die grüne Umrandung; die Kettensymbole für Spieler, die deinem Questfokus folgen, bleiben erhalten.
+
+### Stabilere VIP-Sterne
+
+- Wiederholte VIP-Erneuerungen konnten den noch gültigen Status eines anderen Spielers aus dem Zwischenspeicher verdrängen. Dieser Fehler ist behoben.
+- Nach Änderungen an den Verbindungen zwischen Spielern kann bereits verifizierter VIP-Status wieder weitergegeben werden, ohne seine Gültigkeit zu verlängern. Damit sind zwei Ursachen behoben, durch die VIP-Sterne zu normalen Punkten werden konnten.
+
 ## 9.1.0
 
 Du spielst WoW Forever mit Controller? Teste die Controller-Beta von QuestTogether mit uns!

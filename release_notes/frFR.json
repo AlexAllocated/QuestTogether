@@ -1,15 +1,28 @@
 {
-  "source_sha256": "2b9572ab1333bb326ead725e6c65afbb2e083018439539200a97e526ed686760",
+  "source_sha256": "c62317c9fa35af624a81215db7d0b8e6e044d7eefe9a51f307832420b7690065",
   "notes": {
-    "version": "9.1.0",
-    "welcome": "Vous jouez à WoW Forever à la manette ? Venez essayer la bêta de QuestTogether !",
+    "version": "9.2.0",
+    "welcome": "De nouveaux raccourcis pour suivre les quêtes du groupe, des repères plus lisibles et des corrections pour les étoiles VIP.",
     "sections": [
       {
-        "title": "Essayez la bêta pour manette",
+        "title": "Raccourcis de suivi de quête",
         "items": [
-          "Cette bêta facultative s’appuie sur la Gamepad UI native pour parcourir le Journal de quêtes du groupe et les menus QT. Le réticule de la carte du monde permet aussi de survoler les marqueurs QT. Cette mise à jour stable annonce la bêta ; elle n’ajoute pas encore ces commandes.",
-          "Dans l’application CurseForge, faites un clic droit sur QuestTogether, choisissez \"Release Type\", puis \"Beta\". Mettez l’addon à jour et saisissez /reload dans WoW.",
-          "Activez la Gamepad UI de WoW Forever, puis faites un essai. Vos retours sur ce qui fonctionne et ce qui reste à améliorer nous aideront à préparer la version stable."
+          "Ciblez un membre du groupe et tapez /qt focus pour suivre sa quête active. Vous pouvez aussi le désigner avec /qt focus <name>. La commande /qt unfollow arrête ce suivi.",
+          "Les noms complets sont acceptés, avec le nom de famille sur WoW Forever ou le royaume sur Retail. Si un nom court correspond à plusieurs membres du groupe, utilisez le nom complet.",
+          "Les raccourcis « Suivre la quête active de la cible » et « Arrêter le suivi de quête » se trouvent dans la rubrique QuestTogether des raccourcis clavier de WoW. Aucune touche n’est attribuée automatiquement. Les commandes fonctionnent aussi dans les macros : elles suivent les quêtes, sans déplacer votre personnage."
+        ]
+      },
+      {
+        "title": "Repères de quête plus lisibles",
+        "items": [
+          "Dans le suivi des objectifs, les repères de quête active des membres du groupe prennent la forme d’anneaux épais et creux de la couleur de leur classe. L’anneau du membre que vous suivez se remplit de cette même couleur, à la place de l’ancien contour vert. Les badges en forme de chaîne qui signalent les joueurs suivant votre quête active sont conservés."
+        ]
+      },
+      {
+        "title": "Stabilité des étoiles VIP",
+        "items": [
+          "Correction d’un problème où des renouvellements successifs pouvaient retirer du cache le statut VIP encore valide d’un autre joueur.",
+          "Un statut VIP déjà vérifié peut désormais être retransmis après un changement de connexion entre joueurs, sans prolonger sa validité. Ces corrections traitent deux causes qui pouvaient transformer les étoiles VIP en points ordinaires."
         ]
       }
     ]
