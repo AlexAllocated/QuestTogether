@@ -2,6 +2,24 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0
+
+Nuovi comandi per seguire le missioni del gruppo, indicatori più chiari e correzioni alle stelle VIP.
+
+### Segui la missione di un compagno
+
+- Seleziona un membro del gruppo e usa /qt focus per seguirne la missione attiva, oppure scegli direttamente il giocatore con /qt focus <name>. Per interrompere, usa /qt unfollow.
+- Puoi usare questi comandi nelle macro o assegnare un tasto a «Segui la missione attiva del bersaglio» e «Smetti di seguire la missione» nella sezione QuestTogether delle associazioni tasti di WoW. Nessun tasto viene assegnato automaticamente: si segue la selezione delle missioni, non il personaggio.
+- Sono supportati i nomi completi con cognome su Forever e con reame su Retail. Se più compagni hanno lo stesso nome breve, specifica quello completo.
+
+### Indicatori nel colore della classe
+
+- Nel riepilogo obiettivi, le missioni selezionate dai compagni sono indicate da anelli vuoti al centro, con un bordo spesso nel colore della loro classe. L’anello del giocatore che segui diventa pieno, al posto del vecchio contorno verde. Restano le icone a catena per chi segue le tue missioni.
+
+### Stelle VIP più stabili
+
+- Corretti due problemi che potevano trasformare una stella VIP in un normale punto: i rinnovi ripetuti potevano rimuovere lo stato ancora valido di un altro giocatore, e alcuni cambi di connessione con i giocatori vicini impedivano di ricevere la conferma VIP aggiornata. I controlli di validità e le scadenze restano invariati.
+
 ## 9.2.0-beta.1
 
 Questo piccolo aggiornamento della beta migliora la lettura delle note della patch con il controller.

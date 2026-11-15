@@ -1,15 +1,28 @@
 {
-  "source_sha256": "f17a94f7c63252150307da234c8bbe3de22f669d2606bf3a181c8c196d3adbaa",
+  "source_sha256": "c62317c9fa35af624a81215db7d0b8e6e044d7eefe9a51f307832420b7690065",
   "notes": {
-    "version": "9.2.0-beta.1",
-    "welcome": "Esta pequena atualização da beta melhora a leitura das notas com controle.",
+    "version": "9.2.0",
+    "welcome": "Novos atalhos para acompanhar as missões do grupo, indicadores mais claros e correções nas estrelas VIP.",
     "sections": [
       {
-        "title": "Controle nas notas da atualização",
+        "title": "Atalhos para seguir o foco de missão",
         "items": [
-          "As notas que abrem automaticamente após uma atualização agora recebem o foco do controle. Assim, você pode fechá-las diretamente com Voltar.",
-          "A rolagem pelo analógico direito agora move a barra junto com o texto e atualiza a posição de leitura guardada.",
-          "A navegação no Histórico passa a seleção para um controle válido quando um botão desaparece ou fica indisponível. Os controles também são atualizados ao trocar de página."
+          "Selecione um membro do grupo como alvo e use /qt focus para seguir a missão em foco dele. Com /qt focus <name>, você escolhe pelo nome. Para parar, use /qt unfollow.",
+          "Nomes completos são aceitos, incluindo sobrenome no WoW Forever ou reino no Retail. Se o nome curto corresponder a mais de um membro do grupo, informe o nome completo.",
+          "Na seção QuestTogether das teclas de atalho do WoW, você encontra “Seguir a missão em foco do alvo” e “Parar de seguir o foco de missão”. Nenhuma tecla é atribuída automaticamente. Os comandos também funcionam em macros e acompanham apenas as missões, sem mover seu personagem."
+        ]
+      },
+      {
+        "title": "Indicadores de foco mais claros",
+        "items": [
+          "Os indicadores de foco dos membros do grupo no rastreador de objetivos agora são anéis grossos e vazados na cor da classe. O anel de quem você está seguindo fica preenchido com a mesma cor, no lugar do contorno verde. Os símbolos de corrente de quem segue o seu foco de missão continuam aparecendo."
+        ]
+      },
+      {
+        "title": "Estrelas VIP mais estáveis",
+        "items": [
+          "Corrigido um erro em que renovações repetidas podiam remover do cache o status VIP ainda válido de outro jogador.",
+          "O status VIP já verificado pode ser retransmitido após mudanças nas conexões entre jogadores, sem prolongar sua validade. Essas correções resolvem duas causas que podiam transformar estrelas VIP em pontos comuns."
         ]
       }
     ]

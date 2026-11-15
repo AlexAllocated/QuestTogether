@@ -1,15 +1,28 @@
 {
-  "source_sha256": "f17a94f7c63252150307da234c8bbe3de22f669d2606bf3a181c8c196d3adbaa",
+  "source_sha256": "c62317c9fa35af624a81215db7d0b8e6e044d7eefe9a51f307832420b7690065",
   "notes": {
-    "version": "9.2.0-beta.1",
-    "welcome": "Esta pequeña actualización de la beta mejora la lectura de las notas del parche con mando.",
+    "version": "9.2.0",
+    "welcome": "Nuevos atajos para seguir las misiones del grupo, indicadores más claros y correcciones para las estrellas VIP.",
     "sections": [
       {
-        "title": "Notas del parche con mando",
+        "title": "Atajos para seguir misiones",
         "items": [
-          "Cuando las notas se abren automáticamente tras una actualización, ahora reciben el foco del mando. Puedes cerrarlas directamente con Atrás.",
-          "Al desplazarte con el stick derecho, la barra se mueve junto con el texto y la posición de lectura guardada se mantiene al día.",
-          "Al navegar por el Historial, la selección pasa a un control válido si el botón seleccionado desaparece o deja de estar disponible. Los controles se actualizan al cambiar de página."
+          "Selecciona a un miembro del grupo y escribe /qt focus para seguir su misión activa. También puedes elegirlo por nombre con /qt focus <name>. Usa /qt unfollow para dejar de seguir su misión.",
+          "Se admiten nombres completos, con apellido en WoW Forever o reino en Retail. Si un nombre corto coincide con varios miembros del grupo, tendrás que indicar el nombre completo.",
+          "En la sección QuestTogether de las asignaciones de teclas de WoW encontrarás «Seguir la misión activa del objetivo» y «Dejar de seguir la misión del compañero». No se asigna ninguna tecla automáticamente. Los comandos también sirven en macros y siguen las misiones, sin mover a tu personaje."
+        ]
+      },
+      {
+        "title": "Indicadores de misión más claros",
+        "items": [
+          "Los indicadores de misión activa de los miembros del grupo en el seguimiento de objetivos ahora son anillos gruesos y huecos del color de su clase. El anillo del compañero al que sigues se rellena con ese mismo color, en lugar de mostrar un borde verde. Se mantienen los símbolos de cadena que identifican a quienes siguen tu misión activa."
+        ]
+      },
+      {
+        "title": "Estrellas VIP más estables",
+        "items": [
+          "Se ha corregido un error por el que las renovaciones repetidas podían eliminar de la caché el estado VIP todavía válido de otro jugador.",
+          "Tras un cambio en las conexiones entre jugadores, el estado VIP ya verificado puede volver a transmitirse sin ampliar su periodo de validez. Estas correcciones resuelven dos causas por las que las estrellas VIP podían convertirse en puntos normales."
         ]
       }
     ]

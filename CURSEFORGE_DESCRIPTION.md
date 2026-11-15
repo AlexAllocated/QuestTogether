@@ -4,11 +4,13 @@
 
 QuestTogether helps you quest with other players: compare quest logs, share eligible quests, follow party progress, and find people looking for company. Progress bubbles, an interactive chat log, map information, and party navigation work alongside WoW’s questing UI.
 
-## Try the controller beta
+## Play with a controller
 
-Play WoW Forever with a controller? Try QuestTogether's optional native Gamepad UI beta and help us improve it. It adds controller navigation for Party Quest Log and QT menus, plus world-map crosshair hover over QT markers.
+Controller support is included in the stable release for WoW Forever 1.60.1 builds 70888 and 70938. Enable WoW's Gamepad UI and leave **Enable native gamepad navigation** checked under QT's General settings. Other clients keep their existing mouse and keyboard controls.
 
-In the CurseForge app, **right-click QuestTogether → Release Type → Beta**, then update the addon and `/reload` in WoW. Enable WoW Forever's Gamepad UI to try it, and share your feedback. Controller support remains in the beta; the stable release only announces its availability.
+With the default controller layout, QT adds a quest-book PQL macro to **LT + RT + D-pad Up on normal action page 1** when that slot is empty. Move or remove it with WoW's action-bar editor. QT preserves existing actions and does not put a moved or removed button back while the macro still exists.
+
+Use the D-pad to browse PQL quests and controls, Select to activate, and Back to close. Assign **Open QuestTogether menu** in WoW Key Bindings for contextual actions and pending requests; it has no default binding. The world-map crosshair can highlight QT players and clusters, but A keeps WoW's normal map action. Some map controls take priority over assigned QT menu combinations. In Patch Notes, the right stick scrolls and Back closes. Text entry and HUD placement retain their existing controls.
 
 ## Getting started
 

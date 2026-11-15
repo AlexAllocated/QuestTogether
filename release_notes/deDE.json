@@ -1,15 +1,28 @@
 {
-  "source_sha256": "f17a94f7c63252150307da234c8bbe3de22f669d2606bf3a181c8c196d3adbaa",
+  "source_sha256": "c62317c9fa35af624a81215db7d0b8e6e044d7eefe9a51f307832420b7690065",
   "notes": {
-    "version": "9.2.0-beta.1",
-    "welcome": "Dieses kleine Beta-Update verbessert die Bedienung der Patchnotes mit dem Controller.",
+    "version": "9.2.0",
+    "welcome": "Neue Questfokus-Befehle, klarere Fokusmarkierungen und Korrekturen für VIP-Sterne.",
     "sections": [
       {
-        "title": "Patchnotes mit dem Controller",
+        "title": "Neue Questfokus-Kurzbefehle",
         "items": [
-          "Automatisch eingeblendete Patchnotes erhalten jetzt den Controller-Fokus. Du kannst sie direkt lesen oder mit Zurück schließen.",
-          "Beim Scrollen mit dem rechten Stick bewegt sich nun auch der Scrollbalken. Die gespeicherte Leseposition bleibt dabei aktuell.",
-          "Beim Wechsel im Verlauf wird die Auswahl sicher versetzt, wenn ein Bedienelement verschwindet oder deaktiviert wird. Nach einem Seitenwechsel wird die Navigation aktualisiert."
+          "Mit /qt focus folgst du dem Questfokus des Gruppenmitglieds, das du als Ziel ausgewählt hast. Mit /qt focus <name> wählst du ein Gruppenmitglied per Namen; /qt unfollow beendet das Folgen.",
+          "Vollständige Namen mit Nachnamen in WoW Forever oder Realm in Retail werden unterstützt. Passt ein kurzer Name zu mehreren Gruppenmitgliedern, musst du den vollständigen Namen angeben.",
+          "Unter QuestTogether in der WoW-Tastenbelegung findest du „Dem Questfokus des Ziels folgen“ und „Dem Questfokus nicht mehr folgen“. Es werden keine Tasten automatisch belegt. Die Befehle funktionieren auch in Makros und folgen nur dem Questfokus – sie bewegen deinen Charakter nicht."
+        ]
+      },
+      {
+        "title": "Deutlichere Fokusmarkierungen",
+        "items": [
+          "Die Questfokus-Markierungen der Gruppenmitglieder in der Zielverfolgung sind jetzt kräftige, innen leere Ringe in Klassenfarbe. Folgst du einem Mitglied, wird dessen Ring mit derselben Farbe gefüllt. Das ersetzt die grüne Umrandung; die Kettensymbole für Spieler, die deinem Questfokus folgen, bleiben erhalten."
+        ]
+      },
+      {
+        "title": "Stabilere VIP-Sterne",
+        "items": [
+          "Wiederholte VIP-Erneuerungen konnten den noch gültigen Status eines anderen Spielers aus dem Zwischenspeicher verdrängen. Dieser Fehler ist behoben.",
+          "Nach Änderungen an den Verbindungen zwischen Spielern kann bereits verifizierter VIP-Status wieder weitergegeben werden, ohne seine Gültigkeit zu verlängern. Damit sind zwei Ursachen behoben, durch die VIP-Sterne zu normalen Punkten werden konnten."
         ]
       }
     ]

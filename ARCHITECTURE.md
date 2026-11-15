@@ -1204,7 +1204,7 @@ retains native map Select, and native overrides may mask the user's ordinary QT
 menu binding. A successful private player-menu test is not evidence that the
 startup handoff or cluster path is ready for production.
 
-`GAMEPAD.md` documents beta setup and the remaining live-test boundaries and is
+`GAMEPAD.md` documents controller setup and the remaining live-test boundaries and is
 included in installation packages.
 Offline adapter tests live outside the in-game test manifest; safe domain/owned
 frame regressions are included in the optional test companion.

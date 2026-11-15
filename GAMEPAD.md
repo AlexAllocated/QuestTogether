@@ -1,4 +1,4 @@
-# Native gamepad navigation (beta)
+# Native gamepad navigation
 
 QuestTogether uses Forever's native Gamepad UI navigation and the player's
 existing controller mappings. Enable Gamepad UI in WoW, then leave **Enable native
@@ -28,7 +28,7 @@ unassigned. For a macro, use `/qt focus` for your current target or
 `/qt focus Full Name` for a specific party member; `/qt unfollow` stops following.
 These commands follow quest focus, not the player's movement.
 
-This beta supports the audited native interfaces in Forever 1.60.1 builds
+Controller navigation supports the audited native interfaces in Forever 1.60.1 builds
 70888 and 70938. Other builds and clients without those interfaces keep their
 existing mouse and keyboard windows. Hardware detection alone does not enable
 navigation.
@@ -62,8 +62,7 @@ controls, dialogs and native Select/Back prompts retain their original styling.
   POT keeps its display-mode and tooltip preferences and remains a passive HUD.
 - On the **world map**, point the native crosshair at a QT marker, then open the QT
   menu for its player or cluster actions using a binding that reaches QT. Native
-  Select currently retains Blizzard's map action; an automatic Select handoff is
-  undergoing a private feasibility test and is not enabled in production.
+  Select retains Blizzard's map action and does not open QT menus.
   Native zooming, panning and
   waypoints keep their normal behavior. Protected player targeting remains a
   mouse action.
@@ -81,8 +80,8 @@ controls, dialogs and native Select/Back prompts retain their original styling.
 
 ## Safety and validation
 
-This is a beta release for feedback on Forever's Gamepad UI integration. The
-remaining live checks below are still pending. Private development probes are
+Controller support is included in the stable release. The remaining live checks
+below are still pending. Private development probes are
 not included in the release, and automatic A-button menus on map markers are
 not enabled. Native map Select keeps its existing behavior.
 
@@ -111,7 +110,7 @@ window-lifecycle case.
 The tester also confirmed world-map crosshair hover and that QT's player tooltip
 stays above an overlapping native quest tooltip. A separate private A-button
 probe opened a player menu with D-pad navigation, Back and return to map movement;
-that experiment is not part of the beta. Its revised startup handoff and cluster
+that experiment is not part of the release. Its revised startup handoff and cluster
 menu path still need live validation.
 
 The related world-map party marker presentation keeps verified VIP stars and

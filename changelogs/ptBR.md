@@ -2,6 +2,25 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.2.0
+
+Novos atalhos para acompanhar as missões do grupo, indicadores mais claros e correções nas estrelas VIP.
+
+### Atalhos para seguir o foco de missão
+
+- Selecione um membro do grupo como alvo e use /qt focus para seguir a missão em foco dele. Com /qt focus <name>, você escolhe pelo nome. Para parar, use /qt unfollow.
+- Nomes completos são aceitos, incluindo sobrenome no WoW Forever ou reino no Retail. Se o nome curto corresponder a mais de um membro do grupo, informe o nome completo.
+- Na seção QuestTogether das teclas de atalho do WoW, você encontra “Seguir a missão em foco do alvo” e “Parar de seguir o foco de missão”. Nenhuma tecla é atribuída automaticamente. Os comandos também funcionam em macros e acompanham apenas as missões, sem mover seu personagem.
+
+### Indicadores de foco mais claros
+
+- Os indicadores de foco dos membros do grupo no rastreador de objetivos agora são anéis grossos e vazados na cor da classe. O anel de quem você está seguindo fica preenchido com a mesma cor, no lugar do contorno verde. Os símbolos de corrente de quem segue o seu foco de missão continuam aparecendo.
+
+### Estrelas VIP mais estáveis
+
+- Corrigido um erro em que renovações repetidas podiam remover do cache o status VIP ainda válido de outro jogador.
+- O status VIP já verificado pode ser retransmitido após mudanças nas conexões entre jogadores, sem prolongar sua validade. Essas correções resolvem duas causas que podiam transformar estrelas VIP em pontos comuns.
+
 ## 9.2.0-beta.1
 
 Esta pequena atualização da beta melhora a leitura das notas com controle.
