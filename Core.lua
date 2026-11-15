@@ -99,6 +99,29 @@ local function CanAccessForeignTable(rawTable)
 	return CanAccessForeignValue(rawTable)
 end
 
+-- GetUserWaypoint returns a plain UiMapPoint; its position need not carry
+-- Vector2DMixin methods. Called through pcall so a malformed waypoint cannot
+-- interrupt the independent quest-focus observation.
+local function ReadPartyWaypoint(point)
+	if not CanAccessForeignTable(point) then return nil end
+	local position = point.position
+	if not CanAccessForeignTable(position) then return nil end
+	local map = QuestTogether:SafeToNumber(point.uiMapID)
+	local x, y = position.x, position.y
+	if not CanAccessForeignValue(x) or not CanAccessForeignValue(y) then return nil end
+	if x == nil and y == nil then
+		local getter = position.GetXY
+		if not CanAccessForeignValue(getter) or type(getter) ~= "function" then return nil end
+		x, y = getter(position)
+	end
+	x, y = QuestTogether:SafeToNumber(x), QuestTogether:SafeToNumber(y)
+	if not map or map <= 0 or map > 1000000 or map ~= math.floor(map)
+		or not x or not y or x < 0 or x > 1 or y < 0 or y > 1 then
+		return nil
+	end
+	return map, x, y
+end
+
 ---@return string?
 local function ReadOptionalString(value)
 	if not CanAccessForeignValue(value) or type(value) ~= "string" then
@@ -3249,37 +3272,15 @@ QuestTogether.API = QuestTogether.API
 			then
 				local ok, point = pcall(C_Map.GetUserWaypoint)
 				if not ok or not CanAccessForeignValue(point) then
-					return nil
+					return result
 				end
 				if point == nil then
 					result.mapID = 0
 				else
-					if not CanAccessForeignTable(point) or not CanAccessForeignTable(point.position) then
-						return nil
+					local got, map, x, y = pcall(ReadPartyWaypoint, point)
+					if got and map then
+						result.mapID, result.x, result.y = map, x, y
 					end
-					local map = QuestTogether:SafeToNumber(point.uiMapID)
-					local getter = point.position.GetXY
-					if not CanAccessForeignValue(getter) or type(getter) ~= "function" then
-						return nil
-					end
-					local got, x, y = pcall(getter, point.position)
-					x, y = QuestTogether:SafeToNumber(x), QuestTogether:SafeToNumber(y)
-					if
-						not got
-						or not map
-						or map <= 0
-						or map > 1000000
-						or map ~= math.floor(map)
-						or not x
-						or not y
-						or x < 0
-						or x > 1
-						or y < 0
-						or y > 1
-					then
-						return nil
-					end
-					result.mapID, result.x, result.y = map, x, y
 				end
 			end
 			return result

@@ -651,7 +651,9 @@ return pushable end or nil,
 		do
 			local oldMap, oldTrack, oldQuest, oldBlocked = C_Map, C_SuperTrack, C_QuestLog, addon.IsRuntimeRestricted
 			local blocked, active, id, owns, writes = false, true, 123, true, 0
-			local waypoint = { uiMapID = 37, position = { GetXY = function() return 0.4, 0.5 end } }
+			-- The native waypoint result contains plain x/y coordinates, not a
+			-- required Vector2D method. Keep the actual client shape in this contract.
+			local waypoint = { uiMapID = 37, position = { x = 0.4, y = 0.5 } }
 			addon.IsRuntimeRestricted = function() return blocked end
 			C_Map = { GetUserWaypoint = function() return waypoint end }
 			C_QuestLog = { IsOnQuest = function() return owns end }
@@ -662,7 +664,24 @@ return pushable end or nil,
 				SetSuperTrackedQuestID = function(value) writes = writes + 1; id = value; active = true end,
 			}
 			local p = addon.API.GetPartyNavigationNativeState()
-			assert(p.questID == 123 and p.mapID == 37 and p.x == 0.4 and p.y == 0.5)
+			assert(p and p.questID == 123 and p.mapID == 37 and p.x == 0.4 and p.y == 0.5,
+				"native plain-coordinate waypoints must preserve both focus and waypoint")
+			-- Method-only vectors remain accepted for compatible client adapters.
+			waypoint = { uiMapID = 37, position = { GetXY = function() return 0.4, 0.5 end } }
+			p = addon.API.GetPartyNavigationNativeState()
+			assert(p and p.mapID == 37 and p.x == 0.4 and p.y == 0.5)
+			waypoint = { uiMapID = 37, position = setmetatable({ x = 0.4, y = 0.5 }, {
+				__index = function() error("plain coordinates must not inspect a vector getter") end,
+			}) }
+			p = addon.API.GetPartyNavigationNativeState()
+			assert(p and p.mapID == 37 and p.x == 0.4 and p.y == 0.5,
+				"valid plain coordinates must not depend on optional vector methods")
+			for _, coordinates in ipairs({ { 0, 0 }, { 0, 1 }, { 1, 0 }, { 1, 1 } }) do
+				waypoint = { uiMapID = 37, position = { x = coordinates[1], y = coordinates[2] } }
+				p = addon.API.GetPartyNavigationNativeState()
+				assert(p and p.mapID == 37 and p.x == coordinates[1] and p.y == coordinates[2],
+					"valid map edges must not be treated as missing coordinates")
+			end
 			assert(addon.API.SetPartyNavigationQuest(456) == true and writes == 1)
 			owns = false; assert(addon.API.SetPartyNavigationQuest(789) == false and writes == 1)
 			owns = true; C_SuperTrack.SetSuperTrackedQuestID = function() writes = writes + 1 end
@@ -681,17 +700,64 @@ return pushable end or nil,
 				assert(addon.API.SetPartyNavigationQuest(0) == false)
 			end
 			C_SuperTrack.IsSuperTrackingAnything = function() return active end
+			active, id = true, 123
+			local function UnavailableWaypoint()
+				local ok, state = pcall(addon.API.GetPartyNavigationNativeState)
+				assert(ok and state and state.questID == 123 and state.mapID == -1 and state.x == 0 and state.y == 0,
+					"unreadable waypoints must preserve valid quest focus and clear only waypoint coordinates")
+			end
 			for _, value in ipairs({ secret, inaccessible }) do
-				waypoint = value; assert(addon.API.GetPartyNavigationNativeState() == nil)
+				waypoint = value; UnavailableWaypoint()
 				waypoint = { uiMapID = value, position = { GetXY = function() return 0.4, 0.5 end } }
-				assert(addon.API.GetPartyNavigationNativeState() == nil)
+				UnavailableWaypoint()
 				waypoint = { uiMapID = 37, position = value }
-				assert(addon.API.GetPartyNavigationNativeState() == nil)
+				UnavailableWaypoint()
 				waypoint = { uiMapID = 37, position = { GetXY = value } }
-				assert(addon.API.GetPartyNavigationNativeState() == nil)
+				UnavailableWaypoint()
 				C_SuperTrack.SetSuperTrackedQuestID = value
 				assert(addon.API.SetPartyNavigationQuest(123) == false)
 			end
+			local fallbackCalls = 0
+			local function Fallback()
+				fallbackCalls = fallbackCalls + 1
+				return 0.4, 0.5
+			end
+			for _, value in ipairs({ secret, inaccessible, false, {}, "invalid", -0.01, 1.01, math.huge, 0 / 0 }) do
+				for _, axis in ipairs({ "x", "y" }) do
+					local position = { x = 0.4, y = 0.5, GetXY = Fallback }
+					position[axis] = value
+					waypoint = { uiMapID = 37, position = position }
+					UnavailableWaypoint()
+				end
+			end
+			for _, position in ipairs({ { x = 0.4, GetXY = Fallback }, { y = 0.5, GetXY = Fallback } }) do
+				waypoint = { uiMapID = 37, position = position }
+				UnavailableWaypoint()
+			end
+			assert(fallbackCalls == 0, "invalid or partial fields must not be replaced by a fallback vector")
+			for _, value in ipairs({ secret, inaccessible, false, {}, "invalid", -0.01, 1.01, math.huge, 0 / 0 }) do
+				for _, axis in ipairs({ "x", "y" }) do
+					waypoint = { uiMapID = 37, position = { GetXY = function()
+						if axis == "x" then return value, 0.5 end
+						return 0.4, value
+					end } }
+					UnavailableWaypoint()
+				end
+			end
+			for _, value in ipairs({ false, {}, "invalid", 0, -1, 1.5, 1000001, math.huge, 0 / 0 }) do
+				waypoint = { uiMapID = value, position = { x = 0.4, y = 0.5 } }
+				UnavailableWaypoint()
+			end
+			local hostile = setmetatable({}, { __index = function() error("hostile native field") end })
+			for _, value in ipairs({ hostile, { uiMapID = 37, position = hostile },
+				{ uiMapID = 37, position = {} },
+				{ uiMapID = 37, position = { GetXY = function() error("hostile vector getter") end } },
+			}) do
+				waypoint = value
+				UnavailableWaypoint()
+			end
+			C_Map.GetUserWaypoint = function() error("waypoint temporarily unavailable") end
+			UnavailableWaypoint()
 			blocked = true
 			C_Map.GetUserWaypoint = function() error("restricted read") end
 			assert(addon.API.GetPartyNavigationNativeState() == nil and addon.API.SetPartyNavigationQuest(123) == false)

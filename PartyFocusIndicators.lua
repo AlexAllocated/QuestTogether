@@ -4,7 +4,6 @@ local QT = _G.QuestTogether
 local L = QT.Translate
 local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 local DOT_SIZE, DOT_SPACING = 12, 16
-local BADGE_SIZE, BADGE_GAP = 12, 2
 local STRATA = { BACKGROUND = true, LOW = true, MEDIUM = true, HIGH = true, DIALOG = true }
 
 local function Read(a, frame, method, ...)
@@ -111,19 +110,13 @@ local function NewPin(a, root)
 		return texture
 	end
 	-- Keep the center transparent so the tracker background shows through.
-	-- Both states retain their class color and size; following fills the ring.
+	-- Following fills the ring; followers replace it with a class-colored chain.
 	local ring = Call(a, frame, "CreateTexture", nil, "ARTWORK")
 	Call(a, ring, "SetSize", DOT_SIZE, DOT_SIZE)
 	Call(a, ring, "SetPoint", "CENTER")
-	Call(a, ring, "SetTexture", "Interface\\AddOns\\QuestTogether\\Media\\FocusRing.tga")
 	local dot = Circle(DOT_SIZE - 2, "OVERLAY")
 	Call(a, dot, "Hide")
-	local badge = Call(a, frame, "CreateTexture", nil, "OVERLAY")
-	Call(a, badge, "SetSize", BADGE_SIZE, BADGE_SIZE)
-	Call(a, badge, "SetPoint", "RIGHT", frame, "LEFT", -BADGE_GAP, 0)
-	Call(a, badge, "SetTexture", "Interface\\AddOns\\QuestTogether\\Media\\FocusFollower.tga")
-	Call(a, badge, "Hide")
-	return { frame = frame, ring = ring, dot = dot, badge = badge }
+	return { frame = frame, ring = ring, dot = dot }
 end
 
 local function Current(a, pin, identity)
@@ -241,22 +234,21 @@ function QT:RefreshPartyQuestFocusIndicatorGeometry()
 		local pin = state.pins[index]
 		if header then
 			if not pin then pin = NewPin(self, root); state.pins[index] = pin end
-			if self:CanMutateOwnedUI(pin.frame) and self:CanMutateOwnedUI(pin.dot) and self:CanMutateOwnedUI(pin.ring)
-				and self:CanMutateOwnedUI(pin.badge) then
+			if self:CanMutateOwnedUI(pin.frame) and self:CanMutateOwnedUI(pin.dot) and self:CanMutateOwnedUI(pin.ring) then
 				local follower = self:IsPartyQuestFocusFollower(row.name)
 				-- Grow leftward along the title row, not vertically into adjacent
-				-- quests whose objective lists may be collapsed or empty. Reserve
-				-- each badge's width so it cannot cover the next player's dot.
+				-- quests whose objective lists may be collapsed or empty. Rings
+				-- and chains occupy the same slot and hover/click target.
 				local x = header.edge - DOT_SIZE / 2 - 3 - (slots[row.questID] or 0)
 					- left * scale / header.scale
-				slots[row.questID] = (slots[row.questID] or 0) + DOT_SPACING + (follower and BADGE_SIZE + BADGE_GAP or 0)
+				slots[row.questID] = (slots[row.questID] or 0) + DOT_SPACING
 				local y = header.top - math.min(7, header.height / 2)
 					- bottom * scale / header.scale
 				local s = header.scale / scale
 				local old = pin.geometry
 				if not old or old.x ~= x or old.y ~= y or old.scale ~= s or old.level ~= header.level or old.strata ~= header.strata then
 					Call(self, pin.frame, "SetScale", s)
-					-- Focus rings, fills and badges belong to the tracker layer so
+					-- Focus rings, fills and chains belong to the tracker layer so
 					-- ordinary windows can cover both their artwork and hit targets.
 					Call(self, pin.frame, "SetFrameStrata", header.strata)
 					Call(self, pin.frame, "SetFrameLevel", header.level)
@@ -272,15 +264,13 @@ function QT:RefreshPartyQuestFocusIndicatorGeometry()
 				end
 				pin.name, pin.questID, pin.classFile = row.name, row.questID, row.classFile
 				local following = followTarget == row.name
-				if pin.following ~= following then
-					pin.following = following
-					Call(self, pin.dot, following and "Show" or "Hide")
-					if pin.tooltip and Call(self, pin.tooltip, "IsShown") == true then Tooltip(self, pin) end
-				end
-				if pin.follower ~= follower then
-					pin.follower = follower
-					Call(self, pin.badge, follower and "Show" or "Hide")
-					Call(self, pin.frame, "SetHitRectInsets", follower and -(BADGE_SIZE + BADGE_GAP) or 0, 0, 0, 0)
+				if pin.following ~= following or pin.follower ~= follower then
+					pin.following, pin.follower = following, follower
+					Call(self, pin.ring, "SetTexture", follower
+						and "Interface\\AddOns\\QuestTogether\\Media\\FocusFollower.tga"
+						or "Interface\\AddOns\\QuestTogether\\Media\\FocusRing.tga")
+					-- A transient two-way follow still gets just one marker.
+					Call(self, pin.dot, following and not follower and "Show" or "Hide")
 					if pin.tooltip and Call(self, pin.tooltip, "IsShown") == true then Tooltip(self, pin) end
 				end
 				Call(self, pin.frame, "Show")

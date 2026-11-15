@@ -168,17 +168,18 @@ private `.local` notes are historical context, not the source of truth.
   focus it represents. Members sharing a quest form a spaced horizontal row.
   Unfollowed members use a thick class-colored ring with a transparent center;
   the followed member uses a filled circle in the same class color.
-  A white chain-link badge identifies a member following the local player, using
+  A class-colored chain link replaces the ring for a member following the local player, using
   the shared navigation query and its existing ordering, expiry and membership
-  rules. Matching quest IDs alone never establish a follow relationship. Badges
-  reserve their own horizontal space and share the dot's hover/click target.
+  rules. Matching quest IDs alone never establish a follow relationship. The chain
+  occupies the same slot and hover/click target, without shifting nearby markers.
+  It takes visual precedence if a transient snapshot contains both follow directions.
   The owned frames are parented to UIParent and positioned
   with sanitized coordinates; they never alter native layout, pooling or
   gamepad navigation. Clicks request a follow confirmation; the user can save a
   per-profile preference to skip it. Delayed clicks and dialog choices recheck
   identity, membership and lifetime. Hidden, recycled, sliding
   or unreadable native rows and retired focus observations hide their markers.
-  Focus dots, follow rings and badges track the native row's strata and frame
+  Focus dots, follow rings and chains track the native row's strata and frame
   level so ordinary windows can cover them. Their separate hover tooltips and
   focus confirmation dialogs remain on their appropriate overlay layers.
   POT stays on the LOW strata behind ordinary windows and tooltips. Quest-hover
