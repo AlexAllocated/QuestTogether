@@ -362,6 +362,72 @@ QT:RegisterTest("prefix icons follow the visible name text and safely handle cha
 	end
 end)
 
+QT:RegisterTest("name-only friendly player logos follow the name and restore the configured bar placement", function()
+	for _, style in ipairs({ "left", "right", "top", "prefix" }) do
+		local state = Fixture()
+		QT.db.profile.nameplatePlayerIconStyle = style
+		local name = state.unitFrame.name
+		name.justifyH, name.stringWidth, name.width = "CENTER", 80, 240
+		state:AddBuffs(2)
+		local icon = ShowLogo(state)
+		local normalAnchor, normalPoint = icon.point[2], icon.point[3]
+		state.unitFrame.showOnlyName, state.unitFrame.healthBar.shown = true, false
+		QT:HandleNameplateEvent("CVAR_UPDATE", "nameplateShowOnlyNameForFriendlyPlayerUnits")
+		state.clock:Advance(0.05)
+		Equal(icon.point[1], "RIGHT")
+		Equal(icon.point[2], name)
+		Equal(icon.point[3], "CENTER")
+		Equal(icon.point[4], -44)
+		Equal(icon.point[5], 0)
+		Equal(QT.db.profile.nameplatePlayerIconStyle, style)
+		-- Unit-name refreshes follow new text width and scale without anchoring
+		-- to the hidden bar, leftover aura containers, or absolute coordinates.
+		name.stringWidth, name.scale = 140, 1.5
+		QT:HandleNameplateEvent("UNIT_NAME_UPDATE", "nameplate1")
+		state.clock:Advance(0)
+		Equal(icon.point[2], name)
+		Equal(icon.point[4], -109)
+		state.unitFrame.showOnlyName, state.unitFrame.healthBar.shown = false, true
+		QT:HandleNameplateEvent("CVAR_UPDATE", "nameplateShowOnlyNameForFriendlyPlayerUnits")
+		state.clock:Advance(0.05)
+		Equal(icon.point[2], normalAnchor)
+		Equal(icon.point[3], normalPoint)
+		Equal(state.creations, 1)
+		Equal(state.invalid, 0)
+	end
+end)
+
+QT:RegisterTest("name-only player positioning rejects unreadable mode and leaves quest icons unchanged", function()
+	local state = Fixture()
+	QT.db.profile.nameplatePlayerIconStyle, QT.db.profile.nameplateQuestIconStyle = "left", "left"
+	local icon = ShowLogo(state)
+	local inaccessible = {}
+	local canAccess = QT.CanAccessValue
+	QT.CanAccessValue = function(self, value) return value ~= inaccessible and canAccess(self, value) end
+	for _, mode in ipairs({ false, 1, "true", inaccessible }) do
+		state.unitFrame.showOnlyName = mode
+		QT:RefreshNameplateIcon(state.plate)
+		Equal(icon.point[2], state.unitFrame.healthBar)
+	end
+	state.unitFrame.showOnlyName = nil
+	setmetatable(state.unitFrame, { __index = function(_, key)
+		if key == "showOnlyName" then error("native name-only state unavailable") end
+	end })
+	QT:RefreshNameplateIcon(state.plate)
+	Equal(icon.point[2], state.unitFrame.healthBar)
+	setmetatable(state.unitFrame, nil)
+	state.unitFrame.showOnlyName = true
+	icon.qtIconKind = "quest"
+	QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+	Equal(icon.point[2], state.unitFrame.healthBar)
+	icon.qtIconKind = "player"
+	local mutations = state.mutations
+	state.plate.forbidden = true
+	QT:RefreshNameplateIcon(state.plate)
+	Equal(state.mutations, mutations)
+	Equal(state.invalid, 0)
+end)
+
 QT:RegisterTest("right plate icons follow the visible level box without reading screen geometry", function()
 	for _, kind in ipairs({ "quest", "player" }) do
 		local state = Fixture()

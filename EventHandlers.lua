@@ -589,6 +589,7 @@ function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
 	if not normalizedQuestId then
 		return
 	end
+	self:OnPartyNavigationQuestAccepted(normalizedQuestId)
 	self:InvalidateQuestCompareSnapshot()
 
 	-- A repeatable quest can be accepted before the previous removal timer runs.

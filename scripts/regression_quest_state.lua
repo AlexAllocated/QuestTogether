@@ -398,7 +398,9 @@ QuestTogether:RegisterTest("scan recovery preserves newly accepted quest announc
 		local addon, clock = NewInitialScanRecoveryFixture("row")
 		addon.unavailable = nil
 		addon.rows[3] = { questID = 54321, questLogIndex = 3, title = "Accepted during recovery" }
+		function addon:OnPartyNavigationQuestAccepted(id) self.focusAcceptance = id end
 		addon:QUEST_ACCEPTED(nil, 54321)
+		AssertEqual(addon.focusAcceptance, 54321, "focus acceptance must be observed before quest-log readiness")
 		if restricted then addon.restriction = "combat" end
 		addon:QUEST_LOG_UPDATE()
 		clock:Drain()

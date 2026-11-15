@@ -18,6 +18,7 @@ function Controller:GetTarget()
 end
 function Controller:Stop()
 	self.choice = nil
+	self.acceptances, self.trackingAt = nil, nil
 	local a, s = self.adapter, self.adapter.peek()
 	a.save(nil)
 	if not s or not s.following then
@@ -30,9 +31,11 @@ function Controller:Stop()
 end
 function Controller:Suspend()
 	self.choice = nil
+	self.acceptances, self.trackingAt = nil, nil
 end
 function Controller:Resume()
 	self.choice = nil
+	self.acceptances, self.trackingAt = nil, nil
 	local s = self.adapter.peek()
 	if not s then
 		return
@@ -73,6 +76,7 @@ function Controller:Follow(name)
 	end
 	local s = a.state()
 	self.choice = nil
+	self.acceptances, self.trackingAt = nil, nil
 	s.following, s.attempt, s.expectedQuest = name, nil, a.currentQuest() or 0
 	s.checkExternal, s.resuming, s.waiting, s.followToken = nil, nil, nil, {}
 	a.save(name)
@@ -167,10 +171,28 @@ function Controller:Apply()
 		a.changed()
 	end
 end
+function Controller:OnQuestAccepted(questID)
+	local a, s = self.adapter, self.adapter.peek()
+	questID = a.questID(questID)
+	local now = a.now and a.now()
+	if not self:IsActive() or not s or not s.following or self.choice or a.loggingOut()
+		or not questID or questID <= 0 or not now then return end
+	local accepted = self.acceptances
+	if not accepted or accepted.at ~= now or accepted.state ~= s or accepted.token ~= s.followToken then
+		accepted = { at = now, state = s, token = s.followToken, quests = {}, count = 0 }
+		self.acceptances = accepted
+	end
+	-- Several quests may be accepted in one frame while only the first takes
+	-- focus. Keep a bounded event batch, never the pending quest-log task list.
+	if not accepted.quests[questID] and accepted.count < 32 then
+		accepted.quests[questID], accepted.count = true, accepted.count + 1
+	end
+end
 function Controller:OnTrackingChanged()
 	local a, s = self.adapter, self.adapter.peek()
 	if self:IsActive() and s and s.following and not s.applying and not s.resuming then
 		s.checkExternal = true
+		self.trackingAt = a.now and a.now()
 	end
 	a.publish()
 	a.changed()
@@ -186,6 +208,18 @@ function Controller:ObserveNative()
 	end
 	local s = a.state()
 	if self:IsActive() then
+		local accepted = self.acceptances
+		if native.questID >= 0 then self.acceptances = nil end
+		local now = accepted and a.now and a.now()
+		if accepted and not self.choice and s.following and accepted.state == s and accepted.token == s.followToken
+			and accepted.at == self.trackingAt and now and now >= accepted.at and accepted.quests[native.questID] then
+			-- Native acceptance and tracking callbacks can arrive in either order.
+			-- Their frame timestamp identifies this one automatic selection; a
+			-- later manual selection (even of the same quest) must still prompt.
+			-- Apply restores the current follow only once restrictions permit.
+			s.checkExternal, s.attempt = nil, nil
+			return native
+		end
 		local choice = self.choice
 		if choice and choice.nativeOverride and native.questID >= 0 then
 			if native.questID == choice.questID then
@@ -272,6 +306,7 @@ function Controller:Request(name, questID, nativeOverride)
 	if not self:IsActive() or a.blocked() then
 		return false
 	end
+	self.acceptances = nil
 	local following, token = self:GetTarget()
 	local state = a.peek()
 	local choice = { questID = questID, nativeOverride = nativeOverride == true }

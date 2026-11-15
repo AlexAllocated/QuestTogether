@@ -3294,6 +3294,13 @@ function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 	local style = iconFrame.qtIconKind == "player" and self:GetNameplatePlayerIconStyle()
 		or self:GetNameplateQuestIconStyle()
 	local playerIcon = iconFrame.qtIconKind == "player"
+	-- Native friendly name-only plates keep the health bar frame but hide its
+	-- contents. Follow the rendered name instead of that invisible bar; retain
+	-- the chosen bar style for when the native setting is turned off again.
+	if playerIcon and not self:IsWorkBlocked("nameplate_refresh")
+		and select(1, self:GetAccessibleFrameMember(unitFrame, "showOnlyName")) == true then
+		style = "prefix"
+	end
 	local gap = playerIcon and 4 or 1
 	local width = self.NAMEPLATE_QUEST_ICON_WIDTH
 	local height = self.NAMEPLATE_QUEST_ICON_HEIGHT

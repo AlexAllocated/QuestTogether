@@ -160,6 +160,10 @@ function QT:GetPartyFocusController()
 		loggingOut = function()
 			return a.isLoggingOut
 		end,
+		now = function()
+			local now = a:SafeToNumber(a.API.GetTime and a.API.GetTime())
+			return now and now >= 0 and now or nil
+		end,
 		restricted = function()
 			return a:IsRuntimeRestricted()
 		end,
@@ -291,6 +295,10 @@ function QT:ApplyPartyQuestFocus()
 end
 function QT:OnPartyNavigationTrackingChanged()
 	return self:GetPartyFocusController():OnTrackingChanged()
+end
+function QT:OnPartyNavigationQuestAccepted(questID)
+	local controller = rawget(self, "partyFocusController")
+	if controller then controller:OnQuestAccepted(questID) end
 end
 function QT:SamplePartyNavigation()
 	local controller = self:GetPartyFocusController()
