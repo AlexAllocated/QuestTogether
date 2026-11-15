@@ -176,6 +176,14 @@ To follow a party member:
 2. Choose **Follow quest focus** from that player’s menu. You can also use the active focus button for their selected quest in the comparison.
 3. Use **Stop following** when you want to choose your own navigation again.
 
+For a shortcut, target a party member and run `/qt focus`, or use
+`/qt focus <name>` to choose them by name. Full names work, including Forever
+surnames and Retail realm names; a short name works when it identifies only one
+other party member. `/qt unfollow` stops following. You can assign **Follow
+target's quest focus** and **Stop following quest focus** in WoW Key Bindings
+under QuestTogether, or put the commands in a macro. These follow quest
+navigation, not the player's movement.
+
 QT remembers whom you are following across reloads and resumes after fresh party information arrives. You can start following even when you do not share any quests. If that player selects a quest you do not have, QT keeps following and leaves your current navigation in place. It automatically focuses their quest once that quest is in your log, or when they select another quest you both have. Choosing a different quest through QT while following asks for confirmation. Your own column’s focus buttons let you select a quest directly.
 
 [![Party Quest Log while following a teammate’s quest focus](https://media.forgecdn.net/attachments/2055/215/follow-party-quest-focus-png.png)](https://media.forgecdn.net/attachments/2055/215/follow-party-quest-focus-png.png)

@@ -3223,6 +3223,48 @@ Register("disabling clustering restores actual world map dots and leaves minimap
 	Equal(a.playerLocationClusterExpansion, nil)
 end)
 
+Register("VIP world map artwork survives first minimap entry and independent minimap pool reuse", function()
+	local a = ClusterFixture(1)
+	local row = a.rows.map[1]
+	function a:NormalizeMemberName(name) return name end
+	function a:IsSelfSender() return false end
+	a.communicationState = {}
+	local proof = { active = true, session = "vip-session", received = 90, sampledAt = 90, expires = 390 }
+	a.vipState = { communication = a.communicationState, peers = { [row.name] = proof } }
+	assert(a:RecordPeerEpoch(row.name, proof.session, 90))
+	assert(a:IsVerifiedVIP(row.name), "the renderer must use the shared verified identity query")
+	a:RefreshPlayerLocationPins()
+	local map = Pin(a, "map")
+	assert(map.developerGear.shown and not map.texture.shown)
+	assert(not a.locationPinState.surfaces.minimap, "a distant player has no minimap marker yet")
+
+	a.rows.minimap = { row }
+	a:RefreshPlayerLocationPins()
+	local mini = Pin(a, "minimap")
+	assert(map ~= mini and map.frame ~= mini.frame and map.developerGear ~= mini.developerGear,
+		"world map and minimap must own independent recycled artwork")
+	for _, pin in ipairs({ map, mini }) do
+		assert(pin.developerGear.shown and not pin.texture.shown and not pin.border.shown)
+		assert(pin.developerGear.texture:find("VIPStar", 1, true))
+	end
+
+	-- Reusing only the minimap slot for an ordinary nearby player must not
+	-- replace the still-visible VIP world-map symbol or its shared proof.
+	a.rows.minimap = { Row("Ordinary-Realm") }
+	a:RefreshPlayerLocationPins()
+	Equal(Pin(a, "minimap"), mini)
+	assert(not mini.developerGear.shown and mini.texture.shown and mini.border.shown)
+	assert(map.developerGear.shown and not map.texture.shown and not map.border.shown)
+	assert(a:IsVerifiedVIP(row.name))
+	Equal(a.vipState.peers[row.name], proof)
+	Equal(proof.expires, 390)
+
+	a.rows.minimap = { row }
+	a:RefreshPlayerLocationPins()
+	assert(mini.developerGear.shown and not mini.texture.shown and not mini.border.shown)
+	assert(map.developerGear.shown and not map.texture.shown and not map.border.shown)
+end)
+
 Register("developer and VIP artwork requires verified identity and restores normal dots after revocation or reuse", function()
 	local a = ClusterFixture(1)
 	local row = a.rows.map[1]

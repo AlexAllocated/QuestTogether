@@ -214,6 +214,78 @@ end
 function QT:FollowPartyQuestFocus(name)
 	return self:GetPartyFocusController():Follow(name)
 end
+
+-- Resolve only current group identities. In particular, an unqualified Retail
+-- name must not silently prefer our realm when two members share that name.
+function QT:ResolvePartyQuestFocusTarget(text)
+	if text ~= nil and (not self:CanAccessValue(text) or type(text) ~= "string") then return nil, "member" end
+	text = self:SafeTrimString(text, "")
+	local fromTarget = text == ""
+	if fromTarget then
+		for _, method in ipairs({ "UnitExists", "UnitIsPlayer" }) do
+			local getter = self.API and self.API[method]
+			if type(getter) ~= "function" then return nil, "target" end
+			local ok, value = pcall(getter, "target")
+			if not ok or not self:CanAccessValue(value) or value ~= true then return nil, "target" end
+		end
+		local ok, name = pcall(self.GetUnitFullName, self, "target")
+		if not ok or not Name(self, name) then return nil, "target" end
+		text = name
+	elseif #text >= 2 and (text:sub(1, 1) == '"' and text:sub(-1) == '"'
+		or text:sub(1, 1) == "'" and text:sub(-1) == "'") then
+		text = self:SafeTrimString(text:sub(2, -2), "")
+	end
+	local normalized = Name(self, text)
+	if not normalized then return nil, fromTarget and "target" or "member" end
+	local needle, normalizedNeedle = string.lower(text), string.lower(normalized)
+	local qualified = fromTarget or text:find("[%s%-]") ~= nil
+	local regional = self:UsesRegionalPlayerNames()
+	local found
+	for member in pairs(self.partyMembers or {}) do
+		local full = Name(self, member)
+		if full and not self:IsSelfSender(full) then
+			local key = string.lower(full)
+			local short = regional and full:match("^[^%s%-]+") or full:match("^[^%-]+")
+			local matches = key == needle or (qualified and key == normalizedNeedle)
+				or (not qualified and short and string.lower(short) == needle)
+			if matches then
+				if found and found ~= full then return nil, "ambiguous" end
+				found = full
+			end
+		end
+	end
+	return found, not found and (fromTarget and "target" or "member") or nil
+end
+
+function QT:HandlePartyQuestFocusCommand(text)
+	if not self.isInitialized or type(self.db) ~= "table" or type(self.db.profile) ~= "table" or self.isLoggingOut then
+		return false
+	end
+	if not self.isEnabled then
+		self:Print(L("QuestTogether is disabled."))
+		return false
+	end
+	if self:IsRuntimeRestricted() then
+		self:Print(L("Quest focus cannot be followed right now."))
+		return false
+	end
+	local name, reason = self:ResolvePartyQuestFocusTarget(text)
+	if not name then
+		self:Print(reason == "ambiguous" and L("That name matches more than one party member. Use their full name.")
+			or L("Target a party member, or use /qt focus <name>."))
+		return false
+	end
+	if not self:FollowPartyQuestFocus(name) then
+		if self:WouldPartyQuestFollowCycle(name) then
+			self:Print(L("Following would create a loop"))
+		else
+			self:Print(L("Quest focus cannot be followed right now."))
+		end
+		return false
+	end
+	self:Print(string.format(L("Following: %s"), name))
+	return true
+end
 function QT:ApplyPartyQuestFocus()
 	return self:GetPartyFocusController():Apply()
 end

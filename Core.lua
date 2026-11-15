@@ -337,6 +337,7 @@ BINDING_HEADER_QUESTTOGETHER = "QuestTogether"
 BINDING_NAME_QUESTTOGETHER_PARTY_LOG = L("Toggle Party Quest Log")
 BINDING_NAME_QUESTTOGETHER_MENU = L("Open QuestTogether menu")
 BINDING_NAME_QUESTTOGETHER_QUEST_PARTNERS = L("Toggle Looking for Questing Partners")
+BINDING_NAME_QUESTTOGETHER_FOLLOW_TARGET = L("Follow target's quest focus")
 BINDING_NAME_QUESTTOGETHER_STOP_FOLLOW = L("Stop following quest focus")
 BINDING_NAME_QUESTTOGETHER_CHAT = L("Open QuestTogether chat")
 BINDING_NAME_QUESTTOGETHER_SETTINGS = L("Open QuestTogether settings")
@@ -6947,6 +6948,8 @@ function QuestTogether:PrintHelp()
 	self:Print(L("/qt set <option> <value> - Set a boolean option (e.g. emoteOnQuestCompletion off)"))
 	self:Print(L("/qt get <option> - Read an option value"))
 	self:Print(L("/qt pql - Open Party Quest Log"))
+	self:Print(L("/qt focus [name] - Follow a party member's quest focus (your target if omitted)"))
+	self:Print(L("/qt unfollow - Stop following quest focus"))
 	self:Print(L("/qt companions - Open your private recent companions list"))
 	self:Print(L("/qt vip - Learn about VIP rewards and activate your cosmetics"))
 	self:Print(L("/qt tip | hint - Show another QuestTogether tip"))
@@ -7085,6 +7088,12 @@ function QuestTogether:HandleSlashCommand(input)
 	end
 	if command == "vip" then
 		return self:OpenVIPWindow()
+	end
+	if command == "focus" then
+		return self:HandlePartyQuestFocusCommand(rest)
+	end
+	if command == "unfollow" then
+		return self:HandleKeybinding("stop_follow")
 	end
 	if command == "tip" or command == "hint" then
 		if not self:ShowHint() then

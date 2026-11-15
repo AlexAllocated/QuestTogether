@@ -87,7 +87,10 @@ local function State(a)
 	return s
 end
 function QT:GetVIPCommunicationMetrics()
-	local s, result = rawget(self, "vipState"), { pending = 0 }
+	local s, result = rawget(self, "vipState"), {
+		pending = 0, proofsCached = 0, proofsValid = 0, proofsExpired = 0,
+		proofsWithdrawn = 0, proofsSessionInvalid = 0, proofsUnavailable = 0,
+	}
 	if not s then
 		return result
 	end
@@ -95,6 +98,19 @@ function QT:GetVIPCommunicationMetrics()
 		result[key] = value
 	end
 	result.pending = #s.jobs
+	local now, current = Now(self), Current(self, s)
+	-- This bounded snapshot is requested by diagnostics, never by the renderer.
+	-- Only counts leave the identity owner; no names or signed payloads do.
+	for name, peer in pairs(s.peers) do
+		result.proofsCached = result.proofsCached + 1
+		local key
+		if now >= peer.expires then key = "proofsExpired"
+		elseif not peer.active then key = "proofsWithdrawn"
+		elseif not self:IsPeerSessionObservationCurrent(name, peer.session, peer.sampledAt) then key = "proofsSessionInvalid"
+		elseif not current or now < peer.received or self:IsIgnoredPlayerName(name) then key = "proofsUnavailable"
+		else key = "proofsValid" end
+		result[key] = result[key] + 1
+	end
 	return result
 end
 local function Changed(a)
@@ -180,12 +196,39 @@ function QT:IsVerifiedVIP(name)
 		and Now(self) < peer.expires
 		and self:IsPeerSessionObservationCurrent(name, peer.session, peer.sampledAt)
 end
+
+-- Cached relays may carry either the current enabled proof or its signed
+-- withdrawal. Replaying a publication never grants it a new observation lease.
+function QT:IsCurrentVerifiedVIPProof(name, data)
+	name = self:NormalizeMemberName(name)
+	local s = rawget(self, "vipState")
+	local peer = s and name and s.peers[name]
+	return type(data) == "table"
+		and peer ~= nil
+		and Current(self, s)
+		and not self:IsIgnoredPlayerName(name)
+		and peer.session == data.session
+		and peer.issuedAt == data.issuedAt
+		and peer.certificate == data.certificate
+		and peer.signatureText == data.signature
+		and peer.active == data.active
+		and Now(self) >= peer.received
+		and Now(self) < peer.expires
+		and self:IsPeerSessionObservationCurrent(name, peer.session, peer.sampledAt)
+end
+
+local function RemovePeerOrder(s, name)
+	for index = #s.order, 1, -1 do
+		if s.order[index].sender == name then table.remove(s.order, index) end
+	end
+end
 function QT:RetireVIPPeer(name)
 	local s = rawget(self, "vipState")
 	if not s then
 		return
 	end
 	s.peers[name] = nil
+	RemovePeerOrder(s, name)
 	for _, job in ipairs(s.jobs) do
 		if job.sender == name then
 			job.cancelled = true
@@ -403,6 +446,14 @@ function QT:UpdateVIPIdentity()
 					(not old or old.session ~= job.session or old.issuedAt < job.issuedAt)
 					and self:RecordPeerEpoch(job.sender, job.session, job.stamp)
 				then
+					if old and old.session == job.session and old.active and job.active and now >= old.expires then
+						Count(s, "renewalGaps")
+						s.metrics.renewalGapLast = now - old.expires
+						s.metrics.renewalGapMax = math.max(s.metrics.renewalGapMax or 0, now - old.expires)
+					end
+					-- Count distinct peers, not every historical renewal. Otherwise a
+					-- busy renewal stream can evict an unrelated still-valid identity.
+					RemovePeerOrder(s, job.sender)
 					s.peers[job.sender] = job
 					Count(s, "verified")
 					s.metrics.authenticationLast = now - job.received

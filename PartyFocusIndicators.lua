@@ -3,7 +3,7 @@
 local QT = _G.QuestTogether
 local L = QT.Translate
 local MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
-local DOT_SIZE, FOLLOW_SIZE, DOT_SPACING = 12, 14, 16
+local DOT_SIZE, DOT_SPACING = 12, 16
 local BADGE_SIZE, BADGE_GAP = 12, 2
 local STRATA = { BACKGROUND = true, LOW = true, MEDIUM = true, HIGH = true, DIALOG = true }
 
@@ -110,14 +110,20 @@ local function NewPin(a, root)
 		Call(a, texture, "AddMaskTexture", mask)
 		return texture
 	end
-	local border = Circle(DOT_SIZE, "ARTWORK")
-	Call(a, border, "SetColorTexture", 0.04, 0.04, 0.04, 1)
+	-- Keep the center transparent so the tracker background shows through.
+	-- Both states retain their class color and size; following fills the ring.
+	local ring = Call(a, frame, "CreateTexture", nil, "ARTWORK")
+	Call(a, ring, "SetSize", DOT_SIZE, DOT_SIZE)
+	Call(a, ring, "SetPoint", "CENTER")
+	Call(a, ring, "SetTexture", "Interface\\AddOns\\QuestTogether\\Media\\FocusRing.tga")
+	local dot = Circle(DOT_SIZE - 2, "OVERLAY")
+	Call(a, dot, "Hide")
 	local badge = Call(a, frame, "CreateTexture", nil, "OVERLAY")
 	Call(a, badge, "SetSize", BADGE_SIZE, BADGE_SIZE)
 	Call(a, badge, "SetPoint", "RIGHT", frame, "LEFT", -BADGE_GAP, 0)
 	Call(a, badge, "SetTexture", "Interface\\AddOns\\QuestTogether\\Media\\FocusFollower.tga")
 	Call(a, badge, "Hide")
-	return { frame = frame, border = border, dot = Circle(DOT_SIZE - 2, "OVERLAY"), badge = badge }
+	return { frame = frame, ring = ring, dot = dot, badge = badge }
 end
 
 local function Current(a, pin, identity)
@@ -235,7 +241,7 @@ function QT:RefreshPartyQuestFocusIndicatorGeometry()
 		local pin = state.pins[index]
 		if header then
 			if not pin then pin = NewPin(self, root); state.pins[index] = pin end
-			if self:CanMutateOwnedUI(pin.frame) and self:CanMutateOwnedUI(pin.dot) and self:CanMutateOwnedUI(pin.border)
+			if self:CanMutateOwnedUI(pin.frame) and self:CanMutateOwnedUI(pin.dot) and self:CanMutateOwnedUI(pin.ring)
 				and self:CanMutateOwnedUI(pin.badge) then
 				local follower = self:IsPartyQuestFocusFollower(row.name)
 				-- Grow leftward along the title row, not vertically into adjacent
@@ -250,7 +256,7 @@ function QT:RefreshPartyQuestFocusIndicatorGeometry()
 				local old = pin.geometry
 				if not old or old.x ~= x or old.y ~= y or old.scale ~= s or old.level ~= header.level or old.strata ~= header.strata then
 					Call(self, pin.frame, "SetScale", s)
-					-- Dots, follow rings and badges belong to the tracker layer so
+					-- Focus rings, fills and badges belong to the tracker layer so
 					-- ordinary windows can cover both their artwork and hit targets.
 					Call(self, pin.frame, "SetFrameStrata", header.strata)
 					Call(self, pin.frame, "SetFrameLevel", header.level)
@@ -260,6 +266,7 @@ function QT:RefreshPartyQuestFocusIndicatorGeometry()
 				end
 				if pin.name ~= row.name or pin.questID ~= row.questID or pin.classFile ~= row.classFile then
 					local r, g, b = self:GetWindowClassColor(row.classFile, 1)
+					Call(self, pin.ring, "SetVertexColor", r, g, b, 1)
 					Call(self, pin.dot, "SetColorTexture", r, g, b, 1)
 					Bind(self, pin)
 				end
@@ -267,9 +274,7 @@ function QT:RefreshPartyQuestFocusIndicatorGeometry()
 				local following = followTarget == row.name
 				if pin.following ~= following then
 					pin.following = following
-					local size = following and FOLLOW_SIZE or DOT_SIZE
-					Call(self, pin.border, "SetSize", size, size)
-					Call(self, pin.border, "SetColorTexture", following and 0.5 or 0.04, following and 1 or 0.04, following and 0 or 0.04, 1)
+					Call(self, pin.dot, following and "Show" or "Hide")
 					if pin.tooltip and Call(self, pin.tooltip, "IsShown") == true then Tooltip(self, pin) end
 				end
 				if pin.follower ~= follower then
