@@ -1,20 +1,20 @@
 {
-  "source_sha256": "c3b9ee8559c4f63381aed7198e04655d03ef9ffd369f665dccfab0ec89aa2090",
+  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
   "notes": {
-    "version": "9.3.1",
-    "welcome": "Correcciones al compartir puntos de ruta y seguir misiones, con un indicador más claro para quienes siguen tu misión activa.",
+    "version": "9.3.2",
+    "welcome": "Corregidos el seguimiento al aceptar misiones y la posición del icono de QT en las placas amistosas que solo muestran nombres.",
     "sections": [
       {
-        "title": "Puntos de ruta y misión activa",
+        "title": "Aceptar misiones durante el seguimiento",
         "items": [
-          "Con Compartir mi punto de ruta activado, los puntos que coloques en el mapa de WoW vuelven a compartirse con el grupo como marcadores del color de tu clase.",
-          "Tener un punto de ruta en el mapa ya no interrumpe las actualizaciones de la misión activa ni del seguimiento. El grupo vuelve a ver a quién sigues y, si eliges otra misión mientras sigues a un compañero, vuelve a aparecer la confirmación para dejar de seguirlo. Cancelar mantiene el seguimiento."
+          "Al aceptar una misión, el cambio automático de misión activa ya no interrumpe el seguimiento de un compañero ni pide confirmar que quieres dejar de seguirlo. El seguimiento sigue activo y se recupera la misión compartida en cuanto WoW lo permite.",
+          "Si después eliges otra misión por tu cuenta, se sigue mostrando la confirmación para dejar de seguir al compañero."
         ]
       },
       {
-        "title": "Indicador de seguimiento",
+        "title": "Placas amistosas con solo nombres",
         "items": [
-          "En el seguimiento de objetivos, cada compañero que sigue tu misión activa aparece con un único icono de cadena del color de su clase. La cadena sustituye al aro vacío, en lugar de mostrarse como una insignia aparte."
+          "Cuando WoW muestra solo los nombres de los jugadores amistosos, el icono de QT queda justo a la izquierda del texto del nombre, en lugar de junto a la barra de salud oculta. Al desactivar esa opción, el icono vuelve a la posición que tenías guardada."
         ]
       }
     ]

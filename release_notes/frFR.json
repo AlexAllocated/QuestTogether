@@ -1,20 +1,20 @@
 {
-  "source_sha256": "c3b9ee8559c4f63381aed7198e04655d03ef9ffd369f665dccfab0ec89aa2090",
+  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
   "notes": {
-    "version": "9.3.1",
-    "welcome": "Correctifs pour le partage des repères et le suivi des quêtes, avec un indicateur plus clair pour les membres qui suivent votre sélection.",
+    "version": "9.3.2",
+    "welcome": "Corrections du suivi lors de l’acceptation de quêtes et du placement des icônes QT quand seuls les noms des joueurs alliés sont affichés.",
     "sections": [
       {
-        "title": "Repères du groupe et quête active",
+        "title": "Accepter des quêtes pendant un suivi",
         "items": [
-          "Lorsque « Partager mon repère » est activé, les repères que vous placez sur la carte de WoW sont à nouveau partagés avec le groupe, dans votre couleur de classe.",
-          "La présence d’un repère sur la carte ne bloque plus les mises à jour de la quête active et du suivi. Choisir une autre quête pendant un suivi demande à nouveau confirmation avant de l’arrêter ; « Annuler » conserve le suivi."
+          "Lorsqu’une quête acceptée devient automatiquement votre quête active, vous continuez à suivre votre compagnon sans demande d’arrêt. La quête commune est rétablie dès que le jeu le permet.",
+          "Si vous choisissez ensuite vous-même une autre quête, la confirmation d’arrêt du suivi reste nécessaire."
         ]
       },
       {
-        "title": "Indicateur des membres qui vous suivent",
+        "title": "Barres d’info alliées affichant uniquement les noms",
         "items": [
-          "Dans le suivi des objectifs, un seul symbole de chaîne à leur couleur de classe remplace le cercle vide des membres qui suivent votre sélection de quête. La chaîne n’apparaît plus à côté du cercle."
+          "Quand WoW affiche uniquement les noms des joueurs alliés sur leurs barres d’info, l’icône QT se place juste à gauche du nom visible. Désactiver cette option rétablit la position enregistrée de l’icône."
         ]
       }
     ]

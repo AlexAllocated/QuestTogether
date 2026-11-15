@@ -4,6 +4,19 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.3.2
+
+Picking up new quests no longer interrupts quest-focus following. QT icons also line up properly with friendly player names when health bars are hidden.
+
+### Keep following when picking up quests
+
+- Accepting a new quest no longer asks you to stop following when WoW automatically changes quest focus. QT keeps the follow active and returns to your party member's focused quest when allowed.
+- Deliberately choosing another quest still asks whether to stop following.
+
+### Name-only friendly player plates
+
+- With Only show names enabled, the QT icon now sits just left of the player's name instead of beside the hidden health bar. Turn the setting off to return the icon to your saved position.
+
 ## 9.3.1
 
 Party waypoint sharing and quest-follow updates are working together again, with a clearer follower indicator.

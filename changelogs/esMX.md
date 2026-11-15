@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.2
+
+Esta actualización corrige el seguimiento al aceptar misiones y la posición del ícono de QT en las placas amistosas que muestran solo nombres.
+
+### Aceptar misiones durante el seguimiento
+
+- Si WoW selecciona automáticamente una misión que acabas de aceptar, ya no aparece la confirmación para dejar de seguir a tu compañero. El seguimiento se mantiene y la misión compartida vuelve a quedar activa en cuanto el juego lo permite.
+- Cuando eliges otra misión por tu cuenta más adelante, la confirmación para dejar de seguir sigue apareciendo como antes.
+
+### Placas amistosas con solo nombres
+
+- Con la opción de WoW para mostrar solo los nombres de jugadores amistosos, el ícono de QT se coloca justo a la izquierda del texto del nombre, en vez de junto a la barra de salud oculta. Si desactivas la opción, vuelve a la posición que guardaste.
+
 ## 9.3.1
 
 Esta actualización corrige el envío de puntos de ruta y el seguimiento de misiones, y aclara el indicador de quienes siguen tu misión activa.

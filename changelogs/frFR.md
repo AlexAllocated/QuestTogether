@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.2
+
+Corrections du suivi lors de l’acceptation de quêtes et du placement des icônes QT quand seuls les noms des joueurs alliés sont affichés.
+
+### Accepter des quêtes pendant un suivi
+
+- Lorsqu’une quête acceptée devient automatiquement votre quête active, vous continuez à suivre votre compagnon sans demande d’arrêt. La quête commune est rétablie dès que le jeu le permet.
+- Si vous choisissez ensuite vous-même une autre quête, la confirmation d’arrêt du suivi reste nécessaire.
+
+### Barres d’info alliées affichant uniquement les noms
+
+- Quand WoW affiche uniquement les noms des joueurs alliés sur leurs barres d’info, l’icône QT se place juste à gauche du nom visible. Désactiver cette option rétablit la position enregistrée de l’icône.
+
 ## 9.3.1
 
 Correctifs pour le partage des repères et le suivi des quêtes, avec un indicateur plus clair pour les membres qui suivent votre sélection.

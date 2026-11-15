@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.2
+
+Correzioni per chi segue la missione di un compagno e per le icone QT sulle targhette amichevoli che mostrano solo il nome.
+
+### Accettare missioni mentre segui un compagno
+
+- Quando accetti una missione mentre segui quella di un compagno, il cambio automatico di selezione non ti chiede più di smettere di seguirlo. Continui a seguirlo e la missione condivisa viene ripristinata appena il gioco lo consente.
+- Se in seguito scegli tu un’altra missione, compare ancora la conferma per smettere di seguire il compagno.
+
+### Targhette amichevoli con il solo nome
+
+- Quando WoW mostra solo i nomi sulle targhette dei giocatori amichevoli, l’icona QT si posiziona subito a sinistra del nome visibile. Disattivando questa opzione, l’icona torna nella posizione che avevi salvato.
+
 ## 9.3.1
 
 Questo aggiornamento corregge la condivisione dei punti di riferimento e la sincronizzazione della missione attiva, e rende più chiaro chi ti segue.

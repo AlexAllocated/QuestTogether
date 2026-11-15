@@ -1,20 +1,20 @@
 {
-  "source_sha256": "c3b9ee8559c4f63381aed7198e04655d03ef9ffd369f665dccfab0ec89aa2090",
+  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
   "notes": {
-    "version": "9.3.1",
-    "welcome": "Correções no compartilhamento de pontos de rota e no acompanhamento de missões, além de um indicador mais claro para quem segue sua missão em foco.",
+    "version": "9.3.2",
+    "welcome": "Correções no acompanhamento ao aceitar missões e na posição do ícone do QT nas placas de jogadores aliados que exibem apenas nomes.",
     "sections": [
       {
-        "title": "Pontos de rota e missão em foco",
+        "title": "Aceitar missões durante o acompanhamento",
         "items": [
-          "Com Compartilhar meu ponto de rota ativado, os pontos marcados no mapa do WoW voltam a ser compartilhados com o grupo, usando a cor da sua classe.",
-          "Ter um ponto de rota no mapa não interrompe mais as atualizações da missão em foco nem do estado de acompanhamento exibido ao grupo. Ao selecionar outra missão enquanto segue alguém, a confirmação para parar de seguir volta a aparecer. Escolher Cancelar mantém o acompanhamento."
+          "A seleção automática de uma missão recém-aceita não interrompe mais o acompanhamento da missão em foco de um integrante do grupo nem pede confirmação para parar de seguir. O acompanhamento permanece ativo, e a missão compartilhada volta ao foco assim que o WoW permite.",
+          "Se você escolher outra missão por conta própria depois disso, a confirmação para parar de seguir continua aparecendo normalmente."
         ]
       },
       {
-        "title": "Indicador de acompanhamento",
+        "title": "Placas aliadas com apenas nomes",
         "items": [
-          "No rastreador de objetivos, quem segue sua missão em foco passa a ser representado por um único ícone de corrente na cor da própria classe. A corrente substitui o anel vazio, em vez de aparecer como um símbolo separado ao lado dele."
+          "Com a opção do WoW de exibir apenas os nomes de jogadores aliados, o ícone do QT fica logo à esquerda do texto do nome, em vez de acompanhar a barra de vida oculta. Ao desativar a opção, o ícone retorna à posição que você salvou."
         ]
       }
     ]

@@ -1,20 +1,20 @@
 {
-  "source_sha256": "c3b9ee8559c4f63381aed7198e04655d03ef9ffd369f665dccfab0ec89aa2090",
+  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
   "notes": {
-    "version": "9.3.1",
-    "welcome": "Esta actualización corrige el envío de puntos de ruta y el seguimiento de misiones, y aclara el indicador de quienes siguen tu misión activa.",
+    "version": "9.3.2",
+    "welcome": "Esta actualización corrige el seguimiento al aceptar misiones y la posición del ícono de QT en las placas amistosas que muestran solo nombres.",
     "sections": [
       {
-        "title": "Puntos de ruta y misión activa",
+        "title": "Aceptar misiones durante el seguimiento",
         "items": [
-          "Los puntos de ruta que marques en el mapa de WoW vuelven a compartirse con tu grupo si tienes activado Compartir mi punto de ruta. Se muestran con el color de tu clase.",
-          "Un punto de ruta en el mapa ya no impide actualizar la misión activa ni el estado de seguimiento que ve el grupo. Al elegir otra misión mientras sigues a un compañero, vuelve a aparecer la confirmación para dejar de seguirlo; si eliges Cancelar, el seguimiento continúa."
+          "Si WoW selecciona automáticamente una misión que acabas de aceptar, ya no aparece la confirmación para dejar de seguir a tu compañero. El seguimiento se mantiene y la misión compartida vuelve a quedar activa en cuanto el juego lo permite.",
+          "Cuando eliges otra misión por tu cuenta más adelante, la confirmación para dejar de seguir sigue apareciendo como antes."
         ]
       },
       {
-        "title": "Indicador de seguimiento",
+        "title": "Placas amistosas con solo nombres",
         "items": [
-          "Los compañeros que siguen tu misión activa ahora se representan en el seguimiento de objetivos con un solo ícono de cadena del color de su clase. Este reemplaza al aro vacío y ya no aparece como una insignia adicional."
+          "Con la opción de WoW para mostrar solo los nombres de jugadores amistosos, el ícono de QT se coloca justo a la izquierda del texto del nombre, en vez de junto a la barra de salud oculta. Si desactivas la opción, vuelve a la posición que guardaste."
         ]
       }
     ]

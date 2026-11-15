@@ -1,20 +1,20 @@
 {
-  "source_sha256": "c3b9ee8559c4f63381aed7198e04655d03ef9ffd369f665dccfab0ec89aa2090",
+  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
   "notes": {
-    "version": "9.3.1",
-    "welcome": "Questo aggiornamento corregge la condivisione dei punti di riferimento e la sincronizzazione della missione attiva, e rende più chiaro chi ti segue.",
+    "version": "9.3.2",
+    "welcome": "Correzioni per chi segue la missione di un compagno e per le icone QT sulle targhette amichevoli che mostrano solo il nome.",
     "sections": [
       {
-        "title": "Punti di riferimento e missione attiva",
+        "title": "Accettare missioni mentre segui un compagno",
         "items": [
-          "Con «Condividi il mio punto di riferimento» attivo, i punti che posizioni sulla mappa di WoW vengono di nuovo condivisi con il gruppo e mostrati nel colore della tua classe.",
-          "Un punto sulla mappa non impedisce più al gruppo di vedere la tua missione attiva e chi stai seguendo. Se scegli un’altra missione mentre segui quella di un compagno, ricompare la conferma per smettere di seguirlo; con «Annulla» continui a seguirlo."
+          "Quando accetti una missione mentre segui quella di un compagno, il cambio automatico di selezione non ti chiede più di smettere di seguirlo. Continui a seguirlo e la missione condivisa viene ripristinata appena il gioco lo consente.",
+          "Se in seguito scegli tu un’altra missione, compare ancora la conferma per smettere di seguire il compagno."
         ]
       },
       {
-        "title": "Indicatore per chi ti segue",
+        "title": "Targhette amichevoli con il solo nome",
         "items": [
-          "Nel tracciatore obiettivi, chi segue la tua missione attiva è ora indicato da un solo simbolo di catena nel colore della sua classe, al posto del cerchio vuoto. La catena non compare più accanto al cerchio."
+          "Quando WoW mostra solo i nomi sulle targhette dei giocatori amichevoli, l’icona QT si posiziona subito a sinistra del nome visibile. Disattivando questa opzione, l’icona torna nella posizione che avevi salvato."
         ]
       }
     ]

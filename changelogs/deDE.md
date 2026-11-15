@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.2
+
+Korrekturen für den Questfokus beim Annehmen neuer Quests und für QT-Symbole neben freundlichen Spielernamen.
+
+### Quests annehmen und weiter folgen
+
+- Folgst du dem Questfokus eines Gruppenmitglieds, löst der automatische Fokuswechsel beim Annehmen einer Quest keine Rückfrage zum Beenden mehr aus. Das Folgen bleibt aktiv; die gemeinsame Quest wird wieder ausgewählt, sobald das Spiel es zulässt.
+- Wählst du später selbst eine andere Quest aus, erscheint weiterhin die Rückfrage, ob du dem Gruppenmitglied nicht mehr folgen möchtest.
+
+### Freundliche Namensplaketten ohne Balken
+
+- Wenn WoW auf freundlichen Namensplaketten nur Namen anzeigt, sitzt das QT-Symbol jetzt direkt links neben dem sichtbaren Namen. Schaltest du diese Option aus, wird die gespeicherte QT-Symbolposition wieder verwendet.
+
 ## 9.3.1
 
 Korrekturen für geteilte Wegpunkte und den Questfokus sowie eine klarere Anzeige für Mitspieler, die deinem Questfokus folgen.

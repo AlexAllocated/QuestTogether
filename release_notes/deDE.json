@@ -1,20 +1,20 @@
 {
-  "source_sha256": "c3b9ee8559c4f63381aed7198e04655d03ef9ffd369f665dccfab0ec89aa2090",
+  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
   "notes": {
-    "version": "9.3.1",
-    "welcome": "Korrekturen für geteilte Wegpunkte und den Questfokus sowie eine klarere Anzeige für Mitspieler, die deinem Questfokus folgen.",
+    "version": "9.3.2",
+    "welcome": "Korrekturen für den Questfokus beim Annehmen neuer Quests und für QT-Symbole neben freundlichen Spielernamen.",
     "sections": [
       {
-        "title": "Gruppenwegpunkte und Questfokus",
+        "title": "Quests annehmen und weiter folgen",
         "items": [
-          "Wenn „Meinen Wegpunkt teilen“ aktiviert ist, werden deine normalen WoW-Kartenwegpunkte wieder mit der Gruppe geteilt und in deiner Klassenfarbe angezeigt.",
-          "Ein gesetzter Kartenwegpunkt blockiert die Aktualisierung von Questfokus und Folgestatus nicht mehr. Wählst du beim Folgen eine andere Quest, erscheint wieder die Bestätigung zum Beenden. Mit „Abbrechen“ folgst du weiterhin demselben Mitspieler."
+          "Folgst du dem Questfokus eines Gruppenmitglieds, löst der automatische Fokuswechsel beim Annehmen einer Quest keine Rückfrage zum Beenden mehr aus. Das Folgen bleibt aktiv; die gemeinsame Quest wird wieder ausgewählt, sobald das Spiel es zulässt.",
+          "Wählst du später selbst eine andere Quest aus, erscheint weiterhin die Rückfrage, ob du dem Gruppenmitglied nicht mehr folgen möchtest."
         ]
       },
       {
-        "title": "Mitspieler, die deinem Questfokus folgen",
+        "title": "Freundliche Namensplaketten ohne Balken",
         "items": [
-          "In der Zielverfolgung ersetzt ein einzelnes Kettensymbol in Klassenfarbe den hohlen Ring für Mitspieler, die deinem Questfokus folgen. Das zusätzliche Kettensymbol neben dem Ring entfällt."
+          "Wenn WoW auf freundlichen Namensplaketten nur Namen anzeigt, sitzt das QT-Symbol jetzt direkt links neben dem sichtbaren Namen. Schaltest du diese Option aus, wird die gespeicherte QT-Symbolposition wieder verwendet."
         ]
       }
     ]

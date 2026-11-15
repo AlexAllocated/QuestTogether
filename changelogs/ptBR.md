@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.2
+
+Correções no acompanhamento ao aceitar missões e na posição do ícone do QT nas placas de jogadores aliados que exibem apenas nomes.
+
+### Aceitar missões durante o acompanhamento
+
+- A seleção automática de uma missão recém-aceita não interrompe mais o acompanhamento da missão em foco de um integrante do grupo nem pede confirmação para parar de seguir. O acompanhamento permanece ativo, e a missão compartilhada volta ao foco assim que o WoW permite.
+- Se você escolher outra missão por conta própria depois disso, a confirmação para parar de seguir continua aparecendo normalmente.
+
+### Placas aliadas com apenas nomes
+
+- Com a opção do WoW de exibir apenas os nomes de jogadores aliados, o ícone do QT fica logo à esquerda do texto do nome, em vez de acompanhar a barra de vida oculta. Ao desativar a opção, o ícone retorna à posição que você salvou.
+
 ## 9.3.1
 
 Correções no compartilhamento de pontos de rota e no acompanhamento de missões, além de um indicador mais claro para quem segue sua missão em foco.

@@ -3,6 +3,217 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.3.1",
+        "welcome": "Party waypoint sharing and quest-follow updates are working together again, with a clearer follower indicator.",
+        "sections": [
+          {
+            "title": "Waypoints and quest focus",
+            "items": [
+              "Fixed normal WoW map pins not reaching your party as class-colored waypoint markers when waypoint sharing is enabled.",
+              "Having a map pin no longer interrupts quest-focus and follow-status updates. Choosing another quest while following once again asks whether to stop following; Cancel keeps the follow active."
+            ]
+          },
+          {
+            "title": "A clearer follower indicator",
+            "items": [
+              "On the objective tracker, party members following your quest focus now appear as a class-colored chain link in place of the hollow ring. The extra icon beside the ring is gone."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.3.1",
+        "welcome": "Korrekturen für geteilte Wegpunkte und den Questfokus sowie eine klarere Anzeige für Mitspieler, die deinem Questfokus folgen.",
+        "sections": [
+          {
+            "title": "Gruppenwegpunkte und Questfokus",
+            "items": [
+              "Wenn „Meinen Wegpunkt teilen“ aktiviert ist, werden deine normalen WoW-Kartenwegpunkte wieder mit der Gruppe geteilt und in deiner Klassenfarbe angezeigt.",
+              "Ein gesetzter Kartenwegpunkt blockiert die Aktualisierung von Questfokus und Folgestatus nicht mehr. Wählst du beim Folgen eine andere Quest, erscheint wieder die Bestätigung zum Beenden. Mit „Abbrechen“ folgst du weiterhin demselben Mitspieler."
+            ]
+          },
+          {
+            "title": "Mitspieler, die deinem Questfokus folgen",
+            "items": [
+              "In der Zielverfolgung ersetzt ein einzelnes Kettensymbol in Klassenfarbe den hohlen Ring für Mitspieler, die deinem Questfokus folgen. Das zusätzliche Kettensymbol neben dem Ring entfällt."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.3.1",
+        "welcome": "Correctifs pour le partage des repères et le suivi des quêtes, avec un indicateur plus clair pour les membres qui suivent votre sélection.",
+        "sections": [
+          {
+            "title": "Repères du groupe et quête active",
+            "items": [
+              "Lorsque « Partager mon repère » est activé, les repères que vous placez sur la carte de WoW sont à nouveau partagés avec le groupe, dans votre couleur de classe.",
+              "La présence d’un repère sur la carte ne bloque plus les mises à jour de la quête active et du suivi. Choisir une autre quête pendant un suivi demande à nouveau confirmation avant de l’arrêter ; « Annuler » conserve le suivi."
+            ]
+          },
+          {
+            "title": "Indicateur des membres qui vous suivent",
+            "items": [
+              "Dans le suivi des objectifs, un seul symbole de chaîne à leur couleur de classe remplace le cercle vide des membres qui suivent votre sélection de quête. La chaîne n’apparaît plus à côté du cercle."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.3.1",
+        "welcome": "Correcciones al compartir puntos de ruta y seguir misiones, con un indicador más claro para quienes siguen tu misión activa.",
+        "sections": [
+          {
+            "title": "Puntos de ruta y misión activa",
+            "items": [
+              "Con Compartir mi punto de ruta activado, los puntos que coloques en el mapa de WoW vuelven a compartirse con el grupo como marcadores del color de tu clase.",
+              "Tener un punto de ruta en el mapa ya no interrumpe las actualizaciones de la misión activa ni del seguimiento. El grupo vuelve a ver a quién sigues y, si eliges otra misión mientras sigues a un compañero, vuelve a aparecer la confirmación para dejar de seguirlo. Cancelar mantiene el seguimiento."
+            ]
+          },
+          {
+            "title": "Indicador de seguimiento",
+            "items": [
+              "En el seguimiento de objetivos, cada compañero que sigue tu misión activa aparece con un único icono de cadena del color de su clase. La cadena sustituye al aro vacío, en lugar de mostrarse como una insignia aparte."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.3.1",
+        "welcome": "Esta actualización corrige el envío de puntos de ruta y el seguimiento de misiones, y aclara el indicador de quienes siguen tu misión activa.",
+        "sections": [
+          {
+            "title": "Puntos de ruta y misión activa",
+            "items": [
+              "Los puntos de ruta que marques en el mapa de WoW vuelven a compartirse con tu grupo si tienes activado Compartir mi punto de ruta. Se muestran con el color de tu clase.",
+              "Un punto de ruta en el mapa ya no impide actualizar la misión activa ni el estado de seguimiento que ve el grupo. Al elegir otra misión mientras sigues a un compañero, vuelve a aparecer la confirmación para dejar de seguirlo; si eliges Cancelar, el seguimiento continúa."
+            ]
+          },
+          {
+            "title": "Indicador de seguimiento",
+            "items": [
+              "Los compañeros que siguen tu misión activa ahora se representan en el seguimiento de objetivos con un solo ícono de cadena del color de su clase. Este reemplaza al aro vacío y ya no aparece como una insignia adicional."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.3.1",
+        "welcome": "Correções no compartilhamento de pontos de rota e no acompanhamento de missões, além de um indicador mais claro para quem segue sua missão em foco.",
+        "sections": [
+          {
+            "title": "Pontos de rota e missão em foco",
+            "items": [
+              "Com Compartilhar meu ponto de rota ativado, os pontos marcados no mapa do WoW voltam a ser compartilhados com o grupo, usando a cor da sua classe.",
+              "Ter um ponto de rota no mapa não interrompe mais as atualizações da missão em foco nem do estado de acompanhamento exibido ao grupo. Ao selecionar outra missão enquanto segue alguém, a confirmação para parar de seguir volta a aparecer. Escolher Cancelar mantém o acompanhamento."
+            ]
+          },
+          {
+            "title": "Indicador de acompanhamento",
+            "items": [
+              "No rastreador de objetivos, quem segue sua missão em foco passa a ser representado por um único ícone de corrente na cor da própria classe. A corrente substitui o anel vazio, em vez de aparecer como um símbolo separado ao lado dele."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.3.1",
+        "welcome": "Исправлены обмен метками и синхронизация выбранных заданий, а значки следования в списке целей стали понятнее.",
+        "sections": [
+          {
+            "title": "Метки группы и выбор задания",
+            "items": [
+              "Если включено «Делиться моей путевой точкой», обычная метка WoW снова передаётся группе и отображается цветом вашего класса.",
+              "Метка на карте больше не мешает обновлению выбранного задания и статуса следования у участников группы. При выборе другого задания во время следования снова появляется подтверждение его прекращения; «Отмена» сохраняет следование."
+            ]
+          },
+          {
+            "title": "Значок следования",
+            "items": [
+              "В списке целей участник группы, следующий вашему выбору задания, теперь обозначается одним значком цепочки цвета своего класса. Он заменяет полое кольцо и отдельную цепочку рядом с ним."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.3.1",
+        "welcome": "Questo aggiornamento corregge la condivisione dei punti di riferimento e la sincronizzazione della missione attiva, e rende più chiaro chi ti segue.",
+        "sections": [
+          {
+            "title": "Punti di riferimento e missione attiva",
+            "items": [
+              "Con «Condividi il mio punto di riferimento» attivo, i punti che posizioni sulla mappa di WoW vengono di nuovo condivisi con il gruppo e mostrati nel colore della tua classe.",
+              "Un punto sulla mappa non impedisce più al gruppo di vedere la tua missione attiva e chi stai seguendo. Se scegli un’altra missione mentre segui quella di un compagno, ricompare la conferma per smettere di seguirlo; con «Annulla» continui a seguirlo."
+            ]
+          },
+          {
+            "title": "Indicatore per chi ti segue",
+            "items": [
+              "Nel tracciatore obiettivi, chi segue la tua missione attiva è ora indicato da un solo simbolo di catena nel colore della sua classe, al posto del cerchio vuoto. La catena non compare più accanto al cerchio."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.3.1",
+        "welcome": "경유지 공유와 집중 퀘스트 동기화 오류를 수정하고, 내 퀘스트 선택을 따라가는 파티원의 표시를 정리했습니다.",
+        "sections": [
+          {
+            "title": "파티 경유지와 집중 퀘스트",
+            "items": [
+              "‘내 경유지 공유’를 켜면 WoW 기본 지도 핀이 다시 파티원에게 공유되며, 내 직업 색상의 표식으로 표시됩니다.",
+              "지도 핀이 있어도 집중 퀘스트와 따라가기 상태가 파티원에게 정상적으로 전달됩니다. 따라가기 중 다른 퀘스트를 선택하면 중단 여부를 다시 확인하며, ‘취소’를 누르면 따라가기가 유지됩니다."
+            ]
+          },
+          {
+            "title": "내 퀘스트 선택을 따라가는 파티원",
+            "items": [
+              "목표 추적기에서 내 퀘스트 선택을 따라가는 파티원은 직업 색상의 사슬 아이콘 하나로 표시됩니다. 기존의 속이 빈 원과 옆에 붙던 사슬 표시는 이 아이콘으로 통합됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.3.1",
+        "welcome": "本次更新修复路径点共享和任务跟随同步问题，并简化了跟随者标记。",
+        "sections": [
+          {
+            "title": "路径点共享与任务跟随",
+            "items": [
+              "启用“共享我的路径点”后，放置 WoW 自带的地图标记会再次将路径点共享给队友，并以你的职业颜色显示。",
+              "地图上已有标记时，任务选择和跟随状态也能正常同步。跟随队友的任务选择期间，手动改选其他任务会再次弹出停止跟随的确认；点击“取消”即可继续跟随。"
+            ]
+          },
+          {
+            "title": "跟随者标记",
+            "items": [
+              "目标追踪器现在用一个职业颜色的链环图标标示跟随你任务选择的队友，取代原先的空心圆环和旁边的独立链环标记。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.3.1",
+        "welcome": "修正地圖標記分享與任務跟隨的同步問題，並調整跟隨者的顯示方式。",
+        "sections": [
+          {
+            "title": "隊伍路徑點與任務追蹤",
+            "items": [
+              "開啟「分享我的路徑點」後，使用 WoW 內建功能放置地圖標記，隊友就能再次收到路徑點，標記會以你的職業顏色顯示。",
+              "已有地圖標記不再妨礙任務選擇和跟隨狀態更新。跟隨隊友的任務選擇時，手動改選任務會再次詢問是否停止跟隨；選擇「取消」即可保持跟隨。"
+            ]
+          },
+          {
+            "title": "跟隨者標記",
+            "items": [
+              "跟隨你任務選擇的隊友，現在會在目標追蹤器中顯示為一個職業顏色的鏈結圖示。原先的空心圓環和旁邊的獨立鏈結標記已合併為這個圖示。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.3.0",
         "welcome": "Controller support is now in the stable release! No beta download is needed, and the latest focus shortcuts, rings and VIP fixes are included.",
         "sections": [
