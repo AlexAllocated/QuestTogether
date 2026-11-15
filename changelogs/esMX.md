@@ -2,6 +2,27 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.0
+
+El soporte para control ya está en la versión estable. No necesitas descargar la beta, y se conservan los atajos de misión, los anillos y las correcciones VIP.
+
+### Activa la navegación con control
+
+- Funciona con la Gamepad UI de WoW Forever 1.60.1, compilaciones 70888 y 70938. Activa esa interfaz en WoW y mantén seleccionada «Activar navegación nativa con control» en QT → General; está activada de forma predeterminada. En los demás clientes se mantienen el teclado y el mouse.
+
+### Abre y usa QuestTogether
+
+- Con la configuración predeterminada, QT agrega una macro PQL con icono de libro de misiones a LT + RT + arriba en la cruceta, en la página de acciones normal 1, siempre que el espacio esté vacío. Las acciones existentes se respetan. Puedes mover o quitar el botón con el editor de barras de acción; QT no lo repone mientras la macro siga existiendo. Si borras la macro por completo, puede recrearla y colocarla si el espacio predeterminado está libre.
+- Usa la cruceta para recorrer las misiones y los controles del Registro de misiones del grupo. Seleccionar activa lo que tengas marcado y Atrás cierra la ventana. La lista se desplaza para que la misión seleccionada siga visible.
+- En las asignaciones de teclas de WoW, configura «Abrir el menú de QuestTogether» para ver las acciones contextuales y las «Solicitudes pendientes». No hay una tecla asignada por defecto. Los menús con aspecto de WoW, las listas desplegables y las confirmaciones admiten el control. Las solicitudes que recibas no toman el foco hasta que las abras; las confirmaciones empiezan en Cancelar o Rechazar.
+- Las notas de actualización que se abren automáticamente toman el foco del control. El stick derecho desplaza tanto el texto como la barra; la cruceta selecciona botones y Atrás cierra la ventana. La escritura de texto y la colocación del HUD siguen usando sus controles habituales.
+
+### Seguimiento de objetivos y mapa del mundo
+
+- Al recorrer con el control el seguimiento de objetivos de WoW, el Seguimiento de objetivos del grupo responde como si pasaras el cursor. Esto no cambia tu misión activa ni a quién sigues.
+- La retícula del mapa del mundo resalta a los jugadores y grupos de jugadores QT. A/Seleccionar conserva la acción normal del mapa, sin abrir automáticamente el menú QT. Puedes usar el atajo asignado al menú QT para ver las acciones del marcador, aunque los controles del mapa pueden interceptar algunas combinaciones. Mover el mapa, usar el zoom y colocar puntos de ruta funciona como antes.
+- Los marcadores del grupo en el mapa del mundo conservan las estrellas VIP verificadas y los iconos de desarrollador. Al apagar los marcadores QT, vuelven los marcadores del grupo de WoW. El minimapa sigue igual.
+
 ## 9.2.0
 
 Nuevos atajos para las misiones del grupo, indicadores más claros y correcciones para las estrellas VIP.

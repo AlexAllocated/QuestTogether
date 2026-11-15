@@ -2,6 +2,27 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.0
+
+Die Controller-Unterstützung ist jetzt Teil der stabilen Version. Ein Beta-Download ist nicht mehr nötig; die Questfokus-Kurzbefehle, Ringe und VIP-Korrekturen bleiben erhalten.
+
+### Controller-Navigation einschalten
+
+- Unterstützt wird die Gamepad UI von WoW Forever 1.60.1 in den Builds 70888 und 70938. Aktiviere sie in WoW und lasse unter QT → Allgemein die standardmäßig eingeschaltete Option „Native Gamepad-Navigation aktivieren“ ausgewählt. Andere Clients behalten ihre Maus- und Tastatursteuerung.
+
+### QuestTogether öffnen und bedienen
+
+- Bei der Standardbelegung legt QT ein PQL-Makro mit Questbuch-Symbol auf LT + RT + Steuerkreuz oben auf der normalen Aktionsseite 1, sofern der Platz frei ist. Vorhandene Aktionen bleiben erhalten. Du kannst den Button im Aktionsleisteneditor verschieben oder entfernen; solange das Makro noch existiert, setzt QT ihn nicht zurück. Löschst du das Makro selbst, kann QT es neu anlegen und den freien Standardplatz wieder belegen.
+- Im Gruppenquestlog wechselst du mit dem Steuerkreuz zwischen Quests und Bedienelementen. Auswählen aktiviert das markierte Element, Zurück schließt das Fenster. Die Liste scrollt mit, damit die ausgewählte Quest sichtbar bleibt.
+- Belege in den WoW-Tasteneinstellungen „QuestTogether-Menü öffnen“, um kontextbezogene Aktionen und „Offene Anfragen“ aufzurufen. Dafür ist keine Taste vorbelegt. Menüs im WoW-Stil, Auswahllisten und Bestätigungen lassen sich mit dem Controller bedienen. Eingehende Anfragen übernehmen den Fokus erst, wenn du sie öffnest; bei Bestätigungen ist zunächst Abbrechen oder Ablehnen ausgewählt.
+- Automatisch nach einem Update geöffnete Patchnotes erhalten den Controller-Fokus. Der rechte Stick bewegt Text und Scrollbalken, das Steuerkreuz wählt Buttons und Zurück schließt das Fenster. Texteingabe und HUD-Platzierung behalten ihre bisherigen Bedienelemente.
+
+### Zielverfolgung und Weltkarte
+
+- Wenn du WoWs Zielverfolgung mit dem Controller durchgehst, reagiert die Gruppen-Zielverfolgung so, als würdest du auf die jeweilige Quest zeigen. Dabei werden weder Questfokus noch Folgen geändert.
+- Das Fadenkreuz auf der Weltkarte hebt QT-Spieler und Spielergruppen hervor. A/Auswählen führt weiterhin die normale Kartenaktion aus und öffnet kein QT-Menü. Eine zugewiesene QT-Menütaste kann die passenden Aktionen öffnen, wobei die Kartensteuerung manche Kombinationen abfangen kann. Verschieben, Zoomen und Wegpunkte funktionieren wie gewohnt.
+- Gruppenmarkierungen auf der Weltkarte behalten verifizierte VIP-Sterne und Entwickler-Symbole. Schaltest du die QT-Kartenanzeigen aus, erscheinen wieder WoWs Gruppenmarkierungen. Die Minikarte bleibt unverändert.
+
 ## 9.2.0
 
 Neue Questfokus-Befehle, klarere Fokusmarkierungen und Korrekturen für VIP-Sterne.

@@ -2,6 +2,27 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.0
+
+Il supporto nativo per controller arriva nella versione stabile: non serve più scaricare la beta. Restano inclusi i comandi per seguire le missioni, i nuovi anelli e le correzioni VIP.
+
+### Attiva la navigazione con controller
+
+- Supportati WoW Forever 1.60.1, build 70888 e 70938. Attiva la Gamepad UI di WoW e lascia selezionato «Abilita la navigazione nativa con controller» nella sezione Generale di QT: è già attivo per impostazione predefinita. Gli altri client mantengono i controlli con mouse e tastiera.
+
+### Apri e usa QuestTogether
+
+- Con la disposizione predefinita, QT aggiunge una macro per il Registro missioni del gruppo, con icona a libro, a LT + RT + Su sulla croce direzionale nella pagina azioni normale 1, solo se lo spazio è libero. Puoi spostare o rimuovere il pulsante con l’editor delle barre: finché la macro esiste, QT non lo rimette. Se elimini la macro, QT può ricrearla e riassegnarla se lo spazio è vuoto.
+- Nel Registro missioni del gruppo, la croce direzionale passa tra missioni e comandi. Seleziona attiva il comando e Indietro chiude la finestra. La lista scorre per mantenere visibile la missione selezionata.
+- Assegna «Apri il menu di QuestTogether» nelle associazioni tasti di WoW per accedere alle azioni contestuali e alle Richieste in attesa; non ha un tasto predefinito. Menu, elenchi a discesa e conferme si navigano con il controller. Le richieste in arrivo non prendono il controllo finché non le apri; le conferme partono da Annulla o Rifiuta.
+- Le note della patch aperte dopo un aggiornamento ricevono il controllo del controller. La levetta destra scorre testo e barra di scorrimento, la croce direzionale seleziona i pulsanti e Indietro chiude. Scrittura del testo e posizionamento degli elementi HUD mantengono i controlli esistenti.
+
+### Obiettivi e mappa del mondo
+
+- La navigazione con controller nel riepilogo obiettivi di WoW viene riconosciuta dal Tracciamento obiettivi del gruppo come un passaggio del mouse, senza cambiare la missione attiva o il compagno seguito.
+- Il mirino sulla mappa del mondo evidenzia giocatori QT e gruppi di indicatori. A/Seleziona mantiene l’azione normale della mappa e non apre automaticamente il menu QT. La scorciatoia assegnata al menu può aprire le azioni contestuali, ma alcuni comandi della mappa hanno la precedenza. Spostamento, zoom e punti di destinazione restano quelli di WoW.
+- Gli indicatori del gruppo sulla mappa del mondo mantengono le stelle VIP verificate e le icone degli sviluppatori. Disattivando gli indicatori QT tornano quelli del gruppo di WoW. La minimappa resta invariata.
+
 ## 9.2.0
 
 Nuovi comandi per seguire le missioni del gruppo, indicatori più chiari e correzioni alle stelle VIP.

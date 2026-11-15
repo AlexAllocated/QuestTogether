@@ -3,6 +3,298 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.2.0",
+        "welcome": "Follow a teammate's quest focus with a command or keybinding, spot who you're following at a glance, and keep VIP stars more reliably.",
+        "sections": [
+          {
+            "title": "Follow quest focus with a shortcut",
+            "items": [
+              "Target a party member and type /qt focus, or use /qt focus <name>. Full names work, including Forever surnames and Retail realms. Short names work when they identify only one party member.",
+              "Use /qt unfollow to stop. In WoW Key Bindings, look under QuestTogether for Follow target's quest focus and Stop following quest focus. Both start unassigned, and the commands also work in macros. These follow quest navigation, not your teammate's movement."
+            ]
+          },
+          {
+            "title": "Clearer focus markers",
+            "items": [
+              "Party focus markers beside the Objective Tracker now use thick, hollow rings in each player's class color. The ring fills in when you follow that player, replacing the green outline. Chain badges still show who is following you."
+            ]
+          },
+          {
+            "title": "More reliable VIP stars",
+            "items": [
+              "Fixed repeated VIP renewals displacing another player's valid status, and restored delivery of verified VIP status when nearby-player connections change. These fixes address causes of stars turning into ordinary dots while keeping the original verification and expiry rules."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.2.0",
+        "welcome": "Neue Questfokus-Befehle, klarere Fokusmarkierungen und Korrekturen für VIP-Sterne.",
+        "sections": [
+          {
+            "title": "Neue Questfokus-Kurzbefehle",
+            "items": [
+              "Mit /qt focus folgst du dem Questfokus des Gruppenmitglieds, das du als Ziel ausgewählt hast. Mit /qt focus <name> wählst du ein Gruppenmitglied per Namen; /qt unfollow beendet das Folgen.",
+              "Vollständige Namen mit Nachnamen in WoW Forever oder Realm in Retail werden unterstützt. Passt ein kurzer Name zu mehreren Gruppenmitgliedern, musst du den vollständigen Namen angeben.",
+              "Unter QuestTogether in der WoW-Tastenbelegung findest du „Dem Questfokus des Ziels folgen“ und „Dem Questfokus nicht mehr folgen“. Es werden keine Tasten automatisch belegt. Die Befehle funktionieren auch in Makros und folgen nur dem Questfokus – sie bewegen deinen Charakter nicht."
+            ]
+          },
+          {
+            "title": "Deutlichere Fokusmarkierungen",
+            "items": [
+              "Die Questfokus-Markierungen der Gruppenmitglieder in der Zielverfolgung sind jetzt kräftige, innen leere Ringe in Klassenfarbe. Folgst du einem Mitglied, wird dessen Ring mit derselben Farbe gefüllt. Das ersetzt die grüne Umrandung; die Kettensymbole für Spieler, die deinem Questfokus folgen, bleiben erhalten."
+            ]
+          },
+          {
+            "title": "Stabilere VIP-Sterne",
+            "items": [
+              "Wiederholte VIP-Erneuerungen konnten den noch gültigen Status eines anderen Spielers aus dem Zwischenspeicher verdrängen. Dieser Fehler ist behoben.",
+              "Nach Änderungen an den Verbindungen zwischen Spielern kann bereits verifizierter VIP-Status wieder weitergegeben werden, ohne seine Gültigkeit zu verlängern. Damit sind zwei Ursachen behoben, durch die VIP-Sterne zu normalen Punkten werden konnten."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.2.0",
+        "welcome": "De nouveaux raccourcis pour suivre les quêtes du groupe, des repères plus lisibles et des corrections pour les étoiles VIP.",
+        "sections": [
+          {
+            "title": "Raccourcis de suivi de quête",
+            "items": [
+              "Ciblez un membre du groupe et tapez /qt focus pour suivre sa quête active. Vous pouvez aussi le désigner avec /qt focus <name>. La commande /qt unfollow arrête ce suivi.",
+              "Les noms complets sont acceptés, avec le nom de famille sur WoW Forever ou le royaume sur Retail. Si un nom court correspond à plusieurs membres du groupe, utilisez le nom complet.",
+              "Les raccourcis « Suivre la quête active de la cible » et « Arrêter le suivi de quête » se trouvent dans la rubrique QuestTogether des raccourcis clavier de WoW. Aucune touche n’est attribuée automatiquement. Les commandes fonctionnent aussi dans les macros : elles suivent les quêtes, sans déplacer votre personnage."
+            ]
+          },
+          {
+            "title": "Repères de quête plus lisibles",
+            "items": [
+              "Dans le suivi des objectifs, les repères de quête active des membres du groupe prennent la forme d’anneaux épais et creux de la couleur de leur classe. L’anneau du membre que vous suivez se remplit de cette même couleur, à la place de l’ancien contour vert. Les badges en forme de chaîne qui signalent les joueurs suivant votre quête active sont conservés."
+            ]
+          },
+          {
+            "title": "Stabilité des étoiles VIP",
+            "items": [
+              "Correction d’un problème où des renouvellements successifs pouvaient retirer du cache le statut VIP encore valide d’un autre joueur.",
+              "Un statut VIP déjà vérifié peut désormais être retransmis après un changement de connexion entre joueurs, sans prolonger sa validité. Ces corrections traitent deux causes qui pouvaient transformer les étoiles VIP en points ordinaires."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.2.0",
+        "welcome": "Nuevos atajos para seguir las misiones del grupo, indicadores más claros y correcciones para las estrellas VIP.",
+        "sections": [
+          {
+            "title": "Atajos para seguir misiones",
+            "items": [
+              "Selecciona a un miembro del grupo y escribe /qt focus para seguir su misión activa. También puedes elegirlo por nombre con /qt focus <name>. Usa /qt unfollow para dejar de seguir su misión.",
+              "Se admiten nombres completos, con apellido en WoW Forever o reino en Retail. Si un nombre corto coincide con varios miembros del grupo, tendrás que indicar el nombre completo.",
+              "En la sección QuestTogether de las asignaciones de teclas de WoW encontrarás «Seguir la misión activa del objetivo» y «Dejar de seguir la misión del compañero». No se asigna ninguna tecla automáticamente. Los comandos también sirven en macros y siguen las misiones, sin mover a tu personaje."
+            ]
+          },
+          {
+            "title": "Indicadores de misión más claros",
+            "items": [
+              "Los indicadores de misión activa de los miembros del grupo en el seguimiento de objetivos ahora son anillos gruesos y huecos del color de su clase. El anillo del compañero al que sigues se rellena con ese mismo color, en lugar de mostrar un borde verde. Se mantienen los símbolos de cadena que identifican a quienes siguen tu misión activa."
+            ]
+          },
+          {
+            "title": "Estrellas VIP más estables",
+            "items": [
+              "Se ha corregido un error por el que las renovaciones repetidas podían eliminar de la caché el estado VIP todavía válido de otro jugador.",
+              "Tras un cambio en las conexiones entre jugadores, el estado VIP ya verificado puede volver a transmitirse sin ampliar su periodo de validez. Estas correcciones resuelven dos causas por las que las estrellas VIP podían convertirse en puntos normales."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.2.0",
+        "welcome": "Nuevos atajos para las misiones del grupo, indicadores más claros y correcciones para las estrellas VIP.",
+        "sections": [
+          {
+            "title": "Atajos para seguir misiones",
+            "items": [
+              "Con /qt focus puedes seguir la misión activa del miembro del grupo que tengas seleccionado. Si prefieres usar su nombre, escribe /qt focus <name>. Para detener el seguimiento, usa /qt unfollow.",
+              "Puedes indicar el nombre completo con apellido en WoW Forever o con reino en Retail. Si hay varios miembros del grupo con el mismo nombre corto, se te pedirá el nombre completo.",
+              "En las asignaciones de teclas de WoW, dentro de QuestTogether, están «Seguir la misión activa del objetivo» y «Dejar de seguir la misión del compañero». Ninguna tecla se asigna de forma automática. También puedes usar estos comandos en macros; solo siguen las misiones y no mueven a tu personaje."
+            ]
+          },
+          {
+            "title": "Indicadores de misión más claros",
+            "items": [
+              "En el seguimiento de objetivos, la misión activa de cada compañero se marca con un anillo grueso y hueco del color de su clase. Al seguirlo, su anillo se rellena con el mismo color y ya no lleva el borde verde. Se conservan los símbolos de cadena que indican quiénes siguen tu misión activa."
+            ]
+          },
+          {
+            "title": "Estabilidad de las estrellas VIP",
+            "items": [
+              "Se corrigió un error que permitía que las renovaciones repetidas borraran de la caché el estado VIP aún válido de otro jugador.",
+              "El estado VIP verificado ahora puede retransmitirse cuando cambian las conexiones entre jugadores, sin extender su vigencia. Esto corrige dos causas que podían hacer que una estrella VIP volviera a verse como un punto normal."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.2.0",
+        "welcome": "Novos atalhos para acompanhar as missões do grupo, indicadores mais claros e correções nas estrelas VIP.",
+        "sections": [
+          {
+            "title": "Atalhos para seguir o foco de missão",
+            "items": [
+              "Selecione um membro do grupo como alvo e use /qt focus para seguir a missão em foco dele. Com /qt focus <name>, você escolhe pelo nome. Para parar, use /qt unfollow.",
+              "Nomes completos são aceitos, incluindo sobrenome no WoW Forever ou reino no Retail. Se o nome curto corresponder a mais de um membro do grupo, informe o nome completo.",
+              "Na seção QuestTogether das teclas de atalho do WoW, você encontra “Seguir a missão em foco do alvo” e “Parar de seguir o foco de missão”. Nenhuma tecla é atribuída automaticamente. Os comandos também funcionam em macros e acompanham apenas as missões, sem mover seu personagem."
+            ]
+          },
+          {
+            "title": "Indicadores de foco mais claros",
+            "items": [
+              "Os indicadores de foco dos membros do grupo no rastreador de objetivos agora são anéis grossos e vazados na cor da classe. O anel de quem você está seguindo fica preenchido com a mesma cor, no lugar do contorno verde. Os símbolos de corrente de quem segue o seu foco de missão continuam aparecendo."
+            ]
+          },
+          {
+            "title": "Estrelas VIP mais estáveis",
+            "items": [
+              "Corrigido um erro em que renovações repetidas podiam remover do cache o status VIP ainda válido de outro jogador.",
+              "O status VIP já verificado pode ser retransmitido após mudanças nas conexões entre jogadores, sem prolongar sua validade. Essas correções resolvem duas causas que podiam transformar estrelas VIP em pontos comuns."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.2.0",
+        "welcome": "Команды для следования выбору задания, более заметные кольца и исправления звёзд VIP.",
+        "sections": [
+          {
+            "title": "Следуйте выбору задания участника группы",
+            "items": [
+              "Возьмите участника группы в цель и введите /qt focus, чтобы следовать его выбору задания. Команда /qt focus <name> позволяет указать игрока по имени, а /qt unfollow — прекратить следование.",
+              "Команды можно добавить в макросы. В настройках клавиш WoW, в разделе QuestTogether, доступны «Следовать выбранному заданию цели» и «Прекратить следование заданию». По умолчанию клавиши не назначены. Эти действия меняют выбранное задание, а не заставляют персонажа идти за игроком.",
+              "Поддерживаются полные имена с фамилией на Forever и с названием игрового мира на Retail. Если короткое имя совпадает у нескольких участников, нужно указать полное."
+            ]
+          },
+          {
+            "title": "Кольца цвета класса",
+            "items": [
+              "У заданий в списке отслеживания теперь видны полые кольца с толстым контуром в цвете класса участников, выбравших это задание. Кольцо игрока, за чьим выбором вы следуете, становится сплошным кружком вместо зелёной обводки. Значки цепочки у тех, кто следует вашему выбору, сохранены."
+            ]
+          },
+          {
+            "title": "Исправления звёзд VIP",
+            "items": [
+              "Исправлены две причины, по которым звезда VIP могла стать обычной точкой: многократное обновление статуса могло удалить ещё действующий статус другого игрока, а смена соединений с игроками поблизости иногда мешала получить актуальное подтверждение VIP. Проверки подлинности и сроки действия сохранены."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.2.0",
+        "welcome": "Nuovi comandi per seguire le missioni del gruppo, indicatori più chiari e correzioni alle stelle VIP.",
+        "sections": [
+          {
+            "title": "Segui la missione di un compagno",
+            "items": [
+              "Seleziona un membro del gruppo e usa /qt focus per seguirne la missione attiva, oppure scegli direttamente il giocatore con /qt focus <name>. Per interrompere, usa /qt unfollow.",
+              "Puoi usare questi comandi nelle macro o assegnare un tasto a «Segui la missione attiva del bersaglio» e «Smetti di seguire la missione» nella sezione QuestTogether delle associazioni tasti di WoW. Nessun tasto viene assegnato automaticamente: si segue la selezione delle missioni, non il personaggio.",
+              "Sono supportati i nomi completi con cognome su Forever e con reame su Retail. Se più compagni hanno lo stesso nome breve, specifica quello completo."
+            ]
+          },
+          {
+            "title": "Indicatori nel colore della classe",
+            "items": [
+              "Nel riepilogo obiettivi, le missioni selezionate dai compagni sono indicate da anelli vuoti al centro, con un bordo spesso nel colore della loro classe. L’anello del giocatore che segui diventa pieno, al posto del vecchio contorno verde. Restano le icone a catena per chi segue le tue missioni."
+            ]
+          },
+          {
+            "title": "Stelle VIP più stabili",
+            "items": [
+              "Corretti due problemi che potevano trasformare una stella VIP in un normale punto: i rinnovi ripetuti potevano rimuovere lo stato ancora valido di un altro giocatore, e alcuni cambi di connessione con i giocatori vicini impedivano di ricevere la conferma VIP aggiornata. I controlli di validità e le scadenze restano invariati."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.2.0",
+        "welcome": "파티원의 집중 퀘스트를 따라가는 명령과 선명한 고리 표시를 추가하고, VIP 별 표시 문제를 수정했습니다.",
+        "sections": [
+          {
+            "title": "명령과 단축키로 퀘스트 따라가기",
+            "items": [
+              "파티원을 대상으로 선택하고 /qt focus 명령을 입력하면 그 파티원의 집중 퀘스트를 따라갑니다. /qt focus <name> 명령으로 이름을 지정하거나 /qt unfollow 명령으로 따라가기를 중지할 수 있습니다.",
+              "명령을 매크로에 넣거나 WoW 단축키 설정의 QuestTogether 항목에서 「대상의 집중 퀘스트 따라가기」와 「퀘스트 따라가기 중지」에 키를 지정할 수 있습니다. 기본으로 지정된 키는 없습니다. 퀘스트 선택을 따라가는 기능이며, 캐릭터가 상대를 따라 이동하지는 않습니다.",
+              "Forever에서는 성을 포함한 전체 이름, Retail에서는 서버 이름을 포함한 이름을 사용할 수 있습니다. 짧은 이름이 같은 파티원이 여럿이면 전체 이름을 입력해야 합니다."
+            ]
+          },
+          {
+            "title": "직업 색상의 퀘스트 표시",
+            "items": [
+              "목표 추적기의 파티원 집중 퀘스트 표시를 굵은 직업 색상 고리로 바꿨습니다. 평소에는 가운데가 비어 있고, 해당 파티원의 퀘스트를 따라가면 같은 색으로 채워집니다. 기존 초록색 테두리는 없어지며, 내 퀘스트 선택을 따라오는 파티원의 사슬 표시는 그대로 유지됩니다."
+            ]
+          },
+          {
+            "title": "VIP 별 표시 수정",
+            "items": [
+              "VIP 별이 일반 점으로 바뀔 수 있던 두 가지 원인을 수정했습니다. 상태를 반복 갱신할 때 다른 플레이어의 유효한 VIP 상태가 지워지는 문제와, 주변 플레이어와의 연결이 바뀐 뒤 최신 VIP 확인 정보가 전달되지 않는 문제입니다. 기존 인증 검사와 유효 기간은 그대로 적용됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.2.0",
+        "welcome": "新增任务跟随命令，优化队友任务标记，并修复 VIP 星标异常变为圆点的问题。",
+        "sections": [
+          {
+            "title": "快捷跟随队友的任务选择",
+            "items": [
+              "选中队友后输入 /qt focus，即可跟随对方的任务选择；也可以用 /qt focus <name> 指定队友。输入 /qt unfollow 停止跟随。",
+              "这些命令可写入宏。WoW 按键设置的 QuestTogether 分类中提供“跟随目标的任务追踪”和“停止跟随任务焦点”，默认不分配按键。此功能只同步任务选择，不会让角色跟随对方移动。",
+              "支持 Forever 中包含姓氏的完整姓名，以及 Retail 中包含服务器名的角色名。若有多名队友使用相同的简称，请输入完整名字。"
+            ]
+          },
+          {
+            "title": "更清晰的职业色圆环",
+            "items": [
+              "目标追踪栏中，队友选中的任务会显示粗边空心圆环，颜色与其职业一致。跟随该队友的任务选择后，圆环会填满，变为同色实心圆，不再使用绿色外框。表示队友正在跟随你的链条图标仍然保留。"
+            ]
+          },
+          {
+            "title": "VIP 星标修复",
+            "items": [
+              "修复了 VIP 星标变回普通圆点的两种原因：反复刷新状态可能误删其他玩家仍然有效的 VIP 状态；附近玩家之间的连接变化后，有时无法及时传递当前有效的 VIP 确认信息。原有的验证规则和有效期保持不变。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.2.0",
+        "welcome": "新增跟隨任務選擇的指令，讓隊友標記更清楚，並修正 VIP 星號異常變回圓點的問題。",
+        "sections": [
+          {
+            "title": "用指令跟隨隊友的任務",
+            "items": [
+              "將隊友選為目標後，輸入 /qt focus 就能跟隨對方的任務選擇。也可以使用 /qt focus <name> 指定隊友，或輸入 /qt unfollow 停止跟隨。",
+              "這些指令都能放進巨集。你也可以到 WoW 的按鍵設定，在 QuestTogether 分類中為「跟隨目標的任務追蹤」和「停止跟隨任務焦點」指定按鍵；預設不會自動綁定。這項功能只會跟隨任務選擇，不會讓角色自動跟著對方移動。",
+              "可使用 Forever 中包含姓氏的完整姓名，或 Retail 中包含伺服器名稱的角色名。若有多位隊友的簡稱相同，請改用完整名字。"
+            ]
+          },
+          {
+            "title": "職業色圓環標記",
+            "items": [
+              "目標追蹤清單中的隊友任務標記改為空心圓環，以職業顏色呈現，並加粗邊緣以便辨識。跟隨該隊友的任務選擇後，圓環會填滿成同色實心圓，取代原本的綠色外框。隊友跟隨你時顯示的鏈條圖示則維持不變。"
+            ]
+          },
+          {
+            "title": "修正 VIP 星號顯示",
+            "items": [
+              "修正兩種可能讓 VIP 星號變成一般圓點的情況：反覆更新狀態時，可能誤刪其他玩家仍有效的 VIP 狀態；附近玩家之間的連線變動後，有時無法傳遞目前有效的 VIP 確認資訊。原有的驗證規則與有效期限維持不變。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.2.0-beta.1",
         "welcome": "A small controller-beta update makes Patch Notes easier to read and close.",
         "sections": [

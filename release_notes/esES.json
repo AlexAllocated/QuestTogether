@@ -1,28 +1,30 @@
 {
-  "source_sha256": "c62317c9fa35af624a81215db7d0b8e6e044d7eefe9a51f307832420b7690065",
+  "source_sha256": "e974489779502b490e5ed6b11f8ba7596dbe8e5da896e895483ced501bcb3082",
   "notes": {
-    "version": "9.2.0",
-    "welcome": "Nuevos atajos para seguir las misiones del grupo, indicadores más claros y correcciones para las estrellas VIP.",
+    "version": "9.3.0",
+    "welcome": "La compatibilidad con mando ya forma parte de la versión estable, sin necesidad de descargar la beta. Se mantienen los atajos de misión, los anillos y las correcciones VIP.",
     "sections": [
       {
-        "title": "Atajos para seguir misiones",
+        "title": "Activar la navegación con mando",
         "items": [
-          "Selecciona a un miembro del grupo y escribe /qt focus para seguir su misión activa. También puedes elegirlo por nombre con /qt focus <name>. Usa /qt unfollow para dejar de seguir su misión.",
-          "Se admiten nombres completos, con apellido en WoW Forever o reino en Retail. Si un nombre corto coincide con varios miembros del grupo, tendrás que indicar el nombre completo.",
-          "En la sección QuestTogether de las asignaciones de teclas de WoW encontrarás «Seguir la misión activa del objetivo» y «Dejar de seguir la misión del compañero». No se asigna ninguna tecla automáticamente. Los comandos también sirven en macros y siguen las misiones, sin mover a tu personaje."
+          "Compatible con la Gamepad UI de WoW Forever 1.60.1, compilaciones 70888 y 70938. Activa esa interfaz en WoW y deja marcada «Activar navegación nativa con mando» en QT → General; viene activada por defecto. Los demás clientes conservan sus controles de teclado y ratón."
         ]
       },
       {
-        "title": "Indicadores de misión más claros",
+        "title": "Abrir y usar QuestTogether",
         "items": [
-          "Los indicadores de misión activa de los miembros del grupo en el seguimiento de objetivos ahora son anillos gruesos y huecos del color de su clase. El anillo del compañero al que sigues se rellena con ese mismo color, en lugar de mostrar un borde verde. Se mantienen los símbolos de cadena que identifican a quienes siguen tu misión activa."
+          "Con la distribución predeterminada, QT coloca una macro PQL con icono de libro de misiones en LT + RT + arriba de la cruceta, en la página de acciones normal 1, si el hueco está libre. No sustituye acciones existentes. Puedes mover o quitar el botón con el editor de barras de acción; QT no lo vuelve a colocar mientras exista la macro. Si borras la macro, puede recrearla y asignarla de nuevo si el hueco predeterminado está vacío.",
+          "En el Registro de misiones del grupo, la cruceta permite recorrer misiones y controles. Seleccionar activa el control elegido y Atrás cierra la ventana. La lista se desplaza para mantener visible la misión seleccionada.",
+          "Asigna «Abrir el menú de QuestTogether» en las teclas de WoW para acceder a las acciones contextuales y las «Solicitudes pendientes». No tiene una tecla predeterminada. Los menús de estilo WoW, desplegables y confirmaciones se pueden usar con el mando. Las solicitudes recibidas solo toman el foco al abrirlas, y las confirmaciones empiezan en Cancelar o Rechazar.",
+          "Las notas que se abren automáticamente tras una actualización toman el foco del mando. El stick derecho desplaza el texto y la barra de desplazamiento; la cruceta selecciona botones y Atrás cierra la ventana. La entrada de texto y la colocación del HUD mantienen sus controles habituales."
         ]
       },
       {
-        "title": "Estrellas VIP más estables",
+        "title": "Seguimiento de objetivos y mapa del mundo",
         "items": [
-          "Se ha corregido un error por el que las renovaciones repetidas podían eliminar de la caché el estado VIP todavía válido de otro jugador.",
-          "Tras un cambio en las conexiones entre jugadores, el estado VIP ya verificado puede volver a transmitirse sin ampliar su periodo de validez. Estas correcciones resuelven dos causas por las que las estrellas VIP podían convertirse en puntos normales."
+          "Recorrer el seguimiento de objetivos de WoW con el mando cuenta como pasar el cursor para el Seguimiento de objetivos del grupo. No cambia la misión activa ni a quién sigues.",
+          "La retícula del mapa del mundo resalta jugadores y grupos de jugadores QT. A/Seleccionar mantiene la acción normal del mapa y no abre automáticamente el menú QT. El atajo que asignes al menú QT permite abrir las acciones del marcador, pero los controles del mapa pueden tener prioridad sobre algunas combinaciones. El desplazamiento, el zoom y los puntos de ruta conservan su comportamiento habitual.",
+          "Los marcadores del grupo en el mapa del mundo conservan las estrellas VIP verificadas y los iconos de desarrollador. Al desactivar los marcadores QT vuelven los del grupo de WoW. El minimapa no cambia."
         ]
       }
     ]

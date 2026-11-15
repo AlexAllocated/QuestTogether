@@ -2,6 +2,27 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.0
+
+La prise en charge de la manette rejoint la version stable : plus besoin de télécharger la bêta. Les raccourcis de quête, les anneaux et les corrections VIP restent inclus.
+
+### Activer la navigation à la manette
+
+- Cette intégration prend en charge la Gamepad UI de WoW Forever 1.60.1, builds 70888 et 70938. Activez cette interface dans WoW, puis laissez cochée l’option « Activer la navigation native à la manette » dans QT → Général ; elle est activée par défaut. Les autres clients conservent leurs commandes au clavier et à la souris.
+
+### Ouvrir et utiliser QuestTogether
+
+- Avec la configuration par défaut, QT place une macro PQL à l’icône de livre de quêtes sur LT + RT + haut de la croix directionnelle, sur la page d’actions normale 1, si cet emplacement est vide. Les actions déjà présentes sont conservées. Vous pouvez déplacer ou retirer le bouton avec l’éditeur de barres d’action : QT ne le remet pas tant que la macro existe. Si vous supprimez la macro elle-même, QT peut la recréer et la replacer si l’emplacement par défaut est libre.
+- Dans le Journal de quêtes du groupe, la croix directionnelle passe d’une quête ou d’une commande à l’autre. Valider active la sélection et Retour ferme la fenêtre. La liste défile pour garder la quête sélectionnée à l’écran.
+- Dans les raccourcis clavier de WoW, attribuez une touche à « Ouvrir le menu QuestTogether » pour accéder aux actions contextuelles et aux « Demandes en attente ». Aucun raccourci n’est attribué par défaut. Les menus de style WoW, listes déroulantes et confirmations se parcourent à la manette. Les demandes reçues ne prennent le focus que lorsque vous les ouvrez ; les confirmations sélectionnent d’abord Annuler ou Refuser.
+- Lorsque les notes de mise à jour s’ouvrent automatiquement, elles prennent le focus de la manette. Le stick droit fait défiler le texte et sa barre de défilement ; la croix directionnelle sélectionne les boutons et Retour ferme la fenêtre. La saisie de texte et le placement des éléments du HUD gardent leurs commandes habituelles.
+
+### Suivi des objectifs et carte du monde
+
+- Parcourir le suivi des objectifs de WoW à la manette compte comme un survol pour le Suivi des objectifs du groupe. Cela ne modifie ni votre quête active ni le suivi d’un coéquipier.
+- Sur la carte du monde, le réticule met en évidence les joueurs et groupes de joueurs QT. A/Valider conserve l’action normale de la carte et n’ouvre pas automatiquement le menu QT. Le raccourci attribué au menu QT permet d’accéder aux actions du repère, mais les commandes de la carte peuvent prendre la priorité sur certaines combinaisons. Déplacement, zoom et points de passage fonctionnent comme avant.
+- Les repères du groupe sur la carte du monde conservent les étoiles VIP vérifiées et les icônes de développeur. Désactiver les repères QT rétablit ceux de WoW. Le comportement de la minicarte ne change pas.
+
 ## 9.2.0
 
 De nouveaux raccourcis pour suivre les quêtes du groupe, des repères plus lisibles et des corrections pour les étoiles VIP.
