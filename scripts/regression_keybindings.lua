@@ -1,6 +1,6 @@
 -- Private addon/controller services only; never assigns keys or native globals.
 local QT = _G.QuestTogether
-local ACTIONS = { "menu", "party_log", "quest_partners", "stop_follow", "chat", "settings" }
+local ACTIONS = { "menu", "party_log", "quest_partners", "follow_target", "stop_follow", "chat", "settings" }
 
 local function Fixture()
 	local a = setmetatable({
@@ -27,6 +27,10 @@ local function Fixture()
 	function a:HandleQuestPartnerCommand(action)
 		assert(action == "toggle")
 		return Call("quest_partners")
+	end
+	function a:HandlePartyQuestFocusCommand(text)
+		assert(text == "", "the binding must resolve the current target at invocation")
+		return Call("follow_target")
 	end
 	function a:OpenOptionsWindow()
 		return Call("settings")
@@ -96,7 +100,7 @@ end)
 QT:RegisterTest("keybindings block restricted UI actions but can cancel following intent", function()
 	local a = Fixture()
 	a.restricted = true
-	for _, action in ipairs({ "menu", "party_log", "quest_partners", "chat", "settings" }) do
+	for _, action in ipairs({ "menu", "party_log", "quest_partners", "follow_target", "chat", "settings" }) do
 		assert(not a:HandleKeybinding(action))
 	end
 	assert(#a.calls == 0)
@@ -128,6 +132,41 @@ QT:RegisterTest("keybinding stop follow cancels the active preview without chang
 	assert(not a:HandleKeybinding("stop_follow"), "repeated stop does not invent a new follow session")
 	a.nativePartyFocusOwner = nil
 	assert(a:HandleKeybinding("stop_follow") and not a.states.live.following)
+end)
+
+QT:RegisterTest("keybinding follow target reuses the command result without toggling or assigning inputs", function()
+	local a = Fixture()
+	assert(a:HandleKeybinding("follow_target"))
+	assert(table.concat(a.calls, ",") == "follow_target")
+	a.result = false
+	assert(not a:HandleKeybinding("follow_target"))
+	assert(table.concat(a.calls, ",") == "follow_target,follow_target")
+	assert(a.states.live.following == "live", "rejected start must not silently stop the current follow")
+end)
+
+QT:RegisterTest("focus slash shortcuts preserve full names and never fall through into public chat", function()
+	local a = Fixture()
+	a.commands = {}
+	function a:HandlePartyQuestFocusCommand(text)
+		self.commands[#self.commands + 1] = { "focus", text }
+		return self.result
+	end
+	function a:HandleKeybinding(action)
+		self.commands[#self.commands + 1] = { action }
+		return self.result
+	end
+	function a:SendQTChatMessage() error("focus shortcuts cannot become public chat") end
+	function a:GetDebugController() error("focus shortcuts cannot delegate to an unrelated command handler") end
+	a:HandleSlashCommand("focus")
+	a:HandleSlashCommand(" FoCuS  Friend Surname ")
+	a.result = false
+	a:HandleSlashCommand('focus "Friend Surname"')
+	a:HandleSlashCommand("unfollow")
+	assert(#a.commands == 4)
+	assert(a.commands[1][1] == "focus" and a.commands[1][2] == "")
+	assert(a.commands[2][1] == "focus" and a:SafeTrimString(a.commands[2][2], "") == "Friend Surname")
+	assert(a.commands[3][1] == "focus" and a.commands[3][2] == '"Friend Surname"')
+	assert(a.commands[4][1] == "stop_follow")
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_keybindings.lua")

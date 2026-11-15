@@ -21,6 +21,13 @@ and **Pending Requests**. It has no default binding. The world map's native
 overrides can mask controller combinations, including modified face/D-pad keys;
 an ordinary assigned controller binding is not guaranteed to reach QT there.
 
+You can also assign **Follow target's quest focus** under QuestTogether in WoW
+Key Bindings. Target a party member and press your assigned key to follow their
+quest navigation. **Stop following quest focus** cancels it. Both bindings start
+unassigned. For a macro, use `/qt focus` for your current target or
+`/qt focus Full Name` for a specific party member; `/qt unfollow` stops following.
+These commands follow quest focus, not the player's movement.
+
 This beta supports the audited native interfaces in Forever 1.60.1 builds
 70888 and 70938. Other builds and clients without those interfaces keep their
 existing mouse and keyboard windows. Hardware detection alone does not enable

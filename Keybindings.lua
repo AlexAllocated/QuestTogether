@@ -21,6 +21,8 @@ function QT:HandleKeybinding(action)
 		return self:TogglePartyQuestCompare() ~= false
 	elseif action == "quest_partners" then
 		return self:HandleQuestPartnerCommand("toggle") ~= false
+	elseif action == "follow_target" then
+		return self:HandlePartyQuestFocusCommand("") ~= false
 	elseif action == "chat" then
 		return self.API and type(self.API.OpenQTChatComposer) == "function" and self.API.OpenQTChatComposer() ~= false
 			or false

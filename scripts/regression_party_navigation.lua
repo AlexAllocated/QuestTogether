@@ -178,6 +178,122 @@ local function Pair()
 	b:Deliver(a)
 	return a, b
 end
+
+local function ShortcutFixture(a, regional)
+	a = a or Fixture()
+	a.isInitialized, a.db, a.messages = true, { profile = {}, global = {} }, {}
+	a.NormalizeMemberName = QT.NormalizeMemberName
+	a.API.RegionalUniqueNamesEnabled = function() return regional ~= false end
+	a.API.GetRealmName = function() return "Realm" end
+	a.API.UnitExists = function(unit) assert(unit == "target"); return a.targetName ~= nil end
+	a.API.UnitIsPlayer = function(unit) assert(unit == "target"); return not a.targetNPC end
+	a.API.UnitFullName = function(unit) assert(unit == "target"); return a.targetName, a.targetRealm end
+	a.API.UnitName = function(unit) assert(unit == "target"); return a.targetName end
+	function a:Print(text) self.messages[#self.messages + 1] = text end
+	return a
+end
+
+QT:RegisterTest("party focus shortcuts resolve full and unique short roster names without guessing", function()
+	local a = ShortcutFixture()
+	a:Roster("Me Realm", "Friend Surname", "Third Person")
+	for _, text in ipairs({ "Friend Surname", "  friend surname  ", '"Friend Surname"', "Friend-Surname", "friend" }) do
+		Equal(a:ResolvePartyQuestFocusTarget(text), "Friend Surname")
+	end
+	a:Roster("Me Realm", "Friend Surname", "Friend Other")
+	local name, reason = a:ResolvePartyQuestFocusTarget("Friend")
+	Equal(name, nil)
+	Equal(reason, "ambiguous")
+	Equal(a:ResolvePartyQuestFocusTarget("Friend Surname"), "Friend Surname")
+	for _, text in ipairs({ "Me Realm", "Unknown", '"Friend Surname', "Friend|Surname", "Friend\nSurname" }) do
+		Equal(a:ResolvePartyQuestFocusTarget(text), nil)
+	end
+
+	local retail = ShortcutFixture(Fixture("Me-Realm"), false)
+	retail:Roster("Me-Realm", "Friend-Realm", "Friend-Elsewhere")
+	name, reason = retail:ResolvePartyQuestFocusTarget("friend")
+	Equal(name, nil)
+	Equal(reason, "ambiguous")
+	Equal(retail:ResolvePartyQuestFocusTarget("FRIEND-elsewhere"), "Friend-Elsewhere")
+	Equal(retail:ResolvePartyQuestFocusTarget("Friend-Realm"), "Friend-Realm")
+	retail:Roster("Me-Realm", "Friend-Elsewhere")
+	Equal(retail:ResolvePartyQuestFocusTarget("Friend"), "Friend-Elsewhere")
+end)
+
+QT:RegisterTest("party focus target shortcut rejects absent nonplayer self foreign and unreadable targets", function()
+	local a = ShortcutFixture()
+	a:Roster("Me Realm", "Friend Surname")
+	a.targetName, a.targetRealm = "Friend", "Surname"
+	Equal(a:ResolvePartyQuestFocusTarget(""), "Friend Surname")
+	a.targetNPC = true
+	Equal(a:ResolvePartyQuestFocusTarget(""), nil)
+	a.targetNPC, a.targetName, a.targetRealm = nil, nil, nil
+	Equal(a:ResolvePartyQuestFocusTarget(""), nil)
+	a.targetName, a.targetRealm = "Me", "Realm"
+	Equal(a:ResolvePartyQuestFocusTarget(""), nil)
+	a.targetName, a.targetRealm = "Stranger", "Surname"
+	Equal(a:ResolvePartyQuestFocusTarget(""), nil)
+	a.targetName, a.targetRealm = "Friend", "Surname"
+	local secret = {}
+	function a:CanAccessValue(value) return value ~= secret end
+	for _, method in ipairs({ "UnitExists", "UnitIsPlayer" }) do
+		local original = a.API[method]
+		a.API[method] = function() return secret end
+		Equal(a:ResolvePartyQuestFocusTarget(""), nil)
+		a.API[method] = function() error("unreadable target") end
+		Equal(a:ResolvePartyQuestFocusTarget(""), nil)
+		a.API[method] = original
+	end
+	a.targetName = secret
+	Equal(a:ResolvePartyQuestFocusTarget(""), nil)
+	a.targetName, a.targetRealm = "Friend", secret
+	Equal(a:ResolvePartyQuestFocusTarget(""), nil)
+	assert(#a.writes == 0 and not a.partyNavigationState, "resolution cannot alter native focus or follow intent")
+end)
+
+QT:RegisterTest("party focus commands start the existing follower and reject invalid replacement intent", function()
+	local a, b = Pair()
+	ShortcutFixture(a)
+	a.targetName, a.targetRealm = "Friend", "Realm"
+	b.native.questID = 2
+	b:QueuePartyNavigationUpdate()
+	b:Tick()
+	b:Deliver(a)
+	assert(a:HandlePartyQuestFocusCommand(""))
+	Equal(a:GetPartyQuestFollowTarget(), b.name)
+	Equal(a.native.questID, 2)
+	Equal(#a.writes, 1)
+	assert(a:HandlePartyQuestFocusCommand(b.name), "repeating the shortcut must remain a start operation, not a toggle")
+	Equal(a:GetPartyQuestFollowTarget(), b.name)
+	Equal(#a.writes, 1, "an already matching focus must not cause another native quest change")
+	local before = a.partyNavigationState.followToken
+	assert(not a:HandlePartyQuestFocusCommand("Unknown Player"))
+	Equal(a.partyNavigationState.followToken, before)
+	assert(#a.messages > 0, "an invalid shortcut must give local feedback")
+end)
+
+QT:RegisterTest("party focus command honors lifecycle restrictions expiry previews and follow loops", function()
+	for _, boundary in ipairs({ "initialize", "profile", "disabled", "logout", "restricted", "preview", "expired", "unshared", "loop", "departed", "raid" }) do
+		local a, b = Pair()
+		ShortcutFixture(a)
+		assert(a:FollowPartyQuestFocus(b.name))
+		local token, writes = a.partyNavigationState.followToken, #a.writes
+		if boundary == "initialize" then a.isInitialized = false
+		elseif boundary == "profile" then a.db.profile = nil
+		elseif boundary == "disabled" then a.isEnabled = false
+		elseif boundary == "logout" then a.isLoggingOut = true
+		elseif boundary == "restricted" then a.blocked = true
+		elseif boundary == "preview" then a.nativePartyFocusOwner = {}
+		elseif boundary == "expired" then a.time = a.time + 91
+		elseif boundary == "unshared" then a.partyNavigationState.peers[b.name].questID = -1
+		elseif boundary == "loop" then a.partyNavigationState.peers[b.name].following = a.name
+		elseif boundary == "departed" then a:Roster(a.name)
+		else a.raid = true end
+		assert(not a:HandlePartyQuestFocusCommand(b.name), boundary)
+		Equal(a.partyNavigationState.followToken, token, "a rejected shortcut cannot replace existing intent")
+		Equal(#a.writes, writes, "a rejected shortcut cannot change native focus")
+	end
+end)
+
 QT:RegisterTest("party navigation combines changes and routes only to the current small party", function()
 	local a, b = Pair()
 	Equal(#a.audioCues, 1)

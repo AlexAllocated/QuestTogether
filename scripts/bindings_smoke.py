@@ -14,6 +14,7 @@ EXPECTED = {
     "QUESTTOGETHER_PARTY_LOG": ("party_log", "Toggle Party Quest Log"),
     "QUESTTOGETHER_MENU": ("menu", "Open QuestTogether menu"),
     "QUESTTOGETHER_QUEST_PARTNERS": ("quest_partners", "Toggle Looking for Questing Partners"),
+    "QUESTTOGETHER_FOLLOW_TARGET": ("follow_target", "Follow target's quest focus"),
     "QUESTTOGETHER_STOP_FOLLOW": ("stop_follow", "Stop following quest focus"),
     "QUESTTOGETHER_CHAT": ("chat", "Open QuestTogether chat"),
     "QUESTTOGETHER_SETTINGS": ("settings", "Open QuestTogether settings"),
@@ -33,7 +34,7 @@ def verify(xml_source, core_source, lua):
     rows = list(bindings)
     names = [row.get("name") for row in rows]
     assert len(names) == len(set(names)), "duplicate binding action"
-    assert set(names) == set(EXPECTED), "six public binding IDs must remain declared, including the original PQL ID"
+    assert set(names) == set(EXPECTED), "public binding IDs must remain declared, including the original PQL ID"
     for row in rows:
         assert row.tag == "Binding" and not list(row), "unexpected binding declaration"
         assert row.get("category") == CATEGORY, f"{row.get('name')}: explicit localized category required"
@@ -117,7 +118,7 @@ def main():
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args()
     verify((args.root / "Bindings.xml").read_text(), (args.root / "Core.lua").read_text(), args.lua)
-    print("Bindings: six actions, localized category/labels, preserved IDs and release-only menu dispatch passed")
+    print(f"Bindings: {len(EXPECTED)} actions, localized category/labels, preserved IDs and release-only menu dispatch passed")
 
 
 if __name__ == "__main__":

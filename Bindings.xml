@@ -4,6 +4,7 @@
   if keystate == "up" then QuestTogether:HandleKeybinding("menu") end
  </Binding>
  <Binding name="QUESTTOGETHER_QUEST_PARTNERS" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("quest_partners")</Binding>
+ <Binding name="QUESTTOGETHER_FOLLOW_TARGET" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("follow_target")</Binding>
  <Binding name="QUESTTOGETHER_STOP_FOLLOW" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("stop_follow")</Binding>
  <Binding name="QUESTTOGETHER_CHAT" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("chat")</Binding>
  <Binding name="QUESTTOGETHER_SETTINGS" category="BINDING_HEADER_QUESTTOGETHER">QuestTogether:HandleKeybinding("settings")</Binding>

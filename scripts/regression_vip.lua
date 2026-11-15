@@ -56,6 +56,11 @@ local function Install(a)
 	local claim = a:GetVIPClaimCode()
 	assert(a:ImportVIPActivation("QTVIPKEY1." .. claim:sub(10) .. "." .. string.rep("5", 64) .. "." .. CERT))
 end
+local function VerifyProof(observer, name, data)
+	assert(observer:HandleVIPIdentity(data, name, { session = data.session }))
+	for _ = 1, 10 do observer:UpdateVIPIdentity() end
+	assert(observer.vipState.peers[name] and observer.vipState.peers[name].issuedAt == data.issuedAt)
+end
 QT:RegisterTest("VIP renewals from different players can arrive together without starving a star", function()
 	local net = QT:CreateTestNetwork({ fps = 10 })
 	local observer = Peer(net, "Observer-Realm")
@@ -73,6 +78,101 @@ QT:RegisterTest("VIP renewals from different players can arrive together without
 		net:Advance(118)
 	end
 end, { offline = true })
+QT:RegisterTest("VIP renewals retain every distinct peer until the identity cache admits another peer", function()
+	local net = QT:CreateTestNetwork()
+	local observer = Peer(net, "Observer-Realm")
+	local function Verify(name)
+		local data = { certificate = CERT, signature = string.rep("6", 128), session = "session",
+			issuedAt = observer:GetAnnouncementServerTime(), active = true }
+		assert(observer:HandleVIPIdentity(data, name, { session = data.session }))
+		for _ = 1, 10 do observer:UpdateVIPIdentity() end
+		assert(observer:IsVerifiedVIP(name))
+	end
+	for index = 1, 512 do Verify("Peer" .. index .. "-Realm") end
+	net:Advance(11)
+	Verify("Peer2-Realm")
+	assert(observer:IsVerifiedVIP("Peer1-Realm"), "renewing an existing peer must not evict an unrelated valid proof")
+	assert(#observer.vipState.order == 512, "the cache limit counts current peers rather than historical renewals")
+	Verify("Peer513-Realm")
+	assert(not observer:IsVerifiedVIP("Peer1-Realm"), "a new peer may evict the oldest proof at capacity")
+	assert(observer:IsVerifiedVIP("Peer2-Realm"), "the refreshed peer remains in the bounded cache")
+	observer:RetireVIPPeer("Peer2-Realm")
+	assert(#observer.vipState.order == 511, "retirement must remove obsolete order entries as well as the proof")
+end)
+QT:RegisterTest("VIP cached proof eligibility preserves exact identity withdrawal and original expiry", function()
+	local net = QT:CreateTestNetwork()
+	local observer, name = Peer(net, "Observer-Realm"), "VIP-Realm"
+	local data = { certificate = CERT, signature = string.rep("6", 128), session = "session",
+		issuedAt = observer:GetAnnouncementServerTime(), active = true }
+	VerifyProof(observer, name, data)
+	assert(observer:IsCurrentVerifiedVIPProof(name, data))
+	for key, value in pairs({ certificate = CERT .. "x", signature = string.rep("7", 128), session = "other",
+		issuedAt = data.issuedAt + 1, active = false }) do
+		local changed = {}; for field, original in pairs(data) do changed[field] = original end
+		changed[key] = value
+		assert(not observer:IsCurrentVerifiedVIPProof(name, changed), key .. " must match the current signed proof")
+	end
+	assert(not observer:IsCurrentVerifiedVIPProof("Other-Realm", data))
+	net:Advance(11)
+	local withdrawn = { certificate = CERT, signature = string.rep("6", 128), session = data.session,
+		issuedAt = observer:GetAnnouncementServerTime(), active = false }
+	VerifyProof(observer, name, withdrawn)
+	assert(not observer:IsCurrentVerifiedVIPProof(name, data), "old enabled proof must not survive withdrawal")
+	assert(observer:IsCurrentVerifiedVIPProof(name, withdrawn), "the newest signed withdrawal remains replayable")
+	local expires, callbacks = observer.vipState.peers[name].expires, 0
+	assert(observer:HandleVIPIdentity(withdrawn, name, { session = withdrawn.session }, function() callbacks = callbacks + 1 end))
+	assert(callbacks == 1 and observer.vipState.peers[name].expires == expires, "a verified duplicate must not renew the lease")
+	observer.ignored[name] = true
+	assert(not observer:IsCurrentVerifiedVIPProof(name, withdrawn))
+	observer.ignored[name] = nil
+	observer.communicationState.departing = true
+	assert(not observer:IsCurrentVerifiedVIPProof(name, withdrawn))
+	observer.communicationState.departing = nil
+	assert(observer:IsCurrentVerifiedVIPProof(name, withdrawn))
+	net:Advance(301)
+	assert(not observer:IsCurrentVerifiedVIPProof(name, withdrawn), "cached replay ends at original signed expiry")
+	data.issuedAt = observer:GetAnnouncementServerTime()
+	VerifyProof(observer, name, data)
+	assert(observer:RecordPeerEpoch(name, "replacement", data.issuedAt + 1))
+	assert(not observer:IsCurrentVerifiedVIPProof(name, data), "a replacement peer session invalidates cached proof")
+end)
+QT:RegisterTest("VIP diagnostics distinguish cached proof health and record renewal gaps without private data", function()
+	local net = QT:CreateTestNetwork()
+	local observer = Peer(net, "Observer-Realm")
+	local function Verify(name, active, session)
+		local data = { certificate = CERT, signature = string.rep("6", 128), session = session or "session",
+			issuedAt = observer:GetAnnouncementServerTime(), active = active ~= false }
+		VerifyProof(observer, name, data)
+		return data
+	end
+	Verify("Expired-Realm")
+	net:Advance(301)
+	Verify("Valid-Realm")
+	Verify("Withdrawn-Realm", false)
+	local stale = Verify("Session-Realm")
+	observer:RecordPeerEpoch("Session-Realm", "replacement", stale.issuedAt + 1)
+	Verify("Ignored-Realm")
+	observer.ignored["Ignored-Realm"] = true
+	observer.vipState.metrics.expired = 7
+	local metrics = observer:GetVIPCommunicationMetrics()
+	assert(metrics.proofsCached == 5 and metrics.proofsValid == 1 and metrics.proofsExpired == 1)
+	assert(metrics.proofsWithdrawn == 1 and metrics.proofsSessionInvalid == 1 and metrics.proofsUnavailable == 1)
+	assert(metrics.expired == 7, "existing expired verification jobs metric must keep its original meaning")
+	for _, value in pairs(metrics) do assert(type(value) == "number", "diagnostics must expose only aggregate numbers") end
+	Verify("Expired-Realm")
+	metrics = observer:GetVIPCommunicationMetrics()
+	assert(metrics.renewalGaps == 1 and math.abs(metrics.renewalGapLast - 1) < 0.000001
+		and math.abs(metrics.renewalGapMax - 1) < 0.000001)
+	net:Advance(11)
+	Verify("Expired-Realm")
+	assert(observer:GetVIPCommunicationMetrics().renewalGaps == 1, "an on-time renewal is not a gap")
+	net:Advance(301)
+	Verify("Valid-Realm", false)
+	Verify("Withdrawn-Realm", true)
+	Verify("Expired-Realm", true, "new-session")
+	assert(observer:GetVIPCommunicationMetrics().renewalGaps == 1,
+		"withdrawal, reenabling cosmetics, and a new session must not count as a missing renewal")
+end)
 QT:RegisterTest("VIP stars and locations survive a lost renewal with concurrent peers and reordered fragments", function()
 	local net = QT:CreateTestNetwork({ fps = 5 })
 	local observer, publishers = Peer(net, "Observer-Realm"), {}

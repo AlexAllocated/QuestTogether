@@ -1381,6 +1381,21 @@ function QT:ReplayMeshPublicationsForInterest(lease)
 	end
 	s.replay[lease] = replay
 end
+local function CanReplayCachedPublication(a, s, entry)
+	if not entry.verified or (entry.replayHops or 0) <= 0 then
+		return false
+	end
+	if entry.publication.operation == "VIP" then
+		-- A repaired subscription may reach a relay between renewals. Reuse
+		-- only its latest authenticated proof, including a signed withdrawal;
+		-- caching must not extend expiry or resurrect a superseded on proof.
+		return entry.signedVerified == true
+			and a:IsCurrentVerifiedVIPProof(entry.publication.origin, entry.data)
+	end
+	return entry.publication.operation == "STATE"
+		and not entry.replayRetired
+		and ReplayFenceAllows(a, s, entry)
+end
 local function ReplayOne(a, s, now)
 	if now < s.nextReplay then
 		return
@@ -1414,11 +1429,7 @@ local function ReplayOne(a, s, now)
 				if
 					(
 						entry.owned
-						or entry.verified
-							and entry.publication.operation == "STATE"
-							and not entry.replayRetired
-							and (entry.replayHops or 0) > 0
-							and ReplayFenceAllows(a, s, entry)
+						or CanReplayCachedPublication(a, s, entry)
 					)
 					and not entry.superseded
 					and entry.publication.origin ~= lease.destination
@@ -1495,13 +1506,13 @@ local function ReplayOne(a, s, now)
 					meshReplayHops = not chosen.owned and chosen.replayHops or nil,
 					expires = chosen.untilAt,
 					key = descriptor.key,
-					priority = descriptor.priority or "background",
+					priority = descriptor.priority or (chosen.publication.operation == "VIP" and "event" or "background"),
 					onComplete = Completed,
 					isCurrent = function()
 						return EntryCurrent(a, s, chosen)
 							and not chosen.replayRetired
 							and not chosen.superseded
-							and ReplayFenceAllows(a, s, chosen)
+							and (chosen.owned or CanReplayCachedPublication(a, s, chosen))
 					end,
 				})
 				if not admitted then
@@ -1510,7 +1521,7 @@ local function ReplayOne(a, s, now)
 				if admitted then
 					replay.origins[origin] = replay.turn
 					if admitted and not chosen.owned then
-						Count(s, "cachedStateReplays")
+						Count(s, chosen.publication.operation == "VIP" and "cachedVIPReplays" or "cachedStateReplays")
 					end
 				end
 				return

@@ -1286,6 +1286,120 @@ QT:RegisterTest("mesh replay skips confirmed shared-link copies without wasting 
 	assert(bridge:GetMeshPublicationMetrics().replayDeliveryReused == 1)
 end)
 
+local VIP_CERT = "QTVIP1." .. string.rep("1", 32) .. "." .. string.rep("2", 64) .. "." .. string.rep("3", 128)
+local function VIPRelayFixture()
+	local owner, relay = Peer("VIP-Realm"), Peer("Relay-Realm")
+	for _, peer in ipairs({ owner, relay }) do
+		peer.API.GetServerTime = function() return math.floor(1800000000 + peer.now) end
+	end
+	relay.vipIssuerPublicKeyHex = string.rep("4", 64)
+	relay.Ed25519 = { Hash = QT.Ed25519.Hash, Verify = function() return true end }
+	local function Receive(active)
+		local data = { certificate = VIP_CERT, signature = string.rep("6", 128), session = owner:GetCommunicationSession(),
+			issuedAt = owner:GetAnnouncementServerTime(), active = active }
+		local publication = Publish(owner, "VIP", data)
+		assert(relay:HandleMeshPublication(Wire(publication), owner.name))
+		Finish(relay)
+		relay:UpdateVIPIdentity()
+		local entry
+		for _, row in pairs(relay.meshPublicationState.entries) do
+			if row.publication.id == publication.id then entry = row end
+		end
+		assert(entry and entry.verified and entry.signedVerified and not entry.owned)
+		return entry
+	end
+	local replays = {}
+	local forward = relay.ForwardMeshPublication
+	function relay:ForwardMeshPublication(publication, options)
+		if options.meshInterest then
+			replays[#replays + 1] = { publication = publication, options = options }
+		end
+		return forward(self, publication, options)
+	end
+	function relay:HasDeliveredMeshPublicationForInterest() return false end
+	local serial = 0
+	local function Replay()
+		serial = serial + 1
+		relay:ReplayMeshPublicationsForInterest({ destination = "Late-Realm", zone = 0,
+			expiresAt = relay:GetAnnouncementServerTime() + 90, id = "late-" .. serial })
+		relay.now, owner.now = relay.now + 1, owner.now + 1
+		relay:UpdateMeshPublications(relay.now)
+	end
+	return owner, relay, Receive, Replay, replays
+end
+
+QT:RegisterTest("mesh cached VIP renewal reaches repaired interests without extending its signed lifetime", function()
+	local _, relay, receive, replay, replays = VIPRelayFixture()
+	local entry = receive(true)
+	local expires = relay.vipState.peers["VIP-Realm"].expires
+	assert(relay:IsVerifiedVIP("VIP-Realm"))
+	relay.now = relay.now + 160
+	replay()
+	assert(#replays == 1 and replays[1].publication == entry.publication,
+		"a verified relay must offer its current VIP proof to a newly reached subscriber")
+	assert(replays[1].options.meshReplayHops == 7 and replays[1].options.priority == "event")
+	assert(replays[1].options.expires == entry.untilAt and relay.vipState.peers["VIP-Realm"].expires == expires,
+		"replay must retain original expiry and must not refresh the relay's proof")
+	assert(relay:GetMeshPublicationMetrics().cachedVIPReplays == 1)
+	local late = Peer("Late-Realm")
+	late.now = relay.now
+	late.API.GetServerTime = function() return math.floor(1800000000 + late.now) end
+	late.vipIssuerPublicKeyHex, late.Ed25519 = relay.vipIssuerPublicKeyHex, relay.Ed25519
+	assert(late:HandleMeshPublication(Wire(replays[1].publication), relay.name))
+	Finish(late)
+	late:UpdateVIPIdentity()
+	assert(late:IsVerifiedVIP("VIP-Realm"), "the late subscriber must authenticate the replay and regain its star")
+	assert(late.vipState.peers["VIP-Realm"].expires == expires,
+		"an aged relay proof must expire at its original deadline on the new subscriber")
+	late.now = expires
+	assert(not late:IsVerifiedVIP("VIP-Realm"))
+end)
+
+QT:RegisterTest("mesh cached VIP withdrawal cancels queued stars and only replays the newest proof", function()
+	local owner, relay, receive, replay, replays = VIPRelayFixture()
+	local active = receive(true)
+	replay()
+	local queued = assert(replays[1]).options
+	assert(queued.isCurrent())
+	owner.now, relay.now = owner.now + 12, relay.now + 12
+	local withdrawal = receive(false)
+	assert(not relay:IsVerifiedVIP(owner.name))
+	assert(not queued.isCurrent(), "a queued old star must become ineligible as soon as withdrawal verifies")
+	replay()
+	assert(#replays == 2 and replays[2].publication == withdrawal.publication)
+	assert(active.publication.expiresAt > relay:GetAnnouncementServerTime(),
+		"the superseded active proof is still cryptographically fresh and must nevertheless stay suppressed")
+	assert(replays[2].options.isCurrent(), "the current signed withdrawal remains eligible")
+end)
+
+QT:RegisterTest("mesh cached VIP replay fails closed after identity and lifetime boundaries", function()
+	for _, boundary in ipairs({ "expiry", "retire", "session", "ignore", "verification", "hops", "reset" }) do
+		local owner, relay, receive, replay, replays = VIPRelayFixture()
+		local entry = receive(true)
+		replay()
+		local queued = assert(replays[1]).options
+		assert(queued.isCurrent())
+		if boundary == "expiry" then
+			relay.now = relay.vipState.peers[owner.name].expires
+		elseif boundary == "retire" then
+			relay:RetireVIPPeer(owner.name)
+		elseif boundary == "session" then
+			assert(relay:RecordPeerEpoch(owner.name, "replacement-session", owner:GetAnnouncementServerTime() + 1))
+		elseif boundary == "ignore" then
+			relay.ignored[owner.name] = true
+		elseif boundary == "verification" then
+			entry.signedVerified = nil
+		elseif boundary == "hops" then
+			entry.replayHops = 0
+		else
+			relay:ResetVIPIdentity()
+		end
+		assert(not queued.isCurrent(), boundary .. " must cancel a queued replay before native transmission")
+		replay()
+		assert(#replays == 1, boundary .. " must not replay stale or unverified VIP evidence")
+	end
+end)
+
 QT:RegisterTest("mesh cached replay excludes unverified events exhausted hops and superseded state", function()
 	for _, scenario in ipairs({ "unverified", "event", "hops", "withdrawal", "replacement", "expired" }) do
 		local owner, bridge = Peer("Owner-Realm"), Peer("Bridge-Realm")

@@ -165,8 +165,9 @@ private `.local` notes are historical context, not the source of truth.
   the marker view reacquires visible native quest blocks through the read-only
   `GetExistingBlock` lookup. Each member gets a clickable class-colored dot to
   the left of Blizzard's quest-focus button, with a tooltip identifying whose
-  focus it represents. Members sharing a quest form a spaced horizontal row;
-  a lime-green outline identifies the followed member without changing class color.
+  focus it represents. Members sharing a quest form a spaced horizontal row.
+  Unfollowed members use a thick class-colored ring with a transparent center;
+  the followed member uses a filled circle in the same class color.
   A white chain-link badge identifies a member following the local player, using
   the shared navigation query and its existing ordering, expiry and membership
   rules. Matching quest IDs alone never establish a follow relationship. Badges
@@ -484,7 +485,14 @@ grants developer authority or changes diagnostic/location consent.
 `RuntimeCoordinator` advances VIP work through the communication coordinator;
 public `VIP` events use scoped mesh interests, the catalog, transport and
 fragment assembly. Presentation queries `IsVerifiedVIP`, with developer artwork
-taking precedence. Private activation seeds live in the separate
+taking precedence; minimap rendering never changes the shared proof. The identity
+cache bounds distinct peers, replacing a peer's old eviction entry on renewal.
+Relays may replay their latest authenticated VIP proof to a new or repaired
+subscription while its original signed expiry and peer session remain valid.
+The exact proof must still match the identity owner's current observation,
+including withdrawals; an older active proof cannot replace a newer withdrawal.
+Diagnostics expose aggregate proof health and renewal timing without identities
+or certificate payloads. Private activation seeds live in the separate
 `QuestTogetherVIP` SavedVariables root and are excluded from profile exports and
 diagnostic snapshots.
 
@@ -979,6 +987,12 @@ dispatch through existing feature operations; they never assign keys or duplicat
 action logic. The quick-menu binding remains available when the minimap icon is
 hidden. It uses compact QT-owned menus while Gamepad UI is active and the ordinary
 native menu in the mouse/keyboard interface style.
+`/qt focus [name]` and **Follow target's quest focus** share the live party-follow
+controller. Omitted names resolve the current player target through guarded unit
+reads; supplied names resolve only current group identities, with ambiguous
+short names rejected. Neither path changes the character's target or starts
+movement following. `/qt unfollow` uses the existing stop-follow binding action,
+including its preview ownership and restriction-safe cancellation behavior.
 
 Use native settings controls through the shared constructors. Player-facing
 text is localized at presentation; wire facts and diagnostic identifiers stay
