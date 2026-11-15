@@ -1,30 +1,20 @@
 {
-  "source_sha256": "e974489779502b490e5ed6b11f8ba7596dbe8e5da896e895483ced501bcb3082",
+  "source_sha256": "c3b9ee8559c4f63381aed7198e04655d03ef9ffd369f665dccfab0ec89aa2090",
   "notes": {
-    "version": "9.3.0",
-    "welcome": "La prise en charge de la manette rejoint la version stable : plus besoin de télécharger la bêta. Les raccourcis de quête, les anneaux et les corrections VIP restent inclus.",
+    "version": "9.3.1",
+    "welcome": "Correctifs pour le partage des repères et le suivi des quêtes, avec un indicateur plus clair pour les membres qui suivent votre sélection.",
     "sections": [
       {
-        "title": "Activer la navigation à la manette",
+        "title": "Repères du groupe et quête active",
         "items": [
-          "Cette intégration prend en charge la Gamepad UI de WoW Forever 1.60.1, builds 70888 et 70938. Activez cette interface dans WoW, puis laissez cochée l’option « Activer la navigation native à la manette » dans QT → Général ; elle est activée par défaut. Les autres clients conservent leurs commandes au clavier et à la souris."
+          "Lorsque « Partager mon repère » est activé, les repères que vous placez sur la carte de WoW sont à nouveau partagés avec le groupe, dans votre couleur de classe.",
+          "La présence d’un repère sur la carte ne bloque plus les mises à jour de la quête active et du suivi. Choisir une autre quête pendant un suivi demande à nouveau confirmation avant de l’arrêter ; « Annuler » conserve le suivi."
         ]
       },
       {
-        "title": "Ouvrir et utiliser QuestTogether",
+        "title": "Indicateur des membres qui vous suivent",
         "items": [
-          "Avec la configuration par défaut, QT place une macro PQL à l’icône de livre de quêtes sur LT + RT + haut de la croix directionnelle, sur la page d’actions normale 1, si cet emplacement est vide. Les actions déjà présentes sont conservées. Vous pouvez déplacer ou retirer le bouton avec l’éditeur de barres d’action : QT ne le remet pas tant que la macro existe. Si vous supprimez la macro elle-même, QT peut la recréer et la replacer si l’emplacement par défaut est libre.",
-          "Dans le Journal de quêtes du groupe, la croix directionnelle passe d’une quête ou d’une commande à l’autre. Valider active la sélection et Retour ferme la fenêtre. La liste défile pour garder la quête sélectionnée à l’écran.",
-          "Dans les raccourcis clavier de WoW, attribuez une touche à « Ouvrir le menu QuestTogether » pour accéder aux actions contextuelles et aux « Demandes en attente ». Aucun raccourci n’est attribué par défaut. Les menus de style WoW, listes déroulantes et confirmations se parcourent à la manette. Les demandes reçues ne prennent le focus que lorsque vous les ouvrez ; les confirmations sélectionnent d’abord Annuler ou Refuser.",
-          "Lorsque les notes de mise à jour s’ouvrent automatiquement, elles prennent le focus de la manette. Le stick droit fait défiler le texte et sa barre de défilement ; la croix directionnelle sélectionne les boutons et Retour ferme la fenêtre. La saisie de texte et le placement des éléments du HUD gardent leurs commandes habituelles."
-        ]
-      },
-      {
-        "title": "Suivi des objectifs et carte du monde",
-        "items": [
-          "Parcourir le suivi des objectifs de WoW à la manette compte comme un survol pour le Suivi des objectifs du groupe. Cela ne modifie ni votre quête active ni le suivi d’un coéquipier.",
-          "Sur la carte du monde, le réticule met en évidence les joueurs et groupes de joueurs QT. A/Valider conserve l’action normale de la carte et n’ouvre pas automatiquement le menu QT. Le raccourci attribué au menu QT permet d’accéder aux actions du repère, mais les commandes de la carte peuvent prendre la priorité sur certaines combinaisons. Déplacement, zoom et points de passage fonctionnent comme avant.",
-          "Les repères du groupe sur la carte du monde conservent les étoiles VIP vérifiées et les icônes de développeur. Désactiver les repères QT rétablit ceux de WoW. Le comportement de la minicarte ne change pas."
+          "Dans le suivi des objectifs, un seul symbole de chaîne à leur couleur de classe remplace le cercle vide des membres qui suivent votre sélection de quête. La chaîne n’apparaît plus à côté du cercle."
         ]
       }
     ]

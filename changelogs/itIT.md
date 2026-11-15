@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.1
+
+Questo aggiornamento corregge la condivisione dei punti di riferimento e la sincronizzazione della missione attiva, e rende più chiaro chi ti segue.
+
+### Punti di riferimento e missione attiva
+
+- Con «Condividi il mio punto di riferimento» attivo, i punti che posizioni sulla mappa di WoW vengono di nuovo condivisi con il gruppo e mostrati nel colore della tua classe.
+- Un punto sulla mappa non impedisce più al gruppo di vedere la tua missione attiva e chi stai seguendo. Se scegli un’altra missione mentre segui quella di un compagno, ricompare la conferma per smettere di seguirlo; con «Annulla» continui a seguirlo.
+
+### Indicatore per chi ti segue
+
+- Nel tracciatore obiettivi, chi segue la tua missione attiva è ora indicato da un solo simbolo di catena nel colore della sua classe, al posto del cerchio vuoto. La catena non compare più accanto al cerchio.
+
 ## 9.3.0
 
 Il supporto nativo per controller arriva nella versione stabile: non serve più scaricare la beta. Restano inclusi i comandi per seguire le missioni, i nuovi anelli e le correzioni VIP.

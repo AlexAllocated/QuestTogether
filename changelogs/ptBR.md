@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.1
+
+Correções no compartilhamento de pontos de rota e no acompanhamento de missões, além de um indicador mais claro para quem segue sua missão em foco.
+
+### Pontos de rota e missão em foco
+
+- Com Compartilhar meu ponto de rota ativado, os pontos marcados no mapa do WoW voltam a ser compartilhados com o grupo, usando a cor da sua classe.
+- Ter um ponto de rota no mapa não interrompe mais as atualizações da missão em foco nem do estado de acompanhamento exibido ao grupo. Ao selecionar outra missão enquanto segue alguém, a confirmação para parar de seguir volta a aparecer. Escolher Cancelar mantém o acompanhamento.
+
+### Indicador de acompanhamento
+
+- No rastreador de objetivos, quem segue sua missão em foco passa a ser representado por um único ícone de corrente na cor da própria classe. A corrente substitui o anel vazio, em vez de aparecer como um símbolo separado ao lado dele.
+
 ## 9.3.0
 
 O suporte a controle chegou à versão estável: não é mais preciso baixar a beta. Os atalhos de missão, os anéis e as correções de VIP continuam incluídos.

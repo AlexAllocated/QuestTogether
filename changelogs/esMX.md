@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.1
+
+Esta actualización corrige el envío de puntos de ruta y el seguimiento de misiones, y aclara el indicador de quienes siguen tu misión activa.
+
+### Puntos de ruta y misión activa
+
+- Los puntos de ruta que marques en el mapa de WoW vuelven a compartirse con tu grupo si tienes activado Compartir mi punto de ruta. Se muestran con el color de tu clase.
+- Un punto de ruta en el mapa ya no impide actualizar la misión activa ni el estado de seguimiento que ve el grupo. Al elegir otra misión mientras sigues a un compañero, vuelve a aparecer la confirmación para dejar de seguirlo; si eliges Cancelar, el seguimiento continúa.
+
+### Indicador de seguimiento
+
+- Los compañeros que siguen tu misión activa ahora se representan en el seguimiento de objetivos con un solo ícono de cadena del color de su clase. Este reemplaza al aro vacío y ya no aparece como una insignia adicional.
+
 ## 9.3.0
 
 El soporte para control ya está en la versión estable. No necesitas descargar la beta, y se conservan los atajos de misión, los anillos y las correcciones VIP.

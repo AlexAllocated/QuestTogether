@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.1
+
+Correctifs pour le partage des repères et le suivi des quêtes, avec un indicateur plus clair pour les membres qui suivent votre sélection.
+
+### Repères du groupe et quête active
+
+- Lorsque « Partager mon repère » est activé, les repères que vous placez sur la carte de WoW sont à nouveau partagés avec le groupe, dans votre couleur de classe.
+- La présence d’un repère sur la carte ne bloque plus les mises à jour de la quête active et du suivi. Choisir une autre quête pendant un suivi demande à nouveau confirmation avant de l’arrêter ; « Annuler » conserve le suivi.
+
+### Indicateur des membres qui vous suivent
+
+- Dans le suivi des objectifs, un seul symbole de chaîne à leur couleur de classe remplace le cercle vide des membres qui suivent votre sélection de quête. La chaîne n’apparaît plus à côté du cercle.
+
 ## 9.3.0
 
 La prise en charge de la manette rejoint la version stable : plus besoin de télécharger la bêta. Les raccourcis de quête, les anneaux et les corrections VIP restent inclus.

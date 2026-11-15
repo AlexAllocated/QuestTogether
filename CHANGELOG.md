@@ -4,6 +4,19 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.3.1
+
+Party waypoint sharing and quest-follow updates are working together again, with a clearer follower indicator.
+
+### Waypoints and quest focus
+
+- Fixed normal WoW map pins not reaching your party as class-colored waypoint markers when waypoint sharing is enabled.
+- Having a map pin no longer interrupts quest-focus and follow-status updates. Choosing another quest while following once again asks whether to stop following; Cancel keeps the follow active.
+
+### A clearer follower indicator
+
+- On the objective tracker, party members following your quest focus now appear as a class-colored chain link in place of the hollow ring. The extra icon beside the ring is gone.
+
 ## 9.3.0
 
 Controller support is now in the stable release! No beta download is needed, and the latest focus shortcuts, rings and VIP fixes are included.

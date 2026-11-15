@@ -1,30 +1,20 @@
 {
-  "source_sha256": "e974489779502b490e5ed6b11f8ba7596dbe8e5da896e895483ced501bcb3082",
+  "source_sha256": "c3b9ee8559c4f63381aed7198e04655d03ef9ffd369f665dccfab0ec89aa2090",
   "notes": {
-    "version": "9.3.0",
-    "welcome": "O suporte a controle chegou à versão estável: não é mais preciso baixar a beta. Os atalhos de missão, os anéis e as correções de VIP continuam incluídos.",
+    "version": "9.3.1",
+    "welcome": "Correções no compartilhamento de pontos de rota e no acompanhamento de missões, além de um indicador mais claro para quem segue sua missão em foco.",
     "sections": [
       {
-        "title": "Ative a navegação por controle",
+        "title": "Pontos de rota e missão em foco",
         "items": [
-          "Compatível com a Gamepad UI do WoW Forever 1.60.1, builds 70888 e 70938. Ative essa interface no WoW e deixe marcada a opção “Ativar navegação nativa por controle” em QT → Geral; ela vem ativada por padrão. Os outros clientes mantêm os controles de mouse e teclado."
+          "Com Compartilhar meu ponto de rota ativado, os pontos marcados no mapa do WoW voltam a ser compartilhados com o grupo, usando a cor da sua classe.",
+          "Ter um ponto de rota no mapa não interrompe mais as atualizações da missão em foco nem do estado de acompanhamento exibido ao grupo. Ao selecionar outra missão enquanto segue alguém, a confirmação para parar de seguir volta a aparecer. Escolher Cancelar mantém o acompanhamento."
         ]
       },
       {
-        "title": "Abra e use o QuestTogether",
+        "title": "Indicador de acompanhamento",
         "items": [
-          "Com o layout padrão, o QT coloca uma macro do PQL com ícone de livro de missões em LT + RT + direcional para cima, na página de ações normal 1, se o espaço estiver vazio. Ações existentes são preservadas. Você pode mover ou remover o botão pelo editor de barras de ação; o QT não o recoloca enquanto a macro existir. Se apagar a própria macro, ela poderá ser recriada e colocada no espaço padrão, caso esteja livre.",
-          "No Registro de missões do grupo, use o direcional para passar entre missões e controles. Selecionar ativa o item marcado e Voltar fecha a janela. A lista rola para manter a missão selecionada visível.",
-          "Nas teclas de atalho do WoW, configure “Abrir o menu do QuestTogether” para acessar ações de contexto e “Solicitações pendentes”. Não há tecla atribuída por padrão. Menus no estilo do WoW, listas suspensas e confirmações podem ser usados com o controle. Solicitações recebidas só ganham foco quando você as abre; confirmações começam em Cancelar ou Recusar.",
-          "As notas que abrem automaticamente após uma atualização recebem o foco do controle. O analógico direito rola o texto e a barra de rolagem; o direcional seleciona botões e Voltar fecha a janela. A digitação de texto e o posicionamento do HUD mantêm os controles habituais."
-        ]
-      },
-      {
-        "title": "Rastreador e mapa-múndi",
-        "items": [
-          "Navegar pelo rastreador de objetivos do WoW com o controle conta como passar o cursor para o Rastreador de objetivos do grupo. Isso não altera sua missão em foco nem quem você está seguindo.",
-          "A mira no mapa-múndi destaca jogadores e grupos de jogadores do QT. A/Selecionar mantém a ação normal do mapa e não abre automaticamente o menu QT. O atalho atribuído ao menu QT pode abrir as ações do marcador, mas os controles do mapa podem ter prioridade sobre algumas combinações. Mover o mapa, usar o zoom e definir pontos de rota continua funcionando normalmente.",
-          "Os marcadores do grupo no mapa-múndi mantêm as estrelas VIP verificadas e os ícones de desenvolvedor. Desativar os marcadores QT restaura os marcadores do grupo do WoW. O minimapa não muda."
+          "No rastreador de objetivos, quem segue sua missão em foco passa a ser representado por um único ícone de corrente na cor da própria classe. A corrente substitui o anel vazio, em vez de aparecer como um símbolo separado ao lado dele."
         ]
       }
     ]

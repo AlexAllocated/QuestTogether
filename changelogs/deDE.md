@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.1
+
+Korrekturen für geteilte Wegpunkte und den Questfokus sowie eine klarere Anzeige für Mitspieler, die deinem Questfokus folgen.
+
+### Gruppenwegpunkte und Questfokus
+
+- Wenn „Meinen Wegpunkt teilen“ aktiviert ist, werden deine normalen WoW-Kartenwegpunkte wieder mit der Gruppe geteilt und in deiner Klassenfarbe angezeigt.
+- Ein gesetzter Kartenwegpunkt blockiert die Aktualisierung von Questfokus und Folgestatus nicht mehr. Wählst du beim Folgen eine andere Quest, erscheint wieder die Bestätigung zum Beenden. Mit „Abbrechen“ folgst du weiterhin demselben Mitspieler.
+
+### Mitspieler, die deinem Questfokus folgen
+
+- In der Zielverfolgung ersetzt ein einzelnes Kettensymbol in Klassenfarbe den hohlen Ring für Mitspieler, die deinem Questfokus folgen. Das zusätzliche Kettensymbol neben dem Ring entfällt.
+
 ## 9.3.0
 
 Die Controller-Unterstützung ist jetzt Teil der stabilen Version. Ein Beta-Download ist nicht mehr nötig; die Questfokus-Kurzbefehle, Ringe und VIP-Korrekturen bleiben erhalten.
