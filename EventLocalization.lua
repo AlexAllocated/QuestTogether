@@ -313,6 +313,12 @@ end
 function QT:QUEST_DATA_LOAD_RESULT(_, questID, success)
 	if self.OnQuestChainDataEvent then self:OnQuestChainDataEvent("QUEST_DATA_LOAD_RESULT", questID, success) end
 	local id = Integer(self, questID, 1, 1000000000)
+	local session = self.partyQuestCompareSession
+	if id and self:CanAccessValue(success) and success == true and session
+		and session.questPresentation and session.questPresentation[id] and self.QueuePartyQuestCompareRender then
+		-- Level data can finish loading independently of titles or a chain provider.
+		self:QueuePartyQuestCompareRender()
+	end
 	local cache = rawget(self, "localizedQuestTitles")
 	if not id or not cache or not self:CanAccessValue(success) or type(success) ~= "boolean" then return end
 	local entry = cache.entries[id]

@@ -193,6 +193,12 @@ function QuestTogether:CreateSettingsTooltipFrame(parent)
 	return CreateFrame("Frame", nil, parent, "BackdropTemplate")
 end
 
+function QuestTogether:GetSettingsTooltipCursorPosition(parent, owner)
+	if self:IsNativeGamepadMode()
+		and (not self.API.IsMouseOverPartyQuestWindow or not self.API.IsMouseOverPartyQuestWindow(owner)) then return end
+	return self:GetChatLogTooltipCursorPosition(parent)
+end
+
 function QuestTogether:HideSettingsTooltip(owner)
 	if owner and rawget(self, "settingsTooltipOwner") ~= owner then return end
 	self.settingsTooltipOwner, self.settingsTooltipSession = nil, nil
@@ -208,10 +214,10 @@ function QuestTogether:ShowSettingsTooltip(owner, title, text)
 		self:HideSettingsTooltip()
 		return false
 	end
+	local parent = self:GetSettingsTooltipParent()
+	if not self:CanAccessForeignFrame(parent) then return false end
 	local tooltip = rawget(self, "settingsTooltip")
 	if not tooltip then
-		local parent = self:GetSettingsTooltipParent()
-		if not self:CanAccessForeignFrame(parent) then return false end
 		tooltip = self:CreateSettingsTooltipFrame(parent)
 		if not self.LibChev.CanMutateOwnedRegion(tooltip) then return false end
 		self.settingsTooltip = tooltip
@@ -238,22 +244,36 @@ function QuestTogether:ShowSettingsTooltip(owner, title, text)
 	tooltip.title:SetText(title)
 	tooltip.text:SetText(text)
 	tooltip:SetSize(320, tooltip.title:GetStringHeight() + tooltip.text:GetStringHeight() + 32)
-	tooltip:ClearAllPoints()
-	tooltip:SetPoint("TOPLEFT", owner, "TOPRIGHT", 8, 0)
 	local session = {}
 	self.settingsTooltipOwner, self.settingsTooltipSession = owner, session
 	self:CancelOwnedUICleanup(tooltip)
-	local elapsedSinceCheck = 0
-	tooltip:SetScript("OnUpdate", function(_, elapsed)
+	local relative, point, offsetX, offsetY
+	local function Position()
+		local x, y = self:GetSettingsTooltipCursorPosition(parent, owner)
+		x, y = self:SafeToNumber(x), self:SafeToNumber(y)
+		local anchor, anchorPoint, relativePoint = owner, "TOPLEFT", "BOTTOMLEFT"
+		if x and y then
+			anchor, anchorPoint, relativePoint = parent, "BOTTOMLEFT", "BOTTOMLEFT"
+			x, y = x + 12, y + 12
+		else
+			x, y = 8, -8
+		end
+		if relative == anchor and point == anchorPoint and offsetX == x and offsetY == y then return end
+		tooltip:ClearAllPoints()
+		tooltip:SetPoint(anchorPoint, anchor, relativePoint, x, y)
+		relative, point, offsetX, offsetY = anchor, anchorPoint, x, y
+	end
+	Position()
+	tooltip:SetScript("OnUpdate", function()
 		if rawget(self, "settingsTooltipSession") ~= session then return end
-		elapsedSinceCheck = elapsedSinceCheck + elapsed
-		if elapsedSinceCheck < 0.1 then return end
-		elapsedSinceCheck = 0
 		local current = rawget(self, "settingsTooltipOwner")
 		if self:IsRuntimeRestricted()
+			or not self.LibChev.CanMutateOwnedRegion(tooltip) or not self:CanAccessForeignFrame(parent)
 			or not self.LibChev.CanMutateOwnedRegion(current) or not current:IsVisible() then
 			self:HideSettingsTooltip()
+			return
 		end
+		Position()
 	end)
 	tooltip:Show()
 	return true

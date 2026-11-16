@@ -206,6 +206,8 @@ function QuestTogether:RebuildQuestSnapshotStore()
 					questID = numericQuestID,
 					questLogIndex = self:SafeToNumber(questInfo.questLogIndex) or questLogIndex,
 					title = type(questInfo.title) == "string" and questInfo.title or nil,
+					questLevel = self:SafeToNumber(questInfo.questLevel),
+					questGroupRecommended = ReadBoolean(self, questInfo.questGroupRecommended),
 					isHidden = questInfo.isHidden == true,
 					isTask = isTaskQuest and true or false,
 					isOnMap = ReadBoolean(self, questInfo.isOnMap),

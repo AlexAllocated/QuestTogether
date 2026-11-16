@@ -207,6 +207,7 @@ QT:RegisterTest("focus dot clicks and tooltips use current member identity and r
 	assert(pin.tooltip:IsShown())
 	assert(pin.label:GetText():find("Mage Realm", 1, true))
 	assert(pin.label:GetText():find("has this quest focused", 1, true))
+	assert(pin.label:GetText():match("\n\n|cff909090Quest ID: 41|r$"))
 	click(pin.frame, "RightButton")
 	Equal(a.requested, nil)
 	click(pin.frame, "LeftButton")
@@ -230,6 +231,7 @@ QT:RegisterTest("focus dot clicks and tooltips use current member identity and r
 	Equal(pin.tooltip:IsShown(), false)
 	pin.frame:GetScript("OnEnter")(pin.frame)
 	assert(pin.label:GetText():find("Rogue Realm", 1, true))
+	assert(pin.label:GetText():match("\n\n|cff909090Quest ID: 41|r$"))
 	pin.frame:GetScript("OnClick")(pin.frame, "LeftButton")
 	Equal(a.requested, "Rogue Realm")
 	a.requested = nil

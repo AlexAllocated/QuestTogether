@@ -84,6 +84,25 @@ local function Step(rows, id)
 	for _, row in ipairs(rows) do if row.kind == "chainStep" and row.questId == id then return row end end
 end
 
+QT:RegisterTest("chain preview prepares native levels and colors before cache-only painting", function()
+	local a, reads = Fixture(), 0
+	a.API.GetQuestDifficultyLevel = function(id) reads = reads + 1; return id == 20 and 18 or nil end
+	a.API.GetQuestDifficultyColor = function(level) Equal(level, 18); return { r = 1, g = 0.5, b = 0 } end
+	a.API.GetQuestGroupRecommended = function(id) return id == 20 end
+	assert(a:OpenPartyQuestComparePreview("chains")); a:FlushPreview()
+	local p = a.partyQuestComparePreview
+	local rows = Rows(p)
+	Equal(Step(rows, 20).questLevel, 18); Equal(Step(rows, 20).questDifficultyColor.g, 0.5)
+	Equal(Step(rows, 20).questGroupRecommended, true); Equal(Step(rows, 10).questGroupRecommended, false)
+	Equal(Step(rows, 10).questLevel, nil)
+	local before = reads
+	p.API.GetQuestDifficultyLevel = function() error("paint read native quest level") end
+	p.API.GetQuestDifficultyColor = function() error("paint read native color") end
+	p.API.GetQuestGroupRecommended = function() error("paint read native group recommendation") end
+	Rows(p); p:RenderPartyQuestCompare(); Rows(p)
+	Equal(reads, before)
+end)
+
 QT:RegisterTest("chain preview augments copied real quests with earlier ready later branch and history evidence", function()
 	local a = Fixture()
 	assert(a:HandleSlashCommand("pqlpreview chains"))
@@ -118,6 +137,31 @@ QT:RegisterTest("chain preview augments copied real quests with earlier ready la
 	p.GetQuestChainGraph = graph
 	p.API.GetCharacterQuestHistoryStatus = history
 	Equal(a.entries[1].questTitle, "Actual quest 20")
+end)
+
+QT:RegisterTest("chain preview quest tooltips retain their own IDs and spoiler-safe titles", function()
+	local a = Fixture()
+	function a:ShowSettingsTooltip(_, title, text) self.tooltip = { title, text } end
+	function a:HideSettingsTooltip() self.tooltip = nil end
+	assert(a:OpenPartyQuestComparePreview("chains")); a:FlushPreview()
+	local p, frame = a.partyQuestComparePreview, a.partyQuestComparePreview.partyQuestCompareWindow
+	local function Find(rowID)
+		p:ScrollPartyQuestCompareToRow(frame, rowID)
+		for _, row in ipairs(frame.rows) do if row.data and row.data.rowId == rowID then return row end end
+		error("preview quest row is not visible")
+	end
+	local root = Find("quest:20")
+	root:RunScript("OnEnter")
+	Equal(a.tooltip[1], "[?] Actual quest 20")
+	assert(a.tooltip[2]:find("Quest ID: 20|r", 1, true))
+	root.chain:RunScript("OnEnter")
+	assert(a.tooltip[2]:find("Quest ID: 20|r", 1, true))
+	local future = assert(Step(Rows(p), 40))
+	local row = Find(future.rowId)
+	row:RunScript("OnEnter")
+	Equal(a.tooltip[1], "[?] Future quest")
+	assert(a.tooltip[2]:find("Quest ID: 40|r", 1, true))
+	Equal(#a.wire, 0); Equal(a.pushes, 0)
 end)
 
 QT:RegisterTest("chain preview focus follow giver waypoint and sharing cannot mutate live state", function()

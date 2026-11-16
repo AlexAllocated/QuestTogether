@@ -4881,6 +4881,13 @@ QuestTogether:RegisterTest("quest details work for unowned quests without sharin
 	AssertTrue(root.buttons[1].enabled)
 	AssertFalse(root.buttons[2].enabled)
 	AssertFalse(root.buttons[3].enabled)
+	for index = 1, 3 do
+		root.buttons[index].tooltip({
+			SetText = function(_, text)
+				AssertTrue(text:match("\n\n|cff909090Quest ID: 12345|r$") ~= nil)
+			end,
+		})
+	end
 	local reads = state.journalReads
 	root.buttons[1].callback()
 	AssertEquals(state.detailsOpened[1].id, 12345)
@@ -4905,7 +4912,7 @@ QuestTogether:RegisterTest("quest details recheck stale restrictions and unavail
 		AssertFalse(root.buttons[1].enabled)
 		root.buttons[1].tooltip({
 			SetText = function(_, text)
-				AssertEquals(text, state.messages[1])
+				AssertEquals(text, state.messages[1] .. "\n\n|cff909090Quest ID: 12345|r")
 			end,
 		})
 		state.combat, state.restriction, state.detailsCapable = false, nil, true
@@ -5004,7 +5011,7 @@ QuestTogether:RegisterTest("quest share menu disables unavailable actions and re
 		AssertFalse(root.buttons[2].enabled)
 		local tooltip = {
 			SetText = function(_, message)
-				AssertEquals(message, state.messages[1])
+				AssertEquals(message, state.messages[1] .. "\n\n|cff909090Quest ID: 12345|r")
 			end,
 		}
 		root.buttons[2].tooltip(tooltip)
@@ -5056,7 +5063,7 @@ QuestTogether:RegisterTest("quest log rechecks stale entries and reports unavail
 		AssertFalse(root.buttons[3].enabled)
 		root.buttons[3].tooltip({
 			SetText = function(_, reason)
-				AssertEquals(reason, state.messages[1])
+				AssertEquals(reason, state.messages[1] .. "\n\n|cff909090Quest ID: 12345|r")
 			end,
 		})
 	end

@@ -297,6 +297,7 @@ local function Fixture()
 	function addon:GetMinimapCursorPosition()
 		return self.cursorX, self.cursorY
 	end
+	function addon:GetChatLogTooltipCursorPosition() return nil end
 	function addon:GetMinimapShapeName()
 		return self.shape or "ROUND"
 	end
@@ -622,6 +623,80 @@ Register("minimap tooltip refreshes status without reading quest counts or recre
 	a.blocked = true
 	tooltip.scripts.OnUpdate(nil, 1)
 	Equal(reads, 0)
+	Equal(tooltip.shown, false)
+end)
+
+Register("settings tooltips follow scaled cursor positions and fall back for controller or inaccessible input", function()
+	local a = Fixture()
+	function a:GetSettingsTooltipParent() return self.tooltipParent end
+	function a:CreateSettingsTooltipFrame(parent) return self:CreateMinimapUIFrame("Frame", nil, parent) end
+	function a:IsNativeGamepadMode() return self.controller == true end
+	local cursorReads = 0
+	function a:GetChatLogTooltipCursorPosition(parent)
+		Equal(parent, self.tooltipParent)
+		cursorReads = cursorReads + 1
+		if self.cursorUnavailable then return self.unreadable, self.unreadable end
+		return self.cursorX / parent:GetEffectiveScale(), self.cursorY / parent:GetEffectiveScale()
+	end
+	a.tooltipParent.scale = 0.75
+	a.cursorX, a.cursorY = 150, 75
+	local owner = Frame(a.tooltipParent)
+	a.API.IsMouseOverPartyQuestWindow = function(frame)
+		Equal(frame, owner)
+		return a.mouseOver == true
+	end
+	assert(a:ShowSettingsTooltip(owner, "Wolf Hunt", "Quest ID: 42"))
+	local tooltip = a.settingsTooltip
+	local function AtCursor(x, y)
+		local point = tooltip.points[1]
+		Equal(point[1], "BOTTOMLEFT")
+		Equal(point[2], a.tooltipParent)
+		Equal(point[3], "BOTTOMLEFT")
+		Near(point[4], x)
+		Near(point[5], y)
+	end
+	AtCursor(212, 112)
+	Equal(tooltip.clamped, true)
+	local layouts = tooltip.layouts
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	Equal(tooltip.layouts, layouts)
+	a.cursorX, a.cursorY = 300, 150
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	AtCursor(412, 212)
+	a.tooltipParent.scale = 0.5
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	AtCursor(612, 312)
+	a.controller = true
+	local reads = cursorReads
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	Equal(cursorReads, reads)
+	Equal(tooltip.points[1][1], "TOPLEFT")
+	Equal(tooltip.points[1][2], owner)
+	Equal(tooltip.points[1][3], "BOTTOMLEFT")
+	Equal(tooltip.points[1][4], 8)
+	Equal(tooltip.points[1][5], -8)
+	a.mouseOver = true
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	AtCursor(612, 312)
+	Equal(cursorReads, reads + 1)
+	a.cursorX, a.cursorY = 400, 200
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	AtCursor(812, 412)
+	a.mouseOver = false
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	Equal(tooltip.points[1][2], owner)
+	a.controller = false
+	a.unreadable = setmetatable({}, { __tostring = function() error("inaccessible cursor") end })
+	a.cursorUnavailable = true
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	Equal(tooltip.points[1][2], owner)
+	a.cursorUnavailable = false
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	AtCursor(812, 412)
+	reads = cursorReads
+	a.blocked = true
+	tooltip.scripts.OnUpdate(nil, 0.01)
+	Equal(cursorReads, reads)
 	Equal(tooltip.shown, false)
 end)
 

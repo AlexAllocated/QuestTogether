@@ -1993,6 +1993,76 @@ return rawRow end
 		assert(levelFixture:PLAYER_LEVEL_UP("PLAYER_LEVEL_UP", notANumber) == false)
 		assert(addon.API.GetQuestLogInfo(7).questID == 12345)
 		assert(addon.API.GetQuestLogInfo(7).isComplete == false)
+		do
+			local oldLevel, oldColor, oldRestricted = C_QuestLog.GetQuestDifficultyLevel, GetQuestDifficultyColor, addon.IsRuntimeRestricted
+			local level, color, reads = 23, { r = 1, g = 0.5, b = 0 }, 0
+			C_QuestLog.GetQuestDifficultyLevel = function(id) assert(id == 12345); reads = reads + 1; return level end
+			GetQuestDifficultyColor = function(value) assert(value == 23); return color end
+			assert(addon.API.GetQuestDifficultyLevel(12345) == 23)
+			local copied = addon.API.GetQuestDifficultyColor(23)
+			assert(copied.r == 1 and copied.g == 0.5 and copied.b == 0 and copied ~= color)
+			for _, invalid in ipairs({ secret, inaccessible, -1, 0, 0.5, math.huge }) do
+				level = invalid; assert(addon.API.GetQuestDifficultyLevel(12345) == nil)
+				assert(addon.API.GetQuestDifficultyLevel(invalid) == nil)
+			end
+			for _, invalid in ipairs({ secret, inaccessible, {}, { r = secret, g = 0, b = 0 }, { r = 1, g = 2, b = 0 } }) do
+				color = invalid; assert(addon.API.GetQuestDifficultyColor(23) == nil)
+			end
+			local previousReads = reads
+			addon.IsRuntimeRestricted = function() return true end
+			assert(addon.API.GetQuestDifficultyLevel(12345) == nil and addon.API.GetQuestDifficultyColor(23) == nil)
+			assert(reads == previousReads)
+			addon.IsRuntimeRestricted = oldRestricted
+			C_QuestLog.GetQuestDifficultyLevel = function() error("unavailable") end
+			GetQuestDifficultyColor = function() error("unavailable") end
+			assert(addon.API.GetQuestDifficultyLevel(12345) == nil and addon.API.GetQuestDifficultyColor(23) == nil)
+			C_QuestLog.GetQuestDifficultyLevel, GetQuestDifficultyColor = nil, nil
+			assert(addon.API.GetQuestDifficultyLevel(12345) == nil and addon.API.GetQuestDifficultyColor(23) == nil)
+			C_QuestLog.GetQuestDifficultyLevel, GetQuestDifficultyColor = oldLevel, oldColor
+		end
+		do
+			local oldElite, oldTag, oldSize = C_QuestLog.IsEliteQuest, C_QuestLog.GetQuestTagInfo, C_QuestLog.GetSuggestedGroupSize
+			local oldRestricted, oldTitle, oldInfo = addon.IsRuntimeRestricted, GetQuestLogTitle, C_QuestLog.GetInfo
+			local oldEliteText, oldGroupText = ELITE, GROUP
+			local elite, tag, size, calls = true, { tagID = 1 }, 5, 0
+			C_QuestLog.IsEliteQuest = function(id) assert(id == 12345); calls = calls + 1; return elite end
+			C_QuestLog.GetQuestTagInfo = function() return tag end
+			C_QuestLog.GetSuggestedGroupSize = function() return size end
+			assert(addon.API.GetQuestGroupRecommended(12345) == true)
+			elite = false
+			assert(addon.API.GetQuestGroupRecommended(12345) == false, "native false must win over group-size and tag fallback")
+			C_QuestLog.IsEliteQuest = nil
+			assert(addon.API.GetQuestGroupRecommended(12345) == true, "explicit native group tag is fallback evidence")
+			tag = { tagID = 81 }
+			assert(addon.API.GetQuestGroupRecommended(12345) == true)
+			size = 1; assert(addon.API.GetQuestGroupRecommended(12345) == false)
+			size = nil; assert(addon.API.GetQuestGroupRecommended(12345) == nil, "dungeon tag alone does not establish the elite suffix")
+			for _, invalid in ipairs({ secret, inaccessible, -1, 0.5, math.huge }) do
+				size, tag = invalid, inaccessible
+				assert(addon.API.GetQuestGroupRecommended(12345) == nil)
+			end
+			C_QuestLog.IsEliteQuest = function() return secret end
+			assert(addon.API.GetQuestGroupRecommended(12345) == nil)
+			C_QuestLog.IsEliteQuest = function() error("unavailable") end
+			assert(addon.API.GetQuestGroupRecommended(12345) == nil)
+			C_QuestLog.IsEliteQuest, C_QuestLog.GetQuestTagInfo, C_QuestLog.GetSuggestedGroupSize = nil, nil, nil
+			assert(addon.API.GetQuestGroupRecommended(12345) == nil)
+			ELITE, GROUP = "Localized elite", "Localized group"
+			GetQuestLogTitle = function() return "Quest", 25, ELITE, false, false, false, nil, 12345 end
+			C_QuestLog.GetInfo = nil
+			assert(addon.API.GetQuestLogInfo(7).questGroupRecommended == true)
+			GetQuestLogTitle = nil
+			C_QuestLog.GetInfo = function() return { title = "Quest", questID = 12345, level = 25, suggestedGroup = 3 } end
+			assert(addon.API.GetQuestLogInfo(7).questGroupRecommended == true)
+			C_QuestLog.IsEliteQuest = function() return false end
+			assert(addon.API.GetQuestLogInfo(7).questGroupRecommended == false)
+			local before = calls
+			addon.IsRuntimeRestricted = function() return true end
+			assert(addon.API.GetQuestGroupRecommended(12345) == nil and calls == before)
+			addon.IsRuntimeRestricted, GetQuestLogTitle, C_QuestLog.GetInfo = oldRestricted, oldTitle, oldInfo
+			C_QuestLog.IsEliteQuest, C_QuestLog.GetQuestTagInfo, C_QuestLog.GetSuggestedGroupSize = oldElite, oldTag, oldSize
+			ELITE, GROUP = oldEliteText, oldGroupText
+		end
 		assert(addon.API.GetQuestLogIndexForQuestID(12345) == 7)
 		-- Native tracker completion may differ from the log-row completion flag.
 		local oldComplete = C_QuestLog.IsComplete
@@ -2017,6 +2087,7 @@ return rawRow end
 			return "Legacy Wolf Hunt", 20, nil, false, false, completion, nil, 12345, nil, nil, true, true, true
 		end
 		C_QuestLog.GetInfo = nil
+		assert(addon.API.GetQuestLogInfo(7).questLevel == 20)
 		for _, case in ipairs({ { expected = false }, { value = 1, expected = true }, { value = -1, expected = false } }) do
 			completion = case.value
 			assert(addon.API.GetQuestLogInfo(7).isComplete == case.expected,
@@ -2024,6 +2095,11 @@ return rawRow end
 		end
 		local modernInfo = { title = "Modern Wolf Hunt", questID = 12345, isComplete = false }
 		C_QuestLog.GetInfo = function() return modernInfo end
+		modernInfo.level = 24
+		assert(addon.API.GetQuestLogInfo(7).questLevel == 24, "modern quest level wins when readable")
+		modernInfo.level = secret
+		assert(addon.API.GetQuestLogInfo(7).questLevel == 20, "inaccessible modern level permits the independent legacy field")
+		modernInfo.level = nil
 		for _, legacyCompletion in ipairs({ -1, 1 }) do
 			completion = legacyCompletion
 			local merged = addon.API.GetQuestLogInfo(7)

@@ -176,6 +176,7 @@ QT:RegisterTest("client locale renders event classes and locally resolved quest 
 	assert(row.name == "Native title " .. locale)
 	assert(row.questText:find(T("Your quest status") .. ": " .. T("Not Started"), 1, true))
 	assert(row.questText:find(T("Shareable") .. ": " .. T("Unknown"), 1, true))
+	assert(row.questText:find("\n\n|cff909090" .. T("Quest ID") .. ": 12345|r", 1, true))
 end, { locale = "client" })
 
 QT:RegisterTest("client locale renders minimap menus tooltip and settings status", function()

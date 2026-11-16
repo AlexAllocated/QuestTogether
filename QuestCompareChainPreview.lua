@@ -50,6 +50,7 @@ function QT:ConfigurePartyQuestChainPreview(preview)
 		"GetBestMapForUnit", "GetQuestLineInfo", "GetQuestLineQuests", "GetQuestChainQuestTitle",
 		"RequestQuestChainQuestData", "RequestQuestLinesForMap", "GetQuestChainCurrentMapID",
 		"GetPlayerMapID", "GetCharacterQuestHistoryStatus", "GetQuestChainUnitInfo", "GetActiveTrackedQuestID",
+		"GetQuestDifficultyLevel", "GetQuestDifficultyColor", "GetQuestGroupRecommended",
 	}) do preview.API[key] = owner.API[key] end
 	for _, method in ipairs({
 		"NormalizeQuestID", "ReadCharacterQuestHistoryStatus", "AttachPartyQuestChains", "CancelPartyQuestChains",

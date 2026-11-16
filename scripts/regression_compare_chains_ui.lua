@@ -12,26 +12,44 @@ local function Open(expanded)
 	})
 	a.options.reduceMotion = true
 	a.chainFixtureOpen, a.chainFixtureInstance, a.chainFixtureAvailable = expanded ~= false, "chain:fixture", true
+	a.chainFixtureGrouped = true
 	a.chainFixtureOrigin = "quest:1"
-	function a:ShowSettingsTooltip(_, title, text) self.tooltip = { title, text } end
-	function a:HideSettingsTooltip() self.tooltip = nil end
+	function a:ShowSettingsTooltip(owner, title, text) self.tooltip, self.tooltipOwner = { title, text }, owner end
+	function a:HideSettingsTooltip(owner)
+		if not owner or owner == self.tooltipOwner then self.tooltip, self.tooltipOwner = nil, nil end
+	end
 	function a:BuildPartyQuestCompareDisplayRows(roots)
-		local rows = { { rowId = "chainGroup:1", kind = "chainGroup", groupId = 1, title = "Related quests", cells = {}, selectable = true, expanded = true } }
+		local rows = {}
+		if self.chainFixtureGrouped then
+			rows[1] = { rowId = "chainGroup:1", kind = "chainGroup", groupId = 1, chainGroupId = 1,
+				title = "Related quests", cells = {}, selectable = true, expanded = not self.chainFixtureGroupCollapsed }
+		end
 		for _, row in ipairs(roots) do
 			row.rowId = "quest:" .. row.questId
 			row.chainAvailable = self.chainFixtureAvailable
 			row.chainExpanded = self.chainFixtureOpen and row.rowId == self.chainFixtureOrigin
+			row.chainGroupId, row.chainGroupMember, row.chainGroupEnd = nil, nil, nil
 		end
+		if self.chainFixtureGrouped and self.chainFixtureGroupCollapsed then rows[#rows + 1] = roots[2]; return rows end
 		rows[#rows + 1] = roots[1]
+		if self.chainFixtureObjectives then
+			rows[#rows + 1] = { rowId = "quest:1:member", kind = "member", questId = 1, title = "Player", cells = {} }
+			rows[#rows + 1] = { rowId = "quest:1:objective", kind = "objective", questId = 1, title = "Objective", cells = {}, fraction = 0.5 }
+		end
 		if self.chainFixtureOpen then
 			rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":notice", kind = "chainNotice", title = "Partial quest chain information", cells = {}, chainInstanceId = self.chainFixtureInstance }
 			for id = 1, 30 do
 				rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":quest:" .. id, kind = "chainStep", questId = id,
 					title = id == 1 and "Known quest" or "Future quest", cells = { id == 1 and "Have" or "Unknown", "Absent" },
 					selectable = true, chainInstanceId = self.chainFixtureInstance, depth = id % 3,
+					spoilerHidden = id ~= 1,
 					memberPrerequisiteText = { "Known prerequisites met", "Prerequisites unknown" } }
 			end
 			rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":more:later", kind = "chainMore", title = "Show later quests", cells = {}, selectable = true, direction = "later", chainInstanceId = self.chainFixtureInstance }
+		end
+		if self.chainFixtureGrouped then
+			for index = 2, #rows do rows[index].chainGroupId, rows[index].chainGroupMember = 1, true end
+			rows[#rows].chainGroupEnd = true
 		end
 		rows[#rows + 1] = roots[2]
 		return rows
@@ -64,6 +82,46 @@ local function Key(frame, key) frame.keyboardInput:RunScript("OnKeyDown", key); 
 local function Row(frame, rowID)
 	for _, row in ipairs(frame.rows) do if row.data and row.data.rowId == rowID then return row end end
 end
+
+QT:RegisterTest("chain UI group boundaries indent only members and survive scrolling collapse and ungrouping", function()
+	local a, frame, session = Open()
+	a.chainFixtureObjectives, session.expandedQuestIds[1] = true, true
+	a:RenderPartyQuestCompare()
+	local heading, root = assert(Row(frame, "chainGroup:1")), assert(Row(frame, "quest:1"))
+	Equal(heading.title.points[1][2], 28); Equal(root.title.points[1][2], 46)
+	Equal(root.expander.points[1][2], 24); Equal(root.partySummary.points[1][2], 46)
+	assert(heading.groupRail:IsShown() and root.groupRail:IsShown()); Equal(root.groupEnd:IsShown(), false)
+	local columnX = root.cellShades[1].points[1][2]
+	for _, id in ipairs({ "quest:1:member", "quest:1:objective" }) do
+		local detail = assert(Row(frame, id))
+		assert(detail.groupRail:IsShown()); Equal(detail.groupRail:GetHeight(), detail:GetHeight())
+		Equal(detail.groupEnd:IsShown(), false)
+	end
+	local objective = Row(frame, "quest:1:objective")
+	Equal(objective.title.points[1][2], 82); Equal(objective.progressTrack.points[1][2], 82)
+	local step = assert(Row(frame, "chain:fixture:quest:1"))
+	Equal(step.title.points[1][2], 72); Equal(step.branch.points[1][2], 57)
+	assert(step.groupRail:IsShown()); Equal(step.cellShades[1].points[1][2], columnX)
+	a:ScrollPartyQuestCompareToRow(frame, "quest:2")
+	local last, unrelated = assert(Row(frame, "chain:fixture:more:later")), assert(Row(frame, "quest:2"))
+	assert(last.groupRail:IsShown() and last.groupEnd:IsShown())
+	Equal(last.groupEnd.points[1][3], 1 - last:GetHeight())
+	Equal(unrelated.title.points[1][2], 28); Equal(unrelated.expander.points[1][2], 6)
+	Equal(unrelated.cellShades[1].points[1][2], columnX)
+	Equal(unrelated.groupRail:IsShown(), false); Equal(unrelated.groupEnd:IsShown(), false)
+	a.chainFixtureGroupCollapsed = true; a:RenderPartyQuestCompare()
+	heading, unrelated = assert(Row(frame, "chainGroup:1")), assert(Row(frame, "quest:2"))
+	Equal(heading.groupRail:IsShown(), false); Equal(heading.groupEnd:IsShown(), false)
+	Equal(unrelated.groupRail:IsShown(), false); Equal(unrelated.title.points[1][2], 28)
+	a.chainFixtureGroupCollapsed, a.chainFixtureGrouped = false, false
+	a:RenderPartyQuestCompare(); a:ScrollPartyQuestCompareToRow(frame, "quest:1")
+	root = assert(Row(frame, "quest:1"))
+	Equal(root.title.points[1][2], 28); Equal(root.expander.points[1][2], 6)
+	Equal(root.groupRail:IsShown(), false); Equal(root.groupEnd:IsShown(), false)
+	Equal(Row(frame, "quest:1:objective").progressTrack.points[1][2], 64)
+	Equal(session.expandedQuestIds[1], true)
+	Equal(a.invalidCalls, nil)
+end)
 
 QT:RegisterTest("chain UI keyboard traverses distinct quest instances and offscreen branch controls", function()
 	local a, frame, session = Open()
@@ -105,7 +163,7 @@ QT:RegisterTest("chain UI step actions use spoiler-safe cached text and per-memb
 		return true
 	end
 	Key(frame, "ENTER")
-	Equal(labels[1], "Known quest"); Equal(labels[2], "Find quest giver")
+	Equal(labels[1], "[?] Known quest"); Equal(labels[2], "Find quest giver")
 	callbacks[1](); Equal(a.actedOn, target)
 	a.actedOn = nil; a.chainFixtureInstance = "chain:replacement"; a:RenderPartyQuestCompare()
 	callbacks[1](); Equal(a.actedOn, nil)
@@ -123,7 +181,7 @@ QT:RegisterTest("chain UI preserves independent objective geometry and uses no p
 	assert(selected and selected.data.kind == "chainStep")
 	a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:30")
 	Row(frame, "chain:fixture:quest:30"):RunScript("OnEnter")
-	Equal(a.tooltip[1], "Future quest")
+	Equal(a.tooltip[1], "[?] Future quest")
 	Equal(#frame.navigationRows, 34) -- Notices remain readable but do not trap direction navigation.
 	a:SelectPartyQuestKeyboardRow(frame, { rowId = "quest:1", questId = 1 }, "chain")
 	a:ScrollPartyQuestCompareToRow(frame, "quest:1")
@@ -133,6 +191,117 @@ QT:RegisterTest("chain UI preserves independent objective geometry and uses no p
 	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
 	Equal(a.chainFixtureOpen, true); Equal(#frame.navigationRows, 34)
 	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("quest hover tooltips distinguish same names and recycled chain steps without revealing titles", function()
+	local a, frame = Open()
+	function a:GetQuestChainQuestInfo() error("tooltips must not query provider names") end
+	function a:GetLocalizedQuestTitle() error("tooltips must preserve the row's spoiler policy") end
+	local function Check(control, id, title)
+		control:RunScript("OnEnter")
+		assert(a.tooltip and a.tooltip[2]:find(QT.Translate("Quest ID") .. ": " .. id .. "|r", 1, true))
+		if title then Equal(a.tooltip[1], title) end
+		control:RunScript("OnLeave")
+		Equal(a.tooltip, nil)
+	end
+	local root = assert(Row(frame, "quest:1"))
+	Check(root, 1, "[?] Known quest")
+	Check(root.chain, 1, QT.Translate("Close chain"))
+	Check(root.journal, 1, QT.Translate("Open in Quest Log"))
+	Check(root.focusCells[1], 1)
+	local first = assert(Row(frame, "chain:fixture:quest:1"))
+	Check(first, 1, "[?] Known quest")
+	Check(first.cellTooltips[2], 1)
+	Check(first.focusCells[1], 1)
+	local second = assert(Row(frame, "chain:fixture:quest:2"))
+	second.data.title = "Known quest"
+	Check(second, 2, "[?] Known quest")
+	Check(second.cellTooltips[2], 2)
+	a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:30")
+	local last = assert(Row(frame, "chain:fixture:quest:30"))
+	Check(last, 30, "[?] Future quest")
+	Check(last.cellTooltips[1], 30)
+	a:ScrollPartyQuestCompareToRow(frame, "quest:1")
+	Check(assert(Row(frame, "quest:1")), 1, "[?] Known quest")
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("quest hover tooltips retire child owners before pooled rows represent another quest", function()
+	local a, frame = Open()
+	for _, role in ipairs({ "title", "chain", "journal", "focus", "status" }) do
+		local rowID = role == "status" and "chain:fixture:quest:1" or "quest:1"
+		a:ScrollPartyQuestCompareToRow(frame, rowID)
+		local row = assert(Row(frame, rowID))
+		local control = role == "title" and row or role == "focus" and row.focusCells[1]
+			or role == "status" and row.cellTooltips[2] or row[role]
+		control:RunScript("OnEnter")
+		Equal(a.tooltipOwner, control)
+		assert(a.tooltip[2]:find("Quest ID: 1|r", 1, true))
+		a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:30")
+		Equal(a.tooltip, nil)
+		Equal(a.tooltipOwner, nil)
+	end
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain UI shows cached quest levels and difficulty colors while future titles stay muted", function()
+	local a, frame = Open()
+	local build = a.BuildPartyQuestCompareDisplayRows
+	function a:BuildPartyQuestCompareDisplayRows(roots)
+		local rows = build(self, roots)
+		for _, data in ipairs(rows) do
+			if data.questId then
+				data.questLevel = 20 + data.questId
+				data.questGroupRecommended = data.questId == 1
+				data.questDifficultyColor = { r = 1, g = 0.5, b = 0.25 }
+			end
+		end
+		return rows
+	end
+	for _, light in ipairs({ false, true }) do
+		a.options.lightMode = light
+		a:RenderPartyQuestCompare()
+		local root, future = assert(Row(frame, "quest:1")), assert(Row(frame, "chain:fixture:quest:2"))
+		Equal(root.title:GetText(), "[21+] Known quest")
+		root:RunScript("OnEnter"); Equal(a.tooltip[1], "[21+] Known quest")
+		Equal(root.title.textColor[1], light and 0.5 or 1); Equal(root.title.textColor[2], light and 0.25 or 0.5)
+		Equal(future.title:GetText(), "[22] Future quest")
+		Equal(future.title.textColor[1], light and 0.42 or 0.64)
+		Equal(future.title.textColor[1], future.title.textColor[2])
+		future:RunScript("OnEnter")
+		Equal(a.tooltip[1], "[22] Future quest")
+		a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:30")
+		a:ScrollPartyQuestCompareToRow(frame, "quest:1")
+		root = assert(Row(frame, "quest:1"))
+		Equal(root.title.textColor[1], light and 0.5 or 1); Equal(root.title.textColor[2], light and 0.25 or 0.5)
+	end
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain UI owned and completed member tooltips do not inherit another players prerequisites", function()
+	local a, frame = Open()
+	local build = a.BuildPartyQuestCompareDisplayRows
+	function a:BuildPartyQuestCompareDisplayRows(roots)
+		local rows = build(self, roots)
+		for _, row in ipairs(rows) do
+			if row.kind == "chainStep" and row.questId == 1 then
+				row.cells, row.hint = { "Absent", self.testOwnedStatus }, nil
+				row.memberPrerequisiteText = { "Prerequisites not met", "" }
+				row.prerequisiteText = "Prerequisites not met"
+			end
+		end
+		return rows
+	end
+	for _, status in ipairs({ "Have", "Ready", "Completed" }) do
+		a.testOwnedStatus = status; a:RenderPartyQuestCompare()
+		local row = assert(Row(frame, "chain:fixture:quest:1"))
+		row.cellTooltips[2]:RunScript("OnEnter")
+		assert(a.tooltip[2]:find(status == "Have" and "In progress" or status, 1, true))
+		assert(a.tooltip[2]:find("Quest ID: 1", 1, true)); assert(not a.tooltip[2]:find("Prerequisites", 1, true))
+		row.cellTooltips[1]:RunScript("OnEnter")
+		assert(a.tooltip[2]:find("Prerequisites not met", 1, true))
+		row:RunScript("OnEnter"); assert(not a.tooltip[2]:find("Prerequisites", 1, true))
+	end
 end)
 
 QT:RegisterTest("chain UI toggle labels follow expansion and stale menu actions cannot reverse later choices", function()

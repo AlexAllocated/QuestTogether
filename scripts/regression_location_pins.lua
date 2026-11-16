@@ -915,7 +915,7 @@ Register("own chat tooltip reads live super tracking without a received peer rec
 	local state = a.chatLogPlayerTooltipState
 	assert(state.tooltipLabel.text:find("Tracked quest: Local quest 42", 1, true))
 	assert(state.tooltipIntro.text:find("Level 60 Human", 1, true))
-	assert(state.tooltipLabel.text:match("\n\n|cff909090v5%.16%.7|r$"))
+	assert(state.tooltipLabel.text:match("\n\n|cff909090v5%.16%.7|r\n\n|cff909090Quest ID: 42|r$"))
 	Equal(state.tooltipLabel.text:find("Tracked quests:", 1, true), nil)
 	Equal(state.tooltipIntro.text:find("Solo", 1, true), nil)
 	Equal(state.tooltipIntro.text:find("Party status unknown", 1, true), nil)
@@ -923,11 +923,13 @@ Register("own chat tooltip reads live super tracking without a received peer rec
 	id = 43
 	a:UpdateChatLogPlayerTooltip()
 	assert(state.tooltipLabel.text:find("Tracked quest: Local quest 43", 1, true))
+	assert(state.tooltipLabel.text:match("\n\n|cff909090Quest ID: 43|r$"))
 	Equal(state.tooltipLabel.text:find("Tracked quests:", 1, true), nil)
 	assert(state.tooltipIntro.text:find("Party of 3", 1, true))
 	id = nil
 	a:UpdateChatLogPlayerTooltip()
 	Equal(state.tooltipLabel.text:find("Tracked quest:", 1, true), nil)
+	Equal(state.tooltipLabel.text:find("Quest ID:", 1, true), nil)
 	id = 43
 	a.blocked = true
 	a:UpdateChatLogPlayerTooltip()
@@ -978,6 +980,9 @@ Register("quest hover shows local status and objectives at the cursor and clears
 	}) do
 		assert(state.tooltipLabel.text:find(text, 1, true), text)
 	end
+	assert(state.tooltipLabel.text:match("\n\n|cff909090Quest ID: 42|r$"))
+	local _, idCount = state.tooltipLabel.text:gsub("Quest ID:", "")
+	Equal(idCount, 1)
 	Equal(state.tooltipFaction.shown, false)
 	Equal(state.tooltipLabel.text:find("QT Version", 1, true), nil)
 	Equal(state.tooltip.points[1][4], 112)
@@ -988,6 +993,7 @@ Register("quest hover shows local status and objectives at the cursor and clears
 	Equal(state.tooltipLabel.text:find("Wolves", 1, true), nil)
 	a.enter(nil, chat, "questtogetherlog:Friend-Realm")
 	Equal(state.tooltipLabel.text:find("Your quest status", 1, true), nil)
+	Equal(state.tooltipLabel.text:find("Quest ID:", 1, true), nil)
 	Equal(state.tooltipLabel.text:find("Tracked quests:", 1, true), nil)
 	assert(state.tooltipIntro.text:find("Party status unknown", 1, true))
 	a.enter(nil, chat, "questtogetherquest:42", "[Wolf Hunt]")
@@ -1344,6 +1350,7 @@ Register("partner dot tooltips show localized super-tracking and clear it on new
 		a:RefreshPlayerLocationPins()
 		Pin(a, surface).frame.scripts.OnEnter({})
 		assert(a.locationPinState.tooltipLabel.text:find("Tracked quest: Une quête ||cffff0000test", 1, true))
+		assert(a.locationPinState.tooltipLabel.text:match("\n\n|cff909090Quest ID: 42|r$"))
 		a.title = nil
 		a.qtPlayerPresenceState.partnerQuests["Friend-Realm"].title = "Sender |Hquest:42|hname|h"
 		a:RefreshPlayerLocationPins()
@@ -1354,10 +1361,12 @@ Register("partner dot tooltips show localized super-tracking and clear it on new
 		a.qtPlayerPresenceState.questPartners["Friend-Realm"].sequence = 2
 		a:RefreshPlayerLocationPins()
 		Equal(a.locationPinState.tooltipLabel.text:find("Tracked quest:", 1, true), nil)
+		Equal(a.locationPinState.tooltipLabel.text:find("Quest ID:", 1, true), nil)
 		a.qtPlayerPresenceState.questPartners["Friend-Realm"].sequence = 1
 		a.now = 165
 		a:RefreshPlayerLocationPins()
 		Equal(a.locationPinState.tooltipLabel.text:find("Tracked quest:", 1, true), nil)
+		Equal(a.locationPinState.tooltipLabel.text:find("Quest ID:", 1, true), nil)
 	end
 end)
 

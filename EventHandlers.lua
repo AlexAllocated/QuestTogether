@@ -333,6 +333,9 @@ function QuestTogether:PLAYER_LEVEL_UP(_, newLevel)
 	if not level or level <= 0 or level ~= math.floor(level) then
 		return false
 	end
+	-- Native difficulty colors depend on the player's level. Rebuild their
+	-- session cache through the normal deferred preparation before painting.
+	if self.partyQuestCompareSession and self.QueuePartyQuestCompareRender then self:QueuePartyQuestCompareRender() end
 
 	local emoteToken = self:PickRandomCompletionEmote()
 	-- Publish even when our own emotes are disabled; receivers choose whether to react.

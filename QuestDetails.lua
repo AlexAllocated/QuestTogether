@@ -2,6 +2,15 @@ local QT = _G.QuestTogether
 local L = QT.Translate
 local MAX_LINES, MAX_TEXT, MAX_FIELD = 128, 32768, 4096
 
+function QT:AppendQuestIDToTooltipText(questID, text)
+	local id = self:NormalizeQuestID(questID)
+	if not id or id <= 0 then
+		return text
+	end
+	text = self:CanAccessValue(text) and type(text) == "string" and text or ""
+	return text .. (text ~= "" and "\n\n" or "") .. "|cff909090" .. L("Quest ID") .. ": " .. tostring(id) .. "|r"
+end
+
 local function PlainText(addon, value)
 	if not addon:CanAccessValue(value) or type(value) ~= "string" then
 		return ""

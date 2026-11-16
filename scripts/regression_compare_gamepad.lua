@@ -276,7 +276,7 @@ QT:RegisterTest("party log native presentation refreshes highlights and a recycl
 	a:Advance(0)
 	Equal(frame.rows[1].keyboardHighlight:IsShown(), true)
 	Equal(frame.rows[2].keyboardHighlight:IsShown(), false)
-	Equal(a.tooltip.title, "Quest 01")
+	Equal(a.tooltip.title, "[?] Quest 01")
 	local member = session.members[1].name
 	a:SetPartyQuestColumnCollapsed(member, true, session)
 	a:RenderPartyQuestCompare()
@@ -284,7 +284,7 @@ QT:RegisterTest("party log native presentation refreshes highlights and a recycl
 	a:SelectNative(frame, status)
 	a:Advance(0)
 	Equal(a.tooltip.owner, status)
-	Equal(a.tooltip.text, "Have")
+	Equal(a.tooltip.text, "Have\n\n|cff909090Quest ID: 1|r")
 	local shows = a.tooltipShows
 	a.nativePolicies[frame].onSelection(frame, status)
 	a:Advance(0)
@@ -293,13 +293,13 @@ QT:RegisterTest("party log native presentation refreshes highlights and a recycl
 	a:RefreshPartyQuestGamepad(frame) -- Same native pointer: the double emits no selection/enter callback.
 	a:Advance(0)
 	Equal(a.nativeButton, status)
-	Equal(a.tooltip.text, "Completed")
+	Equal(a.tooltip.text, "Completed\n\n|cff909090Quest ID: 1|r")
 	Move(a, frame, "DOWN")
 	a:Advance(0)
 	Equal(frame.rows[1].keyboardHighlight:IsShown(), false)
 	Equal(frame.rows[2].keyboardHighlight:IsShown(), true)
 	Equal(a.tooltip.owner, a.nativeButton)
-	Equal(a.tooltip.text, "Have")
+	Equal(a.tooltip.text, "Have\n\n|cff909090Quest ID: 2|r")
 	a.nativePolicies[frame].onFocus(frame, false)
 	a.nativeFrame = nil
 	a:Advance(0)

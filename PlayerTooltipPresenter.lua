@@ -82,7 +82,6 @@ function QuestTogether:GetChatLogQuestTooltipRow(questID, fallbackTitle)
 	local lines = {
 		L("Your quest status") .. ": " .. L(self:GetQuestStatusLabel(questID)),
 		L("Shareable") .. ": " .. L(self:GetQuestShareableStatusLabel(questID)),
-		"|cff909090" .. L("Quest ID") .. ": " .. tostring(questID) .. "|r",
 	}
 	-- Read only QT's own current objective text, never infer the sender's
 	-- progress from our quest stage. A missing local quest has no objectives.
@@ -97,7 +96,7 @@ function QuestTogether:GetChatLogQuestTooltipRow(questID, fallbackTitle)
 			end
 		end
 	end
-	return { questID = questID, name = title, questText = table.concat(lines, "\n") }
+	return { questID = questID, name = title, questText = self:AppendQuestIDToTooltipText(questID, table.concat(lines, "\n")) }
 end
 
 local function TooltipTextWidth(addon, label, maxWidth)
@@ -274,7 +273,7 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 	end
 	local factionTexture = row.faction == "Alliance" and "Interface\\TargetingFrame\\UI-PVP-Alliance"
 		or row.faction == "Horde" and "Interface\\TargetingFrame\\UI-PVP-Horde"
-	local text, introText, lastUpdate
+	local text, introText, lastUpdate, trackedQuestID
 	local party = not row.questID and addon:GetPlayerPartyVisualInfo(row.name) or nil
 	local partyMembers, knownPartyMembers = PartyTooltipMembers(addon, party, row)
 	local partySize = Number(addon, party and party.size)
@@ -317,6 +316,7 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 			text = text .. "\n" .. L("\n|cff40ff40Looking for Questing Partners|r"):gsub("|cff40ff40", "|cffffd200")
 			local questID, sourceTitle = addon:GetPlayerPartnerQuestID(row.name)
 			if questID then
+				trackedQuestID = questID
 				text = text
 					.. "|cffffd200"
 					.. L("\nTracked quest: ")
@@ -359,6 +359,7 @@ function QuestTogether:BuildPlayerTooltipModel(row)
 		if partyKey and partySize <= 5 and not party.members and knownPartyMembers < partySize then
 			introText = introText .. (partyText and "\n" or "\n\n") .. "|cff909090" .. L("Loading party members…") .. "|r"
 		end
+		text = addon:AppendQuestIDToTooltipText(trackedQuestID, text)
 	end
 	return {
 		title = classColor .. Text(addon, row.name) .. "|r",

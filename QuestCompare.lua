@@ -545,6 +545,53 @@ function QuestTogether:OnPartyQuestRosterChanged()
 	self:QueuePartyQuestSharePrompt()
 end
 
+-- Run in deferred snapshot preparation, never from row layout or hover. The
+-- resulting primitives belong to this session and can be painted repeatedly.
+function QuestTogether:PreparePartyQuestPresentation(session, ids, metadata)
+	if self.partyQuestCompareSession ~= session or self:IsWorkBlocked("quest_snapshot_refresh") then return end
+	local presentation, palette = {}, {}
+	local groupRecommendations = session.questGroupRecommendations or {}
+	session.questGroupRecommendations = groupRecommendations
+	local function Level(value)
+		local level = self:SafeToNumber(value)
+		return level and level > 0 and level <= 1000 and level == math.floor(level) and level or nil
+	end
+	local function Read(fn, ...)
+		if type(fn) ~= "function" then return nil end
+		local ok, value = pcall(fn, ...)
+		if ok then return value end
+	end
+	local function Boolean(value)
+		if self:CanAccessValue(value) and type(value) == "boolean" then return value end
+	end
+	for _, id in ipairs(ids or {}) do
+		local snapshot = self.GetQuestSnapshot and self:GetQuestSnapshot(id)
+		local info = metadata and metadata[id]
+		local level = Level(Read(self.API.GetQuestDifficultyLevel, id))
+			or Level(snapshot and snapshot.questLevel) or Level(info and info.questLevel)
+		local recommended = Boolean(Read(self.API.GetQuestGroupRecommended, id))
+		if recommended == nil then recommended = Boolean(snapshot and snapshot.questGroupRecommended) end
+		if recommended == nil then recommended = Boolean(info and info.questGroupRecommended) end
+		if recommended ~= nil then groupRecommendations[id] = recommended
+		else recommended = groupRecommendations[id] end
+		local color
+		if level then
+			if palette[level] == nil then
+				local native = Read(self.API.GetQuestDifficultyColor, level)
+				local r, g, b
+				if self:CanAccessTable(native) then
+					r, g, b = self:SafeToNumber(native.r), self:SafeToNumber(native.g), self:SafeToNumber(native.b)
+				end
+				palette[level] = r and g and b and r >= 0 and r <= 1 and g >= 0 and g <= 1 and b >= 0 and b <= 1
+					and { r = r, g = g, b = b } or false
+			end
+			color = palette[level] or nil
+		end
+		presentation[id] = { questLevel = level, questDifficultyColor = color, questGroupRecommended = recommended }
+	end
+	session.questPresentation = presentation
+end
+
 -- Absence is evidence only after the complete snapshot arrives. Partial lists,
 -- timeouts and restricted local reads must never become a false "Missing".
 function QuestTogether:BuildPartyQuestDiffRows()
@@ -577,6 +624,10 @@ function QuestTogether:BuildPartyQuestDiffRows()
 			cells = {},
 			missing = 0,
 		}
+		local presentation = session.questPresentation and session.questPresentation[id]
+		row.questLevel = presentation and presentation.questLevel
+		row.questGroupRecommended = presentation and presentation.questGroupRecommended
+		row.questDifficultyColor = presentation and presentation.questDifficultyColor
 		for i, member in ipairs(session.members) do
 			local quest = member.entries[id]
 			row.cells[i] = quest and (quest.isComplete and "Ready" or "Have")

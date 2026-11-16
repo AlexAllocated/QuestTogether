@@ -261,7 +261,8 @@ QT:RegisterTest("compact quest states use font-independent markers and retain fu
 			Equal(row.focusCells[2]:IsShown(), state == "Have" or state == "Ready")
 			row.cellTooltips[2]:RunScript("OnEnter")
 			Equal(a.tooltip[1], member.name)
-			Equal(a.tooltip[2], QT.Translate(state == "Absent" and "Not in log" or state))
+			Equal(a.tooltip[2], QT.Translate(state == "Absent" and "Not in log" or state)
+				.. "\n\n|cff909090" .. QT.Translate("Quest ID") .. ": " .. row.data.questId .. "|r")
 		end
 		assert(markers.Ready ~= markers.Completed and markers.Completed ~= markers.Missing)
 		a:SetPartyQuestColumnCollapsed(member.name, false, session)

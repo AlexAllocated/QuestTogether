@@ -60,6 +60,23 @@ local function FlushRefresh(a)
 	end
 end
 
+QT:RegisterTest("quest hover IDs preserve tooltip content and reject inaccessible quest identities without title reads", function()
+	local a = Fixture()
+	local body = "|cffffd200Future quest|r\nDetails are hidden."
+	local footer = "|cff909090Quest ID: 12345|r"
+	assert(a:AppendQuestIDToTooltipText("12345", body) == body .. "\n\n" .. footer)
+	assert(a:AppendQuestIDToTooltipText(12345, "") == footer)
+	assert(a:AppendQuestIDToTooltipText(12345, nil) == footer)
+	local inaccessible = setmetatable({}, { __tostring = function() error("inaccessible") end })
+	function a:CanAccessValue(value) return value ~= inaccessible and QT.CanAccessValue(self, value) end
+	for _, id in ipairs({ inaccessible, false, {}, "invalid", 0, -1, 0.1, math.huge }) do
+		assert(a:AppendQuestIDToTooltipText(id, body) == body)
+	end
+	assert(a:AppendQuestIDToTooltipText(nil, body) == body)
+	assert(a:AppendQuestIDToTooltipText(12345, inaccessible) == footer)
+	assert(a.reads == 0 and a.requests == 0, "adding an ID must not read native text or reveal a spoiler title")
+end)
+
 QT:RegisterTest("quest reader copies generic tooltip prose and both columns without retaining foreign data", function()
 	local a = Fixture()
 	a.data = { dataInstanceID = 42, lines = {

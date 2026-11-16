@@ -132,6 +132,8 @@ local function Populate(preview)
 	end
 	preview.partyNavigationState = { peers = {} }
 	preview.partyQuestCompareSession = session
+	local ids = {}; for id in pairs(preview.questCatalog) do ids[#ids + 1] = id end
+	preview:PreparePartyQuestPresentation(session, ids)
 	preview.incompleteData = false
 	preview.statuses = {}
 	preview.previewFollowing, preview.previewFocus, preview.previewFollowStatus = nil, nil, nil
@@ -157,6 +159,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		GetScrollWindowTheme = self.GetScrollWindowTheme,
 		GetPartyQuestSnapshotLabel = self.GetPartyQuestSnapshotLabel,
 		BuildPartyQuestDiffRows = self.BuildPartyQuestDiffRows,
+		PreparePartyQuestPresentation = self.PreparePartyQuestPresentation,
 		BuildPartyQuestCompareDisplayRows = self.BuildPartyQuestCompareDisplayRows,
 		AppendPartyQuestObjectiveRows = self.AppendPartyQuestObjectiveRows,
 		NormalizeQuestObjectiveCounters = self.NormalizeQuestObjectiveCounters,
@@ -165,6 +168,25 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		GetPartyQuestReadiness = self.GetPartyQuestReadiness,
 		CreatePartyQuestCompareWindow = self.CreatePartyQuestCompareWindow,
 	}
+	preview.API.GetQuestDifficultyLevel = function(id)
+		local quest = preview.questCatalog and preview.questCatalog[id]
+		if preview.liveQuestData and quest and not quest.mockIndex and owner.API.GetQuestDifficultyLevel then
+			return owner.API.GetQuestDifficultyLevel(id)
+		end
+	end
+	preview.API.GetQuestDifficultyColor = function(level)
+		return owner.API.GetQuestDifficultyColor and owner.API.GetQuestDifficultyColor(level)
+	end
+	preview.API.GetQuestGroupRecommended = function(id)
+		local quest = preview.questCatalog and preview.questCatalog[id]
+		if preview.liveQuestData and quest and not quest.mockIndex and owner.API.GetQuestGroupRecommended then
+			return owner.API.GetQuestGroupRecommended(id)
+		end
+	end
+	function preview:GetQuestSnapshot(id)
+		local quest = self.questCatalog and self.questCatalog[id]
+		if self.liveQuestData and quest and not quest.mockIndex then return owner:GetQuestSnapshot(id) end
+	end
 	-- Presentation infrastructure is owned by this preview instance; only native
 	-- frame construction and settings reads are delegated to the live addon.
 	preview.windowControllers, preview.ownedUICleanupState = {}, nil
@@ -551,6 +573,9 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	end
 	function preview:ShowSettingsTooltip(...)
 		return owner:ShowSettingsTooltip(...)
+	end
+	function preview:AppendQuestIDToTooltipText(...)
+		return owner:AppendQuestIDToTooltipText(...)
 	end
 	function preview:HideSettingsTooltip(...)
 		return owner:HideSettingsTooltip(...)

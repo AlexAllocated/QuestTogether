@@ -12,7 +12,7 @@ local RELATION_FIELDS = {
 local META_FIELDS = {
 	"name", "startedBy", "requiredLevel", "requiredMaxLevel", "requiredRaces", "requiredClasses",
 	"requiredSkill", "requiredMinRep", "requiredMaxRep", "requiredSpell", "requiredSpecialization",
-	"requiredRanks", "requiredSourceItems", "questFlags", "specialFlags",
+	"requiredRanks", "requiredSourceItems", "questFlags", "specialFlags", "questLevel",
 }
 local KINDS = {
 	preQuestGroup = { "prerequisite_all", "before", true },
@@ -347,6 +347,9 @@ local function ReadQuestieMetadata(addon, state, id)
 		end
 	end
 	info.title = Text(info.name)
+	-- questLevel is the displayed quest difficulty, not the minimum acceptance level.
+	local level = addon:SafeToNumber(info.questLevel)
+	info.questLevel = level and level > 0 and level <= 1000 and level == math.floor(level) and level or nil
 	info.name = nil
 	info.locations, info.locationReason = ReadStarters(addon, state, info.startedBy)
 	return info

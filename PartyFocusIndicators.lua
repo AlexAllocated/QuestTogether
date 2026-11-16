@@ -155,7 +155,7 @@ local function Tooltip(a, pin)
 		-- A direct follower cannot be followed back: that would form a loop.
 		text = text .. "\n" .. L("Click to follow quest focus.")
 	end
-	Call(a, pin.label, "SetText", text)
+	Call(a, pin.label, "SetText", a:AppendQuestIDToTooltipText(pin.questID, text))
 	local height = a:SafeToNumber(Call(a, pin.label, "GetStringHeight"))
 	if not height or height <= 0 then a:HideOwnedUI(pin.tooltip); return end
 	Call(a, pin.tooltip, "SetSize", 280, height + 16)

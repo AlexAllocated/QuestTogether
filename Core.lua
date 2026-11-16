@@ -145,6 +145,23 @@ local function SanitizeQuestInfoEnumValue(rawValue)
 	return numericValue
 end
 
+local function SanitizeQuestLevel(rawValue)
+	local level = QuestTogether and QuestTogether:SafeToNumber(rawValue)
+	return level and level > 0 and level <= 1000 and level == math.floor(level) and level or nil
+end
+
+local function SanitizeSuggestedQuestGroup(rawValue)
+	local size = QuestTogether and QuestTogether:SafeToNumber(rawValue)
+	if size and size >= 0 and size <= 40 and size == math.floor(size) then return size > 1 end
+	return nil
+end
+
+local function IsLegacyEliteQuestTag(tag)
+	if not CanAccessForeignValue(tag) or type(tag) ~= "string" then return nil end
+	if (type(ELITE) == "string" and tag == ELITE) or (type(GROUP) == "string" and tag == GROUP) then return true end
+	return nil
+end
+
 local function BuildSanitizedQuestLogInfoRecord(
 	questLogIndex,
 	titleValue,
@@ -156,7 +173,10 @@ local function BuildSanitizedQuestLogInfoRecord(
 	isCompleteValue,
 	questIDValue,
 	displayQuestIDValue,
-	isWorldQuestValue
+	isWorldQuestValue,
+	levelValue,
+	suggestedGroupValue,
+	questTagValue
 )
 	local numericQuestLogIndex = QuestTogether
 			and QuestTogether.SafeToNumber
@@ -170,6 +190,8 @@ local function BuildSanitizedQuestLogInfoRecord(
 	local sanitizedInfo = {
 		title = (type(titleValue) == "string" and not titleIsSecret) and titleValue or nil,
 		questLogIndex = math.floor(numericQuestLogIndex + 0.5),
+		questLevel = SanitizeQuestLevel(levelValue),
+		questGroupRecommended = SanitizeSuggestedQuestGroup(suggestedGroupValue),
 		isHeader = NormalizeQuestInfoFlagValue(isHeaderValue) == true,
 		isHidden = NormalizeQuestInfoFlagValue(isHiddenValue) == true,
 		isTask = NormalizeQuestInfoFlagValue(isTaskValue) == true,
@@ -177,6 +199,7 @@ local function BuildSanitizedQuestLogInfoRecord(
 		hasLocalPOI = NormalizeQuestLocationFlag(hasLocalPOIValue),
 		isComplete = NormalizeQuestCompletionValue(isCompleteValue) == true,
 	}
+	if IsLegacyEliteQuestTag(questTagValue) then sanitizedInfo.questGroupRecommended = true end
 
 	local numericQuestID = QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(questIDValue)
 		or nil
@@ -214,7 +237,9 @@ local function BuildSanitizedQuestLogInfoFromRawInfo(questLogIndex, rawInfo)
 		rawInfo.isComplete,
 		rawInfo.questID,
 		rawInfo.displayQuestID,
-		rawInfo.isWorldQuest
+		rawInfo.isWorldQuest,
+		rawInfo.level,
+		rawInfo.suggestedGroup
 	)
 	if not sanitizedInfo then
 		return nil
@@ -241,6 +266,9 @@ local function MergeSanitizedQuestLogInfo(primaryInfo, fallbackInfo)
 	local mergedInfo = {}
 	mergedInfo.questLogIndex = primaryInfo.questLogIndex or fallbackInfo.questLogIndex
 	mergedInfo.title = primaryInfo.title or fallbackInfo.title
+	mergedInfo.questLevel = primaryInfo.questLevel or fallbackInfo.questLevel
+	mergedInfo.questGroupRecommended = primaryInfo.questGroupRecommended
+	if mergedInfo.questGroupRecommended == nil then mergedInfo.questGroupRecommended = fallbackInfo.questGroupRecommended end
 	mergedInfo.questID = primaryInfo.questID or fallbackInfo.questID
 	mergedInfo.isHeader = primaryInfo.isHeader == true or fallbackInfo.isHeader == true
 	mergedInfo.isHidden = primaryInfo.isHidden == true or fallbackInfo.isHidden == true
@@ -3286,6 +3314,47 @@ QuestTogether.API = QuestTogether.API
 			local ok, menu = pcall(MenuUtil.CreateContextMenu, ownerFrame, generator)
 			return ok and CanAccessForeignValue(menu) and menu ~= nil
 		end,
+		GetQuestGroupRecommended = function(questID)
+			if QuestTogether:IsRuntimeRestricted() then return nil end
+			local id = QuestTogether:NormalizeQuestID(questID)
+			if not id then return nil end
+			-- The native level suffix uses IsEliteQuest. Its explicit false is
+			-- authoritative; older clients may only expose tags or a group size.
+			if C_QuestLog and type(C_QuestLog.IsEliteQuest) == "function" then
+				local ok, elite = pcall(C_QuestLog.IsEliteQuest, id)
+				if ok and CanAccessForeignValue(elite) and type(elite) == "boolean" then return elite end
+			end
+			if C_QuestLog and type(C_QuestLog.GetQuestTagInfo) == "function" then
+				local ok, info = pcall(C_QuestLog.GetQuestTagInfo, id)
+				if ok and CanAccessForeignTable(info) then
+					local tag = QuestTogether:SafeToNumber(info.tagID)
+					-- Enum.QuestTag.Group / the native elite quest tag is 1.
+					if tag == 1 or (CanAccessForeignValue(info.isElite) and info.isElite == true) then return true end
+				end
+			end
+			if C_QuestLog and type(C_QuestLog.GetSuggestedGroupSize) == "function" then
+				local ok, size = pcall(C_QuestLog.GetSuggestedGroupSize, id)
+				if ok then return SanitizeSuggestedQuestGroup(size) end
+			end
+			return nil
+		end,
+		GetQuestDifficultyLevel = function(questID)
+			if QuestTogether:IsRuntimeRestricted() then return nil end
+			local id = QuestTogether:NormalizeQuestID(questID)
+			if not id or not (C_QuestLog and type(C_QuestLog.GetQuestDifficultyLevel) == "function") then return nil end
+			local ok, level = pcall(C_QuestLog.GetQuestDifficultyLevel, id)
+			return ok and SanitizeQuestLevel(level) or nil
+		end,
+		GetQuestDifficultyColor = function(level)
+			if QuestTogether:IsRuntimeRestricted() then return nil end
+			level = SanitizeQuestLevel(level)
+			if not level or type(GetQuestDifficultyColor) ~= "function" then return nil end
+			local ok, color = pcall(GetQuestDifficultyColor, level)
+			if not ok or not CanAccessForeignTable(color) then return nil end
+			local r, g, b = QuestTogether:SafeToNumber(color.r), QuestTogether:SafeToNumber(color.g), QuestTogether:SafeToNumber(color.b)
+			if not r or not g or not b or r < 0 or r > 1 or g < 0 or g > 1 or b < 0 or b > 1 then return nil end
+			return { r = r, g = g, b = b }
+		end,
 		GetNumQuestLogEntries = function()
 			local getter = type(GetNumQuestLogEntries) == "function" and GetNumQuestLogEntries
 				or (C_QuestLog and C_QuestLog.GetNumQuestLogEntries)
@@ -3314,7 +3383,7 @@ QuestTogether.API = QuestTogether.API
 
 			local titleInfo = nil
 			if type(GetQuestLogTitle) == "function" then
-				local okTitle, title, _, _, isHeader, _, isComplete, _, questID, _, displayQuestID, isOnMap, hasLocalPOI, isTask, _ =
+				local okTitle, title, level, questTag, isHeader, _, isComplete, _, questID, _, displayQuestID, isOnMap, hasLocalPOI, isTask, _ =
 					pcall(GetQuestLogTitle, numericQuestLogIndex)
 				if okTitle then
 					titleInfo = BuildSanitizedQuestLogInfoRecord(
@@ -3328,7 +3397,10 @@ QuestTogether.API = QuestTogether.API
 						isComplete,
 						questID,
 						displayQuestID,
-						nil
+						nil,
+						level,
+						nil,
+						questTag
 					)
 				end
 			end
@@ -3338,11 +3410,15 @@ QuestTogether.API = QuestTogether.API
 				if okInfo then
 					local sanitizedInfo = BuildSanitizedQuestLogInfoFromRawInfo(numericQuestLogIndex, rawInfo)
 					if sanitizedInfo then
-						return MergeSanitizedQuestLogInfo(sanitizedInfo, titleInfo)
+						titleInfo = MergeSanitizedQuestLogInfo(sanitizedInfo, titleInfo)
 					end
 				end
 			end
 
+			if titleInfo and titleInfo.questID then
+				local recommended = QuestTogether.API.GetQuestGroupRecommended(titleInfo.questID)
+				if recommended ~= nil then titleInfo.questGroupRecommended = recommended end
+			end
 			return titleInfo
 		end,
 		GetNumQuestLeaderBoards = function(questLogIndex)
@@ -6537,7 +6613,9 @@ function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallba
 	details:SetEnabled(detailsID ~= nil)
 	details:SetTooltip(function(tooltip)
 		if self:CanAccessForeignFrame(tooltip) then
-			tooltip:SetText(detailsReason or L("Show the game's available information for this quest."))
+			tooltip:SetText(self:AppendQuestIDToTooltipText(
+				questId, detailsReason or L("Show the game's available information for this quest.")
+			))
 		end
 	end)
 	local share = rootDescription:CreateButton(L("Share"), function()
@@ -6547,7 +6625,7 @@ function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallba
 	share:SetEnabled(index ~= nil)
 	share:SetTooltip(function(tooltip)
 		if self:CanAccessForeignFrame(tooltip) then
-			tooltip:SetText(reason or L("Share this quest with your party."))
+			tooltip:SetText(self:AppendQuestIDToTooltipText(questId, reason or L("Share this quest with your party.")))
 		end
 	end)
 	local journal = rootDescription:CreateButton(L("Open in Quest Log"), function()
@@ -6557,7 +6635,9 @@ function QuestTogether:PopulateChatLogQuestMenu(rootDescription, questId, fallba
 	journal:SetEnabled(journalID ~= nil)
 	journal:SetTooltip(function(tooltip)
 		if self:CanAccessForeignFrame(tooltip) then
-			tooltip:SetText(journalReason or L("Open this quest in your quest log."))
+			tooltip:SetText(self:AppendQuestIDToTooltipText(
+				questId, journalReason or L("Open this quest in your quest log.")
+			))
 		end
 	end)
 	local compare = rootDescription:CreateButton(L("Party Quest Log"), function()

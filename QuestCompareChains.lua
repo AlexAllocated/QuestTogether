@@ -54,6 +54,12 @@ local function Resolve(state, id)
 	while id and state.aliases[id] and not seen[id] do seen[id], id = true, state.aliases[id] end
 	return id
 end
+local function HasRelatedQuests(graph, rootID)
+	-- Loading, partial data or a native line ID alone do not establish another
+	-- quest to show. A later provider snapshot can make this available.
+	for id in pairs(graph and graph.nodes or {}) do if id ~= rootID then return true end end
+	return false
+end
 
 function QT:AttachPartyQuestChains(session, previous)
 	local old = previous and previous.chains
@@ -118,7 +124,8 @@ end
 local function RetireMetadataContext(addon, session)
 	local state = session.chains
 	if not state then return end
-	local roots = state.capability.kind == "retail" and IDs(ActiveUnion(session)) or {}
+	local roots = (state.capability.kind == "retail" or state.capability.kind == "questiedb")
+		and (state.capability.state == "ready" or state.capability.state == "loading") and IDs(ActiveUnion(session)) or {}
 	addon:SetPartyQuestChainMetadataInterest(state, roots)
 end
 
@@ -177,25 +184,78 @@ local function AssignGroup(state, graph, rootID)
 	return groupID
 end
 
-local function Depths(graph)
-	local depths, incoming, outgoing, queue = {}, {}, {}, {}
-	for id in pairs(graph.nodes or {}) do incoming[id] = 0 end
+local function SharedBranch(a, b)
+	while a.depth > b.depth do a = a.parent end
+	while b.depth > a.depth do b = b.parent end
+	while a ~= b do a, b = a.parent, b.parent end
+	return a
+end
+
+local function BranchDepths(graph)
+	local depths, incoming, outgoing, connections, queue = {}, {}, {}, {}, {}
+	local count = 0
+	for id in pairs(graph.nodes or {}) do
+		depths[id], incoming[id], outgoing[id], connections[id] = 0, 0, {}, {}
+		count = count + 1
+	end
+	-- Native membership establishes no prerequisite shape. Cyclic data has no
+	-- reliable branch nesting, so retain its logical order without indentation.
+	if graph.membershipOnly or graph.cycle then return depths end
 	for _, edge in ipairs(graph.edges or {}) do
-		if incoming[edge.from] and incoming[edge.to] and edge.from ~= edge.to
+		if incoming[edge.from] and incoming[edge.to] and not edge.negative
 			and (edge.kind == "prerequisite_all" or edge.kind == "prerequisite_any" or edge.kind == "unlock") then
-			outgoing[edge.from] = outgoing[edge.from] or {}
-			outgoing[edge.from][#outgoing[edge.from] + 1] = edge.to
-			incoming[edge.to] = incoming[edge.to] + 1
+			-- Provider fields can describe the same connection more than once.
+			if not connections[edge.from][edge.to] then
+				connections[edge.from][edge.to] = true
+				outgoing[edge.from][#outgoing[edge.from] + 1] = edge.to
+				incoming[edge.to] = incoming[edge.to] + 1
+			end
 		end
 	end
-	for _, id in ipairs(IDs(incoming)) do if incoming[id] == 0 then queue[#queue + 1], depths[id] = id, 0 end end
-	local cursor = 1
+	for _, id in ipairs(IDs(incoming)) do if incoming[id] == 0 then queue[#queue + 1] = id end end
+	local cursor, rank = 1, {}
 	while cursor <= #queue do
-		local id = queue[cursor]; cursor = cursor + 1
-		for _, nextID in ipairs(outgoing[id] or {}) do
-			depths[nextID] = math.max(depths[nextID] or 0, (depths[id] or 0) + 1)
+		local id = queue[cursor]; rank[id], cursor = cursor, cursor + 1
+		for _, nextID in ipairs(outgoing[id]) do
 			incoming[nextID] = incoming[nextID] - 1
 			if incoming[nextID] == 0 then queue[#queue + 1] = nextID end
+		end
+	end
+	if #queue < count then return depths end
+	-- Redundant ancestor prerequisites are shortcuts, not additional arms. This
+	-- affects presentation only; the original relationships and order stay intact.
+	for _, id in ipairs(queue) do
+		local successors = outgoing[id]
+		if #successors > 1 then
+			table.sort(successors, function(a, b) return rank[a] < rank[b] end)
+			local lastRank, retained, reachable = rank[successors[#successors]], {}, {}
+			for _, nextID in ipairs(successors) do
+				if not reachable[nextID] then
+					retained[#retained + 1], reachable[nextID] = nextID, true
+					local pending, nextIndex = { nextID }, 1
+					while nextIndex <= #pending do
+						local current = pending[nextIndex]; nextIndex = nextIndex + 1
+						for _, descendant in ipairs(outgoing[current]) do
+							if rank[descendant] <= lastRank and not reachable[descendant] then
+								reachable[descendant], pending[#pending + 1] = true, descendant
+							end
+						end
+					end
+				end
+			end
+			outgoing[id] = retained
+		end
+	end
+	local root, branches = { depth = 0 }, {}
+	for _, id in ipairs(queue) do
+		branches[id] = branches[id] or root
+		local branch = branches[id]
+		depths[id] = branch.depth
+		for _, nextID in ipairs(outgoing[id]) do
+			-- Linear steps share a context. Only an actual fork opens new levels;
+			-- convergence returns to the common context of its incoming arms.
+			local nextBranch = #outgoing[id] > 1 and { parent = branch, depth = branch.depth + 1 } or branch
+			branches[nextID] = branches[nextID] and SharedBranch(branches[nextID], nextBranch) or nextBranch
 		end
 	end
 	return depths
@@ -266,14 +326,14 @@ function QT:PreparePartyQuestChains(session, state)
 		end
 		if ok and type(graph) == "table" then
 			graphs[id] = graph
-			if graph.lineID or (graph.total or #(graph.order or {})) > 1 then
+			if HasRelatedQuests(graph, id) then
 				local groupID = AssignGroup(state, graph, id)
 				groups[groupID] = graph
 			else state.questGroups[id] = nil end
 			for nodeID in pairs(graph.nodes or {}) do
 				local info = self.GetQuestChainQuestInfo and self:GetQuestChainQuestInfo(nodeID)
 				metadata[nodeID] = info and Copy(info) or {}
-				if (contextWanted and state.rootQuestID == id) or (nodeID == id and capability.kind == "retail") then
+				if (contextWanted and state.rootQuestID == id) or nodeID == id then
 					DemandMetadata(nodeID)
 				end
 			end
@@ -288,7 +348,7 @@ function QT:PreparePartyQuestChains(session, state)
 	for i, member in ipairs(session.members) do state.sourceEntries[i], state.sourceStates[i] = member.entries, member.state end
 	state.providerRevision = self.questChainProviderSnapshot and self.questChainProviderSnapshot.revision
 	local graph = contextWanted and graphs[state.rootQuestID]
-	state.depths = graph and (graph.depths or Depths(graph)) or {}
+	state.depths = graph and BranchDepths(graph) or {}
 	state.required, state.relationshipsByQuest = {}, {}
 	if graph then
 		local queue = {}
@@ -371,6 +431,12 @@ function QT:PreparePartyQuestChains(session, state)
 			end
 		end
 	end
+	local presentationIDs, presentationSeen = {}, {}
+	for id in pairs(union) do presentationIDs[#presentationIDs + 1], presentationSeen[id] = id, true end
+	for _, id in ipairs(interests) do
+		if not presentationSeen[id] then presentationIDs[#presentationIDs + 1], presentationSeen[id] = id, true end
+	end
+	self:PreparePartyQuestPresentation(session, presentationIDs, metadata)
 	self:SetPartyQuestChainMetadataInterest(state, metadataIDs)
 	if #metadataIDs > 0 and self.RequestQuestChainMetadata then
 		local instance, metadataGeneration = state.instance, state.metadataGeneration
@@ -546,6 +612,10 @@ local function RelationshipLabel(kind)
 	elseif kind == "unlock" then return L("Unlock connection") end
 end
 
+local function NeedsQuestRequirements(status)
+	return status ~= "Have" and status ~= "Ready" and status ~= "Completed"
+end
+
 function QT:AppendPartyQuestChainSection(rows, rootRows)
 	local session, state = self.partyQuestCompareSession, self.partyQuestCompareSession.chains
 	if not state.rootQuestID then return end
@@ -570,13 +640,18 @@ function QT:AppendPartyQuestChainSection(rows, rootRows)
 		local title, hidden = self:GetPartyQuestChainDisplayTitle(id)
 		local row = Copy(rootRows[id])
 		row.rowId, row.kind, row.questId, row.title = instance .. ":quest:" .. id, "chainStep", id, title
+		local presentation = session.questPresentation and session.questPresentation[id]
+		row.questLevel = presentation and presentation.questLevel
+		row.questGroupRecommended = presentation and presentation.questGroupRecommended
+		row.questDifficultyColor = presentation and presentation.questDifficultyColor
 		row.chainInstanceId, row.chainId, row.selectable, row.spoilerHidden = instance, instance, true, hidden
 		row.depth, row.cells, row.missing = math.min(12, state.depths[id] or 0), {}, 0
 		row.requirements = state.requirements[id]
 		for i, member in ipairs(session.members) do row.cells[i] = self:GetPartyQuestChainStatus(member, id) end
 		row.memberPrerequisiteText = {}
-		for i, requirement in ipairs(row.requirements or {}) do
-			row.memberPrerequisiteText[i] = self:DescribePartyQuestChainRequirements(requirement)
+		for i, status in ipairs(row.cells) do
+			row.memberPrerequisiteText[i] = NeedsQuestRequirements(status)
+				and self:DescribePartyQuestChainRequirements(row.requirements and row.requirements[i]) or ""
 		end
 		local relationships, seen = {}, {}
 		for _, edge in ipairs(state.relationshipsByQuest and state.relationshipsByQuest[id] or {}) do
@@ -588,15 +663,13 @@ function QT:AppendPartyQuestChainSection(rows, rootRows)
 			end
 		end
 		row.relationshipText = table.concat(relationships, "\n")
-		row.prerequisiteText = row.memberPrerequisiteText[1]
+		row.prerequisiteText = nil
 		if row.relationshipText ~= "" then
-			row.prerequisiteText = (row.prerequisiteText and row.prerequisiteText .. "\n" or "") .. row.relationshipText
-			for i, text in ipairs(row.memberPrerequisiteText) do row.memberPrerequisiteText[i] = text .. "\n" .. row.relationshipText end
+			for i, text in ipairs(row.memberPrerequisiteText) do
+				if NeedsQuestRequirements(row.cells[i]) then row.memberPrerequisiteText[i] = text .. "\n" .. row.relationshipText end
+			end
 		end
-		local ownRequirement = row.requirements and row.requirements[1]
-		row.hint = ownRequirement and (ownRequirement.state == "met" and L("Known prerequisites met")
-			or ownRequirement.state == "blocked" and L("Prerequisites not met") or L("Prerequisites unknown"))
-		if graph.nodes[id] and graph.nodes[id].missing then row.hint = L("Quest information unavailable") end
+		row.hint = graph.nodes[id] and graph.nodes[id].missing and L("Quest information unavailable") or nil
 		local history = Fresh(self, own, id)
 		if history and history.status == "completed" then completed = completed + 1
 		elseif not own.entries[id] and not (history and (history.status == "incomplete" or history.status == "repeatable")) then
@@ -624,7 +697,19 @@ end
 function QT:DecoratePartyQuestChainRows(quests, append)
 	local session, rows = self.partyQuestCompareSession, {}
 	local state = session and session.chains
-	if not state then for _, row in ipairs(quests) do append(rows, row) end; return rows end
+	local function ScopeRows(first, groupID)
+		for index = first, #rows do
+			local row = rows[index]
+			row.chainGroupId, row.chainGroupMember, row.chainGroupEnd = groupID, groupID and true or nil, nil
+		end
+	end
+	if not state then
+		for _, row in ipairs(quests) do append(rows, row) end
+		ScopeRows(1)
+		return rows
+	end
+	local groupByChain = self:GetOption("compareGroupByChain") == true
+	local openGroup = state.rootQuestID and Resolve(state, state.questGroups[state.rootQuestID])
 	local rootRows, groups, ordered = {}, {}, {}
 	for _, row in ipairs(session.unfilteredQuests or quests) do rootRows[row.questId] = row end
 	for _, row in ipairs(quests) do
@@ -633,9 +718,10 @@ function QT:DecoratePartyQuestChainRows(quests, append)
 		-- The same control remains available to close a section if its provider
 		-- becomes unavailable while that section is open.
 		row.chainAvailable = row.chainExpanded or ((state.capability.kind == "questiedb" or state.capability.kind == "retail")
-			and (state.capability.state == "ready" or state.capability.state == "loading"))
+			and (state.capability.state == "ready" or state.capability.state == "loading")
+			and HasRelatedQuests(state.graphs[row.questId], row.questId))
 		row.chainCapability = state.capability
-		local groupID = self:GetOption("compareGroupByChain") == true and Resolve(state, state.questGroups[row.questId])
+		local groupID = groupByChain and Resolve(state, state.questGroups[row.questId])
 		if groupID then
 			if not groups[groupID] then groups[groupID] = {}; ordered[#ordered + 1] = groupID end
 			groups[groupID][#groups[groupID] + 1] = row
@@ -643,8 +729,10 @@ function QT:DecoratePartyQuestChainRows(quests, append)
 	end
 	local inserted = false
 	local function AppendRoot(row)
+		local first = #rows + 1
 		append(rows, row)
 		if row.questId == state.rootQuestID then self:AppendPartyQuestChainSection(rows, rootRows); inserted = true end
+		ScopeRows(first)
 	end
 	for _, item in ipairs(ordered) do
 		if type(item) == "table" then AppendRoot(item)
@@ -657,19 +745,30 @@ function QT:DecoratePartyQuestChainRows(quests, append)
 			for id in pairs(rootRows) do if Resolve(state, state.questGroups[id]) == item then total = total + 1 end end
 			rows[#rows + 1] = {
 				rowId = "chainGroup:" .. item, kind = "chainGroup", groupId = item, selectable = true, cells = {},
+				chainGroupId = item,
 				title = title, expanded = not state.collapsed[item],
 				hint = total > #members and string.format(L("%d quests hidden by filters"), total - #members) or nil,
 			}
-			if not state.collapsed[item] then for _, row in ipairs(members) do AppendRoot(row) end end
+			if not state.collapsed[item] then
+				local first = #rows + 1
+				for _, row in ipairs(members) do AppendRoot(row) end
+				-- A filtered origin still belongs inside its visible group, before
+				-- unrelated roots that happen to follow that group in the list.
+				if not inserted and state.rootQuestID and openGroup == item then
+					self:AppendPartyQuestChainSection(rows, rootRows); inserted = true
+				end
+				ScopeRows(first, item)
+			end
+			rows[#rows].chainGroupEnd = true
 		end
 	end
 	-- Filtering active roots never lets hidden future names cause a match. Keep an opened
 	-- section only when its active group still has a matching root.
-	if not inserted and state.rootQuestID then
-		local openGroup = Resolve(state, state.questGroups[state.rootQuestID])
+	if not groupByChain and not inserted and state.rootQuestID then
 		for _, row in ipairs(quests) do
 			if openGroup and Resolve(state, state.questGroups[row.questId]) == openGroup and not state.collapsed[openGroup] then
-				self:AppendPartyQuestChainSection(rows, rootRows); break
+				local first = #rows + 1
+				self:AppendPartyQuestChainSection(rows, rootRows); ScopeRows(first); break
 			end
 		end
 	end
@@ -723,13 +822,6 @@ function QT:GetPartyQuestChainActions(row, memberName)
 	end
 	if row.action == "share" then Add(L("Share"), function() return self:SharePartyDiffQuest(id) end)
 	elseif row.action == "request" then Add(L("Request Share"), function() return self:RequestPartyQuestShare(id, row.owner) end) end
-	local prerequisite = row.prerequisiteText
-	if memberName then
-		for index, source in ipairs(session.members) do
-			if source.name == memberName then prerequisite = row.memberPrerequisiteText and row.memberPrerequisiteText[index]; break end
-		end
-	end
-	for line in (prerequisite or ""):gmatch("[^\n]+") do Add(line, function() return false end, true) end
 	if row.spoilerHidden then return actions end
 	if self.GetQuestDetailsAvailability and self.ShowQuestDetails then
 		local available = self:GetQuestDetailsAvailability(id)

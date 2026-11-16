@@ -776,6 +776,7 @@
     ],
     "QuestCompareChains.lua": [
       "Absent",
+      "Completed",
       "Have",
       "Missing",
       "Ready",

@@ -8,6 +8,21 @@ list and player columns. One chain section stays open at a time. Clicking an
 ordinary quest title still expands its objectives; objective expansions and the
 open chain are independent.
 
+The chain control appears only when QT has another related quest to show;
+standalone quests keep their ordinary controls. Quest hover tooltips include
+quest IDs, so distinct steps with the same title can be told apart. Hidden
+future titles stay hidden even when their IDs are shown.
+
+Quest rows display their level and use the game's difficulty colors. Group quests
+include `+` after the level, such as `[25+]`. An unknown level appears as `[?]`;
+minimum acceptance requirements are shown in the relevant player's cell tooltip
+when they do not have the quest. In-progress, ready and completed cells omit
+acceptance warnings, as do the general quest-row tooltips.
+Future titles are muted. Straight paths stay aligned, with indentation reserved
+for branches and their joins. Hover tooltips follow the mouse, including when
+the gamepad interface is enabled; controller selection anchors them near the
+selected control.
+
 ## Setup and client coverage
 
 | Client | Data source | What to expect |
@@ -58,7 +73,9 @@ The **Filters** menu includes two saved preferences:
 
 - **Group by chain** starts off. Turn it on to put matching active quests under
   their chain heading. Forever headings use **Related quests** with a known quest
-  title; Retail uses the native line name when available.
+  title; Retail uses the native line name when available. A group boundary and
+  indented quest titles mark its members; unrelated quests return to the normal
+  alignment outside that boundary.
 - **Hide future quest names** starts on. Concealed titles stay hidden in rows,
   search, tooltips and actions. Current party quests, locally confirmed completed
   quests and names needed to explain a known prerequisite blocker can be shown.

@@ -517,6 +517,7 @@ QT:RegisterTest("settings and minimap tooltip retirement shares cleanup and fenc
 		function a:CreateSettingsTooltipFrame(parent)
 			return QT:CreateTestUIRegion(self, parent)
 		end
+		function a:GetSettingsTooltipCursorPosition() return nil end
 		function a:GetMinimapTooltipParent()
 			return root
 		end

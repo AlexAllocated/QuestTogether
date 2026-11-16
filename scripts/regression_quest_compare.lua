@@ -1021,7 +1021,7 @@ QuestTogether:RegisterTest("late quest title notifications refresh exhausted PQL
 		local frame, session = a.partyQuestCompareWindow, a.partyQuestCompareSession
 		Equal(session.titleRequests[1].count, 2)
 		assert(not session.titleRefreshPending, "fixture must exhaust the bounded title polling")
-		Equal(frame.rows[1].title.text, "결속")
+		Equal(frame.rows[1].title.text, "[?] 결속")
 		loaded[1] = "The Binding"
 		a.now = a.now + 6
 		if mode == "cached" then
@@ -1037,7 +1037,7 @@ QuestTogether:RegisterTest("late quest title notifications refresh exhausted PQL
 		end
 		a:QUEST_DATA_LOAD_RESULT(nil, 1, true)
 		a:Advance(0.1)
-		Equal(frame.rows[1].title.text, "The Binding")
+		Equal(frame.rows[1].title.text, "[?] The Binding")
 		Equal(session.members[2].entries[1].questTitle, "결속", "presentation cannot rewrite the certified snapshot")
 		-- A queued notification must not refresh a replacement or dismissed UI.
 		a:OnPartyQuestTitleChanged(1)
@@ -1071,8 +1071,8 @@ QuestTogether:RegisterTest("remote PQL titles render plain text without rewritin
 	for _, row in ipairs(a.partyQuestCompareWindow.rows) do
 		if row.data then titles[row.data.questId] = row.title.text end
 	end
-	Equal(titles[1], "[결속]")
-	Equal(titles[2], "Quest 2")
+	Equal(titles[1], "[?] [결속]")
+	Equal(titles[2], "[?] Quest 2")
 	Equal(member.entries[1].questTitle, source)
 	Equal(member.revision, "plain-title-revision")
 	Equal(assert(a:EncodeCommRecord("QCRS", decoded)), wire)
@@ -1115,7 +1115,7 @@ QuestTogether:RegisterTest("comparison titles refresh on load results and drain 
 	local displayed = false
 	for _, row in ipairs(a.partyQuestCompareWindow.rows) do
 		if row.data and row.data.questId == id then
-			Equal(row.title.text, "A loaded local title")
+			Equal(row.title.text, "[?] A loaded local title")
 			displayed = true
 		end
 	end
@@ -1153,18 +1153,18 @@ QuestTogether:RegisterTest("quest title load events guard restrictions and canno
 	a:OpenPartyQuestCompare()
 	Reply(a, "Friend-Realm", { Quest(1, "Sent title") }, true)
 	a:Advance(0.1)
-	Equal(a.partyQuestCompareWindow.rows[1].title.text, "Sent title")
+	Equal(a.partyQuestCompareWindow.rows[1].title.text, "[?] Sent title")
 	title = "Local title"
 	a:QUEST_DATA_LOAD_RESULT(nil, 1, false)
 	a:Advance(0.1)
-	Equal(a.partyQuestCompareWindow.rows[1].title.text, "Sent title")
+	Equal(a.partyQuestCompareWindow.rows[1].title.text, "[?] Sent title")
 	a.blocked = true
 	a:QUEST_DATA_LOAD_RESULT(nil, 1, true)
 	a:Advance(0.1)
-	Equal(a.partyQuestCompareWindow.rows[1].title.text, "Sent title")
+	Equal(a.partyQuestCompareWindow.rows[1].title.text, "[?] Sent title")
 	a.blocked = false
 	a:FlushDeferredWork("test resume")
-	Equal(a.partyQuestCompareWindow.rows[1].title.text, "Local title")
+	Equal(a.partyQuestCompareWindow.rows[1].title.text, "[?] Local title")
 	-- Queue another result, then close before its callback executes.
 	a.localizedQuestTitles.entries[1].title = nil
 	a:QUEST_DATA_LOAD_RESULT(nil, 1, true)
@@ -2311,7 +2311,7 @@ QuestTogether:RegisterTest("client locale renders comparison and sharing consent
 	Equal(frame.title.text, T("Party Quest Log"))
 	Equal(frame.filter.text, T("Filters"))
 	Equal(frame.rows[1].action.text, T("Share"))
-	Equal(frame.rows[1].title.text, "Local quest")
+	Equal(frame.rows[1].title.text, "[?] Local quest")
 	frame.rows[1].action.scripts.OnClick(frame.rows[1].action)
 	Equal(a.pushes, 1)
 	function a:GetQuestTitle()
@@ -3819,8 +3819,8 @@ QuestTogether:RegisterTest("refresh retains scroll anchor and full text is acces
 	end
 	local a = Fixture(nil, entries)
 	AttachUI(a)
-	function a:ShowSettingsTooltip(_, title)
-		self.tooltipTitle = title
+	function a:ShowSettingsTooltip(_, title, text)
+		self.tooltipTitle, self.tooltipText = title, text
 	end
 	function a:HideSettingsTooltip()
 		self.tooltipTitle = nil
@@ -3839,7 +3839,8 @@ QuestTogether:RegisterTest("refresh retains scroll anchor and full text is acces
 	Equal(a.partyQuestCompareSession.scrollPixels, before)
 	local row = frame.rows[1]
 	row.scripts.OnEnter()
-	Equal(a.tooltipTitle, row.data.title)
+	Equal(a.tooltipTitle, "[?] " .. row.data.title)
+	assert(a.tooltipText:find("Quest ID: " .. row.data.questId .. "|r", 1, true))
 	row.scripts.OnLeave()
 	Equal(a.tooltipTitle, nil)
 end)

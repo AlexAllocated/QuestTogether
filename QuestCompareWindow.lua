@@ -3,11 +3,16 @@ local QuestTogether = _G.QuestTogether
 local VISIBLE_ROWS, ROW_HEIGHT = 11, 42
 local MEMBER_ROW_HEIGHT, OBJECTIVE_ROW_HEIGHT = 24, 26
 local DETAIL_BOTTOM_PADDING = 10
+local CHAIN_GROUP_INDENT, CHAIN_GROUP_RAIL_X = 18, 16
 local function ObjectiveDetail(row)
 	return row and (row.kind == "member" or row.kind == "objective")
 end
 local function RowID(row) return QuestTogether:GetPartyQuestRowIdentity(row) end
 local function Selectable(row) return QuestTogether:IsPartyQuestSelectableRow(row) end
+local function QuestTitle(row)
+	if row.kind and row.kind ~= "chainStep" then return row.title or "" end
+	return "[" .. tostring(row.questLevel or "?") .. (row.questGroupRecommended and "+" or "") .. "] " .. (row.title or "")
+end
 local function CompareRowHeight(rows, index)
 	local row, previous, following = rows[index], rows[index - 1], rows[index + 1]
 	local firstDetail = ObjectiveDetail(row) and (not ObjectiveDetail(previous) or previous.questId ~= row.questId)
@@ -216,7 +221,8 @@ local function CreateFocusButton(addon, row, column)
 		if button.muted and button.clickable then
 			hint = hint .. "\n\n" .. string.format(L("Changing focus will stop following %s."), button.following)
 		end
-		addon:ShowSettingsTooltip(button, button.memberName, StatusLabel(button.questStatus or "Unknown") .. "\n" .. hint)
+		addon:ShowSettingsTooltip(button, button.memberName,
+			addon:AppendQuestIDToTooltipText(row.data.questId, StatusLabel(button.questStatus or "Unknown") .. "\n" .. hint))
 	end)
 	button:SetScript("OnClick", function()
 		Leave()
@@ -252,7 +258,13 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 	for i, row in ipairs(frame.rows) do
 		local slot = frame.visibleRows[i]
 		local data = slot and rows[slot.index]
-		if row.data ~= data then self:HideSettingsTooltip(row) end
+		if row.data ~= data then
+			self:HideSettingsTooltip(row)
+			self:HideSettingsTooltip(row.journal)
+			self:HideSettingsTooltip(row.chain)
+			for _, control in ipairs(row.focusCells or {}) do self:HideSettingsTooltip(control) end
+			for _, control in ipairs(row.cellTooltips or {}) do self:HideSettingsTooltip(control) end
+		end
 		row.data = data
 		row.session = session
 		if not data then
@@ -270,17 +282,35 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			row:SetHeight(CompareRowHeight(rows, slot.index))
 			local expanded = data.kind == "chainGroup" and data.expanded or not data.kind and session.expandedQuestIds and session.expandedQuestIds[data.questId]
 			local previous, following = rows[slot.index - 1], rows[slot.index + 1]
+			local groupIndent = data.chainGroupMember and CHAIN_GROUP_INDENT or 0
+			local groupContinues = data.chainGroupId and following and following.chainGroupId == data.chainGroupId
+				and following.chainGroupMember
+			row.groupRail:Hide(); row.groupEnd:Hide()
+			if data.chainGroupMember or (data.kind == "chainGroup" and groupContinues) then
+				local railTop = data.kind == "chainGroup" and 26 or 0
+				local r, g, b = dark and 0.66 or 0.45, dark and 0.53 or 0.31, dark and 0.30 or 0.12
+				row.groupRail:ClearAllPoints(); row.groupRail:SetPoint("TOPLEFT", CHAIN_GROUP_RAIL_X, -railTop)
+				row.groupRail:SetSize(1, row:GetHeight() - railTop)
+				row.groupRail:SetColorTexture(r, g, b, 0.55); row.groupRail:Show()
+				if data.chainGroupMember and not groupContinues then
+					row.groupEnd:ClearAllPoints(); row.groupEnd:SetPoint("TOPLEFT", CHAIN_GROUP_RAIL_X, 1 - row:GetHeight())
+					row.groupEnd:SetSize(CHAIN_GROUP_INDENT - 4, 1)
+					row.groupEnd:SetColorTexture(r, g, b, 0.55); row.groupEnd:Show()
+				end
+			end
 			local first = not ObjectiveDetail(previous) or previous.questId ~= data.questId
 			local last = not ObjectiveDetail(following) or following.questId ~= data.questId
 			local top, bottom = LayoutDetailsPanel(row, width, ObjectiveDetail(data), first, last, expanded, dark)
 			row.expander:SetTextColor(dark and 0.92 or 0.4, dark and 0.78 or 0.25, dark and 0.45 or 0.08)
 			row.expander:SetText((not data.kind or data.kind == "chainGroup") and (expanded and "-" or "+") or "")
-			row.title:SetText(data.title)
+			row.expander:ClearAllPoints(); row.expander:SetPoint("TOPLEFT", 6 + groupIndent, -8)
+			row.title:SetText(QuestTitle(data))
 			ShowPanel(row.hover, false)
 			ColorPanel(row.hover, dark and 1 or 0.35, dark and 1 or 0.24, dark and 1 or 0.10, 0.08)
 			row.title:ClearAllPoints()
 			local indent = data.kind == "objective" and 64 or data.kind == "member" and 48
 				or data.kind == "chainStep" and 40 + math.min(8, data.depth or 0) * 14 or 28
+			indent = indent + groupIndent
 			local chainRow = data.kind and data.kind:sub(1, 5) == "chain"
 			local questRow = not data.kind or data.kind == "chainStep"
 			local chainVisible = not data.kind and data.chainAvailable == true and self.TogglePartyQuestChain ~= nil
@@ -310,6 +340,8 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				row.journal:Hide()
 			end
 			row.partySummary:SetText(data.partySummary or "")
+			row.partySummary:ClearAllPoints(); row.partySummary:SetPoint("TOPLEFT", 28 + groupIndent, -25)
+			row.partySummary:SetWidth(QUEST_WIDTH - 36 - groupIndent)
 			row.partySummary:SetTextColor(unpack(colors[data.partySummaryState or "Unknown"]))
 			if ObjectiveDetail(data) then
 				row.accent:Hide()
@@ -330,9 +362,16 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 					(expanded or data.kind == "chainGroup") and 0.16 or (chainRow and 0.08 or (slot.index % 2 == 0 and 0.055 or 0.015))
 				)
 			end
-			Style.LayoutProgressBar(row, data, dark, 64, 22 + top, actionX - 80)
+			Style.LayoutProgressBar(row, data, dark, 64 + groupIndent, 22 + top, actionX - 80 - groupIndent)
 			if data.kind == "member" then
 				row.title:SetTextColor(MemberColor(self, data.classFile, 0.32))
+			elseif data.kind == "chainStep" and data.spoilerHidden then
+				local shade = dark and 0.64 or 0.42
+				row.title:SetTextColor(shade, shade, shade)
+			elseif questRow and data.questDifficultyColor then
+				local color = data.questDifficultyColor
+				local shade = dark and 1 or 0.5
+				row.title:SetTextColor(color.r * shade, color.g * shade, color.b * shade)
 			elseif dark then
 				row.title:SetTextColor(0.93, 0.92, 0.88)
 			elseif data.kind == "objective" then
@@ -357,7 +396,8 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 							and not self:IsWorkBlocked("foreign_frame_mutation")
 							and QuestTogether.LibChev.CanMutateOwnedRegion(control) and control:IsVisible() then
 							local text = control.chainStep and control.questStatus == "Have" and L("In progress") or StatusLabel(control.questStatus)
-							self:ShowSettingsTooltip(control, control.memberName, text .. (control.prerequisiteText or ""))
+							self:ShowSettingsTooltip(control, control.memberName,
+								self:AppendQuestIDToTooltipText(row.data.questId, text .. (control.prerequisiteText or "")))
 						end
 					end)
 					local function Leave() self:HideSettingsTooltip(control) end
@@ -812,7 +852,7 @@ function QuestTogether:PopulatePartyQuestContextMenu(frame, selected, root)
 	end
 	if not Current() then return false end
 	local data = selected.data
-	root:CreateTitle(data.title)
+	root:CreateTitle(QuestTitle(data))
 	if not data.kind then
 		root:CreateButton(L("Expand or collapse quest"), function()
 			if Current() then self:TogglePartyQuestObjectives(questID) end
@@ -1184,6 +1224,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.partySummary:SetMaxLines(1)
 			row.branch = row:CreateTexture(nil, "ARTWORK")
 			row.branchStem = row:CreateTexture(nil, "ARTWORK")
+			row.groupRail = row:CreateTexture(nil, "ARTWORK")
+			row.groupEnd = row:CreateTexture(nil, "ARTWORK")
 			row.accent = row:CreateTexture(nil, "ARTWORK")
 			row.accent:SetPoint("TOPLEFT", 8, 0)
 			row.accent:SetSize(2, ROW_HEIGHT)
@@ -1229,7 +1271,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			journalIcon:SetPoint("CENTER")
 			row.journal:SetScript("OnEnter", function()
 				if row.data and (not row.data.kind or row.data.kind == "chainStep") and row.session == self.partyQuestCompareSession then
-					self:ShowSettingsTooltip(row.journal, L("Open in Quest Log"), row.data.title)
+					self:ShowSettingsTooltip(row.journal, L("Open in Quest Log"), self:AppendQuestIDToTooltipText(row.data.questId, QuestTitle(row.data)))
 				end
 			end)
 			local function HideJournalTooltip() self:HideSettingsTooltip(row.journal) end
@@ -1252,7 +1294,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.chainIcon = chainIcon
 			row.chain:SetScript("OnEnter", function()
 				if row.data and row.session == self.partyQuestCompareSession then
-					self:ShowSettingsTooltip(row.chain, row.data.chainExpanded and L("Close chain") or L("View chain"), row.data.title)
+					self:ShowSettingsTooltip(row.chain, row.data.chainExpanded and L("Close chain") or L("View chain"),
+						self:AppendQuestIDToTooltipText(row.data.questId, QuestTitle(row.data)))
 				end
 			end)
 			local function HideChainTooltip() self:HideSettingsTooltip(row.chain) end
@@ -1267,9 +1310,9 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 
 			row:EnableMouse(true)
 			row:SetScript("OnEnter", function()
-				if row.data then
+				if row.data and row.session == self.partyQuestCompareSession then
 					ShowPanel(row.hover, true)
-					self:ShowSettingsTooltip(row, row.data.title or "", row.data.hint or "")
+					self:ShowSettingsTooltip(row, QuestTitle(row.data), self:AppendQuestIDToTooltipText(row.data.questId, row.data.hint or ""))
 				end
 			end)
 			row:SetScript("OnLeave", function()
@@ -1631,11 +1674,12 @@ function QuestTogether:RenderPartyQuestCompare()
 				ShowPanel(button.hover, true)
 				local member = button.navSession.byName[button.navName]
 				local shareResult = self.GetLatestQuestShareResultText and self:GetLatestQuestShareResultText(button.navName)
-				self:ShowSettingsTooltip(button, button.navName,
-					(member and self:GetPartyQuestSnapshotLabel(member) or "") .. "\n"
+				local text = (member and self:GetPartyQuestSnapshotLabel(member) or "") .. "\n"
 					.. (button.navSession.mode ~= "target" and self:GetPartyFocusLabel(button.navName) .. "\n" or "")
 					.. (shareResult and shareResult .. "\n" or "")
-					.. L("Click for player column and quest focus options."))
+					.. L("Click for player column and quest focus options.")
+				local focusID = button.navSession.mode ~= "target" and self.GetPartyQuestFocusID and self:GetPartyQuestFocusID(button.navName)
+				self:ShowSettingsTooltip(button, button.navName, self:AppendQuestIDToTooltipText(focusID, text))
 			end)
 			button:SetScript("OnLeave", Leave)
 			button:SetScript("OnHide", function()
