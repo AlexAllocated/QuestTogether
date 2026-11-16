@@ -1058,5 +1058,16 @@
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s 已加载！现已支持 %s。输入 %s 打开设置。如果你遇到任何问题，请在 %s 或 %s 留下反馈。",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Pong： ",
   "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong：<无效载荷>",
-  "…and %d more": "…还有%d名"
+  "…and %d more": "…还有%d名",
+  "Checking eligibility": "正在检查接取条件",
+  "Eligibility unknown": "接取条件未知",
+  "No known blockers": "暂无已知限制",
+  "No eligible recipients": "无人符合接取条件",
+  "Sharing sends this quest to the whole party.": "分享会向整个队伍发送此任务。",
+  "World of Warcraft checks whether each player can accept the quest.": "魔兽世界会检查每位玩家是否能接受该任务。",
+  "Ask %s to share this quest.": "请%s分享此任务。",
+  "%d blocked": "%d人受限",
+  "%d checking": "%d人检查中",
+  "Already have it: %d": "已接取：%d人",
+  "And %d more players.": "另有%d名玩家。"
 }

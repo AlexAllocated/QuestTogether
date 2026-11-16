@@ -77,6 +77,93 @@ local function StatusLabel(status)
 	return L(status == "Absent" and "Not in log" or status)
 end
 
+local function RecipientReadinessLabel(recipient)
+	if not recipient then return L("Eligibility unknown") end
+	local state = recipient.state
+	if state == "have" then return L("Have")
+	elseif state == "ready" then return L("Ready")
+	elseif state == "completed" then return L("Completed")
+	elseif state == "checking" then return L("Checking eligibility")
+	elseif state == "blocked" then
+		local result = recipient.requirements or {}
+		local requirements = result.requirements
+		local blockersOnly = not requirements or #requirements == 0
+		if blockersOnly then requirements = result.blockers or {} end
+		for _, requirement in ipairs(requirements) do
+			if requirement.state == "blocked" or blockersOnly then
+				if requirement.kind == "class" then return L("Different class")
+				elseif requirement.kind == "race" then return L("Different race")
+				elseif requirement.kind == "level" and requirement.value then return string.format(L("Requires level %d"), requirement.value)
+				elseif requirement.kind == "max_level" and requirement.value then return string.format(L("Maximum level: %d"), requirement.value) end
+			end
+		end
+		return L("Prerequisites not met")
+	elseif state == "missing" and recipient.requirementState == "met" then return L("No known blockers") end
+	return L("Eligibility unknown")
+end
+
+local function ShareReadinessSummary(readiness, full)
+	if not readiness then return nil end
+	local recipients, counts = readiness.recipients or {}, {}
+	if #recipients == 1 then return RecipientReadinessLabel(recipients[1]) end
+	if readiness.disabled and readiness.state == "checking" and not full then return L("Checking eligibility") end
+	if readiness.disabled and not full then return L("No eligible recipients") end
+	for _, recipient in ipairs(recipients) do
+		local state = recipient.state
+		-- Missing from the log is distinct from having checked prerequisites.
+		if state == "missing" and recipient.requirementState ~= "met" then state = "unknown" end
+		counts[state] = (counts[state] or 0) + 1
+	end
+	local parts = {}
+	for _, entry in ipairs({ { "missing", L("%d missing") }, { "checking", L("%d checking") },
+		{ "unknown", L("%d unknown") }, { "blocked", L("%d blocked") }, { "completed", L("%d completed") } }) do
+		if (counts[entry[1]] or 0) > 0 then parts[#parts + 1] = string.format(entry[2], counts[entry[1]]) end
+	end
+	if #parts == 1 and not full then
+		if (counts.checking or 0) > 0 then return L("Checking eligibility") end
+		if (counts.unknown or 0) > 0 then return L("Eligibility unknown") end
+		if (counts.missing or 0) > 0 then return L("No known blockers") end
+	end
+	if (full or #parts == 0) and ((counts.have or 0) + (counts.ready or 0)) > 0 then
+		parts[#parts + 1] = string.format(L("Already have it: %d"), (counts.have or 0) + (counts.ready or 0))
+	end
+	return #parts > 0 and table.concat(parts, " · ") or L("Eligibility unknown")
+end
+
+local function RecipientReadinessText(addon, recipient)
+	local text = RecipientReadinessLabel(recipient)
+	if recipient and recipient.state ~= "have" and recipient.state ~= "ready" and recipient.state ~= "completed"
+		and recipient.requirements and addon.DescribePartyQuestChainRequirements then
+		text = text .. "\n" .. addon:DescribePartyQuestChainRequirements(recipient.requirements)
+	end
+	return text
+end
+
+local function ShareReadinessTooltip(addon, data)
+	local readiness = data.shareReadiness
+	if not readiness then return nil end
+	local parts = { data.action == "request" and string.format(L("Ask %s to share this quest."), data.owner or "")
+		or L("Sharing sends this quest to the whole party.") }
+	if #(readiness.recipients or {}) > 1 then parts[#parts + 1] = ShareReadinessSummary(readiness, true) end
+	local recipients = {}
+	for _, recipient in ipairs(readiness.recipients or {}) do recipients[#recipients + 1] = recipient end
+	local priority = { blocked = 1, missing = 2, checking = 3, unknown = 4, completed = 5, ready = 6, have = 6 }
+	table.sort(recipients, function(a, b)
+		local first, second = priority[a.state] or 4, priority[b.state] or 4
+		return first == second and (a.name or "") < (b.name or "") or first < second
+	end)
+	for index = 1, math.min(#recipients, 8) do
+		local recipient = recipients[index]
+		-- Party summaries stay bounded even when each player has a long list of
+		-- prerequisites. The player's own cell retains the complete explanation.
+		local text = #recipients == 1 and RecipientReadinessText(addon, recipient) or RecipientReadinessLabel(recipient)
+		parts[#parts + 1] = (recipient.name or "") .. ": " .. text
+	end
+	if #recipients > 8 then parts[#parts + 1] = string.format(L("And %d more players."), #recipients - 8) end
+	parts[#parts + 1] = L("World of Warcraft checks whether each player can accept the quest.")
+	return table.concat(parts, "\n\n")
+end
+
 local function MemberColor(addon, classFile, brightness)
 	return addon:GetWindowClassColor(classFile, brightness)
 end
@@ -258,10 +345,11 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 	for i, row in ipairs(frame.rows) do
 		local slot = frame.visibleRows[i]
 		local data = slot and rows[slot.index]
-		if row.data ~= data then
+		if row.data ~= data or row.session ~= session then
 			self:HideSettingsTooltip(row)
 			self:HideSettingsTooltip(row.journal)
 			self:HideSettingsTooltip(row.chain)
+			self:HideSettingsTooltip(row.action)
 			for _, control in ipairs(row.focusCells or {}) do self:HideSettingsTooltip(control) end
 			for _, control in ipairs(row.cellTooltips or {}) do self:HideSettingsTooltip(control) end
 		end
@@ -421,11 +509,19 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				local statusText = data.kind == "chainStep" and status == "Have" and L("In progress") or StatusLabel(status)
 				local prerequisite = data.memberPrerequisiteText and data.memberPrerequisiteText[j] or data.prerequisiteText
 				statusControl.chainStep = data.kind == "chainStep"
+				local needsQuest = status ~= "Have" and status ~= "Ready" and status ~= "Completed"
+				if not needsQuest then prerequisite = nil
+				elseif not data.kind then
+					local readiness = data.shareReadiness and data.shareReadiness.byName
+					local recipient = readiness and readiness[session.members[j].name]
+						or self.GetPartyQuestMemberShareReadiness and self:GetPartyQuestMemberShareReadiness(session.members[j], data.questId)
+					prerequisite = RecipientReadinessText(self, recipient)
+				end
 				statusControl.prerequisiteText = type(prerequisite) == "string" and prerequisite ~= "" and "\n\n" .. prerequisite or nil
 				statusControl:ClearAllPoints()
 				statusControl:SetPoint("TOPLEFT", column.left, 0)
 				statusControl:SetSize(column.width - ((status == "Have" or status == "Ready") and 32 or 0), ROW_HEIGHT - 1)
-				if column.collapsed or data.kind == "chainStep" then statusControl:Show() else statusControl:Hide() end
+				if column.collapsed or data.kind == "chainStep" or not data.kind and needsQuest then statusControl:Show() else statusControl:Hide() end
 				row.cellShades[j]:ClearAllPoints()
 				row.cellShades[j]:SetPoint("TOPLEFT", column.left, 0)
 				row.cellShades[j]:SetSize(column.width, ROW_HEIGHT - 1)
@@ -485,18 +581,20 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				row.action:SetText(
 					coolingDown and L("Please wait") or (data.action == "share" and L("Share") or L("Request Share"))
 				)
-				row.action:SetEnabled(not coolingDown and not self:IsWorkBlocked("quest_share"))
+				row.action:SetEnabled(not coolingDown and not (data.shareReadiness and data.shareReadiness.disabled)
+					and not self:IsWorkBlocked("quest_share"))
 				row.action:Show()
-				if status and status ~= "" then
-					-- Keep terminal feedback visible below a retry action, without
-					-- increasing row height or changing the scroll pool's geometry.
+				local summary = status and status ~= "" and L(status) or ShareReadinessSummary(data.shareReadiness)
+				if summary and summary ~= "" then
+					-- Terminal request feedback takes priority over preflight details;
+					-- both fit below the action without changing pooled row geometry.
 					row.action:ClearAllPoints()
 					row.action:SetPoint("TOPLEFT", actionX, -1)
 					row.action:SetSize(ACTION_WIDTH - 12, 22)
 					row.hint:SetPoint("TOPLEFT", actionX, -24)
 					row.hint:SetSize(ACTION_WIDTH - 12, 18)
 					row.hint:SetMaxLines(1)
-					row.hint:SetText(L(status))
+					row.hint:SetText(summary)
 					row.hint:Show()
 				else
 					row.action:SetWidth(ACTION_WIDTH - 12)
@@ -882,16 +980,16 @@ function QuestTogether:PopulatePartyQuestContextMenu(frame, selected, root)
 			if Current() then self:OpenPartyQuestJournal(questID) end
 		end)
 	end
-	if not data.kind and data.action == "share" then
-		local owner = data.owner
-		root:CreateButton(L("Share"), function()
-			if Current("share", owner) then self:SharePartyDiffQuest(questID) end
+	if not data.kind and data.action then
+		local action, owner = data.action, data.owner
+		local choice = root:CreateButton(action == "share" and L("Share") or L("Request Share"), function()
+			if not Current(action, owner) then return end
+			local readiness = self.GetPartyQuestShareReadiness and self:GetPartyQuestShareReadiness(questID, action, owner)
+			if readiness and readiness.disabled then return end
+			if action == "share" then self:SharePartyDiffQuest(questID)
+			else self:RequestPartyQuestShare(questID, owner) end
 		end)
-	elseif not data.kind and data.action == "request" then
-		local owner = data.owner
-		root:CreateButton(L("Request Share"), function()
-			if Current("request", owner) then self:RequestPartyQuestShare(questID, owner) end
-		end)
+		if choice and choice.SetEnabled then choice:SetEnabled(not (data.shareReadiness and data.shareReadiness.disabled)) end
 	end
 	return true
 end
@@ -1323,15 +1421,41 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.cells, row.cellShades, row.focusCells = {}, {}, {}
 			row.action = Button(self, row, QUEST_WIDTH, -9, ACTION_WIDTH - 12, "", function()
 				local data = row.data
-				if not data or row.session ~= self.partyQuestCompareSession then
+				if not data or not data.action or row.session ~= self.partyQuestCompareSession
+					or frame.displaySession ~= row.session or not row:IsVisible()
+					or self:IsWorkBlocked("quest_share") or self:IsWorkBlocked("foreign_frame_mutation")
+					or not QuestTogether.LibChev.CanMutateOwnedRegion(row.action) then
 					return
 				end
+				if not row.action:IsVisible() or (row.action.IsEnabled and not row.action:IsEnabled())
+					or (data.shareReadiness and data.shareReadiness.disabled) then
+					-- A click queued before pending/eligibility feedback arrived may
+					-- only refresh that explanation, never send another request.
+					self:QueuePartyQuestCompareRender()
+					return
+				end
+				local readiness = self.GetPartyQuestShareReadiness and self:GetPartyQuestShareReadiness(data.questId, data.action, data.owner)
+				if readiness and readiness.disabled then self:QueuePartyQuestCompareRender(); return end
 				if data.action == "share" then
 					self:SharePartyDiffQuest(data.questId)
 				elseif data.action == "request" then
 					self:RequestPartyQuestShare(data.questId, data.owner)
 				end
 			end)
+			if row.action.SetMotionScriptsWhileDisabled then row.action:SetMotionScriptsWhileDisabled(true) end
+			row.action:SetScript("OnEnter", function()
+				if row.session ~= self.partyQuestCompareSession or not row.data or not row.data.action
+					or not row.action:IsVisible() or self:IsWorkBlocked("foreign_frame_mutation")
+					or not QuestTogether.LibChev.CanMutateOwnedRegion(row.action) then return end
+				local text = ShareReadinessTooltip(self, row.data)
+				if text then
+					self:ShowSettingsTooltip(row.action, row.data.action == "share" and L("Share") or L("Request Share"),
+						self:AppendQuestIDToTooltipText(row.data.questId, text))
+				end
+			end)
+			local function HideActionTooltip() self:HideSettingsTooltip(row.action) end
+			row.action:SetScript("OnLeave", HideActionTooltip)
+			row.action:SetScript("OnHide", HideActionTooltip)
 			row.hint = Label(row, QUEST_WIDTH, -7, ACTION_WIDTH - 8, "", "GameFontHighlight")
 			row.hint:SetMaxLines(2)
 			row.hint:SetHeight(ROW_HEIGHT - 8)

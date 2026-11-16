@@ -163,6 +163,7 @@ end)
 
 QT:RegisterTest("party log player and action controls share navigation and reject recycled action identity", function()
 	local a, frame, session = Open(4)
+	session.members[2].state = "timeout" -- Completed acquisition keeps unknown eligibility actionable.
 	local build = a.BuildPartyQuestDiffRows
 	local changed = false
 	function a:BuildPartyQuestDiffRows()
@@ -402,6 +403,38 @@ QT:RegisterTest("chain native recycled step identities disarm Select and retire 
 	callback(); Equal(a.actedOn, nil)
 	Equal(a:ActivatePartyQuestGamepadControl(frame, oldButton), false)
 	Equal(Selected(a, frame).rowId, "quest:1")
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("share readiness native navigation inspects blocked cells and owns enabled action tooltips", function()
+	local a, frame, session = Open(2)
+	local friend = session.members[2]
+	local recipient = { name = friend.name, state = "blocked", requirementState = "blocked", requirements = {
+		state = "blocked", requirements = { { kind = "class", state = "blocked", allowedNames = { "Warrior" } } } } }
+	local readiness = { action = "share", state = "blocked", disabled = true, recipients = { recipient }, byName = { [friend.name] = recipient } }
+	function a:GetPartyQuestShareReadiness() return readiness end
+	function a:GetQuestChainQuestInfo() error("controller tooltip queried provider") end
+	function a:ReadCharacterQuestHistoryStatus() error("controller tooltip queried native history") end
+	a:RenderPartyQuestCompare()
+	local row = frame.rows[1]
+	Equal(row.action.enabled, false)
+	Equal(frame.gamepadNavigation.byButton[row.action], nil)
+	local status = Find(frame, 1, "status", friend.name)
+	a:SelectNative(frame, status); a:Advance(0)
+	Equal(a.tooltip.owner, status); assert(a.tooltip.text:find("Different class", 1, true))
+	assert(a.tooltip.text:find("Warrior", 1, true))
+	local shares = 0
+	function a:SharePartyDiffQuest() shares = shares + 1 end
+	Equal(a:ActivatePartyQuestGamepadControl(frame, row.action), false); Equal(shares, 0)
+	readiness.disabled, readiness.state, recipient.state, recipient.requirementState, recipient.requirements = false, "unknown", "unknown", "unknown", nil
+	a:RenderPartyQuestCompare()
+	local action = Find(frame, 1, "action")
+	a:SelectNative(frame, action); a:Advance(0)
+	Equal(a.tooltip.owner, action); assert(a.tooltip.text:find("Sharing sends this quest to the whole party.", 1, true))
+	assert(a.tooltip.text:find("Eligibility unknown", 1, true))
+	readiness.disabled = true -- A queued native activation cannot use yesterday's eligibility.
+	action.OnSmartNavClick(action); Equal(shares, 0)
+	a.nativePolicies[frame].onFocus(frame, false); a:Advance(0); Equal(a.tooltip, nil)
 	Equal(a.invalidCalls, nil)
 end)
 

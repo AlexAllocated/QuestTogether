@@ -3,7 +3,7 @@
 local QT = _G.QuestTogether
 local DIRECTIONS = { "UP", "DOWN", "LEFT", "RIGHT" }
 local OWNED_TOOLTIP_ROLES = { quest = true, step = true, group = true, more = true, chain = true,
-	journal = true, status = true, focus = true, player = true, column = true }
+	journal = true, status = true, focus = true, player = true, column = true, action = true }
 local ROW_ROLES = { quest = true, step = true, group = true, more = true }
 
 local function Mode(addon)

@@ -55,6 +55,7 @@ function QuestTogether:SetPartyQuestCompletionInterest(questIDs, owner)
 	end
 	owner = owner or "visible"
 	session.historyInterestOwners = session.historyInterestOwners or {}
+	local previousOwned = session.historyInterestOwners[owner] or {}
 	local owned, ownedSeen = {}, {}
 	for _, value in ipairs(questIDs or {}) do
 		local id = QuestID(value)
@@ -70,7 +71,7 @@ function QuestTogether:SetPartyQuestCompletionInterest(questIDs, owner)
 	end
 	-- Visible roots and selected/visible context share the existing wire budget.
 	-- The chain owner retains prerequisite evidence when those rows scroll away.
-	for _, source in ipairs({ "visible", "chain" }) do
+	for _, source in ipairs({ "visible", "share", "chain" }) do
 		for _, id in ipairs(session.historyInterestOwners[source] or {}) do
 			if not ids[id] and #order < MAX_INTEREST then ids[id], order[#order + 1] = true, id end
 		end
@@ -85,8 +86,9 @@ function QuestTogether:SetPartyQuestCompletionInterest(questIDs, owner)
 		for id in pairs(member.entries) do compared[id] = true end
 	end
 	local context, contextCount = {}, 0
-	local chainOwned = {}
+	local chainOwned, shareOwned = {}, {}
 	for _, id in ipairs(session.historyInterestOwners.chain or {}) do chainOwned[id] = true end
+	for _, id in ipairs(session.historyInterestOwners.share or {}) do chainOwned[id], shareOwned[id] = true, true end
 	local chains = session.chains
 	local graph = chains and chains.rootQuestID and chains.graphs and chains.graphs[chains.rootQuestID]
 	for _, id in ipairs(order) do
@@ -94,7 +96,32 @@ function QuestTogether:SetPartyQuestCompletionInterest(questIDs, owner)
 			context[id], contextCount = true, contextCount + 1
 		end
 	end
-	session.historyContext = context
+	-- A blocker can remove its root from an action filter. Retain already-read
+	-- prerequisite facts for active roots without keeping offscreen queries alive,
+	-- or the root would repeatedly disappear and return as those facts are pruned.
+	local retained = {}
+	if chains and not chains.retired then
+		for id in pairs(session.historyContext or {}) do
+			if not compared[id] and not context[id] and session.historyShareContext and session.historyShareContext[id]
+				and chains.shareRootDependencies and chains.shareRootDependencies[id] then
+				for _, member in ipairs(session.members) do
+					local evidence = member.questHistory and member.questHistory[id]
+					if evidence and now >= evidence.sampledAt and now < evidence.sampledAt + HISTORY_LIFETIME then
+						retained[#retained + 1] = id; break
+					end
+				end
+			end
+		end
+	end
+	table.sort(retained)
+	for _, id in ipairs(retained) do
+		if contextCount < MAX_INTEREST then context[id], contextCount = true, contextCount + 1 end
+	end
+	local previousShareContext = session.historyShareContext or {}
+	session.historyContext, session.historyShareContext = context, {}
+	for id in pairs(context) do
+		if shareOwned[id] or previousShareContext[id] then session.historyShareContext[id] = true end
+	end
 	for _, member in ipairs(session.members) do
 		local pending = member.historyRequestId and self:GetPendingQuestCompare(member.historyRequestId)
 		if pending then
@@ -112,6 +139,14 @@ function QuestTogether:SetPartyQuestCompletionInterest(questIDs, owner)
 				member.questHistory[id] = nil
 			end
 		end
+		for id in pairs(member.historyFailures or {}) do
+			if (not compared[id] and not context[id]) or member.entries[id] then member.historyFailures[id] = nil end
+		end
+	end
+	if owner == "visible" and self.QueuePartyQuestChainRefresh then
+		local changed = #previousOwned ~= #owned
+		for index, id in ipairs(owned) do if previousOwned[index] ~= id then changed = true; break end end
+		if changed then self:QueuePartyQuestChainRefresh() end
 	end
 end
 
@@ -193,6 +228,7 @@ function QuestTogether:UpdatePartyQuestCompletion()
 				local profile = self.db and self.db.profile
 				local token = {}
 				member.historyRequestToken = token
+				member.historyFailures = member.historyFailures or {}
 				local function Current()
 					return self.isEnabled and not self.isLoggingOut and self.partyQuestCompareSession == session
 						and member.historyRequestToken == token
@@ -203,6 +239,15 @@ function QuestTogether:UpdatePartyQuestCompletion()
 						and session.byName[member.name] == member and (member.historyGeneration or 0) == generation
 						and not self:IsIgnoredPlayerName(member.name)
 						and (session.mode == "target" or self:IsGroupedSender(member.name))
+				end
+				local function Failed()
+					if not Current() then return end
+					member.historyRequestId, member.historyRequestToken = nil, nil
+					member.nextHistoryRequest = math.max(member.nextHistoryRequest or 0, self.API.GetTime() + 15)
+					for _, row in ipairs(records) do
+						if session.historyInterests[row.questId] then member.historyFailures[row.questId] = true end
+					end
+					self:QueuePartyQuestCompareRender()
 				end
 				local ok, requestId = self:RequestQuestCompare(member.name, {
 					historyQuestIds = records,
@@ -219,21 +264,20 @@ function QuestTogether:UpdatePartyQuestCompletion()
 								local age = serverTime and row.sampledAt and serverTime - row.sampledAt
 								if age and age >= -2 and age < HISTORY_LIFETIME then
 									member.questHistory[row.questId] = { status = row.status, sampledAt = receivedAt - math.max(0, age) }
+									member.historyFailures[row.questId] = nil
+								else
+									member.historyFailures[row.questId] = true
 								end
 							end
 						end
 						self:QueuePartyQuestCompareRender()
 					end,
-					onTimeout = function()
-						if Current() then
-							member.historyRequestId, member.historyRequestToken = nil, nil
-						end
-					end,
+					onTimeout = Failed,
 				})
 				if ok and member.historyRequestToken == token then
 					member.historyRequestId = requestId
 				elseif not ok and member.historyRequestToken == token then
-					member.historyRequestToken = nil
+					Failed()
 				end
 			end
 		end

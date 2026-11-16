@@ -26,6 +26,7 @@ local function Fixture()
 	a.options.compareGroupByChain = false
 	local own = { name = a.name, isLocal = true, state = "ready", entries = { [2] = Entry(2), [4] = Entry(4) }, questHistory = {} }
 	local friend = { name = "Friend-Realm", state = "ready", entries = { [2] = Entry(2) }, questHistory = {}, supportsQuestHistory = true }
+	own.sampledAt, friend.sampledAt = a.now, a.now
 	local session = { playerName = a.name, members = { own, friend }, byName = { [a.name] = own, [friend.name] = friend },
 		mode = "party", expandedQuestIds = {}, search = "", objectiveOwner = {} }
 	a.partyQuestCompareSession = session
@@ -62,6 +63,8 @@ local function Fixture()
 	end
 	function a:EvaluateQuestChainRequirements(id, evidence)
 		self.lastEvidence = evidence
+		self.evidenceByQuest = self.evidenceByQuest or {}
+		self.evidenceByQuest[id] = evidence
 		local prior = evidence[id - 1]
 		local status = prior and prior.completed == false and "blocked" or prior and prior.completed == true and "met" or "unknown"
 		return { state = status, requirements = {}, groups = {}, blockers = prior and prior.completed == false
@@ -627,8 +630,35 @@ QT:RegisterTest("chain eligibility preserves fresher active history over an olde
 	Open(a, session, Graph({ 1, 2, 3, 4 }))
 	friend.questHistory[1] = { status = "active", sampledAt = a.now }
 	a:QueuePartyQuestCompareRender(); a:Flush()
-	Equal(a.lastEvidence[1].active, true)
+	Equal(a.evidenceByQuest[2][1].active, true)
 	Equal(friend.entries[1], nil)
+end)
+
+QT:RegisterTest("share readiness prepares ordinary visible prerequisites without opening a chain", function()
+	local a, session, _, friend = Fixture()
+	a.graphs[2] = Graph({ 1, 2 })
+	friend.entries = {}
+	friend.questHistory[2] = { status = "incomplete", sampledAt = a.now }
+	a:SetPartyQuestCompletionInterest({ 2 })
+	a:QueuePartyQuestCompareRender(); a:Flush()
+	Equal(session.chains.rootQuestID, nil)
+	Equal(session.historyInterests[1], true)
+	friend.questHistory[1] = { status = "incomplete", sampledAt = a.now }
+	a:QueuePartyQuestCompareRender(); a:Flush()
+	local evaluate = a.EvaluateQuestChainRequirements
+	function a:EvaluateQuestChainRequirements() error("painting must not evaluate requirements") end
+	local row
+	for _, candidate in ipairs(a:BuildPartyQuestDiffRows()) do if candidate.questId == 2 then row = candidate end end
+	assert(row); Equal(row.shareReadiness.disabled, true)
+	Equal(row.shareReadiness.byName[friend.name].state, "blocked")
+	a.EvaluateQuestChainRequirements = evaluate
+	a:SetPartyQuestCompletionInterest({ 4 }); a:Flush()
+	Equal(session.historyInterests[1], nil)
+	Equal(friend.questHistory[1].status, "incomplete")
+	-- Retaining accepted facts avoids action-filter churn but does not renew them.
+	a.now = a.now + 60
+	a:SetPartyQuestCompletionInterest({ 4 }); a:QueuePartyQuestCompareRender(); a:Flush()
+	Equal(friend.questHistory[1], nil)
 end)
 
 QT:RegisterTest("chain world resumption replaces only an existing visible retired session without focus", function()

@@ -1058,5 +1058,16 @@
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s carregado! Agora oferece suporte a %s. Digite %s para configurações. Se encontrar algum problema, deixe seu feedback em %s ou %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Pong: ",
   "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Pong: <payload inválido>",
-  "…and %d more": "…e mais %d"
+  "…and %d more": "…e mais %d",
+  "Checking eligibility": "Verificando requisitos",
+  "Eligibility unknown": "Requisitos desconhecidos",
+  "No known blockers": "Nenhum impedimento conhecido",
+  "No eligible recipients": "Nenhum destinatário apto",
+  "Sharing sends this quest to the whole party.": "Ao compartilhar esta missão, ela é oferecida a todo o grupo.",
+  "World of Warcraft checks whether each player can accept the quest.": "World of Warcraft verifica se cada jogador pode aceitar a missão.",
+  "Ask %s to share this quest.": "Pedir a %s para compartilhar esta missão.",
+  "%d blocked": "%d impedidos",
+  "%d checking": "%d em verificação",
+  "Already have it: %d": "Já têm a missão: %d",
+  "And %d more players.": "E mais %d jogadores."
 }

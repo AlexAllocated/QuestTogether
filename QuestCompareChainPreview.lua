@@ -62,6 +62,7 @@ function QT:ConfigurePartyQuestChainPreview(preview)
 		"RevalidateQuestChainProvider", "CancelQuestChainProvider", "GetQuestChainProviderCapability",
 		"SetQuestChainMetadataInterest", "RequestQuestChainMetadata", "GetQuestChainQuestInfo",
 		"GetQuestChainStarterLocations", "OnQuestChainDataEvent", "GetQuestChainGraph", "EvaluateQuestChainRequirements",
+		"PreparePartyQuestShareRequirements", "RefreshPartyQuestShareRequirements",
 	}) do preview[method] = self[method] end
 	local openChain, closeChain = preview.OpenPartyQuestChain, preview.ClosePartyQuestChain
 	function preview:OpenPartyQuestChain(id, origin)

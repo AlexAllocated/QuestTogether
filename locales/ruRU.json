@@ -1058,5 +1058,16 @@
   "v%s loaded! Now supports %s. Type %s for settings. If you run into any issues, please leave feedback on %s or %s.": "v%s загружена! Теперь поддерживает %s. Введите %s для настроек. Если у вас возникнут проблемы, оставьте отзыв на %s или %s.",
   "|cff33ff99QuestTogether|r: Pong: ": "|cff33ff99QuestTogether|r: Понг: ",
   "|cff33ff99QuestTogether|r: Pong: <invalid payload>": "|cff33ff99QuestTogether|r: Понг: <недопустимые данные>",
-  "…and %d more": "…и ещё %d"
+  "…and %d more": "…и ещё %d",
+  "Checking eligibility": "Проверка условий",
+  "Eligibility unknown": "Условия неизвестны",
+  "No known blockers": "Известных препятствий нет",
+  "No eligible recipients": "Нет подходящих получателей",
+  "Sharing sends this quest to the whole party.": "При передаче это задание предлагается всей группе.",
+  "World of Warcraft checks whether each player can accept the quest.": "World of Warcraft проверяет, может ли каждый игрок принять задание.",
+  "Ask %s to share this quest.": "Попросить %s поделиться этим заданием.",
+  "%d blocked": "Недоступно: %d",
+  "%d checking": "Проверка: %d",
+  "Already have it: %d": "Уже есть задание: %d",
+  "And %d more players.": "И ещё %d игроков."
 }

@@ -4,6 +4,8 @@ local QT = _G.QuestTogether
 local L = QT.Translate
 local PAGE_SIZE = 80
 local HISTORY_LIFETIME = 60
+local SHARE_REQUIREMENTS = { prerequisite_all = true, prerequisite_any = true, active_parent = true,
+	starting_with = true, until_completed = true, disabled_by = true, exclusive = true, replacement = true }
 local function CapabilityText()
 	return {
 	provider_missing = L("Install QuestieDB to view related quests on this client."),
@@ -87,7 +89,10 @@ function QT:CancelPartyQuestChains(session)
 	state.retired = true
 	if self.HideQuestChainGiver then self:HideQuestChainGiver() end
 	if self.CancelQuestChainProvider then self:CancelQuestChainProvider(state.owner) end
-	if self.partyQuestCompareSession == session then self:SetPartyQuestCompletionInterest({}, "chain") end
+	if self.partyQuestCompareSession == session then
+		self:SetPartyQuestCompletionInterest({}, "chain")
+		self:SetPartyQuestCompletionInterest({}, "share")
+	end
 end
 
 function QT:RetirePartyQuestChains()
@@ -291,6 +296,74 @@ function QT:GetPartyQuestChainCharacterEvidence(member)
 	return fallback
 end
 
+-- Only explicit provider relationships participate in preflight. Chain order
+-- does not establish prerequisites, and repeatability says nothing about an
+-- earlier completion of a prerequisite.
+function QT:PreparePartyQuestShareRequirements(member, questID, character, readLocal)
+	local snapshot, now = self.questChainProviderSnapshot, self:GetPartyQuestCompareTime()
+	local dependencies, evidence, histories = {}, {}, {}
+	for _, edge in ipairs(snapshot and snapshot.relations and snapshot.relations[questID] or {}) do
+		if SHARE_REQUIREMENTS[edge.kind] and edge.relatedQuestID then dependencies[edge.relatedQuestID] = true end
+	end
+	local session = self.partyQuestCompareSession
+	local state = session and session.chains
+	for _, edge in ipairs(state and state.relationshipsByQuest and state.relationshipsByQuest[questID] or {}) do
+		if SHARE_REQUIREMENTS[edge.kind] and edge.relatedQuestID then dependencies[edge.relatedQuestID] = true end
+	end
+	local expiresAt, reads = now + HISTORY_LIFETIME, 0
+	local snapshotFresh = member.sampledAt and now >= member.sampledAt and now < member.sampledAt + HISTORY_LIFETIME
+	for _, id in ipairs(IDs(dependencies)) do
+		local previous = member.questHistory and member.questHistory[id]
+		histories[id] = previous or false
+		local history = member.state == "ready" and Fresh(self, member, id) or nil
+		if readLocal and member.isLocal then
+			-- An explicit activation rechecks a bounded set of local dependencies.
+			-- Overflow stays unknown instead of authorizing or vetoing from old data.
+			reads = reads + 1
+			history = reads <= 32 and { status = self:ReadCharacterQuestHistoryStatus(id), sampledAt = now } or nil
+			if history and not member.entries[id] and session and session.historyInterests and session.historyInterests[id] then
+				member.questHistory = member.questHistory or {}
+				member.questHistory[id], histories[id] = history, history
+			end
+		end
+		local value = {}
+		if member.state == "ready" then
+			if history and history.status == "active" then value.active = true
+			elseif history and (history.status == "completed" or history.status == "incomplete" or history.status == "repeatable") then
+				value.active = false
+			elseif snapshotFresh then
+				value.active = member.entries and member.entries[id] ~= nil or false
+				expiresAt = math.min(expiresAt, member.sampledAt + HISTORY_LIFETIME)
+			end
+		end
+		if history then
+			expiresAt = math.min(expiresAt, history.sampledAt + HISTORY_LIFETIME)
+			if history.status == "completed" then value.completed = true
+			elseif history.status == "incomplete" then value.completed = false end
+		end
+		evidence[id] = value
+	end
+	local result = self.EvaluateQuestChainRequirements and self:EvaluateQuestChainRequirements(questID, evidence, character)
+		or { state = "unknown", requirements = {}, blockers = {}, groups = {} }
+	result.certificate = { member = member, entries = member.entries, state = member.state,
+		snapshotSampledAt = member.sampledAt,
+		historyGeneration = member.historyGeneration or 0, provider = snapshot, histories = histories,
+		providerGeneration = snapshot and snapshot.generation, providerRevision = snapshot and snapshot.revision,
+		sampledAt = now, expiresAt = expiresAt }
+	return result
+end
+
+function QT:RefreshPartyQuestShareRequirements(member, questID, readLocal)
+	local session = self.partyQuestCompareSession
+	local state = session and session.chains
+	if not state or not Current(self, session, state) or session.byName[member.name] ~= member
+		or self:IsWorkBlocked("quest_snapshot_refresh") then return end
+	state.shareRequirements = state.shareRequirements or {}
+	state.shareRequirements[questID] = state.shareRequirements[questID] or {}
+	state.shareRequirements[questID][member.name] = self:PreparePartyQuestShareRequirements(member, questID,
+		self:GetPartyQuestChainCharacterEvidence(member), readLocal)
+end
+
 function QT:PreparePartyQuestChains(session, state)
 	if not Current(self, session, state) then return end
 	local capability = self.GetQuestChainProviderCapability and self:GetQuestChainProviderCapability()
@@ -350,19 +423,34 @@ function QT:PreparePartyQuestChains(session, state)
 	local graph = contextWanted and graphs[state.rootQuestID]
 	state.depths = graph and BranchDepths(graph) or {}
 	state.required, state.relationshipsByQuest = {}, {}
+	local indexedGraphs, indexedEdges = {}, {}
+	for _, candidate in pairs(graphs) do
+		if not indexedGraphs[candidate] then
+			indexedGraphs[candidate] = true
+			for _, edge in ipairs(candidate.edges or {}) do
+				if not indexedEdges[edge] then
+					indexedEdges[edge] = true
+					local questID = edge.questID
+					if questID then
+						local bucket = state.relationshipsByQuest[questID] or {}
+						state.relationshipsByQuest[questID] = bucket
+						bucket[#bucket + 1] = { kind = edge.kind, relatedQuestID = edge.relatedQuestID }
+					end
+				end
+			end
+		end
+	end
+	state.shareRootDependencies = {}
+	for id in pairs(union) do
+		for _, edge in ipairs(state.relationshipsByQuest[id] or {}) do
+			if SHARE_REQUIREMENTS[edge.kind] and edge.relatedQuestID then state.shareRootDependencies[edge.relatedQuestID] = true end
+		end
+	end
 	if graph then
 		local queue = {}
 		for id in pairs(union) do if graph.nodes[id] then state.required[id], queue[#queue + 1] = true, id end end
 		local incoming = {}
 		for _, edge in ipairs(graph.edges or {}) do
-			-- Each relationship enters one presentation bucket. Painting a node
-			-- reads only its bucket instead of rescanning the component's edges.
-			local questID = edge.questID
-			if questID then
-				local bucket = state.relationshipsByQuest[questID] or {}
-				state.relationshipsByQuest[questID] = bucket
-				bucket[#bucket + 1] = { kind = edge.kind, relatedQuestID = edge.relatedQuestID }
-			end
 			if edge.kind == "prerequisite_all" or edge.kind == "prerequisite_any" then
 				incoming[edge.to] = incoming[edge.to] or {}
 				incoming[edge.to][#incoming[edge.to] + 1] = edge.from
@@ -392,6 +480,19 @@ function QT:PreparePartyQuestChains(session, state)
 		end
 	end
 	self:SetPartyQuestCompletionInterest(interests, "chain")
+	-- Visible ordinary rows need the same explicit prerequisite evidence as an
+	-- expanded chain. Share and chain context use one bounded history budget.
+	local shareInterest, shareSeen = {}, {}
+	for _, id in ipairs(session.historyInterestOwners and session.historyInterestOwners.visible or {}) do
+		if union[id] then
+			for _, edge in ipairs(state.relationshipsByQuest[id] or {}) do
+				if SHARE_REQUIREMENTS[edge.kind] and edge.relatedQuestID and not shareSeen[edge.relatedQuestID] and #shareInterest < 100 then
+					shareSeen[edge.relatedQuestID], shareInterest[#shareInterest + 1] = true, edge.relatedQuestID
+				end
+			end
+		end
+	end
+	self:SetPartyQuestCompletionInterest(shareInterest, "share")
 	state.locations, state.locationReasons = {}, {}
 	local mapGetter = self.API.GetQuestChainCurrentMapID or self.API.GetPlayerMapID or self.API.GetBestMapForUnit
 	local currentMap = mapGetter and mapGetter("player")
@@ -402,24 +503,18 @@ function QT:PreparePartyQuestChains(session, state)
 		end
 	end
 	-- This evaluates only cached relationship and evidence data. It never certifies availability.
-	state.requirements, state.revealBlockers = {}, {}
-	if graph and self.EvaluateQuestChainRequirements then
+	state.requirements, state.shareRequirements, state.revealBlockers = {}, {}, {}
+	if self.EvaluateQuestChainRequirements then
+		local evaluated = Copy(union)
+		for id in pairs(graph and graph.nodes or {}) do evaluated[id] = true end
 		for i, member in ipairs(session.members) do
-			local evidence = {}
-			for _, id in ipairs(interests) do
-				local history = Fresh(self, member, id)
-				local value = {}
-				if member.entries[id] or (history and history.status == "active") then value.active = true
-				elseif member.state == "ready" then value.active = false end
-				if history and history.status == "completed" then value.completed = true
-				elseif history and (history.status == "incomplete" or history.status == "repeatable") then value.completed = false end
-				evidence[id] = value
-			end
 			local character = self:GetPartyQuestChainCharacterEvidence(member)
-			for id in pairs(graph.nodes or {}) do
+			for _, id in ipairs(IDs(evaluated)) do
 				state.requirements[id] = state.requirements[id] or {}
-				local result = self:EvaluateQuestChainRequirements(id, evidence, character)
+				state.shareRequirements[id] = state.shareRequirements[id] or {}
+				local result = self:PreparePartyQuestShareRequirements(member, id, character)
 				state.requirements[id][i] = result
+				state.shareRequirements[id][member.name] = result
 				if union[id] and result.state == "blocked" then
 					for _, blocker in ipairs(result.blockers or {}) do
 						if blocker.questID and (blocker.kind == "prerequisite_all" or

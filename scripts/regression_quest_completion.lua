@@ -18,6 +18,7 @@ local function Fixture()
 	function a:CanMutateOwnedUI() return not self.blocked end
 	local own = { name = a.name, isLocal = true, entries = { [1] = Quest(1) }, state = "ready", questHistory = {} }
 	local friend = { name = "Friend-Realm", entries = {}, state = "ready", supportsQuestHistory = true, questHistory = {} }
+	own.sampledAt, friend.sampledAt = a.now, a.now
 	a.partyQuestCompareSession = {
 		playerName = a.name, members = { own, friend }, byName = { [a.name] = own, [friend.name] = friend },
 		mode = "party", expandedQuestIds = {}, search = "",
@@ -68,13 +69,43 @@ QT:RegisterTest("quest history uses bounded requested character evidence without
 	Equal(a:GetPartyQuestAbsenceState(friend, 2), "Missing")
 	Equal(a:GetPartyQuestAbsenceState(own, 2), "Absent")
 	Equal(a:BuildPartyQuestDiffRows()[1].cells[1], "Have")
-	Equal(a:BuildPartyQuestDiffRows()[1].action, nil)
+	Equal(a:BuildPartyQuestDiffRows()[1].action, "share")
+	Equal(a:BuildPartyQuestDiffRows()[1].shareReadiness.disabled, true)
 	local renders = a.renders
 	a:Advance(61)
 	a:UpdatePartyQuestCompletion() -- The replacement response is deliberately lost.
 	assert(a.renders > renders)
 	Equal(friend.questHistory[1], nil)
 	Equal(a:GetPartyQuestAbsenceState(friend, 1), "Absent")
+end)
+
+QT:RegisterTest("native share requirement refusals preserve localized recipient feedback without changing quest evidence", function()
+	local a, _, friend = Fixture()
+	local suffixes = { "CLASS", "RACE", "PREREQUISITE", "LOW_LEVEL", "HIGH_LEVEL",
+		"LOW_FACTION", "HIGH_FACTION", "EXPANSION", "NEW_PLAYER_EXPERIENCE",
+		"NOT_GARRISON_OWNER", "WRONG_COVENANT", "WRONG_FACTION" }
+	local formats = {}
+	for _, suffix in ipairs(suffixes) do formats["ERR_QUEST_PUSH_" .. suffix .. "_S"] = suffix .. ": %1$s" end
+	formats.ERR_QUEST_PUSH_CLASS_S = "%s is the wrong class for that quest."
+	formats.ERR_QUEST_PUSH_PREREQUISITE_S = "%s hasn't completed all of the prerequisite quests required for that quest."
+	a.API.GetQuestShareResultFormats = function() return formats end
+	function a:RefreshPartyQuestSyncMember() error("a refusal cannot certify changed quest ownership") end
+	friend.questHistory[1] = { status = "incomplete", sampledAt = a.now }
+	local history = friend.questHistory[1]
+	a.partyQuestShareState = { outgoing = { test = { target = friend.name, questId = 1, status = "sent", expires = 150 } } }
+	for _, suffix in ipairs(suffixes) do
+		local message = formats["ERR_QUEST_PUSH_" .. suffix .. "_S"]:gsub("%%1%$s", friend.name):gsub("%%s", friend.name)
+		assert(a:HandleQuestShareSystemMessage(message))
+		local result = a.questShareNativeResults[friend.name]
+		Equal(result.code, "ERR_QUEST_PUSH_" .. suffix .. "_S")
+		Equal(result.questId, nil)
+		Equal(a:GetLatestQuestShareResultText(friend.name), "Latest share result: " .. message)
+		Equal(friend.questHistory[1], history)
+		Equal(a:GetPartyQuestShareStatus(1), "Share attempted")
+	end
+	Equal(next(friend.entries), nil)
+	Equal(#a.audioCues, #suffixes)
+	Equal(#a.wire, 0)
 end)
 
 QT:RegisterTest("completion history keeps older peers honest and active repeatable and unknown states distinct", function()
@@ -326,6 +357,150 @@ QT:RegisterTest("share requests carry exact owner eligibility explanations while
 	index, _, code = a:GetQuestShareAvailability(1)
 	Equal(index, nil)
 	Equal(code, "not_owned")
+end)
+
+QT:RegisterTest("share readiness distinguishes queued history failures and real partywide recipients", function()
+	local a, own, friend = Fixture()
+	Equal(a:GetPartyQuestShareReadiness(1, "share").state, "unknown")
+	a:SetPartyQuestCompletionInterest({ 1 })
+	local readiness = a:GetPartyQuestShareReadiness(1, "share")
+	Equal(readiness.state, "checking"); Equal(readiness.disabled, true)
+	a:UpdatePartyQuestCompletion()
+	local pending = assert(a:GetPendingQuestCompare(friend.historyRequestId))
+	Equal(Response(a, friend, {}), false)
+	assert(friend.historyRequestId, "a partial response cannot finish a certified history query")
+	pending.receiver.onTimeout()
+	readiness = a:GetPartyQuestShareReadiness(1, "share")
+	Equal(readiness.state, "unknown"); Equal(readiness.disabled, false)
+	a:Advance(16); a:UpdatePartyQuestCompletion()
+	assert(friend.historyRequestId)
+	readiness = a:GetPartyQuestShareReadiness(1, "share")
+	Equal(readiness.state, "unknown"); Equal(readiness.disabled, false)
+	Equal(Response(a, friend, { { questId = 1, status = "completed", sampledAt = a.API.GetServerTime() } }), true)
+	readiness = a:GetPartyQuestShareReadiness(1, "share")
+	Equal(readiness.disabled, true); Equal(readiness.counts.completed, 1)
+	Equal(a:SharePartyDiffQuest(1), false); Equal(a.pushes, 0)
+	a:Roster(a.name, friend.name, "Unrepresented-Realm")
+	a.partyQuestCompareSession.mode, a.partyQuestCompareSession.targetName = "target", friend.name
+	readiness = a:GetPartyQuestShareReadiness(1, "share")
+	Equal(readiness.disabled, false); Equal(readiness.counts.unknown, 1)
+	Equal(#readiness.recipients, 2)
+	Equal(a:SharePartyDiffQuest(1), true); Equal(a.pushes, 1)
+	a:Roster(a.name, friend.name)
+	friend.questHistory[1].sampledAt = a.now - 60
+	friend.historyFailures = nil
+	readiness = a:GetPartyQuestShareReadiness(1, "share")
+	Equal(readiness.state, "checking"); Equal(readiness.counts.completed, 0)
+	friend.supportsQuestHistory = false
+	readiness = a:GetPartyQuestShareReadiness(1, "share")
+	Equal(readiness.state, "unknown"); Equal(readiness.disabled, false)
+	friend.questHistory[1] = { status = "repeatable", sampledAt = a.now }
+	a.questShareNativeResults = { [friend.name] = { code = "ERR_QUEST_PUSH_ALREADY_DONE_S", at = a.now } }
+	Equal(a:GetPartyQuestShareReadiness(1, "share").recipients[1].state, "missing")
+	friend.questHistory[1].status = "active"
+	Equal(a:GetPartyQuestShareReadiness(1, "share").recipients[1].state, "have")
+	friend.questHistory[1], friend.entries[1], friend.sampledAt = nil, Quest(1), a.now - 60
+	readiness = a:GetPartyQuestShareReadiness(1, "share")
+	Equal(readiness.state, "unknown"); Equal(readiness.disabled, false)
+	Equal(own.entries[1].questId, 1)
+end)
+
+local function ShareRequirementsFixture()
+	local a, own, friend = Fixture()
+	a.db = { profile = {} }
+	a.partyQuestCompareSession.chains = { profile = a.db.profile, graphs = {}, relationshipsByQuest = {} }
+	a.questChainProviderSnapshot = { kind = "questiedb", state = "ready", generation = 1, revision = 1,
+		nodes = { [1] = {}, [2] = {}, [3] = {} }, metadata = { [1] = { requiredLevel = 10 } },
+		relations = { [1] = { { kind = "prerequisite_all", questID = 1, relatedQuestID = 2 } } } }
+	function a:GetPartyQuestChainCharacterEvidence(member) return member.character or { level = 10 } end
+	return a, own, friend
+end
+
+QT:RegisterTest("share readiness uses certified explicit blockers and invalidates mutable evidence", function()
+	local a, _, friend = ShareRequirementsFixture()
+	friend.questHistory[1], friend.questHistory[2] = { status = "incomplete", sampledAt = a.now },
+		{ status = "incomplete", sampledAt = a.now }
+	a:RefreshPartyQuestShareRequirements(friend, 1)
+	local readiness = a:GetPartyQuestShareReadiness(1, "share")
+	Equal(readiness.disabled, true); Equal(readiness.recipients[1].state, "blocked")
+	-- The action remains focusable on the ordinary row, while Can share excludes it.
+	Equal(a:BuildPartyQuestDiffRows()[1].action, "share")
+	a.partyQuestCompareWindow = nil
+	a:SetPartyQuestCompareFilter("action", "share")
+	Equal(#a:BuildPartyQuestDiffRows(), 0)
+	friend.questHistory[2] = { status = "completed", sampledAt = a.now }
+	Equal(a:GetPartyQuestMemberShareReadiness(friend, 1).requirementState, "unknown")
+	a:RefreshPartyQuestShareRequirements(friend, 1)
+	readiness = a:GetPartyQuestMemberShareReadiness(friend, 1)
+	Equal(readiness.requirementState, "met"); Equal(readiness.state, "missing")
+	Equal(readiness.canAccept, nil)
+	a.questChainProviderSnapshot.revision = 2
+	Equal(a:GetPartyQuestMemberShareReadiness(friend, 1).requirementState, "unknown")
+	friend.character = { level = 5 }
+	a:RefreshPartyQuestShareRequirements(friend, 1)
+	Equal(a:GetPartyQuestMemberShareReadiness(friend, 1).state, "blocked")
+	friend.character = { level = 10 }
+	friend.questHistory[2] = { status = "repeatable", sampledAt = a.now }
+	a:RefreshPartyQuestShareRequirements(friend, 1)
+	Equal(a:GetPartyQuestMemberShareReadiness(friend, 1).requirementState, "unknown")
+	a.questChainProviderSnapshot.relations[1] = {
+		{ kind = "prerequisite_any", questID = 1, relatedQuestID = 2 },
+		{ kind = "prerequisite_any", questID = 1, relatedQuestID = 3 },
+	}
+	friend.questHistory[2] = { status = "incomplete", sampledAt = a.now }
+	friend.questHistory[3] = { status = "completed", sampledAt = a.now }
+	a:RefreshPartyQuestShareRequirements(friend, 1)
+	Equal(a:GetPartyQuestMemberShareReadiness(friend, 1).requirementState, "met")
+	a.now = a.now + 60
+	Equal(a:GetPartyQuestMemberShareReadiness(friend, 1).requirementState, "unknown")
+end)
+
+QT:RegisterTest("share request rechecks local prerequisites and owner confirmation rechecks recipient facts", function()
+	local a, own, friend = ShareRequirementsFixture()
+	a.entries, own.entries, friend.entries, friend.supportsShareRequests = {}, {}, { [1] = Quest(1) }, true
+	a.history[1], a.history[2] = "incomplete", "incomplete"
+	Equal(a:RequestPartyQuestShare(1, friend.name), false)
+	Equal(#a.wire, 0)
+	Equal(a:GetPartyQuestShareReadiness(1, "request").reason, "requirements")
+	-- A level/prerequisite change before activation must replace the old veto.
+	own.questHistory[1] = { status = "completed", sampledAt = a.now }
+	a.history[2] = "completed"
+	Equal(a:RequestPartyQuestShare(1, friend.name), true)
+	Equal(own.questHistory[1].status, "incomplete")
+	local b, _, recipient = ShareRequirementsFixture()
+	local state = b:GetPartyQuestShareState()
+	local request = { key = "incoming", sender = recipient.name, questId = 1, requestId = "incoming", expires = b.now + 60 }
+	state.incoming[request.key] = request
+	recipient.questHistory[1] = { status = "completed", sampledAt = b.now }
+	Equal(b:ConfirmPartyQuestShare(request, false), false)
+	Equal(b.pushes, 0); Equal(state.incoming[request.key], nil)
+	Equal(b.wire[#b.wire].record.status, "unavailable")
+	request = { key = "new", sender = recipient.name, questId = 1, requestId = "new", expires = b.now + 60 }
+	state.incoming[request.key] = request
+	recipient.questHistory[1], recipient.entries[1], recipient.sampledAt = nil, Quest(1), b.now - 60
+	Equal(b:ConfirmPartyQuestShare(request, false), true)
+	Equal(b.pushes, 1)
+end)
+
+QT:RegisterTest("share and chain history context retain one bounded interest budget", function()
+	local a, _, friend = Fixture()
+	local share, chain = {}, {}
+	for id = 2, 101 do share[#share + 1] = id end
+	for id = 102, 201 do chain[#chain + 1] = id end
+	a.partyQuestCompareSession.chains = { selectedQuestID = 102 }
+	a:SetPartyQuestCompletionInterest(chain, "chain")
+	a:SetPartyQuestCompletionInterest(share, "share")
+	a:SetPartyQuestCompletionInterest({ 1 })
+	Equal(#a.partyQuestCompareSession.historyInterestOrder, 100)
+	Equal(a.partyQuestCompareSession.historyInterestOrder[1], 102)
+	Equal(a.partyQuestCompareSession.historyInterestOrder[2], 1)
+	a:UpdatePartyQuestCompletion()
+	Equal(#a.wire[#a.wire].record.historyQuestIds, 32)
+	friend.questHistory[2] = { status = "completed", sampledAt = a.now }
+	a:SetPartyQuestCompletionInterest({}, "share")
+	Equal(friend.questHistory[2], nil)
+	local count = 0; for _ in pairs(a.partyQuestCompareSession.historyContext) do count = count + 1 end
+	assert(count <= 100)
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_quest_completion.lua")

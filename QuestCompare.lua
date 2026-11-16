@@ -3,6 +3,7 @@ local QuestTogether = _G.QuestTogether
 
 local SHARE_LIFETIME = 60
 local SHARE_COOLDOWN = 5
+local SHARE_EVIDENCE_LIFETIME = 60
 local GROUP_ROUTES = { PARTY = true, RAID = true, INSTANCE_CHAT = true }
 local SHARE_STATUS = {
 	request = true,
@@ -43,6 +44,7 @@ function QuestTogether:SetPartyQuestMemberSnapshot(member, entries, revision, sa
 	if not entries or member.isLocal or member.revision ~= revision then
 		self:CancelPartyQuestCompletionRequest(member)
 		member.questHistory = {}
+		member.historyFailures = {}
 		member.historyGeneration = (member.historyGeneration or 0) + 1
 	end
 	member.entries, member.revision, member.sampledAt =
@@ -592,6 +594,124 @@ function QuestTogether:PreparePartyQuestPresentation(session, ids, metadata)
 	session.questPresentation = presentation
 end
 
+-- These readers consume only prepared snapshots. Missing history and a list of
+-- satisfied database requirements never certify that Blizzard will accept a
+-- quest for a character.
+function QuestTogether:GetPartyQuestCachedShareRequirements(member, questId)
+	local session, now = self.partyQuestCompareSession, self:GetPartyQuestCompareTime()
+	local chains = session and session.chains
+	if not chains or chains.retired or chains.profile ~= (self.db and self.db.profile) then return nil end
+	local result = chains and chains.shareRequirements and chains.shareRequirements[questId]
+	result = result and result[member.name]
+	local certificate = result and result.certificate
+	if not certificate or certificate.member ~= member or certificate.entries ~= member.entries
+		or certificate.state ~= member.state or certificate.historyGeneration ~= (member.historyGeneration or 0)
+		or certificate.snapshotSampledAt ~= member.sampledAt
+		or certificate.provider ~= self.questChainProviderSnapshot
+		or (certificate.provider and (certificate.providerGeneration ~= certificate.provider.generation
+			or certificate.providerRevision ~= certificate.provider.revision))
+		or now < certificate.sampledAt or now >= certificate.expiresAt then return nil end
+	for id, evidence in pairs(certificate.histories) do
+		if (member.questHistory and member.questHistory[id] or false) ~= evidence then return nil end
+	end
+	return result
+end
+
+function QuestTogether:GetPartyQuestMemberShareReadiness(member, questId)
+	local result = { name = member.name, isLocal = member.isLocal == true, state = "unknown", requirementState = "unknown" }
+	local entry = member.entries and member.entries[questId]
+	local now = self:GetPartyQuestCompareTime()
+	local snapshotFresh = member.sampledAt and now >= member.sampledAt and now < member.sampledAt + SHARE_EVIDENCE_LIFETIME
+	local history = member.questHistory and member.questHistory[questId]
+	local fresh = history and now >= history.sampledAt and now < history.sampledAt + SHARE_EVIDENCE_LIFETIME
+	local session = self.partyQuestCompareSession
+	local interested = session and session.historyInterests and session.historyInterests[questId]
+	local failed = member.historyFailures and member.historyFailures[questId]
+	if member.state == "ready" then
+		if entry and snapshotFresh then result.state = entry.isComplete and "ready" or "have"
+		elseif fresh and history.status == "active" then result.state = "have"
+		elseif fresh and history.status == "completed" then result.state = "completed"
+		elseif fresh and (history.status == "incomplete" or history.status == "repeatable") then result.state = "missing"
+		elseif not entry and not fresh and interested and not failed and (member.supportsQuestHistory
+			or (member.isLocal and type(self.API.GetCharacterQuestHistoryStatus) == "function")) then result.state = "checking" end
+	elseif member.state == "loading" and (member.requestId or member.refreshToken or member.isLocal) then result.state = "checking" end
+	local requirements = self:GetPartyQuestCachedShareRequirements(member, questId)
+	if requirements then
+		result.requirements, result.requirementState = requirements, requirements.state
+		if requirements.state == "blocked" and result.state ~= "have" and result.state ~= "ready"
+			and result.state ~= "completed" then result.state = "blocked" end
+	end
+	result.canAttempt = result.state ~= "have" and result.state ~= "ready"
+		and result.state ~= "completed" and result.state ~= "blocked"
+	return result
+end
+
+function QuestTogether:GetPartyQuestShareReadiness(questId, action, target)
+	local session = self.partyQuestCompareSession
+	local result = { action = action, state = "unknown", disabled = false, recipients = {}, byName = {},
+		counts = { have = 0, ready = 0, completed = 0, blocked = 0, checking = 0, unknown = 0, missing = 0 } }
+	if not session then return result end
+	for _, member in ipairs(session.members) do
+		result.byName[member.name] = self:GetPartyQuestMemberShareReadiness(member, questId)
+	end
+	local seen, possible = {}, 0
+	local function Add(name)
+		if seen[name] then return end
+		seen[name] = true
+		local member = result.byName[name] or { name = name, state = "unknown", requirementState = "unknown", canAttempt = true }
+		result.byName[name] = member
+		result.recipients[#result.recipients + 1] = member
+		result.counts[member.state] = result.counts[member.state] + 1
+		if member.canAttempt then possible = possible + 1 end
+	end
+	if action == "request" then
+		Add(session.playerName)
+	else
+		-- Native sharing is partywide even in a two-column target comparison.
+		-- An unrepresented or unavailable party member remains a possible recipient.
+		for _, member in ipairs(session.members) do
+			if not member.isLocal and self:IsGroupedSender(member.name) then Add(member.name) end
+		end
+		for _, name in ipairs(self.partyMemberOrder or {}) do
+			if name ~= session.playerName and self:IsGroupedSender(name) then Add(name) end
+		end
+		local remaining = {}
+		for name in pairs(self.partyMembers or {}) do
+			if name ~= session.playerName and self:IsGroupedSender(name) and not seen[name] then remaining[#remaining + 1] = name end
+		end
+		table.sort(remaining)
+		for _, name in ipairs(remaining) do Add(name) end
+	end
+	result.disabled = #result.recipients > 0 and possible == 0
+	if result.disabled then
+		result.state = "blocked"
+		local recipient = #result.recipients == 1 and result.recipients[1]
+		result.reason = recipient and (recipient.state == "blocked" and "requirements" or recipient.state) or "all_unavailable"
+	elseif result.counts.checking > 0 then
+		result.state = "checking"
+		if possible == result.counts.checking then result.disabled, result.reason = true, "checking" end
+	elseif result.counts.unknown > 0 then result.state = "unknown"
+	else result.state = "possible" end
+	return result
+end
+
+-- Revalidate at activation, including delayed request dispatch and owner
+-- confirmation. No preflight result is permission to bypass native sharing.
+function QuestTogether:IsPartyQuestShareRecipientBlocked(member, questId, refreshLocal)
+	if not member then return false end
+	if refreshLocal and member.isLocal then
+		local status = self:ReadCharacterQuestHistoryStatus(questId)
+		if member.state == "ready" and not member.entries[questId] then
+			member.questHistory = member.questHistory or {}
+			member.questHistory[questId] = { status = status, sampledAt = self:GetPartyQuestCompareTime() }
+		end
+		if status == "active" or status == "completed" then return true, status end
+	end
+	if self.RefreshPartyQuestShareRequirements then self:RefreshPartyQuestShareRequirements(member, questId, refreshLocal) end
+	local readiness = self:GetPartyQuestMemberShareReadiness(member, questId)
+	return not readiness.canAttempt, readiness.state
+end
+
 -- Absence is evidence only after the complete snapshot arrives. Partial lists,
 -- timeouts and restricted local reads must never become a false "Missing".
 function QuestTogether:BuildPartyQuestDiffRows()
@@ -637,7 +757,8 @@ function QuestTogether:BuildPartyQuestDiffRows()
 			end
 		end
 		if own.entries[id] then
-			if row.missing > 0 then
+			local recipients = #session.members > 1
+			if row.missing > 0 or recipients then
 				if own.entries[id].isPushable == true then
 					row.action = "share"
 				elseif own.entries[id].isPushable == false then
@@ -646,7 +767,7 @@ function QuestTogether:BuildPartyQuestDiffRows()
 					row.hint = L("Shareability unknown")
 				end
 			end
-		elseif own.state == "ready" and self:GetPartyQuestAbsenceState(own, id) ~= "Completed" then
+		elseif own.state == "ready" then
 			local unknown = false
 			for _, member in ipairs(session.members) do
 				if member.state ~= "ready" or (member.entries[id] and member.entries[id].isPushable == nil) then
@@ -666,6 +787,9 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		end
 		if not targetCanShare and (row.action or row.hint) then
 			row.action, row.owner, row.hint = nil, nil, L("Join a party together to share quests.")
+		end
+		if self.GetPartyQuestShareReadiness then
+			row.shareReadiness = self:GetPartyQuestShareReadiness(id, own.entries[id] and "share" or "request", row.owner)
 		end
 		rows[#rows + 1] = row
 	end
@@ -701,6 +825,17 @@ function QuestTogether:SharePartyDiffQuest(questId)
 		session.message = L("Join a party together to share quests.")
 		self:QueuePartyQuestCompareRender()
 		return false
+	end
+	if session then
+		for _, member in ipairs(session.members) do
+			if not member.isLocal and self.RefreshPartyQuestShareRequirements then
+				self:RefreshPartyQuestShareRequirements(member, questId)
+			end
+		end
+		if self:GetPartyQuestShareReadiness(questId, "share").disabled then
+			self:QueuePartyQuestCompareRender()
+			return false
+		end
 	end
 	local index, reason = self:GetQuestShareAvailability(questId)
 	local ok = index and self.API.PushQuestToParty(index) == true
@@ -765,8 +900,11 @@ function QuestTogether:SendPartyQuestShareMessage(target, questId, requestId, st
 			end
 			-- Only confirmed absence authorizes a delayed share request.
 			local owns = self.API.IsOnQuest and self.API.IsOnQuest(questId)
+			local session = self.partyQuestCompareSession
+			local own = session and session.byName[session.playerName]
 			return self:CanAccessValue(owns) and owns == false
 				and self:ReadCharacterQuestHistoryStatus(questId) ~= "completed"
+				and not self:IsPartyQuestShareRecipientBlocked(own, questId, true)
 		end,
 		onResponse = function(data, sender, context)
 			return self:HandlePartyQuestShareMessage(data, sender, context)
@@ -816,13 +954,18 @@ function QuestTogether:RequestPartyQuestShare(questId, target)
 	end
 	-- Re-read local ownership: the user may already have accepted this quest.
 	local entries = self:BuildQuestCompareEntries()
-	if not entries or EntryMap(self, entries)[questId] then
-		return false
-	end
+	if not entries then return false end
+	local currentEntries = EntryMap(self, entries)
+	if currentEntries[questId] then self:QueuePartyQuestCompareRender(); return false end
+	self:SetPartyQuestMemberSnapshot(own, currentEntries, nil, self:GetPartyQuestCompareTime())
 	if self:ReadCharacterQuestHistoryStatus(questId) == "completed" then
 		if self.partyQuestCompareSession then
 			self.partyQuestCompareSession.message = L("You have already completed this quest.")
 		end
+		self:QueuePartyQuestCompareRender()
+		return false
+	end
+	if self:IsPartyQuestShareRecipientBlocked(own, questId, true) then
 		self:QueuePartyQuestCompareRender()
 		return false
 	end
@@ -1085,6 +1228,13 @@ function QuestTogether:ConfirmPartyQuestShare(request, alwaysAllow, automatic)
 		or self:IsIgnoredPlayerName(request.sender)
 	then
 		self:FinishPartyQuestShare(request, "expired")
+		return false
+	end
+	local session = self.partyQuestCompareSession
+	local recipient = session and session.byName[request.sender]
+		or (self.GetPartyQuestSyncMember and self:GetPartyQuestSyncMember(request.sender))
+	if self:IsPartyQuestShareRecipientBlocked(recipient, request.questId) then
+		self:FinishPartyQuestShare(request, "unavailable")
 		return false
 	end
 	local index, _, reasonCode = self:GetQuestShareAvailability(request.questId)

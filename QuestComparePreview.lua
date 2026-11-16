@@ -248,6 +248,9 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		"ConfigurePartyQuestKeyboardNavigation",
 		"ShowPartyQuestKeyboardMenu",
 		"GetPartyQuestAbsenceState",
+		"GetPartyQuestCachedShareRequirements",
+		"GetPartyQuestMemberShareReadiness",
+		"GetPartyQuestShareReadiness",
 	}) do
 		preview[method] = self[method]
 	end

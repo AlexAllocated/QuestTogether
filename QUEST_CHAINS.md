@@ -23,6 +23,33 @@ for branches and their joins. Hover tooltips follow the mouse, including when
 the gamepad interface is enabled; controller selection anchors them near the
 selected control.
 
+## Sharing from Party Quest Log
+
+The Share column shows current recipient checks before **Share** or **Request
+Share**. Hover the action or a missing player's cell for individual status and
+known requirements. Confirmed completion, active ownership and known blockers
+such as class, level or unmet prerequisites prevent a pointless action. These
+checks also run when activating an action, including delayed requests and the
+owner's confirmation when current evidence is available.
+
+**Checking eligibility** means evidence is still being fetched. **Eligibility
+unknown** means QT cannot establish the remaining conditions; sharing can still
+be attempted. **No known blockers** is not a guarantee that the game will accept
+the quest. Repeatable quests and unavailable history remain distinct from proof
+that a prerequisite was never completed.
+
+Blizzard shares to the entire party, including when PQL displays one selected
+player. A share for someone who needs the quest may still produce a refusal for
+another member. QT shows the game's specific localized response at the player
+level; those messages do not identify a quest and are not treated as new quest
+completion or prerequisite evidence.
+
+Completion checks work without QuestieDB on compatible peers. Documented
+prerequisite and class/race/level requirements on Forever use compatible
+QuestieDB data. Retail quest-line membership alone does not establish those
+requirements. Closing PQL releases its history interests, and sharing checks
+use the existing bounded history protocol.
+
 ## Setup and client coverage
 
 | Client | Data source | What to expect |

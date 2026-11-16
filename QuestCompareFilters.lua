@@ -227,7 +227,8 @@ function QT:FilterPartyQuestCompareRows(rows)
 			or (filters.progress == "someReady" and ready > 0)
 			or (filters.progress == "active" and active > 0)
 			or (filters.progress == "unknown" and unknown > 0)
-		local action = filters.action == "all" or row.action == filters.action
+		local action = filters.action == "all" or (row.action == filters.action
+			and not (row.shareReadiness and row.shareReadiness.disabled and row.shareReadiness.state ~= "checking"))
 		local matches = search == ""
 			or tostring(row.questId):find(search, 1, true)
 			or Fold(row.title):find(search, 1, true)

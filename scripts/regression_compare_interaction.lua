@@ -226,7 +226,7 @@ QT:RegisterTest("collapsed party columns retain roster comparison data and resto
 	a:RenderPartyQuestCompare()
 	Equal(frame.memberColumnsWidth, wide)
 	Equal(frame.columns[2].width, columnWidth)
-	Equal(frame.rows[1].cellTooltips[2]:IsShown(), false)
+	Equal(frame.rows[1].cellTooltips[2]:IsShown(), true) -- Missing snapshot eligibility stays inspectable at full width.
 	Equal(a.invalidCalls, nil)
 end)
 
@@ -261,8 +261,12 @@ QT:RegisterTest("compact quest states use font-independent markers and retain fu
 			Equal(row.focusCells[2]:IsShown(), state == "Have" or state == "Ready")
 			row.cellTooltips[2]:RunScript("OnEnter")
 			Equal(a.tooltip[1], member.name)
-			Equal(a.tooltip[2], QT.Translate(state == "Absent" and "Not in log" or state)
-				.. "\n\n|cff909090" .. QT.Translate("Quest ID") .. ": " .. row.data.questId .. "|r")
+			local label = QT.Translate(state == "Absent" and "Not in log" or state)
+			Equal(a.tooltip[2]:sub(1, #label), label)
+			assert(a.tooltip[2]:find("|cff909090" .. QT.Translate("Quest ID") .. ": " .. row.data.questId .. "|r", 1, true))
+			if state == "Have" or state == "Ready" or state == "Completed" then
+				assert(not a.tooltip[2]:find("Prerequisites", 1, true))
+			else assert(a.tooltip[2]:find("eligibility", 1, true)) end
 		end
 		assert(markers.Ready ~= markers.Completed and markers.Completed ~= markers.Missing)
 		a:SetPartyQuestColumnCollapsed(member.name, false, session)
@@ -271,7 +275,7 @@ QT:RegisterTest("compact quest states use font-independent markers and retain fu
 		for index = 1, #states do
 			local state = states[reverse and (#states + 1 - index) or index]
 			Equal(frame.rows[index].cells[2]:GetText(), QT.Translate(state == "Absent" and "Not in log" or state))
-			Equal(frame.rows[index].cellTooltips[2]:IsShown(), false)
+			Equal(frame.rows[index].cellTooltips[2]:IsShown(), state ~= "Have" and state ~= "Ready" and state ~= "Completed")
 		end
 	end
 	Equal(a.invalidCalls, nil)
@@ -384,6 +388,160 @@ QT:RegisterTest("remote column menus include personal notes and player share fee
 	for _, row in ipairs(frame.rows) do
 		assert(not row.hint:GetText():find("Latest share result:", 1, true))
 	end
+	Equal(a.invalidCalls, nil)
+end)
+
+local function ShareUI(action, recipient)
+	local a, frame, session = Open(2)
+	local own = { name = session.playerName, state = "have", requirementState = "unknown" }
+	recipient.name = action == "request" and session.playerName or session.members[2].name
+	a.readiness = { action = action, recipients = { recipient }, byName = { [own.name] = own, [recipient.name] = recipient },
+		disabled = recipient.state == "blocked" or recipient.state == "completed" }
+	function a:GetPartyQuestShareReadiness() return self.readiness end
+	local build = a.BuildPartyQuestDiffRows
+	function a:BuildPartyQuestDiffRows()
+		local rows = build(self)
+		for _, row in ipairs(rows) do
+			row.action, row.owner = action, action == "request" and session.members[2].name or nil
+			for index, member in ipairs(session.members) do
+				local ready = self.readiness.byName[member.name]
+				row.cells[index] = ready and ({ have = "Have", ready = "Ready", completed = "Completed", checking = "Loading" })[ready.state] or "Missing"
+			end
+		end
+		return rows
+	end
+	function a:ShowSettingsTooltip(owner, title, text) self.tooltip, self.tooltipOwner = { title, text }, owner end
+	function a:HideSettingsTooltip(owner)
+		if not owner or self.tooltipOwner == owner then self.tooltip, self.tooltipOwner = nil, nil end
+	end
+	function a:SharePartyDiffQuest() self.shareClicks = (self.shareClicks or 0) + 1 end
+	function a:RequestPartyQuestShare() self.shareClicks = (self.shareClicks or 0) + 1 end
+	a:RenderPartyQuestCompare()
+	return a, frame, session
+end
+
+QT:RegisterTest("share readiness UI explains blocked requests without prerequisites on possessed or completed quests", function()
+	local requirements = { state = "blocked", requirements = { { kind = "class", state = "blocked", allowedNames = { "Warrior" } },
+		{ kind = "level", state = "blocked", value = 30 } } }
+	local recipient = { state = "blocked", requirementState = "blocked", requirements = requirements }
+	local a, frame, session = ShareUI("request", recipient)
+	local row = frame.rows[1]
+	Equal(row.action.enabled, false); Equal(row.action.text, "Request Share"); Equal(row.hint.text, "Different class")
+	Equal(row.action.motionScriptsWhileDisabled, true)
+	row.action:RunScript("OnEnter")
+	assert(a.tooltip[2]:find("Ask Friend-Realm to share this quest.", 1, true))
+	assert(a.tooltip[2]:find("Requires level 30", 1, true))
+	row.action:RunScript("OnClick"); Equal(a.shareClicks, nil)
+	row.cellTooltips[1]:RunScript("OnEnter")
+	assert(a.tooltip[2]:find("Different class", 1, true)); assert(a.tooltip[2]:find("Warrior", 1, true))
+	row:RunScript("OnEnter"); assert(not a.tooltip[2]:find("Different class", 1, true))
+	-- Some providers supply only blockers, with an empty evaluated list.
+	requirements.requirements, requirements.blockers = {}, { { kind = "class" } }
+	a:RenderPartyQuestCompare(); Equal(frame.rows[1].hint.text, "Different class")
+	for _, state in ipairs({ "have", "ready", "completed" }) do
+		recipient.state = state
+		a:SetPartyQuestColumnCollapsed(session.playerName, true, session)
+		a:RenderPartyQuestCompare()
+		row = frame.rows[1]
+		row.cellTooltips[1]:RunScript("OnEnter")
+		assert(not a.tooltip[2]:find("Requires level", 1, true)); assert(not a.tooltip[2]:find("Different class", 1, true))
+		row.action:RunScript("OnEnter")
+		assert(not a.tooltip[2]:find("Requires level", 1, true)); assert(not a.tooltip[2]:find("Different class", 1, true))
+	end
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("share readiness UI distinguishes missing history from known prerequisites and preserves request feedback", function()
+	local recipient = { state = "missing", requirementState = "unknown" }
+	local a, frame = ShareUI("share", recipient)
+	Equal(frame.rows[1].hint.text, "Eligibility unknown"); Equal(frame.rows[1].action.enabled, true)
+	recipient.state = "checking"; a:RenderPartyQuestCompare()
+	Equal(frame.rows[1].hint.text, "Checking eligibility")
+	recipient.state, recipient.requirementState = "missing", "met"; a:RenderPartyQuestCompare()
+	Equal(frame.rows[1].hint.text, "No known blockers")
+	function a:GetPartyQuestShareStatus() return self.feedback, self.waiting end
+	a.feedback = "Request declined"; a:RenderPartyQuestCompare()
+	Equal(frame.rows[1].hint.text, "Request declined"); Equal(frame.rows[1].action.enabled, true)
+	frame.rows[1].action:RunScript("OnEnter"); assert(a.tooltip)
+	a.feedback, a.waiting = "Request sent", true; a:RenderPartyQuestCompare()
+	Equal(frame.rows[1].action:IsShown(), false); Equal(frame.rows[1].hint.text, "Request sent"); Equal(a.tooltip, nil)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("share readiness UI describes partywide mixed recipients from cached data with bounded raid tooltips", function()
+	local recipient = { state = "blocked", requirementState = "blocked", requirements = { state = "blocked",
+		requirements = { { kind = "class", state = "blocked", allowedNames = { "Warrior" } } } } }
+	for level = 30, 60 do
+		recipient.requirements.requirements[#recipient.requirements.requirements + 1] = { kind = "level", state = "blocked", value = level }
+	end
+	local a, frame = ShareUI("share", recipient)
+	a.readiness.disabled = false
+	local outsider = { name = "OutsideComparison-Realm", state = "unknown", requirementState = "unknown" }
+	a.readiness.recipients[2], a.readiness.byName[outsider.name] = outsider, outsider
+	for index = 1, 10 do
+		a.readiness.recipients[#a.readiness.recipients + 1] = { name = "Holder" .. index, state = "have" }
+	end
+	function a:GetQuestChainQuestInfo() error("presentation queried provider") end
+	function a:ReadCharacterQuestHistoryStatus() error("presentation queried native history") end
+	a:RenderPartyQuestCompare()
+	Equal(frame.rows[1].action.enabled, true)
+	assert(frame.rows[1].hint.text:find("1 unknown", 1, true)); assert(frame.rows[1].hint.text:find("1 blocked", 1, true))
+	frame.rows[1].action:RunScript("OnEnter")
+	local text = a.tooltip[2]
+	assert(text:find("Sharing sends this quest to the whole party.", 1, true))
+	assert(text:find("OutsideComparison-Realm: Eligibility unknown", 1, true))
+	assert(text:find("Friend-Realm: Different class", 1, true))
+	assert(text:find("Already have it: 10", 1, true)); assert(text:find("And 4 more players.", 1, true))
+	assert(text:find("World of Warcraft checks whether each player can accept the quest.", 1, true))
+	local _, occurrences = text:gsub("Different class", ""); Equal(occurrences, 1)
+	assert(not text:find("Requires level", 1, true)); assert(not text:find("Prerequisites not met", 1, true))
+	frame.rows[1].cellTooltips[2]:RunScript("OnEnter")
+	assert(a.tooltip[2]:find("Warrior", 1, true)); assert(a.tooltip[2]:find("Requires level 60", 1, true))
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("share readiness UI keeps mixed pending eligibility distinct from blocked recipients after timeout", function()
+	local recipient = { state = "checking", requirementState = "unknown" }
+	local a, frame = ShareUI("share", recipient)
+	a.readiness.recipients[2] = { name = "Completed-Realm", state = "completed" }
+	a.readiness.disabled, a.readiness.state = true, "checking"
+	a:RenderPartyQuestCompare()
+	Equal(frame.rows[1].action.enabled, false); Equal(frame.rows[1].action.text, "Share")
+	Equal(frame.rows[1].hint.text, "Checking eligibility")
+	recipient.state, a.readiness.state, a.readiness.disabled = "unknown", "unknown", false
+	a:RenderPartyQuestCompare()
+	Equal(frame.rows[1].action.enabled, true); Equal(frame.rows[1].action.text, "Share")
+	assert(frame.rows[1].hint.text:find("1 unknown", 1, true)); assert(frame.rows[1].hint.text:find("1 completed", 1, true))
+	assert(not frame.rows[1].hint.text:find("No eligible recipients", 1, true))
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("share readiness UI retires pooled tooltips and rechecks stale button and menu actions", function()
+	local a, frame, session = ShareUI("share", { state = "missing", requirementState = "met" })
+	local row, callback = frame.rows[1]
+	row.action:RunScript("OnEnter"); Equal(a.tooltipOwner, row.action)
+	local selected = frame.navigationRows[1]
+	a:PopulatePartyQuestContextMenu(frame, selected, { CreateTitle = function() end,
+		CreateButton = function(_, label, action)
+			if label == "Share" then callback = action end
+			return { SetEnabled = function() end }
+		end })
+	assert(callback)
+	a.readiness.disabled = true -- Eligibility changes before redraw or callback delivery.
+	local renders = a.renders
+	row.action:RunScript("OnClick"); callback(); Equal(a.shareClicks, nil)
+	assert(a.renders > renders, "rejected stale actions refresh the current eligibility explanation")
+	a.readiness.disabled = false
+	a:SetPartyQuestCompareFilter("search", "Quest 02"); a:RenderPartyQuestCompare()
+	Equal(row.data.questId, 2); Equal(a.tooltip, nil)
+	callback(); Equal(a.shareClicks, nil)
+	row.action:RunScript("OnEnter"); assert(a.tooltip)
+	row.action:Hide(); Equal(a.tooltip, nil)
+	a.partyQuestCompareSession = {}; renders = a.renders
+	row.action:RunScript("OnEnter"); row.action:RunScript("OnClick")
+	Equal(a.tooltip, nil); Equal(a.shareClicks, nil)
+	Equal(a.renders, renders)
+	a.partyQuestCompareSession = session
 	Equal(a.invalidCalls, nil)
 end)
 

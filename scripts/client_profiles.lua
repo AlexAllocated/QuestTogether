@@ -1600,6 +1600,37 @@ return not active end,
 		-- Native sharing/menu contracts stay offline: these are fake globals in
 		-- this process, never monkeypatches in /qt test.
 		do
+			local suffixes = { "CLASS", "RACE", "PREREQUISITE", "LOW_LEVEL", "HIGH_LEVEL",
+				"LOW_FACTION", "HIGH_FACTION", "EXPANSION", "NEW_PLAYER_EXPERIENCE",
+				"NOT_GARRISON_OWNER", "WRONG_COVENANT", "WRONG_FACTION" }
+			local saved, savedRestricted = {}, addon.IsRuntimeRestricted
+			local blocked = false
+			addon.IsRuntimeRestricted = function() return blocked end
+			for _, suffix in ipairs(suffixes) do
+				local key = "ERR_QUEST_PUSH_" .. suffix .. "_S"
+				saved[key] = _G[key]
+				_G[key] = suffix .. ": %1$s"
+			end
+			local formats = addon.API.GetQuestShareResultFormats()
+			for _, suffix in ipairs(suffixes) do
+				local key = "ERR_QUEST_PUSH_" .. suffix .. "_S"
+				assert(formats[key] == _G[key], "native refusal formats must retain the client's localized text")
+			end
+			for _, invalid in ipairs({ secret, inaccessible, false, 1, "", string.rep("x", 1025) }) do
+				ERR_QUEST_PUSH_PREREQUISITE_S = invalid
+				assert(addon.API.GetQuestShareResultFormats().ERR_QUEST_PUSH_PREREQUISITE_S == nil)
+			end
+			ERR_QUEST_PUSH_PREREQUISITE_S = nil
+			assert(addon.API.GetQuestShareResultFormats().ERR_QUEST_PUSH_PREREQUISITE_S == nil)
+			blocked = true
+			assert(next(addon.API.GetQuestShareResultFormats()) == nil)
+			for _, suffix in ipairs(suffixes) do
+				local key = "ERR_QUEST_PUSH_" .. suffix .. "_S"
+				_G[key] = saved[key]
+			end
+			addon.IsRuntimeRestricted = savedRestricted
+		end
+		do
 			local rawIndex, rawRow = 7, { questID = 12345, isHeader = false }
 			local sends, throws = {}, false
 			QuestLogPushQuest = function(...)
