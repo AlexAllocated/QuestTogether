@@ -11,6 +11,13 @@ not bundled components.
 
 ## Identify the exact source
 
+The prospective license-transition commit is
+`0390b81dfecf1469aba9b05d6a9cdb3107aa61c6`. This local candidate is not yet published;
+a public source URL for it will become valid only with the separately authorized
+release. Local validation includes an exact source archive alongside the candidate
+installation ZIP. The archive identifies its source commit in the accompanying
+validation record.
+
 For an archive built with `scripts/package.py --ref <tag-or-commit>`, read
 `QuestTogether/package-manifest.json`. `sourceCommit` is the full Git commit;
 `sourceRepository` identifies the repository, and `sourceUrl` points to that

@@ -15,8 +15,10 @@ the MIT permission and warranty terms. Preserve any copyright notices supplied
 with the earlier copy. New project-owned contributions from this transition
 forward use GPL-3.0-only; they are not also offered under MIT by this notice.
 
-The transition is the first commit adding this file and changing the main TOC's
-`X-License` to `GPL-3.0-only`. Find its full hash in a complete checkout with:
+The license transition is commit `0390b81dfecf1469aba9b05d6a9cdb3107aa61c6`, which first added this file and changed the main TOC's
+`X-License` to `GPL-3.0-only`. It is an unpublished local candidate; the last
+published stable release, 9.3.3, remains under its existing MIT terms. Verify the
+transition in a complete checkout with:
 
 ```sh
 git log --reverse --diff-filter=A --format='%H %ad %s' --date=iso-strict -- LICENSING.md
