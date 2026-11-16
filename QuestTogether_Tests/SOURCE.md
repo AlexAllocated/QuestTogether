@@ -11,12 +11,12 @@ not bundled components.
 
 ## Identify the exact source
 
-The prospective license-transition commit is
-`0390b81dfecf1469aba9b05d6a9cdb3107aa61c6`. This local candidate is not yet published;
-a public source URL for it will become valid only with the separately authorized
-release. Local validation includes an exact source archive alongside the candidate
-installation ZIP. The archive identifies its source commit in the accompanying
-validation record.
+The license-transition commit is
+`0390b81dfecf1469aba9b05d6a9cdb3107aa61c6`, and the first stable release under
+GPL-3.0-only is 10.0.0 (`v10.0.0`). The transition commit identifies the licensing
+change; obtain the complete source for a release from that release's exact source
+commit, recorded in its package manifest or release description as described
+below. Earlier MIT grants remain in force; see [LICENSING.md](LICENSING.md).
 
 For an archive built with `scripts/package.py --ref <tag-or-commit>`, read
 `QuestTogether/package-manifest.json`. `sourceCommit` is the full Git commit;
@@ -47,8 +47,9 @@ python3 scripts/package.py --ref <sourceCommit> --output dist/QuestTogether.zip
 The repository-based source packager includes tracked sources and applies the
 folder move in `.pkgmeta`; it does not create the deterministic packager's
 manifest. Its release page must therefore identify the immutable release tag
-and full source commit. A version label alone is insufficient, and a local
-uncommitted source tree cannot provide that published mapping.
+and full source commit, and link the source tree and archive for that commit.
+A version label alone is insufficient, and a local uncommitted source tree
+cannot provide that published mapping.
 
 ## Preferred editable asset sources
 
@@ -74,7 +75,7 @@ editable source; byte-identical regenerated media is not promised across tool
 versions. Screenshot conversions preserve third-party artwork and do not acquire
 the original-art license merely by being generated.
 
-## Before a future release
+## Release source and licensing requirements
 
 1. Record the full license-transition commit and the release's actual source
    commit. Verify that the release descends from that transition; do not relabel
@@ -88,5 +89,6 @@ the original-art license merely by being generated.
    keeping the bundled-license and screenshot exceptions visible. Record the
    first affected tag and transition hash in the release description.
 
-These are requirements for a separately authorized future release. Adding the
-license files or building a local ZIP does not publish anything.
+These requirements apply from 10.0.0 onward. Earlier releases retain their
+existing license terms. Adding license files or building a local ZIP does not
+publish a release or establish its exact published source identity.

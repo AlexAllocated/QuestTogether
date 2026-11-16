@@ -468,7 +468,7 @@ the release's applicable host license metadata says GPL-3.0-only and retains the
 bundled-license and screenshot exceptions. Source-packager releases do not create
 the deterministic manifest, so their release page must explicitly link the exact
 source commit and archive as described in `SOURCE.md`. These checks apply to the
-future license-transition release, not to historical MIT versions.
+GPL-3.0-only releases beginning with 10.0.0, not to historical MIT versions.
 
 CI runs the package tests, builds the exact tested commit, and uploads
 `QuestTogether-validated-package`. Use that artifact or the same local command;

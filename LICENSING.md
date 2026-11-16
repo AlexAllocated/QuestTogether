@@ -15,20 +15,22 @@ the MIT permission and warranty terms. Preserve any copyright notices supplied
 with the earlier copy. New project-owned contributions from this transition
 forward use GPL-3.0-only; they are not also offered under MIT by this notice.
 
-The license transition is commit `0390b81dfecf1469aba9b05d6a9cdb3107aa61c6`, which first added this file and changed the main TOC's
-`X-License` to `GPL-3.0-only`. It is an unpublished local candidate; the last
-published stable release, 9.3.3, remains under its existing MIT terms. Verify the
-transition in a complete checkout with:
+The license transition is commit
+`0390b81dfecf1469aba9b05d6a9cdb3107aa61c6`, which first added this file and changed
+the main TOC's `X-License` to `GPL-3.0-only`. The first stable release under these
+terms is 10.0.0 (`v10.0.0`). Earlier releases, including 9.3.3, retain their
+existing MIT terms. Verify the transition in a complete checkout with:
 
 ```sh
 git log --reverse --diff-filter=A --format='%H %ad %s' --date=iso-strict -- LICENSING.md
 git show <transition-commit> -- QuestTogether.toc LICENSING.md
 ```
 
-An uncommitted checkout has no transition commit or published release identity.
-The version string alone does not identify the transition, and existing release
-tags are not relabeled. Future release metadata must identify the actual tag and
-full source commit as described in [SOURCE.md](SOURCE.md).
+A working-tree preview does not establish an exact published source identity.
+The transition commit identifies the licensing change, not the complete source
+of every subsequent release. Existing release tags are not relabeled. Release
+metadata must identify the actual tag and full source commit as described in
+[SOURCE.md](SOURCE.md).
 
 ## Scope and exceptions
 
