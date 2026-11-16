@@ -562,6 +562,7 @@
       "TOPRIGHT",
       "Value",
       "Wifebeast",
+      "player nameplate notice refresh",
       "settings controls require explanatory tooltip text",
       "settings scrollbar refresh"
     ],
@@ -605,7 +606,9 @@
       "Show"
     ],
     "PartyNavigation.lua": [
-      "PARTY"
+      "PARTY",
+      "QUEST",
+      "party_focus event=%s questID=%d"
     ],
     "PartyQuestProgress.lua": [
       "Completed",

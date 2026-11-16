@@ -18,11 +18,15 @@ local function Region(kind, parent)
 	if parent then parent.children[#parent.children + 1] = f end
 	return f
 end
-function methods:CreateFontString()
-	return Region("FontString")
+function methods:CreateFontString(_, _, fontObject)
+	local region = Region("FontString")
+	region.parent, region.fontObject = self, fontObject
+	return region
 end
 function methods:CreateTexture()
-	return Region("Texture")
+	local region = Region("Texture")
+	region.parent = self
+	return region
 end
 function methods:SetScript(key, fn)
 	self.scripts[key] = fn
@@ -99,7 +103,7 @@ function methods:IsProtected()
 	return false
 end
 for _, key in ipairs({
-	"SetTextInsets", "SetBackdrop", "SetBackdropColor", "SetClampedToScreen", "SetDrawLayer",
+	"SetTextInsets", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetClampedToScreen", "SetDrawLayer",
 	"SetFont", "SetFrameLevel", "SetFrameStrata", "SetHighlightFontObject", "SetNormalFontObject",
 	"SetScale", "SetStatusBarColor", "SetStatusBarTexture", "SetTextColor", "SetNameplateIconKind",
 	"SetAutoFocus", "SetMaxLetters", "ClearFocus", "SetAlpha", "ClearAllPoints",
@@ -128,12 +132,36 @@ function methods:SetPoint(...)
 	self.points = self.points or {}
 	self.points[#self.points + 1] = { ... }
 end
-function methods:ClearAllPoints() self.points = {} end
+function methods:ClearAllPoints() self.points, self.allPoints = {}, nil end
+function methods:SetAllPoints(relative) self.allPoints = relative or self.parent end
+function methods:SetAtlas(atlas) self.atlas, self.texture = atlas, nil end
+function methods:SetTexture(texture) self.texture, self.atlas = texture, nil end
+function methods:SetTexCoord(...) self.texCoord = { ... } end
+function methods:SetDrawLayer(layer, sublevel) self.drawLayer, self.drawSublevel = layer, sublevel end
+function methods:SetFontObject(fontObject) self.fontObject = fontObject end
+function methods:SetTextColor(...) self.textColor = { ... } end
+function methods:SetVertexColor(...) self.vertexColor = { ... } end
+function methods:SetFont(path, height, flags) self.fontPath, self.fontHeight, self.fontFlags = path, height, flags end
+function methods:SetTextHeight(height) self.fontHeight = height end
+function methods:SetJustifyH(justify) self.justifyH = justify end
+function methods:SetWordWrap(wrap) self.wordWrap = wrap end
+function methods:GetJustifyH() return self.justifyH or "LEFT" end
+function methods:GetJustifyV() return self.justifyV or "MIDDLE" end
+function methods:SetScale(scale) self.scale = scale end
+function methods:GetScale() return self.scale or 1 end
+function methods:GetEffectiveScale()
+	return self:GetScale() * (self.parent and self.parent.GetEffectiveScale and self.parent:GetEffectiveScale() or 1)
+end
+function methods:RegisterEvent(event)
+	self.events = self.events or {}
+	self.events[event] = true
+end
+function methods:UnregisterEvent(event) if self.events then self.events[event] = nil end end
 function methods:SetWidth(width) self.width = width end
-function methods:GetWidth() return self.width end
+function methods:GetWidth() return self.allPoints and self.allPoints:GetWidth() or self.width end
 function methods:SetSize(width, height) self.width, self.height = width, height end
 function methods:SetHeight(height) self.height = height end
-function methods:GetHeight() return self.height end
+function methods:GetHeight() return self.allPoints and self.allPoints:GetHeight() or self.height end
 function methods:SetScrollChild(child) self.child = child end
 function methods:GetVerticalScrollRange() return math.max(0, self.child.height - self.height) end
 function methods:GetVerticalScroll() return self.offset or 0 end
@@ -159,11 +187,19 @@ function methods:Hide() self.hidden = true end
 function methods:Show() self.hidden = false end
 function methods:SetShown(shown) self.hidden = not shown end
 function methods:GetText() return self.text end
-function methods:GetStringHeight() return 16 end
-function methods:GetFont() return "font", 12, "" end
+function methods:GetStringHeight() return self.fontHeight or 16 end
+function methods:GetStringWidth() return #(self.text or "") * (self.fontHeight or 12) * 0.5 end
+function methods:GetFont() return self.fontPath or "font", self.fontHeight or 12, self.fontFlags or "" end
 function methods:GetFrameStrata() return "LOW" end
 function methods:GetFrameLevel() return 0 end
-function methods:IsVisible() return not self.hidden end
+function methods:IsVisible()
+	local frame = self
+	while frame do
+		if frame.hidden then return false end
+		frame = frame.parent
+	end
+	return true
+end
 function methods:IsShown() return not self.hidden end
 function methods:SetEnabled(enabled)
 	self.enabled = enabled
@@ -827,3 +863,395 @@ assert(audio.content:GetHeight() > audio.scroll:GetHeight(), "all cue controls r
 QuestTogether.SupportsAudioVolume, QuestTogether.PreviewAudioCue = supportsAudioVolume, previewAudioCue
 QuestTogether.isEnabled = audioWasEnabled
 print("Audio settings use native controls, respect volume support and master previews, and preserve unrelated preferences")
+
+-- Exercise actual owned preview constructors and their refresh path. No native
+-- nameplate templates, live unit frames, or shared client tables are involved.
+local originalCVar, originalRegional, originalLevel = QuestTogether.API.GetCVar,
+	QuestTogether.API.RegionalUniqueNamesEnabled, QuestTogether.API.UnitLevel
+local previewProfile = QuestTogether.db.profile
+QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+local foreverPreview, previewCVarReads = true, 0
+local thinStyle = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Thin or 1
+local modernStyle = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Modern or 0
+local previewCVars = {
+	nameplateStyle = thinStyle,
+	nameplateSize = 2,
+	nameplateInfoDisplay = 3,
+	nameplateShowOnlyNameForFriendlyPlayerUnits = 0,
+}
+QuestTogether.API.GetCVar = function(key)
+	previewCVarReads = previewCVarReads + 1
+	if previewCVars[key] ~= nil then return tostring(previewCVars[key]) end
+	return originalCVar and originalCVar(key)
+end
+QuestTogether.API.RegionalUniqueNamesEnabled = function() return foreverPreview end
+QuestTogether.API.UnitLevel = function(unit) assert(unit == "player"); return 31 end
+local playerPreview, questPreview = QuestTogether.playerPlateControls, QuestTogether.questPlateControls
+local playerSettings, questSettings = QuestTogether.playerPlatesFrame, QuestTogether.questPlatesFrame
+assert(playerPreview and questPreview and playerSettings and questSettings)
+local namesOnlyNotice = assert(playerPreview.namesOnlyNotice)
+assert(not questPreview.namesOnlyNotice, "the names-only explanation belongs only on Player Plates")
+local function RefreshPlatePreviews()
+	QuestTogether:RefreshQuestPlatesWindow(false)
+	QuestTogether:RefreshQuestPlatesWindow(true)
+end
+local function LatestPoint(region)
+	assert(region.points and #region.points > 0, "preview region must have an anchor")
+	return region.points[#region.points]
+end
+local function SamePoint(first, second)
+	for index = 1, 5 do assert(first[index] == second[index], "left and prefix must share the same name-only anchor") end
+end
+local function AssertCenteredAboveHealth(controls)
+	local unit, name = controls.previewUnitFrame, controls.previewUnitFrame.name
+	assert(name:GetJustifyH() == "CENTER", "Forever names above the bar must be centered")
+	assert(name:GetWidth() <= unit.HealthBarsContainer:GetWidth(),
+		"the name region must not extend over the level badge")
+	local point = LatestPoint(name)
+	assert(point[2] == unit.HealthBarsContainer, "name anchoring must not include the level badge")
+	assert((point[1] == "BOTTOM" and point[3] == "TOP")
+		or (point[1] == "BOTTOMLEFT" and point[3] == "TOPLEFT"))
+	assert(point[4] == 0)
+end
+for _, frame in ipairs({ playerSettings, questSettings }) do
+	frame:Show()
+	assert(frame.scripts.OnShow and frame.scripts.OnHide and frame.scripts.OnEvent)
+	frame.scripts.OnShow(frame)
+	assert(frame.events and frame.events.CVAR_UPDATE, "visible preview pages must react to native nameplate settings")
+end
+assert(not namesOnlyNotice:IsShown(), "the note must stay hidden while friendly health bars are enabled")
+local normalContentHeight = playerPreview.content:GetHeight()
+local normalTooltipY = LatestPoint(playerPreview.playerTooltipHeader)[5]
+for _, controls in ipairs({ playerPreview, questPreview }) do
+	local unit = controls.previewUnitFrame
+	local badge = assert(unit.PlayerLevelDiffFrame, "both Forever previews need the native level badge")
+	assert(controls.previewIconFrame.parent == unit
+		and controls.previewIconFrame:GetEffectiveScale() == unit:GetEffectiveScale(),
+		"the preview logo and native artwork must share one uniform scale")
+	AssertCenteredAboveHealth(controls)
+	assert(unit.healthBar:IsVisible() and badge:IsVisible() and unit.name:IsVisible())
+	assert(badge.playerLevelDiffIcon.atlas == "ui-hud-nameplates-levelindicator")
+	assert(tostring(badge.playerLevelDiffText.text) == "31", "badge must show the guarded sample player level")
+	assert(badge.playerLevelDiffText.fontObject == "SystemFont_NamePlateLevel")
+	assert(unit.name.fontObject == "SystemFont_NamePlate_Outlined")
+	assert(#badge.points == 2)
+	for index, anchor in ipairs({ { "TOPLEFT", "TOPRIGHT", 3 }, { "BOTTOMLEFT", "BOTTOMRIGHT", -2 } }) do
+		local point = badge.points[index]
+		assert(point[1] == anchor[1] and point[2] == unit.healthBar and point[3] == anchor[2])
+		assert(point[4] == 5 and point[5] == anchor[3], "badge should use native health-bar offsets")
+	end
+end
+QuestTogether.API.UnitLevel = function() return 35 end
+for _, frame in ipairs({ playerSettings, questSettings }) do
+	assert(frame.events.PLAYER_LEVEL_UP, "visible previews must refresh their level sample")
+	frame.scripts.OnEvent(frame, "PLAYER_LEVEL_UP", 35)
+end
+for _, controls in ipairs({ playerPreview, questPreview }) do
+	assert(tostring(controls.previewUnitFrame.PlayerLevelDiffFrame.playerLevelDiffText.text) == "35")
+end
+QuestTogether.API.UnitLevel = function() return nil end
+RefreshPlatePreviews()
+for _, controls in ipairs({ playerPreview, questPreview }) do
+	local levelText = controls.previewUnitFrame.PlayerLevelDiffFrame.playerLevelDiffText.text
+	assert(tonumber(levelText) and tonumber(levelText) > 0, "unavailable native levels need a readable preview sample")
+end
+QuestTogether.API.UnitLevel = function() return 31 end
+QuestTogether.db.profile.nameplatePlayerIconStyle = "right"
+QuestTogether.db.profile.nameplateQuestIconStyle = "right"
+RefreshPlatePreviews()
+for _, controls in ipairs({ playerPreview, questPreview }) do
+	assert(LatestPoint(controls.previewIconFrame)[2] == controls.previewUnitFrame.PlayerLevelDiffFrame,
+		"normal right-position icons must clear the level badge")
+end
+
+previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 1
+playerSettings.scripts.OnEvent(playerSettings, "CVAR_UPDATE", "nameplateShowOnlyNameForFriendlyPlayerUnits", "1")
+questSettings.scripts.OnEvent(questSettings, "CVAR_UPDATE", "nameplateShowOnlyNameForFriendlyPlayerUnits", "1")
+local playerUnit, questUnit = playerPreview.previewUnitFrame, questPreview.previewUnitFrame
+assert(playerUnit.showOnlyName == true and not playerUnit.healthBar:IsVisible()
+	and not playerUnit.PlayerLevelDiffFrame:IsVisible() and playerUnit.name:IsVisible())
+assert(not playerUnit.questPreviewHealthText:IsVisible(), "name-only mode must hide health values too")
+assert(questUnit.showOnlyName ~= true and questUnit.healthBar:IsVisible()
+	and questUnit.PlayerLevelDiffFrame:IsVisible(), "friendly-player name-only settings must not alter quest mobs")
+assert(namesOnlyNotice:IsVisible() and playerPreview.content:GetHeight() > normalContentHeight,
+	"names-only mode must reveal its explanation and extend the scrollable content")
+assert(LatestPoint(playerPreview.playerTooltipHeader)[5] < normalTooltipY)
+local noteHeight, contentHeight = namesOnlyNotice:GetHeight(), playerPreview.content:GetHeight()
+local bodyHeight = namesOnlyNotice.body:GetStringHeight()
+namesOnlyNotice.body.GetStringHeight = function() return bodyHeight + 48 end
+QuestTogether:RefreshQuestPlatesWindow(true)
+assert(namesOnlyNotice:GetHeight() == noteHeight + 48 and playerPreview.content:GetHeight() == contentHeight + 48,
+	"wrapped translations must grow the note and move following controls out of the way")
+namesOnlyNotice.body.GetStringHeight = nil
+local savedOpenNameplates, opens = QuestTogether.API.OpenNativeFriendlyNameplateSettings, 0
+QuestTogether.API.OpenNativeFriendlyNameplateSettings = function() opens = opens + 1; return true end
+namesOnlyNotice.settingsButton.scripts.OnClick()
+assert(opens == 1 and previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits == 1,
+	"the note's button opens native settings without changing the player's names-only choice")
+local nameOnlyLeft
+for _, style in ipairs({ "left", "right", "top", "prefix" }) do
+	QuestTogether.db.profile.nameplatePlayerIconStyle = style
+	QuestTogether:RefreshQuestPlatesWindow(true)
+	local point = LatestPoint(playerPreview.previewIconFrame)
+	assert(point[2] == playerUnit.name, "every name-only position must use the same live name-layout path")
+	assert(point[1] == (style == "right" and "LEFT" or style == "top" and "BOTTOM" or "RIGHT"))
+	assert(QuestTogether:GetNameplatePlayerIconStyle() == style, "preview refresh must preserve the chosen setting")
+	if style == "left" then nameOnlyLeft = point elseif style == "prefix" then SamePoint(nameOnlyLeft, point) end
+end
+previewCVars.nameplateStyle = modernStyle
+playerSettings.scripts.OnEvent(playerSettings, "CVAR_UPDATE", "nameplateStyle", tostring(modernStyle))
+assert(playerUnit.name:GetJustifyH() == "CENTER" and not playerUnit.healthBar:IsVisible())
+previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 0
+local prepareHide = QuestTogether.PrepareGamepadControlHide
+QuestTogether.PrepareGamepadControlHide = function(_, control, fallback)
+	assert(control == namesOnlyNotice and fallback == playerPreview.nameplatePlayerIconEnabled)
+	return false
+end
+playerSettings.scripts.OnEvent(playerSettings, "CVAR_UPDATE", "nameplateShowOnlyNameForFriendlyPlayerUnits", "0")
+assert(namesOnlyNotice:IsShown(), "a selected controller control must not disappear before safe focus handoff")
+QuestTogether.PrepareGamepadControlHide = prepareHide
+playerSettings.scripts.OnEvent(playerSettings, "CVAR_UPDATE", "nameplateShowOnlyNameForFriendlyPlayerUnits", "0")
+assert(not namesOnlyNotice:IsShown() and playerPreview.content:GetHeight() == normalContentHeight
+	and LatestPoint(playerPreview.playerTooltipHeader)[5] == normalTooltipY,
+	"disabling names-only must remove the note and restore the compact layout")
+namesOnlyNotice.settingsButton.scripts.OnClick()
+assert(opens == 1, "a hidden settings link must not dispatch a stale click")
+QuestTogether.API.OpenNativeFriendlyNameplateSettings = savedOpenNameplates
+assert(playerUnit.healthBar:IsVisible() and playerUnit.PlayerLevelDiffFrame:IsVisible())
+assert(playerUnit.name:GetJustifyH() == "LEFT", "Modern keeps Blizzard's normal inside-bar name layout")
+previewCVars.nameplateInfoDisplay = 0
+playerSettings.scripts.OnEvent(playerSettings, "CVAR_UPDATE", "nameplateInfoDisplay", "0")
+local nameWithoutHealthText = playerUnit.name:GetWidth()
+assert(not playerUnit.questPreviewHealthText:IsVisible())
+previewCVars.nameplateInfoDisplay = 3
+playerSettings.scripts.OnEvent(playerSettings, "CVAR_UPDATE", "nameplateInfoDisplay", "3")
+assert(playerUnit.questPreviewHealthText:IsVisible() and playerUnit.name:GetWidth() < nameWithoutHealthText,
+	"inside-bar names reserve space only for visible native health text")
+assert(playerUnit.questPreviewHealthText.fontObject == "SystemFont_NamePlate_Outlined")
+QuestTogether.db.profile.nameplatePlayerIconStyle = "right"
+QuestTogether:RefreshQuestPlatesWindow(true)
+assert(LatestPoint(playerPreview.previewIconFrame)[2] == playerUnit.PlayerLevelDiffFrame)
+
+-- Older saved styles can still select Classic even though Forever's current
+-- style selector omits it. Its fixed border and bar offsets must also retire.
+previewCVars.nameplateStyle = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Classic or 6
+RefreshPlatePreviews()
+for _, controls in ipairs({ playerPreview, questPreview }) do
+	local unit = controls.previewUnitFrame
+	AssertCenteredAboveHealth(controls)
+	assert(unit.questPreviewHealthBackground.texture == "Interface\\Tooltips\\Nameplate-Border")
+	assert(unit.questPreviewHealthBackground.texCoord[3] == 0.5
+		and unit.questPreviewHealthBackground.texCoord[4] == 1)
+	assert(unit.questPreviewHealthBackground.drawLayer == "ARTWORK")
+	assert(unit.questPreviewBaseFillTexture.texture == "Interface\\TargetingFrame\\UI-TargetingFrame-BarFill")
+	assert(unit.questPreviewClassicLevel:IsVisible() and not unit.questPreviewDeselectedOverlay:IsVisible())
+	assert(not unit.healthBar.allPoints and #unit.healthBar.points == 2)
+	assert(unit.healthBar.points[1][4] == 3.5 and unit.healthBar.points[2][4] == -20.75,
+		"Classic preview health must fit its fixed native border")
+end
+previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 1
+RefreshPlatePreviews()
+assert(playerUnit.name:IsVisible() and not playerUnit.questPreviewHealthBackground:IsVisible()
+	and not playerUnit.questPreviewBaseFillTexture:IsVisible() and not playerUnit.questPreviewClassicLevel:IsVisible()
+	and not playerUnit.PlayerLevelDiffFrame:IsVisible(), "names-only must hide every Classic health decoration")
+assert(questUnit.questPreviewHealthBackground:IsVisible() and questUnit.questPreviewClassicLevel:IsVisible()
+	and questUnit.PlayerLevelDiffFrame:IsVisible(), "names-only must leave Classic quest preview artwork alone")
+previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 0
+previewCVars.nameplateStyle = thinStyle
+RefreshPlatePreviews()
+for _, controls in ipairs({ playerPreview, questPreview }) do
+	local unit = controls.previewUnitFrame
+	AssertCenteredAboveHealth(controls)
+	assert(unit.questPreviewHealthBackground.atlas == "UI-HUD-CoolDownManager-Bar-BG"
+		and unit.questPreviewHealthBackground.texCoord[3] == 0
+		and unit.questPreviewHealthBackground.drawLayer == "BACKGROUND")
+	assert(unit.questPreviewBaseFillTexture.atlas == (QuestTogether.NAMEPLATE_HEALTH_FILL_ATLAS or "UI-HUD-CoolDownManager-Bar"))
+	assert(not unit.questPreviewClassicLevel:IsVisible() and unit.questPreviewDeselectedOverlay:IsVisible())
+	assert(unit.healthBar.allPoints == unit.HealthBarsContainer and #unit.healthBar.points == 0,
+		"returning from Classic must clear its health-bar offsets")
+end
+local readsBeforeUnrelated = previewCVarReads
+playerSettings.scripts.OnEvent(playerSettings, "CVAR_UPDATE", "Sound_EnableAllSound", "0")
+assert(previewCVarReads == readsBeforeUnrelated, "unrelated CVar notifications must not rebuild the preview")
+
+playerSettings.scripts.OnHide(playerSettings)
+playerSettings:Hide()
+assert(not playerSettings.events.CVAR_UPDATE and not playerSettings.events.PLAYER_LEVEL_UP,
+	"hidden preview pages must stop listening to native updates")
+previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 1
+local readsBeforeHidden = previewCVarReads
+playerSettings.scripts.OnEvent(playerSettings, "CVAR_UPDATE", "nameplateShowOnlyNameForFriendlyPlayerUnits", "1")
+playerSettings.scripts.OnEvent(playerSettings, "PLAYER_LEVEL_UP", 36)
+assert(previewCVarReads == readsBeforeHidden and playerUnit.showOnlyName ~= true,
+	"late notifications after hiding must not update retired previews")
+playerSettings:Show()
+playerSettings.scripts.OnShow(playerSettings)
+assert(playerSettings.events.CVAR_UPDATE and playerUnit.showOnlyName
+	and not playerUnit.healthBar:IsVisible(), "reopening must read the current native setting")
+assert(namesOnlyNotice:IsShown(), "reopening Player Plates must restore the note for changes made in Blizzard settings")
+previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 0
+previewCVars.nameplateStyle = thinStyle
+foreverPreview = false
+do
+	-- Audited Retail 12.1.5 (70783), client-source commit 297d7aaaa736:
+	-- NamePlateConstants, Driver:GetNamePlateScale/UpdateNamePlateOptions, and
+	-- UnitFrame:ApplyFrameOptions/UpdateAnchors. These checks exercise the owned
+	-- preview constructor; they never run native nameplate mixins on fake units.
+	local scales = { { 0.75, 0.8 }, { 1, 1 }, { 1.25, 1.25 }, { 1.4, 1.4 }, { 1.6, 1.6 } }
+	local function Near(actual, expected, context)
+		assert(math.abs(actual - expected) < 0.00001, context .. ": expected " .. expected .. ", got " .. actual)
+	end
+	local function HasAnchor(region, point, relative, relativePoint, x, y)
+		for _, anchor in ipairs(region.points or {}) do
+			if anchor[1] == point and anchor[2] == relative and anchor[3] == relativePoint
+				and math.abs(anchor[4] - x) < 0.00001 and math.abs(anchor[5] - y) < 0.00001 then return true end
+		end
+		return false
+	end
+	local savedClassColor = QuestTogether.API.GetPlayerNameplatePreviewClassColor
+	QuestTogether.API.GetPlayerNameplatePreviewClassColor = function() return 0.25, 0.5, 0.75 end
+	previewCVars.nameplateShowFriendlyClassColor = 0
+	previewCVars.nameplateUseClassColorForFriendlyPlayerUnitNames = 0
+	QuestTogether.db.profile.nameplatePlayerIconStyle = "right"
+	QuestTogether.db.profile.nameplateQuestIconStyle = "right"
+	-- Include a final Modern pass so stale Classic artwork is exercised too.
+	for _, style in ipairs({ 0, 1, 2, 3, 4, 5, 6, 0 }) do
+		local classic, inside, large = style == 6, style == 0 or style == 2, style == 0 or style == 2 or style == 3
+		previewCVars.nameplateStyle = style
+		for size, scale in ipairs(scales) do
+			local horizontal, vertical = classic and size == 1 and 0.8 or scale[1], scale[2]
+			previewCVars.nameplateSize, previewCVars.nameplateInfoDisplay = size, 0
+			RefreshPlatePreviews()
+			for _, controls in ipairs({ playerPreview, questPreview }) do
+				local unit = controls.previewUnitFrame
+				local label = "Retail style " .. style .. ", size " .. size
+				Near(unit.HealthBarsContainer:GetWidth(), ((classic and 152 or 230) - 24) * horizontal, label .. " bar width")
+				Near(unit.HealthBarsContainer:GetHeight(), (large and 20 or 10) * vertical, label .. " bar height")
+				Near(unit.name.fontHeight, (classic and 10 or 12) * vertical, label .. " name font size")
+				Near(unit.questPreviewHealthText.fontHeight, (classic and 10 or 12) * vertical, label .. " health font size")
+				assert(unit.name.wordWrap == false and unit.questPreviewHealthText.wordWrap == false,
+					label .. " constrained native text rows must remain single-line")
+				assert(unit.name.fontObject == (inside and "SystemFont_NamePlate_Outlined" or "SystemFont_NamePlate"),
+					label .. " must use Retail's name font, with outlines only inside bars")
+				assert(unit.questPreviewHealthText.fontObject == ((inside or classic) and "SystemFont_NamePlate_Outlined" or "SystemFont_NamePlate"),
+					label .. " must use the health-text font for its own row")
+				assert(unit.name:GetJustifyH() == (classic and "CENTER" or "LEFT"), label .. " name justification")
+				assert(HasAnchor(unit.name, inside and "LEFT" or classic and "BOTTOM" or "BOTTOMLEFT",
+					unit.HealthBarsContainer, inside and "LEFT" or classic and "TOP" or "TOPLEFT",
+					classic and 0 or 4, inside and 0 or (classic and 4 or 2) * vertical), label .. " name anchor")
+				assert(HasAnchor(unit.questPreviewHealthText, (inside or classic) and "RIGHT" or "BOTTOMRIGHT",
+					unit.healthBar, (inside or classic) and "RIGHT" or "TOPRIGHT", -4, classic and -0.5 or inside and 0 or 2),
+					label .. " health text must match the native inside/above row")
+				assert(unit.healthBar:IsVisible() and not unit.PlayerLevelDiffFrame:IsVisible(),
+					label .. " same-level samples must not inherit Forever's external level badge")
+				assert(unit.questPreviewClassicLevel:IsVisible() == classic, label .. " inline level is Classic-only")
+				if classic then
+					assert(unit.questPreviewHealthBackground.texture == "Interface\\Tooltips\\Nameplate-Border")
+					assert(unit.questPreviewHealthBackground.texCoord[3] == 0.5 and unit.questPreviewHealthBackground.texCoord[4] == 1)
+					Near(unit.questPreviewHealthBackground:GetWidth(), 128 * horizontal, label .. " Classic border width")
+					Near(unit.questPreviewHealthBackground:GetHeight(), 16 * vertical, label .. " Classic border height")
+					assert(unit.questPreviewBaseFillTexture.texture == "Interface\\TargetingFrame\\UI-TargetingFrame-BarFill")
+					assert(HasAnchor(unit.healthBar, "TOPLEFT", unit.HealthBarsContainer, "TOPLEFT", 3.5 * horizontal, 0.5 * vertical))
+					assert(HasAnchor(unit.healthBar, "BOTTOMRIGHT", unit.HealthBarsContainer, "BOTTOMRIGHT", -20.75 * horizontal, 0.5 * vertical))
+					assert(tostring(unit.questPreviewClassicLevel.text) == "31", label .. " inline level must use the sample player level")
+					Near(unit.questPreviewClassicLevel.fontHeight, 10 * vertical, label .. " level text size")
+					assert(not unit.questPreviewDeselectedOverlay:IsVisible())
+				else
+					assert(unit.questPreviewHealthBackground.atlas == "UI-HUD-CoolDownManager-Bar-BG")
+					assert(unit.questPreviewHealthBackground.texCoord[3] == 0 and unit.questPreviewHealthBackground.drawLayer == "BACKGROUND")
+					assert(unit.questPreviewBaseFillTexture.atlas == "UI-HUD-CoolDownManager-Bar")
+					assert(unit.healthBar.allPoints == unit.HealthBarsContainer and #unit.healthBar.points == 0)
+					assert(unit.questPreviewDeselectedOverlay:IsVisible())
+				end
+				assert(LatestPoint(controls.previewIconFrame)[2] == unit.healthBar,
+					label .. " right-position QT icons must use the actual Retail bar")
+			end
+		end
+		previewCVars.nameplateSize, previewCVars.nameplateInfoDisplay = 2, 0
+		RefreshPlatePreviews()
+		local emptyNameWidths = { playerUnit.name:GetWidth(), questUnit.name:GetWidth() }
+		-- CVar indexes 1/2 map to mask bits 1/2; bit 4 is rarity only.
+		for _, mask in ipairs({ 1, 2, 3, 4, 0 }) do
+			previewCVars.nameplateInfoDisplay = mask
+			RefreshPlatePreviews()
+			for index, unit in ipairs({ playerUnit, questUnit }) do
+				local text, shown = unit.questPreviewHealthText, mask > 0 and mask < 4
+				assert(text:IsVisible() == shown, "Retail health display must honor only the health mask bits")
+				if shown then
+					assert((text.text:find("%%") ~= nil) == (mask == 1 or mask == 3), "percent must match its CVar bit")
+					assert((text.text:find("241", 1, true) ~= nil) == (mask == 2 or mask == 3), "numeric value must match its CVar bit")
+				end
+				if shown and not classic then
+					assert(unit.name:GetWidth() < emptyNameWidths[index], "shared Retail name/health rows must reserve visible text width")
+				else
+					Near(unit.name:GetWidth(), emptyNameWidths[index], "hidden health text or a separate Classic row must not consume name width")
+				end
+			end
+		end
+		previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 1
+		RefreshPlatePreviews()
+		assert(playerUnit.name:IsVisible() and playerUnit.name:GetJustifyH() == "CENTER" and namesOnlyNotice:IsVisible())
+		assert(not playerUnit.healthBar:IsVisible() and not playerUnit.PlayerLevelDiffFrame:IsVisible()
+			and not playerUnit.questPreviewClassicLevel:IsVisible() and not playerUnit.questPreviewHealthText:IsVisible(),
+			"Retail names-only must retire all player health/level decorations")
+		assert(questUnit.healthBar:IsVisible() and not questUnit.showOnlyName and questUnit.questPreviewClassicLevel:IsVisible() == classic,
+			"Retail friendly names-only must not change Quest Plates")
+		local left
+		for _, position in ipairs({ "left", "right", "top", "prefix" }) do
+			QuestTogether.db.profile.nameplatePlayerIconStyle = position
+			QuestTogether:RefreshQuestPlatesWindow(true)
+			local anchor = LatestPoint(playerPreview.previewIconFrame)
+			assert(anchor[2] == playerUnit.name, "Retail names-only icon positions must use the rendered name")
+			assert(anchor[1] == (position == "right" and "LEFT" or position == "top" and "BOTTOM" or "RIGHT"))
+			if position == "left" then left = anchor elseif position == "prefix" then SamePoint(left, anchor) end
+		end
+		QuestTogether.db.profile.nameplatePlayerIconStyle = "right"
+		previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 0
+		RefreshPlatePreviews()
+		assert(not namesOnlyNotice:IsShown() and playerUnit.healthBar:IsVisible())
+	end
+	local function ColorMatches(actual, expected, label)
+		assert(actual, label .. " color must be set")
+		for index = 1, 3 do Near(actual[index], expected[index], label) end
+	end
+	previewCVars.nameplateStyle = thinStyle
+	RefreshPlatePreviews()
+	local questNameColor, questBarColor = questUnit.name.textColor, questUnit.questPreviewBaseFillTexture.vertexColor
+	local classColor, friendlyColor, white = { 0.25, 0.5, 0.75 }, { 0.22, 0.80, 0.22 }, { 1, 1, 1 }
+	ColorMatches(playerUnit.name.textColor, white, "ordinary Retail player name")
+	ColorMatches(playerUnit.questPreviewBaseFillTexture.vertexColor, friendlyColor, "ordinary Retail friendly health")
+	previewCVars.nameplateShowFriendlyClassColor = 1
+	playerSettings.scripts.OnEvent(playerSettings, "CVAR_UPDATE", "nameplateShowFriendlyClassColor", "1")
+	ColorMatches(playerUnit.questPreviewBaseFillTexture.vertexColor, classColor, "Retail friendly class-colored health")
+	ColorMatches(playerUnit.name.textColor, white, "health coloring must not enable class-colored names")
+	previewCVars.nameplateShowFriendlyClassColor = 0
+	previewCVars.nameplateUseClassColorForFriendlyPlayerUnitNames = 1
+	RefreshPlatePreviews()
+	ColorMatches(playerUnit.name.textColor, classColor, "Retail friendly class-colored name")
+	ColorMatches(playerUnit.questPreviewBaseFillTexture.vertexColor, friendlyColor, "name coloring must not enable class-colored health")
+	ColorMatches(questUnit.name.textColor, questNameColor, "friendly name coloring must not alter quest mobs")
+	ColorMatches(questUnit.questPreviewBaseFillTexture.vertexColor, questBarColor, "friendly health coloring must not alter quest tint")
+	previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 1
+	RefreshPlatePreviews()
+	assert(playerUnit.name:IsVisible() and not playerUnit.healthBar:IsVisible())
+	ColorMatches(playerUnit.name.textColor, classColor, "names-only must retain its chosen class color")
+	QuestTogether.API.GetPlayerNameplatePreviewClassColor = function() return nil end
+	previewCVars.nameplateShowOnlyNameForFriendlyPlayerUnits = 0
+	previewCVars.nameplateShowFriendlyClassColor = 1
+	RefreshPlatePreviews()
+	ColorMatches(playerUnit.name.textColor, white, "unavailable class data must restore the normal name color")
+	ColorMatches(playerUnit.questPreviewBaseFillTexture.vertexColor, friendlyColor, "unavailable class data must restore friendly health")
+	QuestTogether.API.GetPlayerNameplatePreviewClassColor = function() return 0.25, 0.5, 0.75 end
+	previewCVars.nameplateShowFriendlyClassColor = 0
+	previewCVars.nameplateUseClassColorForFriendlyPlayerUnitNames = 0
+	previewCVars.nameplateStyle = 5
+	RefreshPlatePreviews()
+	ColorMatches(playerUnit.name.textColor, friendlyColor, "Legacy restores native friendly reaction name coloring")
+	ColorMatches(questUnit.name.textColor, { 1, 0, 0 }, "Legacy restores native hostile reaction name coloring")
+	QuestTogether.API.GetPlayerNameplatePreviewClassColor = savedClassColor
+end
+QuestTogether.API.GetCVar, QuestTogether.API.RegionalUniqueNamesEnabled, QuestTogether.API.UnitLevel =
+	originalCVar, originalRegional, originalLevel
+QuestTogether.db.profile = previewProfile
+RefreshPlatePreviews()
+print("Forever and Retail player/quest previews match native style, size, fonts, level artwork, health text, names-only positions and CVar lifecycle")

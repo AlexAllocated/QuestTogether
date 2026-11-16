@@ -2913,6 +2913,51 @@ QuestTogether.API = QuestTogether.API
 			end
 			return pcall(Settings.OpenToCategory, id, "QuestTogether")
 		end,
+		GetPlayerNameplatePreviewClassColor = function()
+			local getClass, colors = UnitClass, RAID_CLASS_COLORS
+			if not CanAccessForeignValue(getClass) or type(getClass) ~= "function" or not CanAccessForeignTable(colors) then
+				return nil
+			end
+			local ok, _, class = pcall(getClass, "player")
+			if not ok or not CanAccessForeignValue(class) or type(class) ~= "string"
+				or #class == 0 or #class > 32 or not class:match("^[A-Z]+$") then
+				return nil
+			end
+			-- Match Blizzard's own class palette, never an addon's custom override.
+			-- Return only checked components; no shared color table escapes.
+			local readOK, r, g, b = pcall(function()
+				local color = colors[class]
+				if not CanAccessForeignTable(color) then return nil end
+				local red, green, blue = QuestTogether:SafeToNumber(color.r), QuestTogether:SafeToNumber(color.g),
+					QuestTogether:SafeToNumber(color.b)
+				if not red or not green or not blue or red < 0 or red > 1
+					or green < 0 or green > 1 or blue < 0 or blue > 1 then return nil end
+				return red, green, blue
+			end)
+			if readOK then return r, g, b end
+			return nil
+		end,
+		OpenNativeFriendlyNameplateSettings = function()
+			if QuestTogether:IsWorkBlocked("foreign_frame_mutation") or not CanAccessForeignTable(Settings) then
+				return false
+			end
+			local open = Settings.OpenToCategory
+			if not CanAccessForeignValue(open) or type(open) ~= "function" then
+				return false
+			end
+			local id = QuestTogether:SafeToNumber(Settings.NAMEPLATE_OPTIONS_CATEGORY_ID)
+			if not id or id <= 0 or id % 1 ~= 0 then
+				return false
+			end
+			-- Blizzard owns category selection and scrolling to its localized label.
+			-- A missing label still allows opening the native Nameplates category.
+			local label = UNIT_NAMEPLATES_FRIENDLY_PLAYER_SHOW_ONLY_NAME
+			if not CanAccessForeignValue(label) or type(label) ~= "string" or label == "" then
+				label = nil
+			end
+			local opened = pcall(open, id, label)
+			return opened
+		end,
 		GetPlayerNotesNamespace = function()
 			local region = "default"
 			if type(GetCurrentRegion) == "function" then

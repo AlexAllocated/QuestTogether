@@ -42,6 +42,10 @@ local function Fixture()
 			Read(self)
 			return self.justifyH
 		end
+		function frame:GetJustifyV()
+			Read(self)
+			return self.justifyV
+		end
 		function frame:GetWidth()
 			Read(self)
 			if self.widthError then error("text box width unavailable") end
@@ -51,6 +55,15 @@ local function Fixture()
 			Read(self)
 			if self.stringWidthError then error("text width unavailable") end
 			return self.stringWidth
+		end
+		function frame:GetHeight()
+			Read(self)
+			return self.height
+		end
+		function frame:GetStringHeight()
+			Read(self)
+			if self.stringHeightError then error("text height unavailable") end
+			return self.stringHeight
 		end
 		local function ReadPosition(self)
 			Read(self)
@@ -362,23 +375,24 @@ QT:RegisterTest("prefix icons follow the visible name text and safely handle cha
 	end
 end)
 
-QT:RegisterTest("name-only friendly player logos follow the name and restore the configured bar placement", function()
+QT:RegisterTest("name-only friendly player logos honor each position and restore the configured bar placement", function()
 	for _, style in ipairs({ "left", "right", "top", "prefix" }) do
 		local state = Fixture()
 		QT.db.profile.nameplatePlayerIconStyle = style
 		local name = state.unitFrame.name
 		name.justifyH, name.stringWidth, name.width = "CENTER", 80, 240
+		name.justifyV, name.stringHeight, name.height = "MIDDLE", 14, 14
 		state:AddBuffs(2)
 		local icon = ShowLogo(state)
 		local normalAnchor, normalPoint = icon.point[2], icon.point[3]
 		state.unitFrame.showOnlyName, state.unitFrame.healthBar.shown = true, false
 		QT:HandleNameplateEvent("CVAR_UPDATE", "nameplateShowOnlyNameForFriendlyPlayerUnits")
 		state.clock:Advance(0.05)
-		Equal(icon.point[1], "RIGHT")
+		Equal(icon.point[1], style == "top" and "BOTTOM" or style == "right" and "LEFT" or "RIGHT")
 		Equal(icon.point[2], name)
 		Equal(icon.point[3], "CENTER")
-		Equal(icon.point[4], -44)
-		Equal(icon.point[5], 0)
+		Equal(icon.point[4], style == "top" and 0 or style == "right" and 44 or -44)
+		Equal(icon.point[5], style == "top" and 11 or 0)
 		Equal(QT.db.profile.nameplatePlayerIconStyle, style)
 		-- Unit-name refreshes follow new text width and scale without anchoring
 		-- to the hidden bar, leftover aura containers, or absolute coordinates.
@@ -386,13 +400,84 @@ QT:RegisterTest("name-only friendly player logos follow the name and restore the
 		QT:HandleNameplateEvent("UNIT_NAME_UPDATE", "nameplate1")
 		state.clock:Advance(0)
 		Equal(icon.point[2], name)
-		Equal(icon.point[4], -109)
+		Equal(icon.point[4], style == "top" and 0 or style == "right" and 109 or -109)
+		Equal(icon.point[5], style == "top" and 14.5 or 0)
 		state.unitFrame.showOnlyName, state.unitFrame.healthBar.shown = false, true
 		QT:HandleNameplateEvent("CVAR_UPDATE", "nameplateShowOnlyNameForFriendlyPlayerUnits")
 		state.clock:Advance(0.05)
 		Equal(icon.point[2], normalAnchor)
 		Equal(icon.point[3], normalPoint)
 		Equal(state.creations, 1)
+		Equal(state.invalid, 0)
+	end
+end)
+
+QT:RegisterTest("name-only icon geometry follows rendered bounds and justification without reading nameplate coordinates", function()
+	for _, style in ipairs({ "left", "right", "top", "prefix" }) do
+		local state = Fixture()
+		QT.db.profile.nameplatePlayerIconStyle = style
+		local name = state.unitFrame.name
+		state.unitFrame.showOnlyName = true
+		local icon = ShowLogo(state)
+		for _, case in ipairs({
+			{ justify = "LEFT", text = 80, box = 240, width = 80 },
+			{ justify = "CENTER", text = 80, box = 240, width = 80 },
+			{ justify = "RIGHT", text = 80, box = 240, width = 80 },
+			{ justify = "CENTER", text = 400, box = 240, width = 240 },
+			{ justify = "RIGHT", text = 80, box = 240, scale = 1.5, width = 120 },
+			{ justify = "LEFT", text = 80, box = 240, iconScale = 2, width = 40 },
+		}) do
+			name.justifyH, name.stringWidth, name.width = case.justify, case.text, case.box
+			name.scale, icon.scale = case.scale, case.iconScale
+			name.justifyV, name.stringHeight, name.height = "MIDDLE", 14, 30
+			QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+			local expectedX = case.justify == "LEFT" and 0 or case.justify == "CENTER" and -case.width / 2 or -case.width
+			if style == "top" then expectedX = expectedX + case.width / 2
+			elseif style == "right" then expectedX = expectedX + case.width + 4
+			else expectedX = expectedX - 4 end
+			Equal(icon.point[1], style == "top" and "BOTTOM" or style == "right" and "LEFT" or "RIGHT")
+			Equal(icon.point[2], name)
+			Equal(icon.point[3], case.justify)
+			Equal(icon.point[4], expectedX)
+			local scaledHeight = 14 * (case.scale or 1) / (case.iconScale or 1)
+			Equal(icon.point[5], style == "top" and scaledHeight / 2 + 4 or 0)
+		end
+		-- The actual name may occupy the top or bottom of a larger font box.
+		name.scale, icon.scale = 1.5, 1
+		for _, vertical in ipairs({ { "TOP", 12 }, { "MIDDLE", 0 }, { "BOTTOM", -12 } }) do
+			name.justifyV = vertical[1]
+			QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+			Equal(icon.point[5], vertical[2] + (style == "top" and 14.5 or 0))
+		end
+		Equal(state.invalid, 0)
+	end
+end)
+
+QT:RegisterTest("name-only icon geometry falls back safely when text measurements are unavailable", function()
+	for _, style in ipairs({ "left", "right", "top", "prefix" }) do
+		local state = Fixture()
+		QT.db.profile.nameplatePlayerIconStyle = style
+		state.unitFrame.showOnlyName = true
+		local name = state.unitFrame.name
+		name.justifyH, name.width, name.height = "CENTER", 240, 14
+		name.stringWidthError, name.stringHeightError = true, true
+		local icon = ShowLogo(state)
+		Equal(icon.point[2], name)
+		Equal(icon.point[3], style == "top" and "TOP" or style == "right" and "RIGHT" or "LEFT")
+		Equal(icon.point[4], style == "top" and 0 or style == "right" and 4 or -4)
+		Equal(icon.point[5], style == "top" and 4 or 0)
+		local inaccessible = {}
+		local canAccess = QT.CanAccessValue
+		QT.CanAccessValue = function(self, value) return value ~= inaccessible and canAccess(self, value) end
+		name.stringWidthError, name.stringHeightError = false, false
+		name.stringWidth, name.stringHeight, name.justifyH = inaccessible, inaccessible, inaccessible
+		QT:ApplyNameplateQuestIconStyle(icon, state.unitFrame)
+		Equal(icon.point[2], name)
+		Equal(icon.point[3], style == "top" and "TOP" or style == "right" and "RIGHT" or "LEFT")
+		local mutations = state.mutations
+		state.plate.forbidden = true
+		QT:RefreshNameplateIcon(state.plate)
+		Equal(state.mutations, mutations)
 		Equal(state.invalid, 0)
 	end
 end)

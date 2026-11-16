@@ -35,7 +35,6 @@ end
 
 local QUEST_PLATE_PREVIEW_SCALE = 1.35
 local QUEST_PLATE_PREVIEW_FRAME_HEIGHT = 195
-local QUEST_PLATE_PREVIEW_BAR_VISUAL_SCALE = 1.25
 local QUEST_PLATE_PREVIEW_RANDOM_NAMES = {
 	"Koda Bug",
 	"Rue Angel",
@@ -48,10 +47,11 @@ local QUEST_PLATE_PREVIEW_RANDOM_NAMES = {
 	"Wifebeast",
 	"Husblebee",
 }
-local NAMEPLATE_STYLE_MODERN = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Modern or 1
-local NAMEPLATE_STYLE_BLOCK = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Block or 3
-local NAMEPLATE_STYLE_HEALTH_FOCUS = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.HealthFocus or 4
-local NAMEPLATE_STYLE_LEGACY = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Legacy or 6
+local NAMEPLATE_STYLE_MODERN = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Modern or 0
+local NAMEPLATE_STYLE_BLOCK = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Block or 2
+local NAMEPLATE_STYLE_HEALTH_FOCUS = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.HealthFocus or 3
+local NAMEPLATE_STYLE_LEGACY = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Legacy or 5
+local NAMEPLATE_STYLE_CLASSIC = Enum and Enum.NamePlateStyle and Enum.NamePlateStyle.Classic or 6
 local NAMEPLATE_SIZE_MEDIUM = Enum and Enum.NamePlateSize and Enum.NamePlateSize.Medium or 2
 local NAMEPLATE_INFO_PERCENT = Enum and Enum.NamePlateInfoDisplay and Enum.NamePlateInfoDisplay.CurrentHealthPercent or 1
 local NAMEPLATE_INFO_VALUE = Enum and Enum.NamePlateInfoDisplay and Enum.NamePlateInfoDisplay.CurrentHealthValue or 2
@@ -722,6 +722,32 @@ local function SetLabeledControlShown(control, shown)
 	end
 end
 
+local function RefreshPlayerPlateNamesOnlyNotice(controls, namesOnly)
+	local notice = controls.namesOnlyNotice
+	if not notice then return end
+	if not QuestTogether:CanMutateOwnedUI(notice)
+		or (not namesOnly and notice:IsShown()
+			and not QuestTogether:PrepareGamepadControlHide(notice, controls.nameplatePlayerIconEnabled)) then
+		QuestTogether:ScheduleRuntimeWork("foreign_frame_mutation", "player_names_only_notice", function()
+			QuestTogether:RefreshQuestPlatesWindow(true)
+		end, { lifetime = "ui", reason = "player nameplate notice refresh" })
+		return
+	end
+	local extraHeight = 0
+	if namesOnly then
+		-- Measure wrapped localized text instead of reserving an English-only row.
+		notice:SetHeight(12 + notice.heading:GetStringHeight() + 6 + notice.body:GetStringHeight() + 12 + 24 + 12)
+		notice.settingsButton:SetWidth(math.min(596, math.max(220, notice.settingsButton:GetFontString():GetStringWidth() + 32)))
+		extraHeight = notice:GetHeight() + 16
+	end
+	notice:SetShown(namesOnly)
+	controls.playerTooltipHeader:ClearAllPoints()
+	controls.playerTooltipHeader:SetPoint("TOPLEFT", controls.content, "TOPLEFT", 16, -428 - extraHeight)
+	controls.playerTooltipIdentifierDropdown.title:ClearAllPoints()
+	controls.playerTooltipIdentifierDropdown.title:SetPoint("TOPLEFT", controls.content, "TOPLEFT", 16, -456 - extraHeight)
+	controls.content:SetHeight(560 + extraHeight)
+end
+
 local function RefreshQuestPlatesPreview(controls)
 	if type(controls) ~= "table" then
 		return
@@ -740,19 +766,37 @@ local function RefreshQuestPlatesPreview(controls)
 	local nameplateStyle = GetNumericCVarValue("nameplateStyle", NAMEPLATE_STYLE_MODERN)
 	local nameplateSize = GetNumericCVarValue("nameplateSize", NAMEPLATE_SIZE_MEDIUM)
 	local infoDisplayMask = GetNumericCVarValue("nameplateInfoDisplay", 0)
+	local forever = QuestTogether:UsesRegionalPlayerNames()
+	local namesOnly = controls.playerPlates == true
+		and GetNumericCVarValue("nameplateShowOnlyNameForFriendlyPlayerUnits", 0) == 1
+	RefreshPlayerPlateNamesOnlyNotice(controls, namesOnly)
+	-- This frame and all its members are QT-owned. Reuse the live icon geometry
+	-- without registering a native preview unit or editing Blizzard setup tables.
+	previewUnitFrame.showOnlyName = namesOnly
 	local scaleData = NAMEPLATE_PREVIEW_SCALES[nameplateSize] or NAMEPLATE_PREVIEW_SCALES[NAMEPLATE_SIZE_MEDIUM]
 	local horizontalScale = scaleData.horizontal or 1
 	local verticalScale = scaleData.vertical or 1
+	local classic = nameplateStyle == NAMEPLATE_STYLE_CLASSIC
+	if classic and nameplateSize == 1 then horizontalScale = verticalScale end
 	local largeHealthBar = nameplateStyle == NAMEPLATE_STYLE_MODERN
 		or nameplateStyle == NAMEPLATE_STYLE_BLOCK
 		or nameplateStyle == NAMEPLATE_STYLE_HEALTH_FOCUS
 	local nameInsideHealthBar = nameplateStyle == NAMEPLATE_STYLE_MODERN or nameplateStyle == NAMEPLATE_STYLE_BLOCK
-	local barWidth = math.max(120, math.floor((230 * horizontalScale * QUEST_PLATE_PREVIEW_BAR_VISUAL_SCALE) + 0.5))
-	local barHeight = math.max(
-		8,
-		math.floor(((largeHealthBar and 20 or 10) * verticalScale * QUEST_PLATE_PREVIEW_BAR_VISUAL_SCALE) + 0.5)
-	)
-	local nameFontSize = math.max(10, math.floor((12 * verticalScale) + 0.5))
+	-- Retail's outer plate includes two 12-pixel scaled content insets.
+	-- Enlarge the entire sample uniformly, not just the health bar.
+	local barWidth = ((classic and 152 or 230) - 24) * horizontalScale
+	local barHeight = (largeHealthBar and 20 or 10) * verticalScale
+	local nameFontSize = (classic and 10 or 12) * verticalScale
+	if forever then
+		-- Camelot constants: 190-wide plate (152 in Classic), 12-pixel side
+		-- insets, 13/20-pixel health, 14-point names. Scale the whole preview
+		-- uniformly, rather than enlarging only the bar relative to its text.
+		barWidth = ((classic and 152 or 190) - 24) * horizontalScale
+		barHeight = (classic and 10 or largeHealthBar and 20 or 13) * verticalScale
+		-- The enlarged friendly-player sample uses a smaller label; real native
+		-- nameplate fonts are never modified by this preview.
+		nameFontSize = (classic and 10 or controls.playerPlates and 12 or 14) * verticalScale
+	end
 
 	local healthContainer = previewUnitFrame.HealthBarsContainer
 	if healthContainer and healthContainer.SetSize then
@@ -773,7 +817,16 @@ local function RefreshQuestPlatesPreview(controls)
 
 	local nameLabel = previewUnitFrame.name
 	local healthText = previewUnitFrame.questPreviewHealthText
+	local healthInsideBar = nameInsideHealthBar or forever or classic
+	local nameFont = (forever or nameInsideHealthBar) and "SystemFont_NamePlate_Outlined" or "SystemFont_NamePlate"
+	local classR, classG, classB
+	if not forever and controls.playerPlates then
+		classR, classG, classB = QuestTogether.API.GetPlayerNameplatePreviewClassColor()
+	end
 	if nameLabel then
+		if nameLabel.SetFontObject then
+			nameLabel:SetFontObject(nameFont)
+		end
 		local fontPath, _, fontFlags = nameLabel:GetFont()
 		if fontPath and nameLabel.SetFont then
 			nameLabel:SetFont(fontPath, nameFontSize, fontFlags)
@@ -782,20 +835,26 @@ local function RefreshQuestPlatesPreview(controls)
 		if nameLabel.SetDrawLayer then
 			nameLabel:SetDrawLayer("OVERLAY", 7)
 		end
-		if nameLabel.SetJustifyH then
-			nameLabel:SetJustifyH("LEFT")
-		end
-		if nameLabel.SetWidth then
-			nameLabel:SetWidth(math.max(40, barWidth - 72))
-		end
-		if nameInsideHealthBar and healthContainer then
-			nameLabel:SetPoint("LEFT", healthContainer, "LEFT", 6, 0)
+		local centered = namesOnly or classic or (forever and not nameInsideHealthBar)
+		if nameLabel.SetJustifyH then nameLabel:SetJustifyH(centered and "CENTER" or "LEFT") end
+		if nameLabel.SetWidth then nameLabel:SetWidth(math.max(1, barWidth - 8)) end
+		if centered and healthContainer then
+			-- Center on the health bar, not on the combined bar and level badge.
+			if nameInsideHealthBar then
+				nameLabel:SetPoint("CENTER", healthContainer, "CENTER", 0, 0)
+			else
+				nameLabel:SetPoint("BOTTOM", healthContainer, "TOP", 0, namesOnly and 2 or (classic and 4 or 2) * verticalScale)
+			end
+		elseif nameInsideHealthBar and healthContainer then
+			nameLabel:SetPoint("LEFT", healthContainer, "LEFT", 4, 0)
 		elseif healthContainer then
-			nameLabel:SetPoint("BOTTOMLEFT", healthContainer, "TOPLEFT", 6, 2)
+			nameLabel:SetPoint("BOTTOMLEFT", healthContainer, "TOPLEFT", 4, 2 * verticalScale)
 		else
 			nameLabel:SetPoint("TOP", previewUnitFrame, "TOP", 0, 0)
 		end
-		if nameplateStyle == NAMEPLATE_STYLE_LEGACY and nameLabel.SetTextColor then
+		if classR and GetNumericCVarValue("nameplateUseClassColorForFriendlyPlayerUnitNames", 0) == 1 then
+			nameLabel:SetTextColor(classR, classG, classB, 1)
+		elseif nameplateStyle == NAMEPLATE_STYLE_LEGACY and nameLabel.SetTextColor then
 			if controls.playerPlates then
 				nameLabel:SetTextColor(0.22, 0.80, 0.22, 1)
 			else
@@ -807,14 +866,45 @@ local function RefreshQuestPlatesPreview(controls)
 	end
 
 	local healthBar = previewUnitFrame.healthBar
+	healthBar:SetShown(not namesOnly)
 	local baseFill = previewUnitFrame.questPreviewBaseFillTexture
 	local tintOverlay = previewUnitFrame.questPreviewTintTexture
 	local tintHighlight = previewUnitFrame.questPreviewTintHighlight
+	local background = previewUnitFrame.questPreviewHealthBackground
+	healthBar:ClearAllPoints()
+	if classic then
+		healthBar:SetPoint("TOPLEFT", healthContainer, "TOPLEFT", 3.5 * horizontalScale, 0.5 * verticalScale)
+		healthBar:SetPoint("BOTTOMRIGHT", healthContainer, "BOTTOMRIGHT", -20.75 * horizontalScale, 0.5 * verticalScale)
+	else
+		healthBar:SetAllPoints(healthContainer)
+	end
+	if background then
+		background:ClearAllPoints()
+		if classic then
+			background:SetTexture("Interface\\Tooltips\\Nameplate-Border")
+			background:SetTexCoord(0, 1, 0.5, 1)
+			if background.SetTextureSliceMargins then background:SetTextureSliceMargins(0, 0, 0, 0) end
+			background:SetDrawLayer("ARTWORK", 1)
+			background:SetPoint("CENTER", healthContainer, "CENTER", 0, 0)
+			background:SetSize(128 * horizontalScale, 16 * verticalScale)
+		else
+			background:SetAtlas("UI-HUD-CoolDownManager-Bar-BG", true)
+			background:SetTexCoord(0, 1, 0, 1)
+			background:SetDrawLayer("BACKGROUND")
+			background:SetPoint("TOPLEFT", healthBar, "TOPLEFT", -2, 3)
+			background:SetPoint("BOTTOMRIGHT", healthBar, "BOTTOMRIGHT", 6, -6)
+		end
+	end
+	if previewUnitFrame.questPreviewDeselectedOverlay then
+		previewUnitFrame.questPreviewDeselectedOverlay:SetShown(not classic)
+	end
 	if healthBar and healthBar.SetMinMaxValues and healthBar.SetValue then
 		healthBar:SetMinMaxValues(0, 100)
 		healthBar:SetValue(100)
 	end
 	if baseFill then
+		if classic then baseFill:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame-BarFill")
+		else baseFill:SetAtlas(QuestTogether.NAMEPLATE_HEALTH_FILL_ATLAS or "UI-HUD-CoolDownManager-Bar", true) end
 		AnchorPreviewFillTexture(baseFill, healthBar)
 		baseFill:Show()
 	end
@@ -824,11 +914,50 @@ local function RefreshQuestPlatesPreview(controls)
 	if tintHighlight then
 		AnchorPreviewFillTexture(tintHighlight, healthBar)
 	end
+	local level = previewUnitFrame.PlayerLevelDiffFrame
+	local sampleLevel
+	if forever or classic then
+		sampleLevel = QuestTogether:SafeToNumber(QuestTogether.API.UnitLevel("player"))
+		if not sampleLevel or sampleLevel < 1 or sampleLevel > 1000 then sampleLevel = 20 end
+		sampleLevel = tostring(math.floor(sampleLevel))
+	end
+	if level then
+		level:SetShown(forever and not namesOnly)
+		if forever then
+			level.playerLevelDiffIcon:SetAtlas("ui-hud-nameplates-levelindicator", true)
+			level:ClearAllPoints()
+			level:SetWidth(28 * horizontalScale)
+			level:SetPoint("TOPLEFT", healthBar, "TOPRIGHT", 5, 3)
+			level:SetPoint("BOTTOMLEFT", healthBar, "BOTTOMRIGHT", 5, -2)
+			level.playerLevelDiffText:SetText(sampleLevel)
+			level.playerLevelDiffText:SetFontObject("SystemFont_NamePlateLevel")
+			local path, _, flags = level.playerLevelDiffText:GetFont()
+			if path then level.playerLevelDiffText:SetFont(path, 10 * verticalScale, flags) end
+			-- A same-level quest mob is fair difficulty; friendly levels are white.
+			level.playerLevelDiffText:SetTextColor(1, controls.playerPlates and 1 or 0.82, controls.playerPlates and 1 or 0, 1)
+		end
+	end
+	local classicLevel = previewUnitFrame.questPreviewClassicLevel
+	if classicLevel then
+		classicLevel:SetShown(classic and not namesOnly)
+		if classic then
+			classicLevel:ClearAllPoints()
+			classicLevel:SetPoint("CENTER", background, "RIGHT", -11 * horizontalScale, 0)
+			classicLevel:SetText(sampleLevel)
+			classicLevel:SetFontObject("SystemFont_NamePlateLevel")
+			local path, _, flags = classicLevel:GetFont()
+			if path then classicLevel:SetFont(path, 10 * verticalScale, flags) end
+			classicLevel:SetTextColor(1, controls.playerPlates and 1 or 0.82, controls.playerPlates and 1 or 0, 1)
+		end
+	end
 
 	local tintEnabled = not controls.playerPlates
 		and QuestTogether:GetOption("nameplateQuestHealthColorEnabled") == true
 	local enemyBarColor = { r = 0.82, g = 0.14, b = 0.14 }
 	local previewBarColor = controls.playerPlates and { r = 0.22, g = 0.80, b = 0.22 } or enemyBarColor
+	if classR and GetNumericCVarValue("nameplateShowFriendlyClassColor", 0) == 1 then
+		previewBarColor = { r = classR, g = classG, b = classB }
+	end
 	if tintEnabled then
 		previewBarColor = GetColorOption("nameplateQuestHealthColor", QuestTogether.NAMEPLATE_QUEST_HEALTH_COLOR)
 	end
@@ -845,6 +974,9 @@ local function RefreshQuestPlatesPreview(controls)
 	end
 
 	if healthText then
+		healthText:SetFontObject(healthInsideBar and "SystemFont_NamePlate_Outlined" or "SystemFont_NamePlate")
+		local path, _, flags = healthText:GetFont()
+		if path then healthText:SetFont(path, nameFontSize, flags) end
 		if healthText.SetDrawLayer then
 			healthText:SetDrawLayer("OVERLAY", 7)
 		end
@@ -852,15 +984,15 @@ local function RefreshQuestPlatesPreview(controls)
 			healthText:SetJustifyH("RIGHT")
 		end
 		healthText:ClearAllPoints()
-		if nameInsideHealthBar and healthContainer then
-			healthText:SetPoint("RIGHT", healthContainer, "RIGHT", -6, 0)
+		if healthInsideBar and healthContainer then
+			healthText:SetPoint("RIGHT", healthBar, "RIGHT", -4, not forever and classic and -0.5 or 0)
 		elseif healthContainer then
-			healthText:SetPoint("BOTTOMRIGHT", healthContainer, "TOPRIGHT", -6, 2)
+			healthText:SetPoint("BOTTOMRIGHT", healthBar, "TOPRIGHT", -4, 2)
 		end
 
 		local showPercent = HasBit(infoDisplayMask, NAMEPLATE_INFO_PERCENT)
 		local showValue = HasBit(infoDisplayMask, NAMEPLATE_INFO_VALUE)
-		if showPercent or showValue then
+		if not namesOnly and (showPercent or showValue) then
 			if showPercent and showValue then
 				healthText:SetText("241 K  100%")
 			elseif showValue then
@@ -872,12 +1004,16 @@ local function RefreshQuestPlatesPreview(controls)
 		else
 			healthText:Hide()
 		end
+		if (nameInsideHealthBar or not healthInsideBar) and not namesOnly and nameLabel then
+			local reserved = healthText:IsShown() and ((QuestTogether:SafeToNumber(healthText:GetStringWidth()) or 0) + 2) or 0
+			nameLabel:SetWidth(math.max(1, barWidth - 8 - reserved))
+		end
 	end
 
 	local previewIconFrame = controls.previewIconFrame
 	local previewIcon = controls.previewIconTexture
 	if not previewIconFrame or controls.previewIconOwner ~= previewUnitFrame then
-		local iconParent = previewFrame or previewUnitFrame
+		local iconParent = previewUnitFrame
 		previewIconFrame = CreateFrame("Frame", nil, iconParent)
 		previewIconFrame:SetFrameStrata("HIGH")
 		local parentFrameLevel = 0
@@ -1743,11 +1879,11 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 		-82
 	)
 	local nameplateQuestIconStyleDropdown = CreateNameplateIconStyleDropdown(content, 36, -108, playerPlates)
-	local playerTooltipIdentifierDropdown
+	local playerTooltipIdentifierDropdown, playerTooltipHeader
 	if playerPlates then
-		local tooltipHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-		tooltipHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -428)
-		tooltipHeader:SetText(L("Player tooltips"))
+		playerTooltipHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		playerTooltipHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -428)
+		playerTooltipHeader:SetText(L("Player tooltips"))
 		playerTooltipIdentifierDropdown = CreateOptionDropdown(content, L("QuestTogether tooltip"),
 			L("Choose when to show the QuestTogether section below player tooltips, including its logo, quest-partner status, and private notes. It is always hidden on your own character."),
 			16, -456, 320, { "all", "friends", "party", "friends_party", "hidden" },
@@ -1809,6 +1945,39 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 	previewBackground:SetAllPoints()
 	previewBackground:SetColorTexture(0.03, 0.03, 0.05, 0.62)
 
+	local namesOnlyNotice
+	if playerPlates then
+		namesOnlyNotice = CreateFrame("Frame", nil, content, "BackdropTemplate")
+		namesOnlyNotice:SetPoint("TOPLEFT", previewFrame, "BOTTOMLEFT", 0, -16)
+		namesOnlyNotice:SetSize(620, 116)
+		namesOnlyNotice:SetBackdrop({ bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+			edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = true, tileSize = 16, edgeSize = 12,
+			insets = { left = 3, right = 3, top = 3, bottom = 3 } })
+		namesOnlyNotice:SetBackdropColor(0.12, 0.10, 0.05, 0.85)
+		namesOnlyNotice:SetBackdropBorderColor(0.65, 0.52, 0.25, 0.8)
+		namesOnlyNotice:Hide()
+		local heading = namesOnlyNotice:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		heading:SetPoint("TOPLEFT", 12, -12)
+		heading:SetWidth(596)
+		heading:SetJustifyH("LEFT")
+		heading:SetWordWrap(true)
+		heading:SetText(L("Names-only mode is enabled"))
+		local body = namesOnlyNotice:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		body:SetPoint("TOPLEFT", heading, "BOTTOMLEFT", 0, -6)
+		body:SetWidth(596)
+		body:SetJustifyH("LEFT")
+		body:SetWordWrap(true)
+		body:SetText(L("WoW is set to show only names for friendly players. Health bars and level badges are hidden, so QT positions its icon around the name."))
+		local settingsButton = CreateFrame("Button", nil, namesOnlyNotice, "UIPanelButtonTemplate")
+		settingsButton:SetPoint("TOPLEFT", body, "BOTTOMLEFT", 0, -12)
+		settingsButton:SetSize(300, 24)
+		settingsButton:SetText(L("Open Blizzard nameplate settings"))
+		settingsButton:SetScript("OnClick", function()
+			if namesOnlyNotice:IsVisible() then QuestTogether.API.OpenNativeFriendlyNameplateSettings() end
+		end)
+		namesOnlyNotice.heading, namesOnlyNotice.body, namesOnlyNotice.settingsButton = heading, body, settingsButton
+	end
+
 	local previewCaption = previewFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	previewCaption:SetPoint("TOPLEFT", previewFrame, "TOPLEFT", 16, -14)
 	previewCaption:SetText(playerPlates and L("Previewing - QuestTogether Player") or L("Previewing - Quest Mob"))
@@ -1830,8 +1999,22 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 	fallbackHealthBar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
 	fallbackHealthBar:SetStatusBarColor(0, 0, 0, 0)
 	fallbackUnitFrame.healthBar = fallbackHealthBar
+	fallbackHealthBarsContainer.healthBar = fallbackHealthBar
+
+	-- Camelot's level badge is an ordinary owned rendering here, not a copy of
+	-- Blizzard's mixin (which would register unit/CVar callbacks).
+	local levelBadge = CreateFrame("Frame", nil, fallbackUnitFrame)
+	levelBadge:SetFrameLevel(fallbackHealthBar:GetFrameLevel() + 20)
+	levelBadge:Hide()
+	levelBadge.playerLevelDiffIcon = levelBadge:CreateTexture(nil, "BACKGROUND")
+	levelBadge.playerLevelDiffIcon:SetAllPoints()
+	levelBadge.playerLevelDiffText = levelBadge:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	levelBadge.playerLevelDiffText:SetPoint("CENTER", levelBadge, "CENTER", 0, 0)
+	levelBadge.playerLevelDiffText:SetJustifyH("CENTER")
+	fallbackUnitFrame.PlayerLevelDiffFrame = levelBadge
 
 	local fallbackHealthBarBackground = fallbackHealthBar:CreateTexture(nil, "BACKGROUND")
+	fallbackUnitFrame.questPreviewHealthBackground = fallbackHealthBarBackground
 	fallbackHealthBarBackground:SetPoint("TOPLEFT", fallbackHealthBar, "TOPLEFT", -2, 3)
 	fallbackHealthBarBackground:SetPoint("BOTTOMRIGHT", fallbackHealthBar, "BOTTOMRIGHT", 6, -6)
 	if fallbackHealthBarBackground.SetAtlas then
@@ -1903,6 +2086,10 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 	fallbackSelectedBorder:SetPoint("BOTTOMRIGHT", fallbackHealthBarBackground, "BOTTOMRIGHT", -3, 3)
 	fallbackSelectedBorder:Hide()
 	fallbackUnitFrame.questPreviewSelectedBorder = fallbackSelectedBorder
+	local classicLevel = fallbackHealthBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	classicLevel:SetJustifyH("CENTER")
+	classicLevel:Hide()
+	fallbackUnitFrame.questPreviewClassicLevel = classicLevel
 
 	local fallbackTextOverlay = CreateFrame("Frame", nil, fallbackHealthBarsContainer)
 	fallbackTextOverlay:SetAllPoints()
@@ -1913,6 +2100,8 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 	local fallbackName = fallbackTextOverlay:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	fallbackName:SetPoint("LEFT", fallbackHealthBarsContainer, "LEFT", 6, 0)
 	fallbackName:SetJustifyH("LEFT")
+	fallbackName:SetWordWrap(false)
+	fallbackName:SetMaxLines(1)
 	fallbackName:SetWidth(160)
 	fallbackName:SetText(playerPlates and L("QuestTogether Player") or GetRandomQuestPlatePreviewName())
 	fallbackUnitFrame.name = fallbackName
@@ -1921,10 +2110,14 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 	fallbackHealthValue:SetPoint("LEFT", fallbackHealthBarsContainer, "RIGHT", 8, 0)
 	fallbackHealthValue:SetText("241 K")
 	fallbackHealthValue:SetJustifyH("RIGHT")
+	fallbackHealthValue:SetWordWrap(false)
 	fallbackUnitFrame.questPreviewHealthText = fallbackHealthValue
 
 	self[controlsKey] = {
 		playerPlates = playerPlates == true,
+		content = content,
+		namesOnlyNotice = namesOnlyNotice,
+		playerTooltipHeader = playerTooltipHeader,
 		[enabledKey] = nameplateQuestIconEnabled,
 		nameplateQuestIconStyleDropdown = nameplateQuestIconStyleDropdown,
 		playerTooltipIdentifierDropdown = playerTooltipIdentifierDropdown,
@@ -1939,6 +2132,8 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 	self[frameKey] = frame
 
 	frame:SetScript("OnShow", function()
+		frame:RegisterEvent("CVAR_UPDATE")
+		frame:RegisterEvent("PLAYER_LEVEL_UP")
 		local controls = QuestTogether[controlsKey]
 		if controls and controls.previewNameLabel then
 			controls.previewNameLabel:SetText(
@@ -1946,6 +2141,20 @@ function QuestTogether:InitializeQuestPlatesWindow(parentCategory, playerPlates)
 			)
 		end
 		QuestTogether:RefreshQuestPlatesWindow(playerPlates)
+	end)
+	frame:SetScript("OnHide", function()
+		frame:UnregisterEvent("CVAR_UPDATE")
+		frame:UnregisterEvent("PLAYER_LEVEL_UP")
+	end)
+	frame:SetScript("OnEvent", function(_, event, cvar)
+		if not frame:IsShown() then return end
+		if event == "CVAR_UPDATE" then
+			cvar = QuestTogether:SafeToString(cvar, ""):lower()
+			if not cvar:find("nameplate", 1, true) then return end
+		end
+		-- Refresh only this owned preview. Reopening the settings panel also
+		-- samples changes made while its event subscriptions were retired.
+		RefreshQuestPlatesPreview(QuestTogether[controlsKey])
 	end)
 
 	self[playerPlates and "playerPlatesCategory" or "questPlatesCategory"] =

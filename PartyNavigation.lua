@@ -164,6 +164,11 @@ function QT:GetPartyFocusController()
 			local now = a:SafeToNumber(a.API.GetTime and a.API.GetTime())
 			return now and now >= 0 and now or nil
 		end,
+		trace = function(event, questID)
+			-- The existing bounded diagnostic log records timing and public quest
+			-- IDs only; no party identities or native objects cross this boundary.
+			a:Debugf("QUEST", "party_focus event=%s questID=%d", event, Number(a, questID, 0, 1000000000) or 0)
+		end,
 		restricted = function()
 			return a:IsRuntimeRestricted()
 		end,

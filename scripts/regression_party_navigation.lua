@@ -512,32 +512,77 @@ QT:RegisterTest("party quest following asks before applying external quest navig
 end)
 QT:RegisterTest("accepted quest focus restores following for either event order but later manual choices still prompt", function()
 	for _, trackingFirst in ipairs({ false, true }) do
+		for _, eventGap in ipairs({ 0, 0.016, 0.15 }) do
+			local a, b = Pair()
+			assert(a:FollowPartyQuestFocus(b.name))
+			local token = a.partyNavigationState.followToken
+			if not trackingFirst then
+				a:OnPartyNavigationQuestAccepted(2)
+				a.time = a.time + eventGap
+			end
+			a.native.questID = 2
+			a:OnPartyNavigationTrackingChanged()
+			if trackingFirst then
+				a.time = a.time + eventGap
+				a:OnPartyNavigationQuestAccepted(2)
+			end
+			a:OnPartyNavigationQuestAccepted(2) -- Duplicate event, same acceptance.
+			a:Tick()
+			Equal(a.native.questID, 1)
+			Equal(a.partyNavigationState.followToken, token)
+			Equal(a.partyNavigationState.following, b.name)
+			Equal(a.dialogCount, nil)
+			Equal(#a.writes, 1)
+			Equal(a.wire[#a.wire].data.questID, 1)
+			for _ = 1, 3 do a:Tick() end
+			Equal(#a.writes, 1)
+			-- The same quest is a deliberate choice after the acceptance event.
+			a.native.questID = 2
+			a:OnPartyNavigationTrackingChanged()
+			a:Tick()
+			Equal(a.dialogCount, 1)
+			Equal(a.native.questID, 2)
+			assert(a.cancelAction())
+			Equal(a.native.questID, 1)
+			Equal(a.partyNavigationState.following, b.name)
+		end
+	end
+end)
+QT:RegisterTest("accepted quest focus survives unchanged samples and tracking callbacks across frames", function()
+	for _, sequence in ipairs({ "unchanged_sample", "early_tracking_sample", "duplicate_tracking" }) do
 		local a, b = Pair()
 		assert(a:FollowPartyQuestFocus(b.name))
-		local token = a.partyNavigationState.followToken
-		if not trackingFirst then a:OnPartyNavigationQuestAccepted(2) end
+		local controller = a:GetPartyFocusController()
+		if sequence ~= "early_tracking_sample" then a:OnPartyNavigationQuestAccepted(2) end
+		if sequence == "unchanged_sample" then
+			a:Tick(0.016) -- A normal update ran before native focus changed.
+			Equal(a.native.questID, 1)
+			Equal(#a.writes, 0)
+		end
 		a.native.questID = 2
 		a:OnPartyNavigationTrackingChanged()
-		if trackingFirst then a:OnPartyNavigationQuestAccepted(2) end
-		a:OnPartyNavigationQuestAccepted(2) -- Duplicate event, same acceptance.
+		if sequence == "early_tracking_sample" then
+			controller:ObserveNative() -- The corresponding acceptance is still queued.
+			Equal(a.dialogCount, nil)
+			Equal(#a.writes, 0)
+			a.time = a.time + 0.016
+			a:OnPartyNavigationQuestAccepted(2)
+		elseif sequence == "duplicate_tracking" then
+			a.time = a.time + 0.016
+			a:OnPartyNavigationTrackingChanged() -- Another state notification is not another quest choice.
+		end
 		a:Tick()
 		Equal(a.native.questID, 1)
-		Equal(a.partyNavigationState.followToken, token)
 		Equal(a.partyNavigationState.following, b.name)
 		Equal(a.dialogCount, nil)
 		Equal(#a.writes, 1)
-		Equal(a.wire[#a.wire].data.questID, 1)
-		for _ = 1, 3 do a:Tick() end
-		Equal(#a.writes, 1)
-		-- The same quest is a deliberate choice after the acceptance event.
+		-- Consuming the acceptance must not hide a new choice of that same quest.
 		a.native.questID = 2
 		a:OnPartyNavigationTrackingChanged()
 		a:Tick()
-		Equal(a.dialogCount, 1)
 		Equal(a.native.questID, 2)
-		assert(a.cancelAction())
-		Equal(a.native.questID, 1)
-		Equal(a.partyNavigationState.following, b.name)
+		Equal(a.dialogCount, 1)
+		Equal(#a.writes, 1)
 	end
 end)
 QT:RegisterTest("accepted quest batches preserve the first automatic focus and ignore unrelated selections", function()
@@ -547,18 +592,119 @@ QT:RegisterTest("accepted quest batches preserve the first automatic focus and i
 	a.native.questID = 2
 	a:OnPartyNavigationTrackingChanged()
 	a:OnPartyNavigationQuestAccepted(2)
+	a.time = a.time + 0.016
 	a:OnPartyNavigationQuestAccepted(3) -- Native focus stayed on the first pickup.
 	a:Tick()
 	Equal(a.native.questID, 1)
 	Equal(a.dialogCount, nil)
 	Equal(#a.writes, 1)
 	a:OnPartyNavigationQuestAccepted(2)
-	a.native.questID = 3 -- A different quest must never use the acceptance exception.
+	a.owned[4] = 4
+	a.native.questID = 4 -- An unrelated quest must never use the acceptance exception.
 	a:OnPartyNavigationTrackingChanged()
 	a:Tick()
-	Equal(a.native.questID, 3)
+	Equal(a.native.questID, 4)
 	Equal(a.dialogCount, 1)
 	Equal(#a.writes, 1)
+end)
+QT:RegisterTest("accepted quest unchanged tracking preserves the pending pickup and late notifications stay quiet", function()
+	local a, b = Pair()
+	assert(a:FollowPartyQuestFocus(b.name))
+	a:OnPartyNavigationQuestAccepted(2)
+	a:OnPartyNavigationQuestAccepted(1) -- This accepted quest already matches the followed focus.
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick(0.016)
+	Equal(a.native.questID, 1)
+	Equal(a.dialogCount, nil)
+	Equal(#a.writes, 0)
+	-- An unchanged tracking notification must not consume the other pickup.
+	a.native.questID = 2
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick()
+	Equal(a.native.questID, 1)
+	Equal(a.dialogCount, nil)
+	Equal(#a.writes, 1)
+	for _ = 1, 4 do
+		a:OnPartyNavigationTrackingChanged() -- Delayed native notifications after restoration.
+		a:Tick(0.016)
+	end
+	Equal(a.native.questID, 1)
+	Equal(a.partyNavigationState.following, b.name)
+	Equal(a.dialogCount, nil)
+	Equal(#a.writes, 1)
+end)
+QT:RegisterTest("accepted quest focus handles consecutive pickups without reusing consumed evidence", function()
+	local a, b = Pair()
+	assert(a:FollowPartyQuestFocus(b.name))
+	a.owned[3] = 3
+	for _, questID in ipairs({ 2, 3 }) do
+		a:OnPartyNavigationQuestAccepted(questID)
+		a.time = a.time + 0.016
+		a.native.questID = questID
+		a:OnPartyNavigationTrackingChanged()
+		a:Tick()
+		Equal(a.native.questID, 1)
+		Equal(a.dialogCount, nil)
+	end
+	Equal(#a.writes, 2)
+	a.native.questID = 2
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick()
+	Equal(a.native.questID, 2)
+	Equal(a.dialogCount, 1)
+	Equal(#a.writes, 2)
+end)
+QT:RegisterTest("accepted quest evidence expires without suppressing later native selections", function()
+	for _, sampleBeforeSelection in ipairs({ false, true }) do
+		local a, b = Pair()
+		assert(a:FollowPartyQuestFocus(b.name))
+		a:OnPartyNavigationQuestAccepted(2)
+		a.time = a.time + 2.1
+		if sampleBeforeSelection then a:GetPartyFocusController():ObserveNative() end
+		a.native.questID = 2
+		a:OnPartyNavigationTrackingChanged()
+		a:Tick()
+		Equal(a.native.questID, 2)
+		Equal(a.dialogCount, 1)
+		Equal(#a.writes, 0)
+		Equal(a.partyNavigationState.following, b.name)
+	end
+end)
+QT:RegisterTest("accepted quest duplicates cannot prolong correlation and expired batches release capacity", function()
+	local a, b = Pair()
+	assert(a:FollowPartyQuestFocus(b.name))
+	a:OnPartyNavigationQuestAccepted(2)
+	a.time = a.time + 1.8
+	a:OnPartyNavigationQuestAccepted(2)
+	a.time = a.time + 0.3
+	a.native.questID = 2
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick()
+	Equal(a.native.questID, 2)
+	Equal(a.dialogCount, 1)
+	Equal(#a.writes, 0)
+
+	a, b = Pair()
+	assert(a:FollowPartyQuestFocus(b.name))
+	local controller = a:GetPartyFocusController()
+	for questID = 2, 100 do
+		a:OnPartyNavigationQuestAccepted(questID)
+		a:OnPartyNavigationQuestAccepted(questID)
+	end
+	assert(controller.acceptances and controller.acceptances.count <= 32)
+	Equal(#a.writes, 0)
+	Equal(a.dialogCount, nil)
+	-- A full old batch must not prevent a later real pickup from being handled.
+	a.time = a.time + 2.1
+	a.owned[101] = 101
+	a:OnPartyNavigationQuestAccepted(101)
+	a.native.questID = 101
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick()
+	Equal(a.native.questID, 1)
+	Equal(a.dialogCount, nil)
+	Equal(#a.writes, 1)
+	Equal(controller.acceptances, nil)
 end)
 QT:RegisterTest("accepted quest focus defers restoration under restrictions and preserves later manual intent", function()
 	for _, laterManual in ipairs({ false, true }) do
@@ -568,16 +714,44 @@ QT:RegisterTest("accepted quest focus defers restoration under restrictions and 
 		a:OnPartyNavigationQuestAccepted(2)
 		a.native.questID = 2
 		a:OnPartyNavigationTrackingChanged()
-		a:Tick(1)
+		a:Tick(5) -- An already-matching transition survives a restriction longer than the ticket window.
 		Equal(#a.writes, 0)
 		Equal(a.dialogCount, nil)
-		if laterManual then a:OnPartyNavigationTrackingChanged() end
+		if laterManual then
+			a.owned[3], a.native.questID = 3, 3
+			a:OnPartyNavigationTrackingChanged()
+		end
 		a.blocked = false
 		a:Tick()
 		Equal(a.partyNavigationState.following, b.name)
-		Equal(a.native.questID, laterManual and 2 or 1)
+		Equal(a.native.questID, laterManual and 3 or 1)
 		Equal(a.dialogCount, laterManual and 1 or nil)
 		Equal(#a.writes, laterManual and 0 or 1)
+	end
+end)
+QT:RegisterTest("accepted quest deferred sampling rejects a later same-quest selection after correlation expires", function()
+	for _, barrier in ipairs({ "blocked", "unreadable" }) do
+		for _, laterSelection in ipairs({ false, true }) do
+			local a, b = Pair()
+			assert(a:FollowPartyQuestFocus(b.name))
+			a[barrier] = true
+			a:OnPartyNavigationQuestAccepted(2)
+			a.native.questID = 2
+			a:OnPartyNavigationTrackingChanged()
+			a:Tick(10)
+			Equal(a.dialogCount, nil)
+			Equal(#a.writes, 0)
+			if laterSelection then
+				-- An old unobserved pickup must not excuse a new selection forever.
+				a:OnPartyNavigationTrackingChanged()
+			end
+			a[barrier] = false
+			a:Tick()
+			Equal(a.native.questID, laterSelection and 2 or 1)
+			Equal(a.dialogCount, laterSelection and 1 or nil)
+			Equal(#a.writes, laterSelection and 0 or 1)
+			Equal(a.partyNavigationState.following, b.name)
+		end
 	end
 end)
 QT:RegisterTest("accepted quest evidence cannot outlive a follow choice or suppress explicit focus requests", function()
@@ -624,15 +798,16 @@ QT:RegisterTest("accepted quest focus failures remain bounded and invalid timest
 	Equal(a.partyNavigationState.following, b.name)
 	Equal(#a.writes, 1)
 	Equal(a.partyNavigationState.followStatus, "Unable to track this quest")
-	for _, clock in ipairs({ "unreadable", "backward" }) do
+	for _, clock in ipairs({ "unreadable", "lost", "backward" }) do
 		a, b = Pair()
 		assert(a:FollowPartyQuestFocus(b.name))
-		local eventTime = clock == "backward" and a.time or nil
+		local eventTime = clock ~= "unreadable" and a.time or nil
 		a:GetPartyFocusController().adapter.now = function() return eventTime end
 		a:OnPartyNavigationQuestAccepted(2)
 		a.native.questID = 2
 		a:OnPartyNavigationTrackingChanged()
 		if clock == "backward" then eventTime = eventTime - 1 end
+		if clock == "lost" then eventTime = nil end
 		a:GetPartyFocusController():ObserveNative()
 		Equal(a.dialogCount, 1)
 		Equal(#a.writes, 0)

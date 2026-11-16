@@ -33,11 +33,38 @@ an in-game check with a broker display installed.
 Player Plates uses an independent enabled-by-default `nameplatePlayerIconEnabled` option and `nameplatePlayerIconStyle` (Left by default, plus Right, Top and Prefix). Friendly visible player units must match an authenticated QT sender recognized during this UI session, with a readable name/GUID. Native friendly-player visibility is read from `nameplateShowFriendlyPlayers` on current Retail and Forever, falling back to `nameplateShowFriends` only when the modern key is absent. Explicit modern Off overrides legacy On; unreadable values fail closed. Ignored players and self are excluded. The player logo reuses the addon-owned quest-icon pool with separate artwork/style state, adds four pixels of horizontal spacing beside bars/text, and never creates a health tint. Recycled creature/player plates switch artwork; removed plates and departed or evicted peers use owned cleanup handles, including when native lookup is already empty. Protected/forbidden layouts defer to the existing cleanup/recovery path. Instance and restriction policy remains the same as quest plates; no nameplate CVars are changed.
 
 When the native friendly-player `showOnlyName` mode is readable and enabled,
-the player logo temporarily uses Prefix positioning beside the rendered name.
-The existing guarded text-width, justification and scale calculation keeps it
-clear of the letters even though the hidden health-bar frame still exists.
-Turning the mode off restores the saved icon style; no CVar or preference is
-rewritten. Existing nameplate refresh events update both transitions.
+the player logo honors its saved position around the rendered name: Left and
+Prefix are equivalent, Right follows the text's right edge, and Top is centered
+above the letters. Guarded text extents, horizontal/vertical justification and
+effective scale account for a name box wider or taller than the visible text.
+Turning the mode off returns to the normal bar/aura anchors; no CVar or preference
+is rewritten. Existing nameplate refresh events update both transitions.
+
+Both QT-owned settings previews model Forever's Camelot nameplate layout: the
+above-bar name is centered on the health bar alone, with the native level-badge
+artwork to its right. Modern/Block preserve their native inside-bar name layout.
+The previews use native bar/badge proportions, with Classic border geometry when
+that style is selected. The enlarged player sample uses a slightly smaller name
+font; live Blizzard nameplate text is unchanged. Only the friendly-player preview follows the names-only
+CVar, hiding health and level artwork while keeping the name and using the same
+icon-placement path as live plates. Visible pages listen for nameplate CVar and
+level changes, retire subscriptions on hide and refresh on reopen. All frames
+are QT-owned; no Blizzard preview template, unit registration, mixin or setup
+table is modified. These source-derived layouts still require visual validation
+in the running client.
+
+Retail previews follow the [12.1.5 (70783) Blizzard source](https://github.com/Gethe/wow-ui-source/tree/297d7aaaa736f346b3e036f38ee088eaf7f8c07f/Interface/AddOns/Blizzard_NamePlates)
+for all seven stored styles and five sizes. The health container accounts for the
+native horizontal insets; bar height, font height and spacing scale together.
+Modern/Block use outlined text inside the bar; other ordinary styles use native
+unoutlined text above it, with the name reserving space for visible health text.
+Classic uses its fixed border, centered name and inline level. Ordinary Retail
+does not inherit Forever's external level badge. Friendly class-color CVars use
+the local player's guarded native class palette for the sample name and health
+independently. The names-only note links directly to Blizzard's checkbox without
+changing it. Offline settings checks cover all style/size combinations, health
+display flags, colors, names-only and transitions; live Retail rendering remains
+unverified.
 
 Protocol generation 3 uses only the `QuestTogether3` gameplay prefix and typed records. All communicating peers must upgrade; earlier wire formats and capability fallbacks are not decoded or transmitted. Custom channels provide discovery directories only. Public data travels through authenticated mesh whispers; party and private traffic retain native group routes and direct whispers. See [ARCHITECTURE.md](ARCHITECTURE.md) for the catalog, scheduler, correlation and lifetime contracts, and [the live-client release gate](docs/COMMUNICATION_LIVE_TESTS.md) for required engine checks.
 
@@ -526,14 +553,21 @@ Offline client profiles exercise the actual plain-coordinate return shape and
 restricted, secret and malformed reads; party regressions cover the resulting
 waypoint and follow state together. Restricted sampling still stops entirely.
 
-Quest acceptance records a bounded batch of accepted IDs in the active focus
-controller. A native tracking change with the same frame timestamp and accepted
-quest ID is treated as automatic: it consumes that evidence and lets guarded
-follow application restore the current shared quest without a stop-following
-prompt. Either event order is supported. Later tracking events, explicit QT
-choices, replaced follow/state identities and retired controller lifetimes cannot
-reuse the acceptance exception. Restricted restoration waits until allowed;
-subsequent manual intent still takes precedence. No native callbacks are replaced.
+Quest acceptance records up to 32 single-use quest IDs in the active focus
+controller, each with a two-second correlation lifetime. Acceptance is synchronous
+but native tracking notifications are not, so unchanged samples preserve these
+records and either event order may match across frames. Only the matching accepted
+quest consumes the batch and allows guarded restoration of the current shared
+quest. An unexplained native selection settles for 0.2 seconds before prompting,
+using the existing navigation updates. Duplicate tracking notifications within the correlation interval do not
+establish a new user choice. A matching event received during restrictions can
+wait for safe sampling, but a later event outside the interval invalidates it; unrelated quests, expired evidence, explicit QT choices,
+and replaced follow/controller lifetimes cannot reuse the exception. Native APIs
+provide no user-intent flag: selecting that exact new quest manually before its
+first automatic transition is indistinguishable during this short interval.
+Selecting it again after restoration prompts normally. Bounded diagnostic entries
+record acceptance, tracking and classification with public quest IDs, without party
+identities. No native callbacks are replaced and no extra timer is installed.
 
 The three Groups & Sharing options default on, independently of public location/LFQP settings. Disabling either sharing option publishes its unavailable sentinel; clearing a native pin or quest publishes a distinct empty state. Following is explicit, cycle-checked, and saved per character across reloads. Only the follow target is saved; fresh validated party data is required before resuming. Temporary peer expiry or unavailable focus preserves the follow intent while waiting. Missing quests preserve the saved follow target and current navigation, with a Waiting for a shared quest status in PQL. No missing-quest modal interrupts play. Periodic ownership checks resume following when the current focused quest enters the local quest log, and a new shared focus also resumes immediately; neither requires selecting Follow again. Cleared focus preserves the follow and personal navigation. Party departure, disband, raid conversion, ignore, and addon disable clear the saved intent. PQL uses ordinary Blizzard mini quest POI atlases in each owned quest/player cell; local buttons focus a quest and teammates’ active quest buttons start following. Inactive teammate buttons are read-only and gray. All buttons retain full opacity. While following, every button is gray except the followed member’s active quest; choosing your own focus or another member’s active quest asks for confirmation before ending or switching the follow. Without a follow, your buttons and teammates’ active quests retain their colors. Header menus retain focus details and following controls. Cancel leaves the follow intact, and a follow-identity token rejects confirmations from a superseded follow. Use `/qt preview unfollow` or the isolated compare preview to exercise the warning. While actively syncing a valid shared quest, native quest-tracker changes restore the last followed focus and ask before applying the new quest or clearing focus; Cancel keeps following. While waiting, or after the previous quest leaves the local log, native selections caused by quest pickup or turn-in establish a new local baseline without ending the follow. Restoration uses guarded public APIs after the tracking event, without modifying Blizzard callbacks, so the native selection may briefly change before restoration. Explicit waypoint navigation through QT stops following directly. A failed restoration stops following without repeated writes; a failed confirmed quest setter preserves the follow. QT setter echoes do not prompt. Restricted changes retain the latest received intent, then recheck current membership, ownership, and follow state before applying. Failed setters are reported without repeated retries.
 

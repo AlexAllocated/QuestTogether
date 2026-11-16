@@ -2500,6 +2500,104 @@ return rawRow end
 		native.canSet, C_Map.SetUserWaypoint = true, nil
 		assert(waypoint:CreateBlizzardWaypoint(84, 25, 50) == false and native.tracks == 0)
 		C_Map, UiMapPoint, C_SuperTrack = originalMap, originalPoint, originalTrack
+		do
+			local savedClass, savedColors, savedCustom = UnitClass, RAID_CLASS_COLORS, CUSTOM_CLASS_COLORS
+			local savedEnabled = addon.isEnabled
+			local ok, err = pcall(function()
+				local class = "MAGE"
+				UnitClass = function(unit) assert(unit == "player"); return "Mage", class end
+				local color = { r = 0.25, g = 0.5, b = 1 }
+				RAID_CLASS_COLORS = { MAGE = color }
+				CUSTOM_CLASS_COLORS = setmetatable({}, { __index = function() error("custom palette must not be read") end })
+				addon.isEnabled = false
+				local read = addon.API.GetPlayerNameplatePreviewClassColor
+				local r, g, b = read()
+				assert(r == 0.25 and g == 0.5 and b == 1, "disabled QT settings still use the native class palette")
+				for _, value in ipairs({ secret, inaccessible, false, "", "Mage", "MAGE MAGE" }) do
+					class = value
+					assert(read() == nil, "invalid classes must not index a shared palette")
+				end
+				class = "MAGE"
+				for _, value in ipairs({ secret, inaccessible, false }) do
+					RAID_CLASS_COLORS.MAGE = value
+					assert(read() == nil)
+				end
+				RAID_CLASS_COLORS.MAGE = color
+				for _, key in ipairs({ "r", "g", "b" }) do
+					local saved = color[key]
+					for _, value in ipairs({ secret, inaccessible, false, -0.1, 1.1, math.huge, 0 / 0 }) do
+						color[key] = value
+						assert(read() == nil, "invalid color components must not escape")
+					end
+					color[key] = nil
+					assert(read() == nil)
+					color[key] = saved
+				end
+				local reads = inaccessibleReads
+				RAID_CLASS_COLORS = inaccessible
+				assert(read() == nil and inaccessibleReads == reads)
+				RAID_CLASS_COLORS = nil
+				assert(read() == nil)
+				RAID_CLASS_COLORS = { MAGE = color }
+				UnitClass = function() error("class unavailable") end
+				assert(read() == nil)
+				UnitClass = nil
+				assert(read() == nil)
+			end)
+			UnitClass, RAID_CLASS_COLORS, CUSTOM_CLASS_COLORS = savedClass, savedColors, savedCustom
+			addon.isEnabled = savedEnabled
+			assert(ok, err)
+		end
+		do
+			-- Native settings links hand only a category ID and localized label to
+			-- Blizzard; they never edit the setting or depend on QT runtime enablement.
+			local savedSettings, savedLabel = Settings, UNIT_NAMEPLATES_FRIENDLY_PLAYER_SHOW_ONLY_NAME
+			local savedBlocked, savedEnabled = addon.IsWorkBlocked, addon.isEnabled
+			local ok, err = pcall(function()
+				local blocked, opened = false, nil
+				addon.IsWorkBlocked = function(_, kind)
+					assert(kind == "foreign_frame_mutation")
+					return blocked
+				end
+				addon.isEnabled = false
+				UNIT_NAMEPLATES_FRIENDLY_PLAYER_SHOW_ONLY_NAME = "Only show names"
+				local native = {
+					NAMEPLATE_OPTIONS_CATEGORY_ID = 37,
+					OpenToCategory = function(id, label) opened = { id, label } end,
+				}
+				Settings = native
+				local open = addon.API.OpenNativeFriendlyNameplateSettings
+				assert(open() and opened[1] == 37 and opened[2] == UNIT_NAMEPLATES_FRIENDLY_PLAYER_SHOW_ONLY_NAME)
+				blocked, opened = true, nil
+				assert(not open() and opened == nil, "restricted settings navigation must do nothing")
+				blocked = false
+				for _, value in ipairs({ secret, inaccessible, "" }) do
+					UNIT_NAMEPLATES_FRIENDLY_PLAYER_SHOW_ONLY_NAME, opened = value, nil
+					assert(open() and opened[1] == 37 and opened[2] == nil)
+				end
+				for _, value in ipairs({ secret, inaccessible, false, 0, -1, 1.5, math.huge, 0 / 0 }) do
+					native.NAMEPLATE_OPTIONS_CATEGORY_ID, opened = value, nil
+					assert(not open() and opened == nil, "invalid category must not cross the native boundary")
+				end
+				native.NAMEPLATE_OPTIONS_CATEGORY_ID = nil
+				assert(not open())
+				native.NAMEPLATE_OPTIONS_CATEGORY_ID = 37
+				for _, value in ipairs({ secret, inaccessible, false }) do
+					native.OpenToCategory = value
+					assert(not open())
+				end
+				native.OpenToCategory = function() error("settings unavailable") end
+				assert(not open(), "native failure must remain local to the link")
+				local reads = inaccessibleReads
+				Settings = inaccessible
+				assert(not open() and inaccessibleReads == reads)
+				Settings = nil
+				assert(not open())
+			end)
+			Settings, UNIT_NAMEPLATES_FRIENDLY_PLAYER_SHOW_ONLY_NAME = savedSettings, savedLabel
+			addon.IsWorkBlocked, addon.isEnabled = savedBlocked, savedEnabled
+			assert(ok, err)
+		end
 		-- New QoL adapters use native public queries without collapsing unknown
 		-- or restricted values into negative character-completion evidence.
 		do

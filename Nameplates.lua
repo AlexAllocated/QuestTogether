@@ -3072,22 +3072,57 @@ local function GetNameplateNameTextAnchor(unitFrame)
 		or GetAccessibleChildFrame(healthBar, "name")
 end
 
+local function GetNameplateTextExtent(nameText, iconFrame, stringMethod, boxMethod)
+	-- The name's box can span the whole bar even when its letters are centered.
+	-- Measure the visible text without reading its contents or screen position.
+	local extent = SafeUiNumber(CallAccessibleFrameMethod(nameText, stringMethod))
+	if not extent or extent <= 0 then return end
+	local boxExtent = SafeUiNumber(CallAccessibleFrameMethod(nameText, boxMethod))
+	if boxExtent and boxExtent > 0 then extent = math.min(extent, boxExtent) else boxExtent = nil end
+	local nameScale = SafeUiNumber(CallAccessibleFrameMethod(nameText, "GetEffectiveScale"))
+	local iconScale = SafeUiNumber(CallAccessibleFrameMethod(iconFrame, "GetEffectiveScale"))
+	if not nameScale or nameScale <= 0 or not iconScale or iconScale <= 0 then return end
+	local ratio = nameScale / iconScale
+	extent = SafeUiNumber(extent * ratio)
+	if not extent or extent <= 0 then return end
+	return extent, boxExtent and SafeUiNumber(boxExtent * ratio)
+end
+
 local function GetNameplatePrefixAnchor(addon, nameText, iconFrame, gap)
 	if addon:IsWorkBlocked("nameplate_refresh") then return "LEFT", -gap end
 	local justify = CallAccessibleFrameMethod(nameText, "GetJustifyH")
 	if justify ~= "CENTER" and justify ~= "RIGHT" then return "LEFT", -gap end
-	-- The name's box can span the whole bar even when its letters are centered.
-	-- Measure the visible text without reading its contents or screen position.
-	local width = SafeUiNumber(CallAccessibleFrameMethod(nameText, "GetStringWidth"))
-	if not width or width <= 0 then return "LEFT", -gap end
-	local boxWidth = SafeUiNumber(CallAccessibleFrameMethod(nameText, "GetWidth"))
-	if boxWidth and boxWidth > 0 then width = math.min(width, boxWidth) end
-	local nameScale = SafeUiNumber(CallAccessibleFrameMethod(nameText, "GetEffectiveScale"))
-	local iconScale = SafeUiNumber(CallAccessibleFrameMethod(iconFrame, "GetEffectiveScale"))
-	if not nameScale or nameScale <= 0 or not iconScale or iconScale <= 0 then return "LEFT", -gap end
-	width = SafeUiNumber(width * nameScale / iconScale)
-	if not width or width <= 0 then return "LEFT", -gap end
+	local width = GetNameplateTextExtent(nameText, iconFrame, "GetStringWidth", "GetWidth")
+	if not width then return "LEFT", -gap end
 	return justify, -(justify == "CENTER" and width / 2 or width) - gap
+end
+
+local function GetNameOnlyIconAnchor(addon, nameText, iconFrame, style, gap)
+	local textHeight, boxHeight = GetNameplateTextExtent(nameText, iconFrame, "GetStringHeight", "GetHeight")
+	local centerY = 0
+	if textHeight and boxHeight then
+		local justifyV = CallAccessibleFrameMethod(nameText, "GetJustifyV")
+		if justifyV == "TOP" then centerY = (boxHeight - textHeight) / 2
+		elseif justifyV == "BOTTOM" then centerY = -(boxHeight - textHeight) / 2 end
+	end
+	if style == "left" or style == "prefix" then
+		local point, x = GetNameplatePrefixAnchor(addon, nameText, iconFrame, gap)
+		return "RIGHT", point, x, centerY
+	end
+	local justify = CallAccessibleFrameMethod(nameText, "GetJustifyH")
+	local width = GetNameplateTextExtent(nameText, iconFrame, "GetStringWidth", "GetWidth")
+	if style == "right" then
+		if justify == "CENTER" and width then return "LEFT", "CENTER", width / 2 + gap, centerY end
+		if justify == "LEFT" and width then return "LEFT", "LEFT", width + gap, centerY end
+		return "LEFT", "RIGHT", gap, centerY
+	end
+	local point, x = "CENTER", 0
+	if width and justify == "LEFT" then point, x = "LEFT", width / 2
+	elseif width and justify == "RIGHT" then point, x = "RIGHT", -width / 2 end
+	if textHeight then return "BOTTOM", point, x, centerY + textHeight / 2 + gap end
+	-- Older layouts may not expose text height. Their name-box edge remains a
+	-- safe relative anchor without consulting restricted screen geometry.
+	return "BOTTOM", point == "CENTER" and "TOP" or "TOP" .. point, x, gap
 end
 
 ResolveNameplateUnitToken = function(namePlateFrameBase, unitFrame)
@@ -3294,24 +3329,27 @@ function QuestTogether:ApplyNameplateQuestIconStyle(iconFrame, unitFrame)
 	local style = iconFrame.qtIconKind == "player" and self:GetNameplatePlayerIconStyle()
 		or self:GetNameplateQuestIconStyle()
 	local playerIcon = iconFrame.qtIconKind == "player"
-	-- Native friendly name-only plates keep the health bar frame but hide its
-	-- contents. Follow the rendered name instead of that invisible bar; retain
-	-- the chosen bar style for when the native setting is turned off again.
-	if playerIcon and not self:IsWorkBlocked("nameplate_refresh")
-		and select(1, self:GetAccessibleFrameMember(unitFrame, "showOnlyName")) == true then
-		style = "prefix"
-	end
+	-- Native friendly name-only plates retain an invisible health bar frame.
+	-- Honor the same position setting around the rendered name in this mode.
+	local nameOnly = playerIcon and not self:IsWorkBlocked("nameplate_refresh")
+		and select(1, self:GetAccessibleFrameMember(unitFrame, "showOnlyName")) == true
+	local nameText = nameOnly and GetNameplateNameTextAnchor(unitFrame)
 	local gap = playerIcon and 4 or 1
 	local width = self.NAMEPLATE_QUEST_ICON_WIDTH
 	local height = self.NAMEPLATE_QUEST_ICON_HEIGHT
 	local buffAnchor, buffGap
-	if playerIcon and style == "left" then
+	if playerIcon and not nameOnly and style == "left" then
 		buffAnchor, buffGap = GetPlayerBuffIconAnchor(unitFrame)
 	end
 
 	iconFrame:ClearAllPoints()
 
-	if style == "left" then
+	if nameText then
+		width = math.max(14, math.floor(width * 0.8 + 0.5))
+		height = math.max(14, math.floor(height * 0.8 + 0.5))
+		local point, relativePoint, x, y = GetNameOnlyIconAnchor(self, nameText, iconFrame, style, gap)
+		iconFrame:SetPoint(point, nameText, relativePoint, x, y)
+	elseif style == "left" then
 		local barAnchor = buffAnchor or GetIconBarAnchor(unitFrame)
 		if IsFrameForbidden(barAnchor) then
 			barAnchor = unitFrame
