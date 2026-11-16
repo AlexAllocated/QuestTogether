@@ -762,6 +762,18 @@
       "WHISPER",
       "party compare local snapshot"
     ],
+    "QuestCompareChainPreview.lua": [
+      "Aria",
+      "Borin",
+      "Celia",
+      "Dara",
+      "Delay",
+      "Frame",
+      "HUNTER",
+      "MAGE",
+      "ROGUE",
+      "WARRIOR"
+    ],
     "QuestCompareChains.lua": [
       "Absent",
       "Have",

@@ -39,6 +39,7 @@ private `.local` notes are historical context, not the source of truth.
 | QuestCompareInteraction | Column presentation and keyboard selection geometry | Removing members from comparison calculations or global key bindings |
 | PartyFocusController | Following and manual-choice state machine, missing-quest and confirmation policy | Party networking, persistence policy or preview fixtures |
 | PartyNavigation / QuestComparePreview | Live/preview adapters, persistence and ownership of native focus | Copies of the following state machine or repair of another controller's fields |
+| QuestCompareChainPreview | Read-only real log and provider adapters, private asynchronous chain sample and simulated teammate evidence | Live PQL/provider state, native focus/follow/waypoints, saved completion or simulated packets |
 | Hints | Local tip catalog, capability eligibility, account-wide no-repeat pool, startup display and whitelisted navigation links | Network announcements or implicit setting changes |
 | PlayerNotes | Private full-name annotations and their owned editor | Peer state, profile copies, diagnostics or network payloads |
 | RecentCompanions | Bounded private history from actual group membership and its owned list | Nearby discovery, online status, profile copies or network payloads |

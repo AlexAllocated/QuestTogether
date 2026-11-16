@@ -2,7 +2,8 @@
 # Quest chains in Party Quest Log
 
 Open **Party Quest Log** with `/qt pql`, then choose **View chain** beside a
-quest's journal button or in its actions menu. The chain opens inside the same
+quest's journal button or in its actions menu. The chain-link button turns gold
+while open; select it again to close that chain. The chain opens inside the same
 list and player columns. One chain section stays open at a time. Clicking an
 ordinary quest title still expands its objectives; objective expansions and the
 open chain are independent.
@@ -16,10 +17,13 @@ open chain are independent.
 | Other supported client families | No chain provider in this implementation | Ordinary Party Quest Log remains available. |
 
 On Forever, install and enable a QuestieDB build that supports public API
-contract 4 and reports the Forever flavor. QuestTogether does not bundle the
-database. A missing, incompatible, incorrectly configured or failing provider
-leaves the ordinary comparison usable and gives a capability explanation. QT
-uses the provider's public composed reads, including its applicable corrections.
+contract 4 and reports the Forever flavor through its status API or active
+packaged-addon metadata. QuestieDB 1.1.1 packaged builds leave the status API's
+expansion field empty, so QT checks their declared `X-Flavor` and `X-Mode`.
+QuestTogether does not bundle the database. A missing, incompatible, incorrectly
+configured or failing provider leaves the ordinary comparison usable and gives
+a capability explanation. QT uses the provider's public composed reads,
+including its applicable corrections.
 See the [QuestieDB API contract](https://github.com/Questie/QuestieDB/blob/v1.1.1/docs/api.md).
 
 Open Party Quest Log again or choose **Refresh** after a provider change. The
@@ -27,6 +31,26 @@ relationship index loads in scheduled batches; quest details load as needed.
 Retail also updates from native quest-data events. Loading or missing information
 is shown as such. This feature does not promise complete quest data for every
 zone, character or client build.
+
+## Preview a mixed party
+
+Run `/qt pqlpreview chains` (also `/qt preview compare chains`) to open a
+clearly labeled preview using a copy of your current quest log and the provider's
+real relationships. Four simulated teammates demonstrate different steps,
+readiness, completed history, missing quests and unknown progress. The preview
+opens a related section automatically when one is available; the chain-link
+buttons, grouping and objective expansion use the ordinary PQL layout.
+
+Your own quest entries and local completion evidence remain real. The extra
+players and their progress are simulated. Preview actions do not send messages,
+share quests, alter your saved data or change your real focus, following or
+waypoint. Refresh rebuilds the sample from your current log. Close the preview
+or use `/qt pql` to return to ordinary comparison. The separate older
+`/qt preview compare` mode retains its existing navigation-testing behavior.
+
+The chain preview needs the same provider as ordinary PQL. It does not invent
+relationships when data is unavailable. Empty logs remain empty; accept a quest
+and Refresh to try its relationships.
 
 ## Reading the list
 

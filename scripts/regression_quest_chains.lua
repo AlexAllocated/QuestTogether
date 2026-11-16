@@ -5,10 +5,11 @@ local function Equal(actual, expected, label)
 	assert(actual == expected, (label or "value") .. ": expected " .. tostring(expected) .. ", got " .. tostring(actual))
 end
 local function Provider(rows)
-	local provider = { calls = 0, Enum = { raceMaskById = { [1] = 1, [95] = 4294967296, [96] = 8589934592 },
+	local provider = { calls = 0, addonName = "QuestieDB", Enum = { raceMaskById = { [1] = 1, [95] = 4294967296, [96] = 8589934592 },
 		classKeys = { WARRIOR = 1, MAGE = 128 }, factionRaceMasks = { Alliance = 4294967373, Horde = 8589934770 } } }
 	provider.RequireContract = function(contract) Equal(contract, 4); return true end
-	provider.ModeIndicator = { GetStatus = function() return { expansion = "Forever", mode = "baked" } end }
+	-- Packaged QuestieDB 1.1.1 reports its mode but no Source expansion.
+	provider.ModeIndicator = { GetStatus = function() return { mode = "baked" } end }
 	provider.Quest = {
 		GetAllIds = function() local result = {}; for id in pairs(rows) do result[#result + 1] = id end; table.sort(result); return result end,
 		GetAll = function(id, fields)
@@ -26,6 +27,11 @@ end
 local function Fixture(client)
 	local a = setmetatable({ API = {}, callbacks = {}, notices = 0, questChainProviderGeneration = 0 }, { __index = QT })
 	a.API.GetQuestChainClient = function() return client or "forever" end
+	a.API.GetAddOnMetadata = function(addonName, field)
+		Equal(addonName, "QuestieDB", "active provider addon")
+		if field == "X-Flavor" then return "Forever" end
+		if field == "X-Mode" then return "baked" end
+	end
 	a.API.Delay = function(_, callback) a.callbacks[#a.callbacks + 1] = callback end
 	a.API.GetBestMapForUnit = function() return 101 end
 	a.API.GetMapInfo = function(id) if id ~= 999 then return { name = id == 101 and "First" or "Second" } end end
@@ -72,6 +78,85 @@ QT:RegisterTest("quest chains reject missing wrong contract wrong flavor and rec
 		c.API.CanReadNativeQuestChains = function() return false end
 		c:Open(); Equal(c:GetQuestChainProviderCapability().reason, "native_unavailable")
 	end)
+end, { offline = true })
+
+QT:RegisterTest("quest chains verify packaged baked and explicit Source flavor evidence", function()
+	local cases = {
+		{ name = "packaged baked", status = { mode = "baked" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "baked" }, source = "package" },
+		{ name = "explicit baked", status = { mode = "baked", expansion = "Forever" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "baked" }, source = "status" },
+		{ name = "explicit Source", status = { mode = "source", expansion = "Forever" }, metadata = { ["X-Mode"] = "source" }, source = "status" },
+		{ name = "explicit Source matching metadata", status = { mode = "source", expansion = "Forever" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "source" }, source = "status" },
+		{ name = "explicit Source absent metadata", status = { mode = "source", expansion = "Forever" }, metadata = {}, source = "status" },
+		{ name = "explicit baked absent metadata API", status = { mode = "baked", expansion = "Forever" }, missingMetadata = true, source = "status" },
+		{ name = "explicit Source failed optional metadata", status = { mode = "source", expansion = "Forever" }, failedMetadata = true, source = "status" },
+	}
+	for _, case in ipairs(cases) do
+		local provider = Provider({ [1] = { name = "One" } })
+		provider.ModeIndicator.GetStatus = function() return case.status end
+		WithProvider(provider, function()
+			local a = Fixture()
+			if case.missingMetadata then a.API.GetAddOnMetadata = nil
+			else a.API.GetAddOnMetadata = function(addonName, field)
+				Equal(addonName, "QuestieDB", case.name)
+				if case.failedMetadata then error("unavailable addon metadata") end
+				return case.metadata[field]
+			end end
+			a:Open(); a:Flush()
+			local capability = a:GetQuestChainProviderCapability()
+			Equal(capability.state, "ready", case.name)
+			Equal(capability.mode, case.status.mode, case.name .. " mode")
+			Equal(capability.flavorSource, case.source, case.name .. " evidence")
+			Equal(provider.calls, 1, case.name .. " index read")
+		end)
+	end
+end, { offline = true })
+
+QT:RegisterTest("quest chains reject absent conflicting or unknown provider flavor evidence before indexing", function()
+	local cases = {
+		{ name = "wrong baked flavor", status = { mode = "baked" }, metadata = { ["X-Flavor"] = "Classic", ["X-Mode"] = "baked" } },
+		{ name = "missing baked flavor", status = { mode = "baked" }, metadata = { ["X-Mode"] = "baked" } },
+		{ name = "unknown baked flavor", status = { mode = "baked" }, metadata = { ["X-Flavor"] = "future", ["X-Mode"] = "baked" } },
+		{ name = "lowercase baked flavor", status = { mode = "baked" }, metadata = { ["X-Flavor"] = "forever", ["X-Mode"] = "baked" } },
+		{ name = "conflicting baked mode", status = { mode = "baked" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "source" } },
+		{ name = "missing baked mode", status = { mode = "baked" }, metadata = { ["X-Flavor"] = "Forever" } },
+		{ name = "unknown baked mode", status = { mode = "baked" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "future" } },
+		{ name = "missing status mode", status = { expansion = "Forever" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "baked" } },
+		{ name = "unknown status mode", status = { mode = "future", expansion = "Forever" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "future" } },
+		{ name = "nil status", metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "baked" } },
+		{ name = "failed status", failedStatus = true, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "baked" } },
+		{ name = "missing status getter", missingStatus = true, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "baked" } },
+		{ name = "missing baked metadata API", status = { mode = "baked" }, missingMetadata = true },
+		{ name = "failed baked metadata API", status = { mode = "baked" }, failedMetadata = true },
+		{ name = "wrong explicit baked expansion", status = { mode = "baked", expansion = "Classic" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "baked" } },
+		{ name = "wrong explicit Source expansion", status = { mode = "source", expansion = "Classic" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "source" } },
+		{ name = "unknown explicit expansion", status = { mode = "baked", expansion = "future" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "baked" } },
+		{ name = "Source lacks explicit expansion", status = { mode = "source" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "source" } },
+		{ name = "explicit expansion conflicts with flavor", status = { mode = "baked", expansion = "Forever" }, metadata = { ["X-Flavor"] = "Classic", ["X-Mode"] = "baked" } },
+		{ name = "explicit expansion conflicts with mode", status = { mode = "source", expansion = "Forever" }, metadata = { ["X-Flavor"] = "Forever", ["X-Mode"] = "baked" } },
+	}
+	for _, case in ipairs(cases) do
+		local provider = Provider({ [1] = { name = "One" } })
+		if case.missingStatus then provider.ModeIndicator.GetStatus = nil
+		else provider.ModeIndicator.GetStatus = function()
+			if case.failedStatus then error("unavailable provider status") end
+			return case.status
+		end end
+		WithProvider(provider, function()
+			local a = Fixture()
+			if case.missingMetadata then a.API.GetAddOnMetadata = nil
+			else a.API.GetAddOnMetadata = function(addonName, field)
+				Equal(addonName, "QuestieDB", case.name)
+				if case.failedMetadata then error("unavailable addon metadata") end
+				return case.metadata[field]
+			end end
+			a:Open(); a:Flush()
+			local capability = a:GetQuestChainProviderCapability()
+			Equal(capability.state, "unavailable", case.name)
+			Equal(capability.reason, "provider_flavor", case.name .. " reason")
+			Equal(provider.calls, 0, case.name .. " must not read quest data")
+			Equal(capability.indexed, 0, case.name .. " must not index quest data")
+		end)
+	end
 end, { offline = true })
 
 QT:RegisterTest("quest chain index is bounded atomic and discards failures and retired generations", function()

@@ -14,7 +14,7 @@ local function CompareRowHeight(rows, index)
 	local lastDetail = ObjectiveDetail(row) and (not ObjectiveDetail(following) or following.questId ~= row.questId)
 	local height = row.kind == "member" and (row.hint and row.hint ~= "" and 34 or MEMBER_ROW_HEIGHT)
 		or row.kind == "objective" and OBJECTIVE_ROW_HEIGHT
-		or (row.kind == "chainGroup" or row.kind == "chainMore" or row.kind == "chainClose") and 34
+		or (row.kind == "chainGroup" or row.kind == "chainMore") and 34
 		or row.kind == "chainNotice" and 50 or ROW_HEIGHT
 	return height + (firstDetail and 6 or 0) + (lastDetail and DETAIL_BOTTOM_PADDING or 0)
 end
@@ -283,7 +283,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				or data.kind == "chainStep" and 40 + math.min(8, data.depth or 0) * 14 or 28
 			local chainRow = data.kind and data.kind:sub(1, 5) == "chain"
 			local questRow = not data.kind or data.kind == "chainStep"
-			local chainVisible = not data.kind and data.chainAvailable == true and self.OpenPartyQuestChain ~= nil
+			local chainVisible = not data.kind and data.chainAvailable == true and self.TogglePartyQuestChain ~= nil
 			row.branch:Hide(); row.branchStem:Hide()
 			if data.kind == "chainStep" then
 				row.branch:ClearAllPoints(); row.branch:SetPoint("TOPLEFT", indent - 15, -18)
@@ -300,6 +300,8 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			row.title:SetWidth(questRow and math.max(80, QUEST_WIDTH - indent - controlsWidth) or (actionX - indent - 16))
 			row.chain:ClearAllPoints()
 			row.chain:SetPoint("TOPLEFT", QUEST_WIDTH - (journalVisible and 58 or 32), -4)
+			if data.chainExpanded then row.chainIcon:SetVertexColor(1, 0.82, 0.24)
+			else row.chainIcon:SetVertexColor(0.80, 0.80, 0.76) end
 			if chainVisible then row.chain:Show() else row.chain:Hide() end
 			if journalVisible then
 				row.journal:SetEnabled(not self:IsWorkBlocked("foreign_frame_mutation"))
@@ -790,6 +792,8 @@ function QuestTogether:PopulatePartyQuestContextMenu(frame, selected, root)
 	local profile, rowID = self.db and self.db.profile, RowID(selected)
 	if not session or frame.displaySession ~= session or not rowID or self:IsWorkBlocked("foreign_frame_mutation")
 		or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible() then return false end
+	local chainExpanded = selected.data and selected.data.chainExpanded == true
+	local chainInstance = session.chains and session.chains.instance
 	local function Current(action, owner)
 		if self.partyQuestCompareSession ~= session or frame.displaySession ~= session
 			or (self.db and self.db.profile) ~= profile
@@ -797,7 +801,10 @@ function QuestTogether:PopulatePartyQuestContextMenu(frame, selected, root)
 			or self:IsWorkBlocked("foreign_frame_mutation") then return false end
 		for _, entry in ipairs(frame.navigationRows or {}) do
 			if RowID(entry) == rowID then
-				if action == "chain" then return entry.data.chainAvailable == true end
+				if action == "chain" then
+					return entry.data.chainAvailable == true and (entry.data.chainExpanded == true) == chainExpanded
+						and (not chainInstance or session.chains and session.chains.instance == chainInstance)
+				end
 				return not action or (entry.data.action == action and entry.data.owner == owner)
 			end
 		end
@@ -810,12 +817,12 @@ function QuestTogether:PopulatePartyQuestContextMenu(frame, selected, root)
 		root:CreateButton(L("Expand or collapse quest"), function()
 			if Current() then self:TogglePartyQuestObjectives(questID) end
 		end)
-		if data.chainAvailable == true and self.OpenPartyQuestChain then
-			root:CreateButton(L("View chain"), function()
-				if Current("chain") then self:OpenPartyQuestChain(questID, rowID); self:RequestPartyQuestKeyboardFocus(frame) end
+		if data.chainAvailable == true and self.TogglePartyQuestChain then
+			root:CreateButton(chainExpanded and L("Close chain") or L("View chain"), function()
+				if Current("chain") then self:TogglePartyQuestChain(questID, rowID); self:RequestPartyQuestKeyboardFocus(frame) end
 			end)
 		end
-	elseif data.kind == "chainGroup" or data.kind == "chainMore" or data.kind == "chainClose" then
+	elseif data.kind == "chainGroup" or data.kind == "chainMore" then
 		root:CreateButton(data.title, function()
 			if Current() then self:ActivatePartyQuestListRow(frame, data); self:RequestPartyQuestKeyboardFocus(frame) end
 		end)
@@ -1240,11 +1247,12 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.chain:SetPoint("TOPLEFT", QUEST_WIDTH - 58, -4)
 			row.chain:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
 			local chainIcon = row.chain:CreateTexture(nil, "ARTWORK")
-			chainIcon:SetTexture("Interface\\Icons\\INV_Misc_Note_01")
+			chainIcon:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\FocusFollower.tga")
 			chainIcon:SetSize(18, 18); chainIcon:SetPoint("CENTER")
+			row.chainIcon = chainIcon
 			row.chain:SetScript("OnEnter", function()
 				if row.data and row.session == self.partyQuestCompareSession then
-					self:ShowSettingsTooltip(row.chain, L("View chain"), row.data.title)
+					self:ShowSettingsTooltip(row.chain, row.data.chainExpanded and L("Close chain") or L("View chain"), row.data.title)
 				end
 			end)
 			local function HideChainTooltip() self:HideSettingsTooltip(row.chain) end
@@ -1252,8 +1260,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.chain:SetScript("OnClick", function()
 				HideChainTooltip()
 				if row.session == self.partyQuestCompareSession and row.data and not row.data.kind and row.data.chainAvailable == true
-					and row.chain:IsVisible() and not self:IsWorkBlocked("foreign_frame_mutation") and self.OpenPartyQuestChain then
-					self:OpenPartyQuestChain(row.data.questId, RowID(row.data))
+					and row.chain:IsVisible() and not self:IsWorkBlocked("foreign_frame_mutation") and self.TogglePartyQuestChain then
+					self:TogglePartyQuestChain(row.data.questId, RowID(row.data))
 				end
 			end)
 

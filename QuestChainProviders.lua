@@ -214,6 +214,29 @@ function QT:CancelQuestChainProvider(owner)
 	return true
 end
 
+local function HasForeverData(addon, state, status)
+	if type(status) ~= "table" then return false end
+	if status.mode ~= "source" and status.mode ~= "baked" then return false end
+	state.mode = status.mode
+	local metadata = addon.API and addon.API.GetAddOnMetadata
+	local flavor = SafeCall(metadata, "QuestieDB", "X-Flavor")
+	local mode = SafeCall(metadata, "QuestieDB", "X-Mode")
+	if (flavor ~= nil and flavor ~= "Forever") or (mode ~= nil and mode ~= status.mode) then return false end
+	if status.expansion ~= nil then
+		if status.expansion ~= "Forever" then return false end
+		state.flavorSource = "status"
+		return true
+	end
+	-- QuestieDB 1.1.1 reports expansion only in Source mode. Its packaged
+	-- backend selects data from the active TOC's X-Flavor and X-Mode metadata.
+	-- Verify those public fields; the running client alone cannot certify data.
+	if status.mode == "baked" and flavor == "Forever" and mode == "baked" then
+		state.flavorSource = "package"
+		return true
+	end
+	return false
+end
+
 function QT:RevalidateQuestChainProvider(owner, onChange)
 	self:CancelQuestChainProvider()
 	owner = owner or { active = true }
@@ -231,7 +254,7 @@ function QT:RevalidateQuestChainProvider(owner, onChange)
 		local ok, compatible = pcall(function() return provider.RequireContract(4) end)
 		if not ok or compatible ~= true then Fail(self, state, "provider_contract"); return self:GetQuestChainProviderCapability() end
 		local status = SafeCall(provider.ModeIndicator and provider.ModeIndicator.GetStatus)
-		if type(status) ~= "table" or status.expansion ~= "Forever" then
+		if not HasForeverData(self, state, status) then
 			Fail(self, state, "provider_flavor"); return self:GetQuestChainProviderCapability()
 		end
 		if type(provider.Quest) ~= "table" or type(provider.Quest.GetAll) ~= "function"
@@ -255,7 +278,8 @@ function QT:GetQuestChainProviderCapability()
 	local snapshot, state = self.questChainProviderSnapshot, self.questChainProviderState
 	return { kind = snapshot and snapshot.kind or "unsupported", state = snapshot and snapshot.state or "unavailable",
 		reason = snapshot and snapshot.reason or "not_initialized", generation = snapshot and snapshot.generation or 0,
-		mode = state and state.mode, indexed = state and state.indexDone or 0, total = state and state.indexTotal or 0 }
+		mode = state and state.mode, flavorSource = state and state.flavorSource,
+		indexed = state and state.indexDone or 0, total = state and state.indexTotal or 0 }
 end
 
 local function ReadAreaMaps(state)

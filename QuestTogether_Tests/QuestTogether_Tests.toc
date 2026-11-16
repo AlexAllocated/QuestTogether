@@ -12,7 +12,7 @@
 ## LoadOnDemand: 1
 ## RequiredDeps: QuestTogether
 ## X-License: GPL-3.0-only
-## X-QT-TestModules: 70
+## X-QT-TestModules: 71
 
 ..\QuestTogether\scripts\test_bootstrap.lua
 ..\QuestTogether\Libs\libchev\SelfTests.lua
@@ -86,4 +86,5 @@
 ..\QuestTogether\scripts\regression_quest_compare_chains.lua
 ..\QuestTogether\scripts\regression_compare_chains_ui.lua
 ..\QuestTogether\scripts\regression_quest_chain_boundaries.lua
+..\QuestTogether\scripts\regression_compare_chain_preview.lua
 ..\QuestTogether\scripts\test_complete.lua

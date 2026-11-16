@@ -5,21 +5,25 @@ local QT = _G.QuestTogether
 local function Equal(actual, expected)
 	if actual ~= expected then error("expected " .. tostring(expected) .. ", got " .. tostring(actual), 2) end
 end
-local function Open()
+local function Open(expanded)
 	local a = QT:CreateTestPartyQuestCompareFixture({
 		[1] = { questId = 1, questTitle = "Known quest", isPushable = true },
 		[2] = { questId = 2, questTitle = "Other quest", isPushable = true },
 	})
 	a.options.reduceMotion = true
-	a.chainFixtureOpen, a.chainFixtureInstance, a.chainFixtureAvailable = true, "chain:fixture", true
+	a.chainFixtureOpen, a.chainFixtureInstance, a.chainFixtureAvailable = expanded ~= false, "chain:fixture", true
+	a.chainFixtureOrigin = "quest:1"
 	function a:ShowSettingsTooltip(_, title, text) self.tooltip = { title, text } end
 	function a:HideSettingsTooltip() self.tooltip = nil end
 	function a:BuildPartyQuestCompareDisplayRows(roots)
 		local rows = { { rowId = "chainGroup:1", kind = "chainGroup", groupId = 1, title = "Related quests", cells = {}, selectable = true, expanded = true } }
-		for _, row in ipairs(roots) do row.rowId = "quest:" .. row.questId; row.chainAvailable = self.chainFixtureAvailable end
+		for _, row in ipairs(roots) do
+			row.rowId = "quest:" .. row.questId
+			row.chainAvailable = self.chainFixtureAvailable
+			row.chainExpanded = self.chainFixtureOpen and row.rowId == self.chainFixtureOrigin
+		end
 		rows[#rows + 1] = roots[1]
 		if self.chainFixtureOpen then
-			rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":close", kind = "chainClose", title = "Close chain", cells = {}, selectable = true, chainInstanceId = self.chainFixtureInstance }
 			rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":notice", kind = "chainNotice", title = "Partial quest chain information", cells = {}, chainInstanceId = self.chainFixtureInstance }
 			for id = 1, 30 do
 				rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":quest:" .. id, kind = "chainStep", questId = id,
@@ -32,8 +36,20 @@ local function Open()
 		rows[#rows + 1] = roots[2]
 		return rows
 	end
-	function a:OpenPartyQuestChain(id, origin) self.opened = { id, origin }; return true end
-	function a:ClosePartyQuestChain() self.chainFixtureOpen = false; return true, "quest:1" end
+	function a:TogglePartyQuestChain(id, origin)
+		self.toggledChain, self.chainToggles = { id, origin }, (self.chainToggles or 0) + 1
+		self.chainFixtureOpen = not (self.chainFixtureOpen and self.chainFixtureOrigin == origin)
+		self.chainFixtureOrigin = origin
+		self.partyQuestCompareSession.chains.instance = self.partyQuestCompareSession.chains.instance + 1
+		self:RenderPartyQuestCompare()
+		return true
+	end
+	function a:ClosePartyQuestChain()
+		if not self.chainFixtureOpen then return false end
+		self.chainFixtureOpen = false
+		self.partyQuestCompareSession.chains.instance = self.partyQuestCompareSession.chains.instance + 1
+		return true, self.chainFixtureOrigin
+	end
 	function a:TogglePartyQuestChainGroup(id) self.toggledGroup = id; return true end
 	function a:ExpandPartyQuestChain(direction) self.expandedDirection = direction; return true end
 	function a:GetPartyQuestChainActions(row)
@@ -55,10 +71,10 @@ QT:RegisterTest("chain UI keyboard traverses distinct quest instances and offscr
 	Key(frame, "ENTER"); Equal(a.toggledGroup, 1)
 	Key(frame, "DOWN"); Equal(session.keyboardRowId, "quest:1")
 	Key(frame, "RIGHT"); Equal(session.keyboardRole, "chain")
-	Key(frame, "ENTER"); Equal(a.opened[2], "quest:1")
+	Key(frame, "ENTER"); Equal(a.chainFixtureOpen, false); Equal(a.toggledChain[2], "quest:1")
+	Key(frame, "ENTER"); Equal(a.chainFixtureOpen, true); Equal(a.chainToggles, 2)
 	Key(frame, "LEFT"); Equal(session.keyboardRole, "quest")
 	Key(frame, "ENTER"); Equal(session.expandedQuestIds[1], true)
-	Key(frame, "DOWN"); Equal(session.keyboardRowId, "chain:fixture:close")
 	Key(frame, "DOWN"); Equal(session.keyboardRowId, "chain:fixture:quest:1")
 	for id = 2, 30 do Key(frame, "DOWN"); Equal(session.keyboardRowId, "chain:fixture:quest:" .. id) end
 	assert(session.scrollPixels > 0)
@@ -108,11 +124,53 @@ QT:RegisterTest("chain UI preserves independent objective geometry and uses no p
 	a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:30")
 	Row(frame, "chain:fixture:quest:30"):RunScript("OnEnter")
 	Equal(a.tooltip[1], "Future quest")
-	Equal(#frame.navigationRows, 35) -- Notices remain readable but do not trap direction navigation.
-	a:SelectPartyQuestKeyboardRow(frame, { rowId = "chain:fixture:close" })
-	a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:close")
-	Row(frame, "chain:fixture:close"):RunScript("OnMouseUp", "LeftButton")
+	Equal(#frame.navigationRows, 34) -- Notices remain readable but do not trap direction navigation.
+	a:SelectPartyQuestKeyboardRow(frame, { rowId = "quest:1", questId = 1 }, "chain")
+	a:ScrollPartyQuestCompareToRow(frame, "quest:1")
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
 	Equal(a.chainFixtureOpen, false); Equal(frame:IsShown(), true)
+	Equal(#frame.navigationRows, 3)
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(a.chainFixtureOpen, true); Equal(#frame.navigationRows, 34)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain UI toggle labels follow expansion and stale menu actions cannot reverse later choices", function()
+	local a, frame = Open(false)
+	local function Menu()
+		local row, actions = assert(Row(frame, "quest:1")), {}
+		a:PopulatePartyQuestContextMenu(frame, { rowId = row.data.rowId, questId = 1, data = row.data }, {
+			CreateTitle = function() end,
+			CreateButton = function(_, label, callback) actions[label] = callback end,
+		})
+		return actions
+	end
+	Row(frame, "quest:1").chain:RunScript("OnEnter")
+	Equal(a.tooltip[1], QT.Translate("View chain"))
+	local closedMenu = Menu()
+	assert(closedMenu[QT.Translate("View chain")]); Equal(closedMenu[QT.Translate("Close chain")], nil)
+	closedMenu[QT.Translate("View chain")]()
+	Equal(a.chainFixtureOpen, true); Equal(a.chainToggles, 1)
+	closedMenu[QT.Translate("View chain")]()
+	Equal(a.chainFixtureOpen, true); Equal(a.chainToggles, 1)
+	Row(frame, "quest:1").chain:RunScript("OnEnter")
+	Equal(a.tooltip[1], QT.Translate("Close chain"))
+	local openMenu = Menu()
+	assert(openMenu[QT.Translate("Close chain")]); Equal(openMenu[QT.Translate("View chain")], nil)
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(a.chainFixtureOpen, false); Equal(a.chainToggles, 2)
+	openMenu[QT.Translate("Close chain")]()
+	Equal(a.chainFixtureOpen, false); Equal(a.chainToggles, 2)
+	Menu()[QT.Translate("View chain")]()
+	Equal(a.chainFixtureOpen, true); Equal(a.chainToggles, 3)
+	local previousInstanceMenu = Menu()
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(a.chainFixtureOpen, true); Equal(a.chainToggles, 5)
+	previousInstanceMenu[QT.Translate("Close chain")]()
+	Equal(a.chainFixtureOpen, true); Equal(a.chainToggles, 5)
+	Menu()[QT.Translate("Close chain")]()
+	Equal(a.chainFixtureOpen, false); Equal(a.chainToggles, 6)
 	Equal(a.invalidCalls, nil)
 end)
 

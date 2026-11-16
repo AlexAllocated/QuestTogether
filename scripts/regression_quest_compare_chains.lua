@@ -108,7 +108,8 @@ QT:RegisterTest("chain session preserves active counts and independent objective
 	Equal(Find(rows, "chainStep", 4).title, "Active 4")
 	Equal(Find(rows, "chainStep", 1).cells[1], "Absent")
 	assert(Find(rows, "chainStep", 2).memberPrerequisiteText[1]:find("Secret 1", 1, true))
-	assert(Find(rows, "chainClose"))
+	Equal(Find(rows, "chainClose"), nil)
+	assert(Find(rows, nil, 2).chainExpanded)
 	Equal(Find(rows, "chainMore"), nil)
 	local ids = {}; for _, row in ipairs(rows) do assert(not ids[row.rowId]); ids[row.rowId] = true end
 	local reads = a.graphReads
@@ -188,7 +189,8 @@ QT:RegisterTest("chain unavailable loading and retired providers leave a closabl
 	assert(a:OpenPartyQuestChain(2)); a:Flush()
 	local rows = Rows(a)
 	Equal(#a:BuildPartyQuestDiffRows(), 2)
-	assert(Find(rows, "chainClose"))
+	Equal(Find(rows, "chainClose"), nil)
+	assert(Find(rows, nil, 2).chainExpanded)
 	Equal(Find(rows, "chainNotice").title, "Install QuestieDB to view related quests on this client.")
 	local callback, paints = a.providerCallbacks[1], a.renders
 	a:RetirePartyQuestChains()
@@ -484,6 +486,58 @@ QT:RegisterTest("chain failed provider retires metadata demand without repeating
 	Equal(next(a.metadataInterested), nil); Equal(#a.metadataRequests, requests)
 	a:QueuePartyQuestCompareRender(); a:Flush()
 	Equal(#a.metadataRequests, requests)
+end)
+
+QT:RegisterTest("chain same control opens closes reopens and switches roots without collapsing objectives", function()
+	local a, session, own, friend = Fixture()
+	local graph = Graph({ 1, 2, 3, 4 })
+	a.graphs[2], a.graphs[4] = graph, graph
+	for id in pairs(graph.nodes) do a.metadata[id] = { title = "Secret " .. id } end
+	session.expandedQuestIds[2] = true
+	assert(a:TogglePartyQuestChain(2, "quest:2")); a:Flush()
+	local rows = Rows(a)
+	assert(Find(rows, nil, 2).chainExpanded); Equal(Find(rows, nil, 4).chainExpanded, false)
+	Equal(Find(rows, "chainClose"), nil); assert(Find(rows, "chainStep", 3))
+	assert(a.metadataInterested[1])
+	friend.questHistory[1] = { status = "completed", sampledAt = a.now }
+	a:UpdatePartyQuestCompletion()
+	local pending = assert(a:GetPendingQuestCompare(friend.historyRequestId))
+	local closed, origin = a:TogglePartyQuestChain(2, "quest:2")
+	assert(closed); Equal(origin, "quest:2"); Equal(session.chains.rootQuestID, nil)
+	Equal(next(a.metadataInterested), nil); Equal(friend.questHistory[1], nil); Equal(friend.historyRequestId, nil)
+	Equal(next(session.historyContext), nil); Equal(session.expandedQuestIds[2], true)
+	pending.receiver.onHistory({ { questId = 1, status = "completed", sampledAt = a.API.GetServerTime() } })
+	Equal(friend.questHistory[1], nil)
+	a:Flush(); rows = Rows(a)
+	Equal(Find(rows, nil, 2).chainExpanded, false); Equal(Find(rows, "chainStep"), nil)
+	assert(a:TogglePartyQuestChain(2, "quest:2")); a:Flush()
+	assert(a.metadataInterested[1]); Equal(session.chains.rootQuestID, 2)
+	local previousInstance = session.chains.instance
+	assert(a:TogglePartyQuestChain(4, "quest:4"))
+	Equal(session.chains.rootQuestID, 4); Equal(session.chains.originRowId, "quest:4")
+	assert(session.chains.instance > previousInstance); Equal(next(a.metadataInterested), nil)
+	a:Flush(); rows = Rows(a)
+	Equal(Find(rows, nil, 2).chainExpanded, false); assert(Find(rows, nil, 4).chainExpanded)
+	assert(a:TogglePartyQuestChain(4, "quest:4"))
+	Equal(session.chains.rootQuestID, nil); Equal(session.expandedQuestIds[2], true)
+	Equal(own.entries[1], nil); Equal(own.entries[3], nil)
+end)
+
+QT:RegisterTest("chain toggle preserves restrictions and lets the origin close an unavailable section", function()
+	local a, session = Fixture()
+	Open(a, session, Graph({ 1, 2, 3, 4 }))
+	local original = a.IsWorkBlocked
+	function a:IsWorkBlocked() return true end
+	Equal(a:TogglePartyQuestChain(2, "quest:2"), false); Equal(session.chains.rootQuestID, 2)
+	a.IsWorkBlocked = original
+	Equal(a:TogglePartyQuestChain(-1, "quest:2"), false); Equal(session.chains.rootQuestID, 2)
+	a.providerState = "unavailable"
+	a:QueuePartyQuestCompareRender(); a:Flush()
+	local rows = Rows(a)
+	assert(Find(rows, nil, 2).chainExpanded and Find(rows, nil, 2).chainAvailable)
+	Equal(Find(rows, nil, 4).chainAvailable, false); Equal(Find(rows, "chainClose"), nil)
+	assert(a:TogglePartyQuestChain(2, "quest:2")); a:Flush()
+	Equal(Find(Rows(a), nil, 2).chainAvailable, false)
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_quest_compare_chains.lua")

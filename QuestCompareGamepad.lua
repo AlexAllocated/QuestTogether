@@ -2,9 +2,9 @@
 -- owns native registration, binding lifetime and the selected-frame pointer.
 local QT = _G.QuestTogether
 local DIRECTIONS = { "UP", "DOWN", "LEFT", "RIGHT" }
-local OWNED_TOOLTIP_ROLES = { quest = true, step = true, group = true, more = true, closeChain = true, chain = true,
+local OWNED_TOOLTIP_ROLES = { quest = true, step = true, group = true, more = true, chain = true,
 	journal = true, status = true, focus = true, player = true, column = true }
-local ROW_ROLES = { quest = true, step = true, group = true, more = true, closeChain = true }
+local ROW_ROLES = { quest = true, step = true, group = true, more = true }
 
 local function Mode(addon)
 	return addon.IsNativeGamepadMode and addon:IsNativeGamepadMode() == true

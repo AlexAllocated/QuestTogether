@@ -329,10 +329,10 @@ local function ChainFixture()
 	local original = a.BuildPartyQuestCompareDisplayRows
 	function a:BuildPartyQuestCompareDisplayRows(quests)
 		local roots = original(self, quests)
+		roots[1].chainAvailable, roots[1].chainExpanded = true, self.chainFixtureOpen
 		local rows = { roots[1] }
 		if self.chainFixtureOpen then
 			rows[#rows + 1] = { rowId = "chainGroup:1", kind = "chainGroup", groupId = 1, title = "Related quests", cells = {}, selectable = true, expanded = true }
-			rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":close", kind = "chainClose", title = "Close chain", cells = {}, selectable = true, chainInstanceId = self.chainFixtureInstance }
 			for id = 1, 35 do
 				rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":quest:" .. id, kind = "chainStep", questId = id,
 					title = id == 1 and "Quest 01" or "Future quest", cells = { "Unknown", "Absent" },
@@ -342,6 +342,13 @@ local function ChainFixture()
 		end
 		rows[#rows + 1] = roots[#roots]
 		return rows
+	end
+	function a:TogglePartyQuestChain(id, origin)
+		Equal(id, 1); Equal(origin, "quest:1")
+		self.chainFixtureOpen, self.chainToggles = not self.chainFixtureOpen, (self.chainToggles or 0) + 1
+		session.chains.instance = session.chains.instance + 1
+		self:RenderPartyQuestCompare()
+		return true
 	end
 	function a:ClosePartyQuestChain() self.chainFixtureOpen = false; return true, "quest:1" end
 	function a:TogglePartyQuestChainGroup(id) self.toggledGroup = id; return true end
@@ -356,9 +363,17 @@ end
 QT:RegisterTest("chain native selection crosses virtual boundaries without conflating duplicate quest IDs", function()
 	local a, frame, session = ChainFixture()
 	Equal(Selected(a, frame).rowId, "quest:1")
+	Move(a, frame, "RIGHT"); Equal(Selected(a, frame).role, "chain")
+	local chainButton = a.nativeButton
+	chainButton.OnSmartNavClick(chainButton)
+	Equal(a.chainFixtureOpen, false); Equal(a.chainToggles, 1)
+	Equal(Selected(a, frame).rowId, "quest:1"); Equal(Selected(a, frame).role, "chain")
+	Equal(a.nativeButton, chainButton)
+	chainButton.OnSmartNavClick(chainButton)
+	Equal(a.chainFixtureOpen, true); Equal(a.chainToggles, 2)
+	Move(a, frame, "LEFT"); Equal(Selected(a, frame).role, "quest")
 	Move(a, frame, "DOWN"); Equal(Selected(a, frame).rowId, "chainGroup:1")
 	a.nativeButton.OnSmartNavClick(a.nativeButton); Equal(a.toggledGroup, 1)
-	Move(a, frame, "DOWN"); Equal(Selected(a, frame).role, "closeChain")
 	Move(a, frame, "DOWN"); Equal(Selected(a, frame).rowId, "chain:native:quest:1")
 	for id = 2, 35 do Move(a, frame, "DOWN"); Equal(Selected(a, frame).rowId, "chain:native:quest:" .. id) end
 	assert(session.scrollPixels > 0)
@@ -375,7 +390,7 @@ end)
 
 QT:RegisterTest("chain native recycled step identities disarm Select and retire captured menus", function()
 	local a, frame = ChainFixture()
-	Move(a, frame, "DOWN"); Move(a, frame, "DOWN"); Move(a, frame, "DOWN")
+	Move(a, frame, "DOWN"); Move(a, frame, "DOWN")
 	local oldButton, oldID = a.nativeButton, Selected(a, frame).rowId
 	local context = assert(a:GetPartyQuestGamepadContext())
 	local callback

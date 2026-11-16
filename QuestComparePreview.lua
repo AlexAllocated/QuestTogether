@@ -785,21 +785,27 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	return preview
 end
 
-function QuestTogether:OpenPartyQuestComparePreview()
+function QuestTogether:OpenPartyQuestComparePreview(mode)
 	if self:IsWorkBlocked("foreign_frame_mutation") then
 		self:Print(L("Quest comparison preview is unavailable while restricted. Try again when restrictions end."))
 		return false
 	end
 	local preview = rawget(self, "partyQuestComparePreview")
+	local chainPreview = mode == "chains"
+	if preview and (preview.chainPreview == true) ~= chainPreview then
+		self:ClosePartyQuestComparePreview()
+		preview = nil
+	end
 	if not preview then
 		preview = self:CreatePartyQuestComparePreview()
+		if chainPreview then self:ConfigurePartyQuestChainPreview(preview) end
 		self.partyQuestComparePreview = preview
 	end
 	local frame = preview:CreatePartyQuestCompareWindow()
 	if not frame then
 		return false
 	end
-	frame.title:SetText(L("Party Quest Log — Debug Preview"))
+	frame.title:SetText(chainPreview and L("Party Quest Log — Chain Preview") or L("Party Quest Log — Debug Preview"))
 	preview:RefreshPartyQuestCompare()
 	frame:Show()
 	return true
@@ -816,5 +822,5 @@ end
 -- Keep the live follow intent intact, but never run two native focus controllers.
 function QuestTogether:IsPartyQuestCompareNavigationPreviewActive()
 	local preview = rawget(self, "partyQuestComparePreview")
-	return preview and preview.liveQuestData and preview.partyQuestCompareSession ~= nil
+	return preview and not preview.chainPreview and preview.liveQuestData and preview.partyQuestCompareSession ~= nil
 end

@@ -55,7 +55,7 @@ end
 
 function QT:GetPartyQuestRowControlRole(row)
 	return row.kind == "chainGroup" and "group" or row.kind == "chainStep" and "step"
-		or row.kind == "chainMore" and "more" or row.kind == "chainClose" and "closeChain" or "quest"
+		or row.kind == "chainMore" and "more" or "quest"
 end
 
 function QT:GetPartyQuestKeyboardTarget(rows, rowID, key, pageHeight)
@@ -122,9 +122,7 @@ function QT:ActivatePartyQuestListRow(frame, data)
 	local session = self.partyQuestCompareSession
 	if not session or frame.displaySession ~= session or not self:IsPartyQuestSelectableRow(data)
 		or self:IsWorkBlocked("foreign_frame_mutation") then return false end
-	if data.kind == "chainClose" then
-		return self:BackPartyQuestCompare(frame, self:IsPartyQuestGamepadInputOwned() and "gamepad" or "escape")
-	elseif data.kind == "chainGroup" then
+	if data.kind == "chainGroup" then
 		return self.TogglePartyQuestChainGroup and self:TogglePartyQuestChainGroup(data.groupId)
 	elseif data.kind == "chainMore" then
 		return self.ExpandPartyQuestChain and self:ExpandPartyQuestChain(data.direction)

@@ -406,6 +406,15 @@ function QT:OpenPartyQuestChain(questID, originRowId)
 	return true
 end
 
+function QT:TogglePartyQuestChain(questID, originRowId)
+	local session = self.partyQuestCompareSession
+	local state = session and session.chains
+	questID = self:NormalizeQuestID(questID)
+	if not state or not questID or self:IsWorkBlocked("foreign_frame_mutation") then return false end
+	if state.rootQuestID == questID then return self:ClosePartyQuestChain() end
+	return self:OpenPartyQuestChain(questID, originRowId)
+end
+
 function QT:ClosePartyQuestChain()
 	local session = self.partyQuestCompareSession
 	local state = session and session.chains
@@ -542,8 +551,6 @@ function QT:AppendPartyQuestChainSection(rows, rootRows)
 	if not state.rootQuestID then return end
 	local graph = state.graphs[state.rootQuestID]
 	local instance = "chain:" .. state.instance
-	rows[#rows + 1] = { rowId = instance .. ":close", kind = "chainClose", title = L("Close chain"),
-		cells = {}, selectable = true, chainInstanceId = instance, chainId = instance }
 	local function Notice(key, title)
 		rows[#rows + 1] = { rowId = instance .. ":" .. key, kind = "chainNotice", title = title, cells = {}, chainInstanceId = instance }
 	end
@@ -622,8 +629,11 @@ function QT:DecoratePartyQuestChainRows(quests, append)
 	for _, row in ipairs(session.unfilteredQuests or quests) do rootRows[row.questId] = row end
 	for _, row in ipairs(quests) do
 		row.rowId, row.selectable = "quest:" .. row.questId, true
-		row.chainAvailable = (state.capability.kind == "questiedb" or state.capability.kind == "retail")
-			and (state.capability.state == "ready" or state.capability.state == "loading")
+		row.chainExpanded = state.rootQuestID == row.questId
+		-- The same control remains available to close a section if its provider
+		-- becomes unavailable while that section is open.
+		row.chainAvailable = row.chainExpanded or ((state.capability.kind == "questiedb" or state.capability.kind == "retail")
+			and (state.capability.state == "ready" or state.capability.state == "loading"))
 		row.chainCapability = state.capability
 		local groupID = self:GetOption("compareGroupByChain") == true and Resolve(state, state.questGroups[row.questId])
 		if groupID then

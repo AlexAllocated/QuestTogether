@@ -110,6 +110,7 @@ QuestFocusTooltip.lua
 GamepadTracker.lua
 QuestFocusEditMode.lua
 QuestComparePreview.lua
+QuestCompareChainPreview.lua
 Minimap.lua
 DataBroker.lua
 Keybindings.lua

@@ -7155,6 +7155,8 @@ function QuestTogether:PrintPreviewHelp()
 		L("/qt preview share|join|partychat|bubble|discord|unfollow - Preview a QT dialog without changing settings")
 	)
 	self:Print(L("/qt preview compare - Preview Party Quest Log with mock data (no sharing)"))
+	self:Print(L("/qt preview compare chains - Preview real quest chains with simulated teammates"))
+	self:Print(L("/qt pqlpreview chains - Preview real quest chains with simulated teammates"))
 	self:Print(L("/qt preview notes - Preview the welcome and patch-notes window"))
 	self:Print(L("/qt preview announcement <text> - Run a local bubble preview for your current target"))
 	self:Print(
@@ -7171,6 +7173,9 @@ function QuestTogether:HandlePreviewCommand(input)
 	-- Only normalize the selector. Names, quotes and message text retain case.
 	if kind == "announcement" then
 		return self:PreviewBubbleAnnouncement(arguments or "")
+	end
+	if kind == "compare" and string.lower(arguments or "") == "chains" then
+		return self:OpenPartyQuestComparePreview("chains")
 	end
 	if arguments and arguments ~= "" then
 		self:PrintPreviewHelp()
@@ -7250,6 +7255,8 @@ function QuestTogether:HandleSlashCommand(input)
 	local compareCommand = string.lower(self:SafeTrimString(input, ""))
 	if compareCommand == "partychatpreview" then
 		return self:HandlePreviewCommand("partychat")
+	elseif compareCommand:match("^pqlpreview%s+chains$") then
+		return self:OpenPartyQuestComparePreview("chains")
 	elseif compareCommand == "pql" or compareCommand == "compare" then
 		self:ClosePartyQuestComparePreview()
 		return self:OpenPartyQuestCompare()
