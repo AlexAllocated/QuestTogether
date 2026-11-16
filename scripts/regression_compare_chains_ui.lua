@@ -306,6 +306,7 @@ end)
 
 QT:RegisterTest("chain UI toggle labels follow expansion and stale menu actions cannot reverse later choices", function()
 	local a, frame = Open(false)
+	Equal(Row(frame, "quest:1").chainIcon.texture, "Interface\\AddOns\\QuestTogether\\Media\\QuestChain.tga")
 	local function Menu()
 		local row, actions = assert(Row(frame, "quest:1")), {}
 		a:PopulatePartyQuestContextMenu(frame, { rowId = row.data.rowId, questId = 1, data = row.data }, {

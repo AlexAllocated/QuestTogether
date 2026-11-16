@@ -11,7 +11,8 @@ Release ZIPs must include all addon-owned runtime textures:
 - `Media/PanelCornerFill.tga` and `Media/PanelCornerBorder.tga` — 64×64 white corner artwork for scalable, class-tinted rounded panels. Build from the matching SVGs with `python3 scripts/build_panel_corners.py`.
 - `Media/DeveloperGear.tga` — white, class-tinted gear for signature-verified developer map and minimap dots. Regenerate with `python3 scripts/build_party_icons.py`.
 - `Media/VIPStar.tga` — class-tinted VIP marker, built with `python3 scripts/build_party_icons.py`.
-- `Media/FocusFollower.tga` — class-tinted chain link replacing the party focus ring when that player follows your quest focus. Regenerate from its SVG with `python3 scripts/build_party_icons.py`.
+- `Media/FocusFollower.tga` — class-tinted double chevron replacing the party focus ring when that player follows your quest focus. Regenerate from its SVG with `python3 scripts/build_party_icons.py`.
+- `Media/QuestChain.tga` — chain links used by the Party Quest Log's View chain control. Regenerate from its SVG with `python3 scripts/build_party_icons.py`.
 - `Media/QuestTogetherVIPIcon.tga` — rear scroll and gold VIP star. Build with `python3 scripts/build_minimap_icon.py --vip`; `--vip-glow` builds the LFQP variant. Both produce PNG and SVG previews.
 - `Media/Minimap{,VIP,Developer}Button.tga` — launcher-specific scroll, star, and gear icons with a metallic contour instead of a circular overlay. `python3 scripts/build_minimap_buttons.py` also builds matching `Highlight` and `Glow` textures. Chat and map artwork stay separate.
 - `Media/PartyWaypoint.tga` — 32×32 class-tinted map pin with a dark outline. Regenerate with `rsvg-convert -o /tmp/qt-party-pin.png Media/PartyWaypoint.svg` then `magick /tmp/qt-party-pin.png -define tga:bits-per-sample=8 -compress none Media/PartyWaypoint.tga`.

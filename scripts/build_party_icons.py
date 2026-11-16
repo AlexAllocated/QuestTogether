@@ -39,5 +39,5 @@ def render(name):
 
 
 if __name__ == "__main__":
-    for name in ("PartyBadge", "PartyLeader", "PartyHighlight", "DeveloperGear", "VIPStar", "FocusFollower"):
+    for name in ("PartyBadge", "PartyLeader", "PartyHighlight", "DeveloperGear", "VIPStar", "FocusFollower", "QuestChain"):
         render(name)

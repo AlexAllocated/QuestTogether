@@ -56,7 +56,7 @@ uncommitted source tree cannot provide that published mapping.
 | --- | --- |
 | Scroll logo and badge textures | `logo.svg`, marker SVGs under `Media/`, `scripts/build_minimap_icon.py` |
 | Chat bubble | `Media/ChatBubbleIcon.svg`, `scripts/build_chat_icon.py` |
-| Party markers and follower icon | Matching `Media/*.svg`, `scripts/build_party_icons.py` |
+| Party markers, follower chevrons and quest-chain icon | Matching `Media/*.svg`, `scripts/build_party_icons.py` |
 | Panel corners | `Media/PanelCornerFill.svg`, `Media/PanelCornerBorder.svg`, `scripts/build_panel_corners.py` |
 | Party Quest Log scroll | `Media/QuestCompareScroll.svg`, `scripts/build_compare_scroll.py` |
 | Focus and minimap rings | `scripts/build_focus_ring.py`, `scripts/build_minimap_ring.py` |

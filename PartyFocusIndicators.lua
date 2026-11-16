@@ -110,7 +110,7 @@ local function NewPin(a, root)
 		return texture
 	end
 	-- Keep the center transparent so the tracker background shows through.
-	-- Following fills the ring; followers replace it with a class-colored chain.
+	-- Following fills the ring; followers replace it with class-colored chevrons.
 	local ring = Call(a, frame, "CreateTexture", nil, "ARTWORK")
 	Call(a, ring, "SetSize", DOT_SIZE, DOT_SIZE)
 	Call(a, ring, "SetPoint", "CENTER")
@@ -238,7 +238,7 @@ function QT:RefreshPartyQuestFocusIndicatorGeometry()
 				local follower = self:IsPartyQuestFocusFollower(row.name)
 				-- Grow leftward along the title row, not vertically into adjacent
 				-- quests whose objective lists may be collapsed or empty. Rings
-				-- and chains occupy the same slot and hover/click target.
+				-- and follower chevrons occupy the same slot and hover/click target.
 				local x = header.edge - DOT_SIZE / 2 - 3 - (slots[row.questID] or 0)
 					- left * scale / header.scale
 				slots[row.questID] = (slots[row.questID] or 0) + DOT_SPACING
@@ -248,7 +248,7 @@ function QT:RefreshPartyQuestFocusIndicatorGeometry()
 				local old = pin.geometry
 				if not old or old.x ~= x or old.y ~= y or old.scale ~= s or old.level ~= header.level or old.strata ~= header.strata then
 					Call(self, pin.frame, "SetScale", s)
-					-- Focus rings, fills and chains belong to the tracker layer so
+					-- Focus rings, fills and chevrons belong to the tracker layer so
 					-- ordinary windows can cover both their artwork and hit targets.
 					Call(self, pin.frame, "SetFrameStrata", header.strata)
 					Call(self, pin.frame, "SetFrameLevel", header.level)

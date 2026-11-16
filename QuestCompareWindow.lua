@@ -1289,7 +1289,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.chain:SetPoint("TOPLEFT", QUEST_WIDTH - 58, -4)
 			row.chain:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
 			local chainIcon = row.chain:CreateTexture(nil, "ARTWORK")
-			chainIcon:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\FocusFollower.tga")
+			chainIcon:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\QuestChain.tga")
 			chainIcon:SetSize(18, 18); chainIcon:SetPoint("CENTER")
 			row.chainIcon = chainIcon
 			row.chain:SetScript("OnEnter", function()

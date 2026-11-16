@@ -261,7 +261,7 @@ QT:RegisterTest("focus follower icons replace rings without shifting markers or 
 	peers["Rogue Realm"].following = "Mage Realm"
 	peers["Druid Realm"].following = "You Realm"
 	-- A brief conflicting snapshot can carry both directions before cycle
-	-- reconciliation. The chain wins so the marker never has a fill beneath it.
+	-- reconciliation. The follower icon wins so the marker never has a fill beneath it.
 	a.partyNavigationState.following = "Mage Realm"
 	a:UpdatePartyQuestFocusIndicators()
 	local pins, previousLeft = Visible(a), nil
