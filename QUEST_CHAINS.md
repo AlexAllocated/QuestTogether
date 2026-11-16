@@ -142,10 +142,11 @@ Log**, quest focus, following, **Share** and **Request Share** actions appear wh
 their usual conditions allow them. Viewing a chain or selecting a row does not
 change your focused quest, follow target or waypoint.
 
-When valid NPC or object starter locations are available, **Find quest giver**
-opens the map with a temporary marker. Alternatives are offered with the current
-map first. The saved Player Locations map-display preference must allow QT's map
-overlays for this preview. **Set waypoint** is a separate explicit action and uses
+For a revealed step in an expanded chain, each valid NPC or object starter
+location has its own **Find quest giver** action, opening the map with a temporary
+marker. Alternatives are offered with the current map first. Enable QT's
+world-map markers with the QT button on the map to see this marker.
+**Set waypoint** is a separate explicit action and uses
 QT's existing waypoint and follow-confirmation behavior. An item-started quest
 or unavailable location gets an explanation instead of a guessed destination.
 Retail line membership alone does not supply quest-giver coordinates.
