@@ -1,20 +1,21 @@
 {
-  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
+  "source_sha256": "655af31dac1a6660031060fad2b960c65c90179e58df72d9cfb2de4ee911ccd2",
   "notes": {
-    "version": "9.3.2",
-    "welcome": "Esta actualización corrige el seguimiento al aceptar misiones y la posición del ícono de QT en las placas amistosas que muestran solo nombres.",
+    "version": "9.3.3",
+    "welcome": "Seguimiento de enfoque más consistente y vistas previas de placas de nombre más fieles.",
     "sections": [
       {
-        "title": "Aceptar misiones durante el seguimiento",
+        "title": "Aceptar misiones sin interrumpir el seguimiento",
         "items": [
-          "Si WoW selecciona automáticamente una misión que acabas de aceptar, ya no aparece la confirmación para dejar de seguir a tu compañero. El seguimiento se mantiene y la misión compartida vuelve a quedar activa en cuanto el juego lo permite.",
-          "Cuando eliges otra misión por tu cuenta más adelante, la confirmación para dejar de seguir sigue apareciendo como antes."
+          "Se corrigió otro problema de sincronización entre eventos que podía pedirte dejar de seguir al aceptar una misión. Los cambios automáticos conservan el seguimiento; al elegir otra misión por tu cuenta, QT sigue pidiendo confirmación."
         ]
       },
       {
-        "title": "Placas amistosas con solo nombres",
+        "title": "Placas de nombre según tus opciones",
         "items": [
-          "Con la opción de WoW para mostrar solo los nombres de jugadores amistosos, el ícono de QT se coloca justo a la izquierda del texto del nombre, en vez de junto a la barra de salud oculta. Si desactivas la opción, vuelve a la posición que guardaste."
+          "Con la opción de mostrar solo nombres de jugadores amistosos, todas las posiciones del ícono QT se ajustan al texto. Izquierda y Prefijo quedan en el mismo sitio.",
+          "Las vistas previas de Forever centran el nombre sobre la barra de salud y colocan el nivel a la derecha. La vista previa de jugadores respeta el modo de solo nombres e incluye una explicación con acceso al ajuste de Blizzard.",
+          "En Retail, las vistas previas reflejan los estilos, tamaños, fuentes y opciones de salud de las placas del juego."
         ]
       }
     ]

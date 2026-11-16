@@ -2,6 +2,20 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.3
+
+Melhorias no acompanhamento do foco de missões e nas prévias das placas de nome.
+
+### Continue acompanhando ao aceitar missões
+
+- Corrigido outro caso de atraso entre eventos que podia perguntar se você queria parar de acompanhar ao aceitar uma missão. Mudanças automáticas preservam o acompanhamento; escolher outra missão manualmente ainda pede confirmação.
+
+### Prévias de acordo com suas configurações
+
+- Quando apenas os nomes de jogadores amistosos são exibidos, todas as posições do ícone QT passam a usar o nome como referência. Esquerda e Prefixo ficam na mesma posição.
+- No Forever, as prévias centralizam o nome sobre a barra de vida e exibem o nível à direita. A prévia de jogadores respeita o modo de apenas nomes e explica onde alterar essa opção da Blizzard.
+- As prévias do Retail refletem os estilos, tamanhos, fontes e opções de exibição de vida das placas nativas.
+
 ## 9.3.2
 
 Correções no acompanhamento ao aceitar missões e na posição do ícone do QT nas placas de jogadores aliados que exibem apenas nomes.

@@ -1,20 +1,21 @@
 {
-  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
+  "source_sha256": "655af31dac1a6660031060fad2b960c65c90179e58df72d9cfb2de4ee911ccd2",
   "notes": {
-    "version": "9.3.2",
-    "welcome": "Corrections du suivi lors de l’acceptation de quêtes et du placement des icônes QT quand seuls les noms des joueurs alliés sont affichés.",
+    "version": "9.3.3",
+    "welcome": "Le suivi du focus de quête et les aperçus des barres de nom gagnent en précision.",
     "sections": [
       {
-        "title": "Accepter des quêtes pendant un suivi",
+        "title": "Continuer à suivre en acceptant des quêtes",
         "items": [
-          "Lorsqu’une quête acceptée devient automatiquement votre quête active, vous continuez à suivre votre compagnon sans demande d’arrêt. La quête commune est rétablie dès que le jeu le permet.",
-          "Si vous choisissez ensuite vous-même une autre quête, la confirmation d’arrêt du suivi reste nécessaire."
+          "Correction d’un autre décalage entre événements qui pouvait demander d’arrêter le suivi lors de l’acceptation d’une quête. Un changement automatique conserve le suivi ; choisir volontairement une autre quête demande toujours confirmation."
         ]
       },
       {
-        "title": "Barres d’info alliées affichant uniquement les noms",
+        "title": "Des aperçus fidèles aux réglages",
         "items": [
-          "Quand WoW affiche uniquement les noms des joueurs alliés sur leurs barres d’info, l’icône QT se place juste à gauche du nom visible. Désactiver cette option rétablit la position enregistrée de l’icône."
+          "Lorsque seuls les noms des joueurs amicaux sont affichés, toutes les positions de l’icône QT se placent par rapport au nom. Gauche et Préfixe correspondent alors au même emplacement.",
+          "Sur Forever, les aperçus centrent le nom au-dessus de la barre de vie et affichent le niveau à droite. L’aperçu des joueurs respecte le mode sans barre et indique où modifier ce réglage Blizzard.",
+          "Sur Retail, les aperçus suivent les styles, tailles, polices et réglages d’affichage de la vie des barres de nom natives."
         ]
       }
     ]

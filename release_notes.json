@@ -1,18 +1,19 @@
 {
-  "version": "9.3.2",
-  "welcome": "Picking up new quests no longer interrupts quest-focus following. QT icons also line up properly with friendly player names when health bars are hidden.",
+  "version": "9.3.3",
+  "welcome": "Smoother quest-focus following and more accurate nameplate previews.",
   "sections": [
     {
-      "title": "Keep following when picking up quests",
+      "title": "Keep following through quest pickups",
       "items": [
-        "Accepting a new quest no longer asks you to stop following when WoW automatically changes quest focus. QT keeps the follow active and returns to your party member's focused quest when allowed.",
-        "Deliberately choosing another quest still asks whether to stop following."
+        "Fixed another timing case where accepting a quest could ask you to stop following a party member’s quest focus. Automatic changes keep following active; deliberately choosing a different quest still asks."
       ]
     },
     {
-      "title": "Name-only friendly player plates",
+      "title": "Nameplates that match your settings",
       "items": [
-        "With Only show names enabled, the QT icon now sits just left of the player's name instead of beside the hidden health bar. Turn the setting off to return the icon to your saved position."
+        "In friendly-player name-only mode, every QT icon position now follows the name text. Left and Prefix share the same position.",
+        "Forever previews now center names above the health bar and show the level badge on its right. The player preview follows name-only mode and explains where to change that Blizzard setting.",
+        "Retail previews now reflect native nameplate styles, sizes, fonts and health-display settings."
       ]
     }
   ]

@@ -1,20 +1,21 @@
 {
-  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
+  "source_sha256": "655af31dac1a6660031060fad2b960c65c90179e58df72d9cfb2de4ee911ccd2",
   "notes": {
-    "version": "9.3.2",
-    "welcome": "Correzioni per chi segue la missione di un compagno e per le icone QT sulle targhette amichevoli che mostrano solo il nome.",
+    "version": "9.3.3",
+    "welcome": "Migliorati il seguito del focus missione e le anteprime delle barre dei nomi.",
     "sections": [
       {
-        "title": "Accettare missioni mentre segui un compagno",
+        "title": "Continua a seguire mentre accetti missioni",
         "items": [
-          "Quando accetti una missione mentre segui quella di un compagno, il cambio automatico di selezione non ti chiede più di smettere di seguirlo. Continui a seguirlo e la missione condivisa viene ripristinata appena il gioco lo consente.",
-          "Se in seguito scegli tu un’altra missione, compare ancora la conferma per smettere di seguire il compagno."
+          "Risolto un altro problema di temporizzazione che poteva chiedere di interrompere il seguito quando accettavi una missione. I cambi automatici mantengono il seguito attivo; scegliere volontariamente una missione diversa richiede ancora conferma."
         ]
       },
       {
-        "title": "Targhette amichevoli con il solo nome",
+        "title": "Anteprime coerenti con le impostazioni",
         "items": [
-          "Quando WoW mostra solo i nomi sulle targhette dei giocatori amichevoli, l’icona QT si posiziona subito a sinistra del nome visibile. Disattivando questa opzione, l’icona torna nella posizione che avevi salvato."
+          "Quando sono visibili solo i nomi dei giocatori amichevoli, tutte le posizioni dell’icona QT sono relative al testo. Sinistra e Prefisso coincidono.",
+          "Su Forever, le anteprime centrano il nome sopra la barra della salute e mostrano il livello alla sua destra. L’anteprima dei giocatori rispetta la modalità con soli nomi e indica dove cambiare la relativa impostazione Blizzard.",
+          "Le anteprime Retail rispecchiano stili, dimensioni, caratteri e opzioni della salute delle barre native."
         ]
       }
     ]

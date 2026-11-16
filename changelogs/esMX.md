@@ -2,6 +2,20 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.3
+
+Seguimiento de enfoque más consistente y vistas previas de placas de nombre más fieles.
+
+### Aceptar misiones sin interrumpir el seguimiento
+
+- Se corrigió otro problema de sincronización entre eventos que podía pedirte dejar de seguir al aceptar una misión. Los cambios automáticos conservan el seguimiento; al elegir otra misión por tu cuenta, QT sigue pidiendo confirmación.
+
+### Placas de nombre según tus opciones
+
+- Con la opción de mostrar solo nombres de jugadores amistosos, todas las posiciones del ícono QT se ajustan al texto. Izquierda y Prefijo quedan en el mismo sitio.
+- Las vistas previas de Forever centran el nombre sobre la barra de salud y colocan el nivel a la derecha. La vista previa de jugadores respeta el modo de solo nombres e incluye una explicación con acceso al ajuste de Blizzard.
+- En Retail, las vistas previas reflejan los estilos, tamaños, fuentes y opciones de salud de las placas del juego.
+
 ## 9.3.2
 
 Esta actualización corrige el seguimiento al aceptar misiones y la posición del ícono de QT en las placas amistosas que muestran solo nombres.

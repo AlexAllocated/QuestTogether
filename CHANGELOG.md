@@ -4,6 +4,20 @@
 
 [Other languages](changelogs/README.md)
 
+## 9.3.3
+
+Smoother quest-focus following and more accurate nameplate previews.
+
+### Keep following through quest pickups
+
+- Fixed another timing case where accepting a quest could ask you to stop following a party member’s quest focus. Automatic changes keep following active; deliberately choosing a different quest still asks.
+
+### Nameplates that match your settings
+
+- In friendly-player name-only mode, every QT icon position now follows the name text. Left and Prefix share the same position.
+- Forever previews now center names above the health bar and show the level badge on its right. The player preview follows name-only mode and explains where to change that Blizzard setting.
+- Retail previews now reflect native nameplate styles, sizes, fonts and health-display settings.
+
 ## 9.3.2
 
 Picking up new quests no longer interrupts quest-focus following. QT icons also line up properly with friendly player names when health bars are hidden.

@@ -2,6 +2,20 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.3
+
+Migliorati il seguito del focus missione e le anteprime delle barre dei nomi.
+
+### Continua a seguire mentre accetti missioni
+
+- Risolto un altro problema di temporizzazione che poteva chiedere di interrompere il seguito quando accettavi una missione. I cambi automatici mantengono il seguito attivo; scegliere volontariamente una missione diversa richiede ancora conferma.
+
+### Anteprime coerenti con le impostazioni
+
+- Quando sono visibili solo i nomi dei giocatori amichevoli, tutte le posizioni dell’icona QT sono relative al testo. Sinistra e Prefisso coincidono.
+- Su Forever, le anteprime centrano il nome sopra la barra della salute e mostrano il livello alla sua destra. L’anteprima dei giocatori rispetta la modalità con soli nomi e indica dove cambiare la relativa impostazione Blizzard.
+- Le anteprime Retail rispecchiano stili, dimensioni, caratteri e opzioni della salute delle barre native.
+
 ## 9.3.2
 
 Correzioni per chi segue la missione di un compagno e per le icone QT sulle targhette amichevoli che mostrano solo il nome.

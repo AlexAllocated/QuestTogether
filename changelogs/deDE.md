@@ -2,6 +2,20 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.3
+
+Verbesserungen beim Folgen des Questfokus und bei den Namensplaketten-Vorschauen.
+
+### Questfokus beim Annehmen beibehalten
+
+- Eine weitere zeitliche Überschneidung konnte beim Annehmen einer Quest die Nachfrage zum Beenden des Folgens auslösen. Automatische Fokuswechsel lassen das Folgen jetzt aktiv; bei einer bewusst gewählten anderen Quest erscheint die Nachfrage weiterhin.
+
+### Passende Namensplaketten-Vorschauen
+
+- Wenn bei freundlichen Spielern nur Namen angezeigt werden, richten sich alle QT-Symbolpositionen am Namen aus. Links und Präfix liegen dabei an derselben Stelle.
+- In Forever stehen die Namen in der Vorschau mittig über dem Gesundheitsbalken, mit der Stufenanzeige rechts daneben. Die Spielervorschau berücksichtigt den Modus ohne Balken und verweist auf die zugehörige Blizzard-Einstellung.
+- Retail-Vorschauen berücksichtigen die nativen Stile, Größen, Schriftarten und Einstellungen zur Gesundheitsanzeige.
+
 ## 9.3.2
 
 Korrekturen für den Questfokus beim Annehmen neuer Quests und für QT-Symbole neben freundlichen Spielernamen.

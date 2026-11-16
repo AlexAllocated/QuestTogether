@@ -2,6 +2,20 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.3
+
+Mejoras en el seguimiento del enfoque de misiones y en las vistas previas de las placas de nombre.
+
+### Seguir el enfoque al aceptar misiones
+
+- Corregido otro caso de desfase entre eventos que podía pedirte dejar de seguir al aceptar una misión. Los cambios automáticos mantienen el seguimiento; elegir otra misión manualmente sigue pidiendo confirmación.
+
+### Placas acordes con tus ajustes
+
+- Al mostrar solo los nombres de jugadores amistosos, todas las posiciones del icono de QT se calculan respecto al nombre. Izquierda y Prefijo ocupan el mismo lugar.
+- En Forever, las vistas previas centran el nombre sobre la barra de salud y muestran el nivel a su derecha. La vista previa de jugadores respeta el modo de solo nombres e indica dónde cambiar ese ajuste de Blizzard.
+- Las vistas previas de Retail reflejan los estilos, tamaños, fuentes y opciones de salud de las placas nativas.
+
 ## 9.3.2
 
 Corregidos el seguimiento al aceptar misiones y la posición del icono de QT en las placas amistosas que solo muestran nombres.

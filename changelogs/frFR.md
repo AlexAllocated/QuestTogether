@@ -2,6 +2,20 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 9.3.3
+
+Le suivi du focus de quête et les aperçus des barres de nom gagnent en précision.
+
+### Continuer à suivre en acceptant des quêtes
+
+- Correction d’un autre décalage entre événements qui pouvait demander d’arrêter le suivi lors de l’acceptation d’une quête. Un changement automatique conserve le suivi ; choisir volontairement une autre quête demande toujours confirmation.
+
+### Des aperçus fidèles aux réglages
+
+- Lorsque seuls les noms des joueurs amicaux sont affichés, toutes les positions de l’icône QT se placent par rapport au nom. Gauche et Préfixe correspondent alors au même emplacement.
+- Sur Forever, les aperçus centrent le nom au-dessus de la barre de vie et affichent le niveau à droite. L’aperçu des joueurs respecte le mode sans barre et indique où modifier ce réglage Blizzard.
+- Sur Retail, les aperçus suivent les styles, tailles, polices et réglages d’affichage de la vie des barres de nom natives.
+
 ## 9.3.2
 
 Corrections du suivi lors de l’acceptation de quêtes et du placement des icônes QT quand seuls les noms des joueurs alliés sont affichés.

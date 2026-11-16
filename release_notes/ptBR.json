@@ -1,20 +1,21 @@
 {
-  "source_sha256": "db5540274d8382dd2adefaed955e7bf4365a32e0d18ebafcc16ecb7439d56dd2",
+  "source_sha256": "655af31dac1a6660031060fad2b960c65c90179e58df72d9cfb2de4ee911ccd2",
   "notes": {
-    "version": "9.3.2",
-    "welcome": "Correções no acompanhamento ao aceitar missões e na posição do ícone do QT nas placas de jogadores aliados que exibem apenas nomes.",
+    "version": "9.3.3",
+    "welcome": "Melhorias no acompanhamento do foco de missões e nas prévias das placas de nome.",
     "sections": [
       {
-        "title": "Aceitar missões durante o acompanhamento",
+        "title": "Continue acompanhando ao aceitar missões",
         "items": [
-          "A seleção automática de uma missão recém-aceita não interrompe mais o acompanhamento da missão em foco de um integrante do grupo nem pede confirmação para parar de seguir. O acompanhamento permanece ativo, e a missão compartilhada volta ao foco assim que o WoW permite.",
-          "Se você escolher outra missão por conta própria depois disso, a confirmação para parar de seguir continua aparecendo normalmente."
+          "Corrigido outro caso de atraso entre eventos que podia perguntar se você queria parar de acompanhar ao aceitar uma missão. Mudanças automáticas preservam o acompanhamento; escolher outra missão manualmente ainda pede confirmação."
         ]
       },
       {
-        "title": "Placas aliadas com apenas nomes",
+        "title": "Prévias de acordo com suas configurações",
         "items": [
-          "Com a opção do WoW de exibir apenas os nomes de jogadores aliados, o ícone do QT fica logo à esquerda do texto do nome, em vez de acompanhar a barra de vida oculta. Ao desativar a opção, o ícone retorna à posição que você salvou."
+          "Quando apenas os nomes de jogadores amistosos são exibidos, todas as posições do ícone QT passam a usar o nome como referência. Esquerda e Prefixo ficam na mesma posição.",
+          "No Forever, as prévias centralizam o nome sobre a barra de vida e exibem o nível à direita. A prévia de jogadores respeita o modo de apenas nomes e explica onde alterar essa opção da Blizzard.",
+          "As prévias do Retail refletem os estilos, tamanhos, fontes e opções de exibição de vida das placas nativas."
         ]
       }
     ]
