@@ -22,9 +22,9 @@
 ## SavedVariables: QuestTogetherDB, QuestTogetherVIP
 ## Author: Chev
 ## RequiredDeps:
-## OptionalDeps:
+## OptionalDeps: QuestieDB
 ## X-Website: https://www.chevtek.io
-## X-License: MIT License
+## X-License: GPL-3.0-only
 
 Libs/libchev/libchev.lua
 Libs/libchev/Debug.lua
@@ -87,6 +87,9 @@ DeveloperAnnouncements.lua
 GeographicComms.lua
 EventLocalization.lua
 AddonUpdates.lua
+QuestChainProviders.lua
+QuestChains.lua
+QuestCompareChains.lua
 QuestCompare.lua
 QuestCompareFilters.lua
 QuestCompareObjectives.lua
@@ -124,6 +127,7 @@ PartyMapNative.lua
 PartyMapPins.lua
 GamepadMap.lua
 PartyWaypointPins.lua
+QuestChainGiver.lua
 NearbyStreams.lua
 PlayerDetails.lua
 PlayerPhases.lua

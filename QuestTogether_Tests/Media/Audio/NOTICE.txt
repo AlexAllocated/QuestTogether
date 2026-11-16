@@ -1,0 +1,11 @@
+QuestTogether original audio
+Copyright (c) 2026 QuestTogether
+
+These audio cues were created for QuestTogether using original procedural
+synthesis. No game sounds, third-party recordings, or external audio samples
+were used.
+
+Editable synthesis source: scripts/build_audio.py
+Recording metadata and gain variants: Media/Audio/manifest.json
+
+This notice documents provenance and does not grant additional rights.

@@ -2,7 +2,9 @@
 -- owns native registration, binding lifetime and the selected-frame pointer.
 local QT = _G.QuestTogether
 local DIRECTIONS = { "UP", "DOWN", "LEFT", "RIGHT" }
-local OWNED_TOOLTIP_ROLES = { quest = true, journal = true, status = true, focus = true, player = true, column = true }
+local OWNED_TOOLTIP_ROLES = { quest = true, step = true, group = true, more = true, closeChain = true, chain = true,
+	journal = true, status = true, focus = true, player = true, column = true }
+local ROW_ROLES = { quest = true, step = true, group = true, more = true, closeChain = true }
 
 local function Mode(addon)
 	return addon.IsNativeGamepadMode and addon:IsNativeGamepadMode() == true
@@ -14,11 +16,11 @@ local function Current(addon, frame)
 end
 local function Copy(value)
 	if not value then return end
-	return { session = value.session, questId = value.questId, role = value.role,
+	return { session = value.session, rowId = value.rowId, questId = value.questId, role = value.role,
 		player = value.player, action = value.action, owner = value.owner }
 end
 local function Same(a, b, action)
-	return a and b and a.session == b.session and a.questId == b.questId
+	return a and b and a.session == b.session and a.rowId == b.rowId and (a.rowId ~= nil or a.questId == b.questId)
 		and a.role == b.role and a.player == b.player
 		and (not action or (a.action == b.action and a.owner == b.owner))
 end
@@ -30,14 +32,14 @@ local function Find(state, wanted)
 		if Same(identity, wanted) and Enabled(button) then return button end
 	end
 end
-local function FindQuest(state, questId, role, player)
-	local desired = { session = state.session, questId = questId, role = role, player = player }
-	return Find(state, desired) or Find(state, { session = state.session, questId = questId, role = "quest" })
+local function FindRow(state, rowId, role, player)
+	return Find(state, { session = state.session, rowId = rowId, role = role, player = player })
+		or state.rows[rowId] and state.rows[rowId][1]
 end
 local function FirstQuest(frame, state)
 	for _, row in ipairs(frame.rows) do
 		local identity = state.byButton[row]
-		if identity and identity.questId and Enabled(row) then return row end
+		if identity and identity.rowId and Enabled(row) then return row end
 	end
 	return Enabled(frame.search) and frame.search or frame.close
 end
@@ -67,9 +69,10 @@ function QT:QueuePartyQuestGamepadPresentation(frame)
 		end
 		for _, row in ipairs(frame.rows) do
 			local data = row.data
-			local highlighted = data and not data.kind and row.session == self.partyQuestCompareSession
-				and ((identity and identity.questId == data.questId)
-					or (frame.keyboardSession == row.session and row.session.keyboardQuestId == data.questId))
+			local highlighted = self:IsPartyQuestSelectableRow(data) and row.session == self.partyQuestCompareSession
+				and ((identity and identity.rowId == self:GetPartyQuestRowIdentity(data))
+					or (frame.keyboardSession == row.session and row.session.keyboardRowId == self:GetPartyQuestRowIdentity(data)))
+			if highlighted and identity then row.keyboardHighlight:ClearAllPoints(); row.keyboardHighlight:SetAllPoints(button) end
 			if highlighted then row.keyboardHighlight:Show() else row.keyboardHighlight:Hide() end
 		end
 		-- Refresh only QT-authored handlers. Calling a template/native OnEnter
@@ -109,9 +112,10 @@ function QT:ActivatePartyQuestGamepadControl(frame, button)
 	if selected ~= button then return false end
 	local identity = state.byButton[button]
 	local row = identity.row
-	if row and (row.session ~= identity.session or not row.data or row.data.kind or row.data.questId ~= identity.questId
+	if row and (row.session ~= identity.session or not self:IsPartyQuestSelectableRow(row.data)
+		or self:GetPartyQuestRowIdentity(row.data) ~= identity.rowId or row.data.questId ~= identity.questId
 		or (identity.role == "action" and (row.data.action ~= identity.action or row.data.owner ~= identity.owner))) then return false end
-	local script = button:GetScript(identity.role == "quest" and "OnMouseUp" or "OnClick")
+	local script = button:GetScript(ROW_ROLES[identity.role] and "OnMouseUp" or "OnClick")
 	if not script then return false end
 	script(button, "LeftButton")
 	return true
@@ -142,7 +146,8 @@ local function Collect(addon, frame, state)
 		if not button then return end
 		if not Enabled(button) then addon:SetGamepadControlIgnored(button, true); return end
 		Bind(addon, frame, state, button, { session = session, role = role, questId = questId,
-			player = player, action = data and data.action, owner = data and data.owner, row = row })
+			player = player, rowId = row and addon:GetPartyQuestRowIdentity(row.data),
+			action = data and data.action, owner = data and data.owner, row = row })
 		if list then list[#list + 1] = button end
 	end
 	for _, role in ipairs({ "close", "search", "filter", "reset", "refresh", "stopFollowing" }) do
@@ -157,17 +162,13 @@ local function Collect(addon, frame, state)
 	end
 	for _, row in ipairs(frame.rows) do
 		local data = row.data
-		local logical = row.session == session and data and not data.kind and Enabled(row)
+		local logical = row.session == session and addon:IsPartyQuestSelectableRow(data) and Enabled(row)
 		addon:SetGamepadControlIgnored(row, not logical)
 		if logical then
-			local list = {}; state.rows[data.questId] = list
-			Add(row, "quest", data.questId, nil, nil, list, row)
-			Add(row.journal, "journal", data.questId, nil, nil, list, row)
-			for index, member in ipairs(session.members) do
-				Add(row.cellTooltips and row.cellTooltips[index], "status", data.questId, member.name, nil, list, row)
-				Add(row.focusCells[index], "focus", data.questId, member.name, nil, list, row)
+			local list = {}; state.rows[addon:GetPartyQuestRowIdentity(data)] = list
+			for _, control in ipairs(addon:GetPartyQuestRowControls(frame, data)) do
+				Add(control.button, control.role, data.questId, control.player, data, list, row)
 			end
-			Add(row.action, "action", data.questId, nil, data, list, row)
 		end
 	end
 	-- Scroll frames contain only a materialized slice. Explicit direction
@@ -186,15 +187,16 @@ function QT:RefreshPartyQuestGamepad(frame)
 	if state.updating then return end
 	state.updating = true
 	local session, old = frame.displaySession, state.selected
+	if old and self.ResolvePartyQuestChainRowID then old.rowId = self:ResolvePartyQuestChainRowID(old.rowId) end
 	if state.session ~= session then state.session, state.selected, state.armed = session, nil, nil; old = nil end
 	Collect(self, frame, state)
 	local focused = self:IsGamepadWindowFocused(frame)
 	local target = old and Find(state, old)
 	-- Structural refreshes preserve the selected quest through sorting, resize
 	-- and expansion. A mouse-wheel scroll intentionally changes the visible slice.
-	if old and old.questId and not target and (frame.rendering or state.restoreWanted) and not state.materializing then
+	if old and old.rowId and not target and (frame.rendering or state.restoreWanted) and not state.materializing then
 		state.materializing = true
-		self:ScrollPartyQuestCompareToQuest(frame, old.questId)
+		self:ScrollPartyQuestCompareToRow(frame, old.rowId)
 		state.materializing = nil
 		Collect(self, frame, state)
 		target = Find(state, old)
@@ -203,6 +205,7 @@ function QT:RefreshPartyQuestGamepad(frame)
 		target = target or FirstQuest(frame, state)
 		local identity = state.byButton[target]
 		state.selected = Copy(identity)
+		if self.SetPartyQuestChainSelection then self:SetPartyQuestChainSelection(identity and identity.row and identity.row.data) end
 		-- Reusing the same physical frame does not emit native selection callbacks.
 		-- A changed quest/action must not inherit permission from the old selection.
 		if not Same(state.armed, identity, true) then state.armed = nil end
@@ -226,16 +229,16 @@ function QT:MovePartyQuestGamepadSelection(frame, button, direction)
 	local identity = state.byButton[button]
 	if not identity or identity.session ~= self.partyQuestCompareSession then return true end
 	local target
-	if identity.questId and (direction == "UP" or direction == "DOWN") then
-		local nextRow = self:GetPartyQuestKeyboardTarget(frame.navigationRows, identity.questId, direction, frame.rowsViewport:GetHeight())
-		if nextRow and nextRow.questId ~= identity.questId then
+	if identity.rowId and (direction == "UP" or direction == "DOWN") then
+		local nextRow = self:GetPartyQuestKeyboardTarget(frame.navigationRows, identity.rowId, direction, frame.rowsViewport:GetHeight())
+		if nextRow and self:GetPartyQuestRowIdentity(nextRow) ~= identity.rowId then
 			state.materializing = true
-			self:ScrollPartyQuestCompareToQuest(frame, nextRow.questId)
+			self:ScrollPartyQuestCompareToRow(frame, self:GetPartyQuestRowIdentity(nextRow))
 			state.materializing = nil
-			target = FindQuest(state, nextRow.questId, identity.role, identity.player)
+			target = FindRow(state, self:GetPartyQuestRowIdentity(nextRow), identity.role, identity.player)
 		elseif direction == "UP" then target = state.headers[1] or frame.filter end
-	elseif identity.questId then
-		local list = state.rows[identity.questId] or {}
+	elseif identity.rowId then
+		local list = state.rows[identity.rowId] or {}
 		local index = Position(list, button)
 		if index then target = list[index + (direction == "LEFT" and -1 or 1)] end
 	else
@@ -251,6 +254,7 @@ function QT:MovePartyQuestGamepadSelection(frame, button, direction)
 	if not target or not Enabled(target) then return true end
 	self:RevealPartyQuestGamepadControl(frame, state.byButton[target])
 	state.selected, state.armed = Copy(state.byButton[target]), Copy(state.byButton[target])
+	if self.SetPartyQuestChainSelection then self:SetPartyQuestChainSelection(state.byButton[target].row and state.byButton[target].row.data) end
 	-- This refresh does not select: the native directional callback selects its
 	-- returned frame, including when the pool reused the same frame identity.
 	self:RefreshGamepadNavigation(frame)
@@ -274,13 +278,14 @@ function QT:ConfigurePartyQuestGamepadNavigation(frame)
 	self:ConfigureGamepadWindow(frame, {
 		role = "compare", kind = "window", footer = true,
 		defaultFocus = function() return FirstQuest(frame, state) end,
-		close = function() self:DismissManagedWindow(frame, "gamepad") end,
+		close = function() self:BackPartyQuestCompare(frame, "gamepad") end,
 		onSelection = function(_, button)
 			if not state.focused or state.parking or state.parked or state.updating or state.restoreWanted or not Current(self, frame) then return end
 			local identity = state.byButton[button]
 			if identity then
 				local changed = state.nativeButton ~= button or not Same(state.selected, identity, true)
 				state.selected = Copy(identity)
+				if self.SetPartyQuestChainSelection then self:SetPartyQuestChainSelection(identity.row and identity.row.data) end
 				if state.nativeButton ~= button then state.armed = Copy(identity) end
 				state.nativeButton = button
 				if changed then self:QueuePartyQuestGamepadPresentation(frame) end
@@ -323,12 +328,13 @@ function QT:GetPartyQuestGamepadContext()
 	local button = identity and Find(state, identity)
 	if not button then return end
 	local session = frame.displaySession
-	if identity.questId then
+	if identity.rowId then
 		for _, selected in ipairs(frame.navigationRows) do
-			if selected.questId == identity.questId then
+			if self:GetPartyQuestRowIdentity(selected) == identity.rowId then
 				return { owner = button, populate = function(root)
 					if self.partyQuestCompareSession == session and Current(self, frame) then
-						self:PopulatePartyQuestContextMenu(frame, selected, root)
+						self:PopulatePartyQuestContextMenu(frame, { rowId = selected.rowId, questId = selected.questId,
+							data = selected.data, player = identity.player }, root)
 					end
 				end }
 			end

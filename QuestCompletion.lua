@@ -48,27 +48,53 @@ function QuestTogether:CancelPartyQuestCompletionRequest(member)
 	end
 end
 
-function QuestTogether:SetPartyQuestCompletionInterest(questIDs)
+function QuestTogether:SetPartyQuestCompletionInterest(questIDs, owner)
 	local session = rawget(self, "partyQuestCompareSession")
 	if not session then
 		return
 	end
-	local order, ids = {}, {}
+	owner = owner or "visible"
+	session.historyInterestOwners = session.historyInterestOwners or {}
+	local owned, ownedSeen = {}, {}
 	for _, value in ipairs(questIDs or {}) do
 		local id = QuestID(value)
-		if id and not ids[id] and #order < MAX_INTEREST then
-			ids[id], order[#order + 1] = true, id
+		if id and not ownedSeen[id] and #owned < MAX_INTEREST then
+			ownedSeen[id], owned[#owned + 1] = true, id
+		end
+	end
+	session.historyInterestOwners[owner] = owned
+	local order, ids = {}, {}
+	local selected = session.chains and session.chains.selectedQuestID
+	if selected and session.historyInterestOwners.chain and #session.historyInterestOwners.chain > 0 then
+		ids[selected], order[1] = true, selected
+	end
+	-- Visible roots and selected/visible context share the existing wire budget.
+	-- The chain owner retains prerequisite evidence when those rows scroll away.
+	for _, source in ipairs({ "visible", "chain" }) do
+		for _, id in ipairs(session.historyInterestOwners[source] or {}) do
+			if not ids[id] and #order < MAX_INTEREST then ids[id], order[#order + 1] = true, id end
 		end
 	end
 	session.historyInterests, session.historyInterestOrder = ids, order
 	-- Visibility owns request interest, not accepted evidence. Forgetting a
 	-- completed quest as it sorts offscreen makes it appear absent again and
 	-- sends it back to the top on the next history tick. Retain fresh results
-	-- only for the bounded union of quests in this comparison's snapshots.
+	-- for active snapshots plus at most MAX_INTEREST extra owned context IDs.
 	local compared, now = {}, self.API.GetTime()
 	for _, member in ipairs(session.members) do
 		for id in pairs(member.entries) do compared[id] = true end
 	end
+	local context, contextCount = {}, 0
+	local chainOwned = {}
+	for _, id in ipairs(session.historyInterestOwners.chain or {}) do chainOwned[id] = true end
+	local chains = session.chains
+	local graph = chains and chains.rootQuestID and chains.graphs and chains.graphs[chains.rootQuestID]
+	for _, id in ipairs(order) do
+		if not compared[id] and (chainOwned[id] or (graph and graph.nodes[id])) and contextCount < MAX_INTEREST then
+			context[id], contextCount = true, contextCount + 1
+		end
+	end
+	session.historyContext = context
 	for _, member in ipairs(session.members) do
 		local pending = member.historyRequestId and self:GetPendingQuestCompare(member.historyRequestId)
 		if pending then
@@ -81,7 +107,7 @@ function QuestTogether:SetPartyQuestCompletionInterest(questIDs)
 			end
 		end
 		for id, evidence in pairs(member.questHistory or {}) do
-			if not compared[id] or member.entries[id]
+			if (not compared[id] and not context[id]) or member.entries[id]
 				or now < evidence.sampledAt or now >= evidence.sampledAt + HISTORY_LIFETIME then
 				member.questHistory[id] = nil
 			end
@@ -162,11 +188,17 @@ function QuestTogether:UpdatePartyQuestCompletion()
 				requested = true
 				member.nextHistoryRequest = now + 15
 				local generation = member.historyGeneration or 0
+				local chainGeneration = session.chains and session.chains.historyGeneration
+				local providerGeneration = self.questChainProviderSnapshot and self.questChainProviderSnapshot.generation
+				local profile = self.db and self.db.profile
 				local token = {}
 				member.historyRequestToken = token
 				local function Current()
 					return self.isEnabled and not self.isLoggingOut and self.partyQuestCompareSession == session
 						and member.historyRequestToken == token
+						and (self.db and self.db.profile) == profile
+						and (session.chains and session.chains.historyGeneration) == chainGeneration
+						and (self.questChainProviderSnapshot and self.questChainProviderSnapshot.generation) == providerGeneration
 						and self:IsPartyQuestCompletionViewActive(session)
 						and session.byName[member.name] == member and (member.historyGeneration or 0) == generation
 						and not self:IsIgnoredPlayerName(member.name)

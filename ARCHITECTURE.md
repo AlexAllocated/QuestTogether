@@ -30,7 +30,11 @@ private `.local` notes are historical context, not the source of truth.
 | QuestFocusWindow / QuestFocusTooltip / QuestFocusEditMode | Party Objective Tracker HUD, native focus/tooltip observation, local detail reads, owned Edit Mode controls and revert baseline | Blizzard tracker rows, shared native layout registries or a separate objective cache |
 | PartyFocusIndicators | Clickable class-colored party-focus dots and hover tips beside native quest buttons; bounded read-only block lookup and owned overlay geometry | Native tracker scripts, text, pools or layout; another focus store or network request |
 | QuestCompare | Atomic party log assembly, local snapshots and negotiated revision reuse | Native UI mutation or independent transport pumps |
-| QuestCompletion | Bounded character-history queries for visible comparisons, evidence age and completed/absent classification | Account-wide completion or full history broadcasts |
+| QuestChainProviders | Optional public QuestieDB/native adapters, scheduled relationship indexing, on-demand metadata and atomic generation-scoped snapshots | Provider internals, copied databases, active-log evidence or eligibility policy |
+| QuestChains | Derived graphs, distinct relationship semantics, partial/cycle state and evidence-based prerequisite evaluation | Native/provider reads during rendering, active-log membership or guaranteed availability |
+| QuestCompareChains | View-owned chain lifetime, group identities, spoiler-safe cached rows/actions and chain history interests | Certified active-log entries, another window/input engine or native waypoint ownership |
+| QuestChainGiver | View-owned temporary starter-location preview through the existing map overlay pool | Saved user waypoints, quest focus, following or provider reads |
+| QuestCompletion | Bounded visible/chain-owned character-history interests, evidence age and completed/absent classification | Account-wide completion, full history broadcasts or static quest relationships |
 | QuestSharingResults | Exact native share-result matching and recent per-player explanations | Guessing which quest a native result belongs to |
 | QuestCompareInteraction | Column presentation and keyboard selection geometry | Removing members from comparison calculations or global key bindings |
 | PartyFocusController | Following and manual-choice state machine, missing-quest and confirmation policy | Party networking, persistence policy or preview fixtures |
@@ -319,12 +323,31 @@ private `.local` notes are historical context, not the source of truth.
   permanently satisfied from a past completion. Active `Have`/`Ready` entries
   take precedence, and `Completed` does not mean ready for turn-in. Optional
   history fields distinguish active-log snapshots from completion evidence. Queries cover at
-  most 32 IDs per request and 100 visible interests, with bounded native work;
+  most 32 IDs per request and 100 combined visible/chain interests, with bounded native work;
   source sampling time limits history freshness to 60 seconds. Viewport changes
   limit pending requests but retain fresh accepted history for the comparison's
-  bounded quest union, so sorting a completed quest offscreen cannot make it
-  appear absent again. Ownership, expiry and snapshot invalidation still retire
-  that evidence.
+  bounded active quest union plus at most 100 extra chain context IDs, so sorting
+  a completed quest offscreen cannot make it appear absent again. Chain interests
+  include the selected node and necessary prerequisites. Closing/replacing the
+  chain retires its interests without stopping ordinary party sync. Ownership,
+  expiry and snapshot invalidation still retire that evidence.
+- Quest-chain preparation separates provider relationships, active comparison
+  snapshots, character completion and derived requirements. Forever uses only
+  public composed contract-4 QuestieDB reads for the Forever flavor; Retail
+  preserves native line membership without treating order as a prerequisite.
+  Scheduled bounded indexing publishes atomically, and metadata/locations are
+  requested on demand. Hover, layout and scrolling consume cached presentation
+  input. Open/Refresh replaces provider generations; native Retail data events
+  refresh current requests. Session, profile, member, history, chain-instance and
+  provider fences reject retired callbacks and actions. Derived group identities
+  and merge aliases are session-only and never enter SavedVariables.
+  Search/filters/counts remain based on actual active quests. Spoiler policy is
+  applied before row, action, tooltip and accessible text is produced. Partial
+  graphs retain missing/cycle/frontier notices and expansion controls; only a
+  complete verified linear path can report exact progress. Starter browsing
+  creates only a temporary owned map marker; an explicit waypoint action uses
+  existing navigation/confirmation policy. [QUEST_CHAINS.md](QUEST_CHAINS.md)
+  documents the player-facing capability and evidence limits.
 - Collapsing columns changes only session presentation. All members still
   participate in readiness, missing-quest and sharing calculations. Keyboard
   navigation follows opening/list-click focus and uses a temporary owned input child;

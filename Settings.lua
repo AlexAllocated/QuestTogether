@@ -503,6 +503,17 @@ end
 function QuestTogether:ApplySettingsTransaction(changed, context)
 	context = context or {}
 	local all = context.replace == true
+	local compareFrame, compareTarget, resumeCompare, compareProfile
+	if all then
+		compareProfile = self.db and self.db.profile
+		local session = rawget(self, "partyQuestCompareSession")
+		compareFrame = rawget(self, "partyQuestCompareWindow")
+		if session and compareFrame and type(compareFrame.IsShown) == "function" then
+			local ok, shown = pcall(compareFrame.IsShown, compareFrame)
+			resumeCompare, compareTarget = ok and shown == true, session.targetName
+		end
+		if session then Invoke(self, "CancelPartyQuestCompare") end
+	end
 	local function Has(...)
 		if all then
 			return true
@@ -635,6 +646,15 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 			tostring(self.activeCharacterKey),
 			tostring(self.activeProfileKey)
 		)
+	end
+	if resumeCompare and self.isEnabled then
+		self:ScheduleDeferredWork("quest_snapshot_refresh", "party_compare_profile", function()
+			if self.isEnabled and not self.isLoggingOut and rawget(self, "partyQuestCompareWindow") == compareFrame
+				and (self.db and self.db.profile) == compareProfile and not rawget(self, "partyQuestCompareSession") then
+				local ok, shown = pcall(compareFrame.IsShown, compareFrame)
+				if ok and shown == true then self:RefreshPartyQuestCompare(nil, compareTarget, true) end
+			end
+		end, 0, "party compare profile replacement")
 	end
 	return true
 end

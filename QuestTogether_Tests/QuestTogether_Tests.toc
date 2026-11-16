@@ -11,7 +11,8 @@
 ## Notes: Optional on-demand isolated checks for /qt test.
 ## LoadOnDemand: 1
 ## RequiredDeps: QuestTogether
-## X-QT-TestModules: 66
+## X-License: GPL-3.0-only
+## X-QT-TestModules: 70
 
 ..\QuestTogether\scripts\test_bootstrap.lua
 ..\QuestTogether\Libs\libchev\SelfTests.lua
@@ -81,4 +82,8 @@
 ..\QuestTogether\scripts\regression_window_layout.lua
 ..\QuestTogether\scripts\regression_ui_runtime.lua
 ..\QuestTogether\scripts\regression_settings.lua
+..\QuestTogether\scripts\regression_quest_chains.lua
+..\QuestTogether\scripts\regression_quest_compare_chains.lua
+..\QuestTogether\scripts\regression_compare_chains_ui.lua
+..\QuestTogether\scripts\regression_quest_chain_boundaries.lua
 ..\QuestTogether\scripts\test_complete.lua

@@ -57,6 +57,14 @@ controls, dialogs and native Select/Back prompts retain their original styling.
   their controls. Select expands a quest; the QT menu binding opens its actions.
   Player headers offer the same player actions as the mouse. Navigation scrolls
   through the complete list, even when only some rows are visible.
+- **View chain** opens inline quest-chain rows in the same list. Up/Down selects
+  rows and Left/Right selects their controls. Select toggles a chain group, opens
+  a step's actions, or expands objectives on an ordinary quest title. Back closes
+  the action menu first, then the selected chain section and restores its origin;
+  otherwise it closes Party Quest Log. The partial list viewport does not use
+  native right-stick scrolling. Browsing leaves quest focus and waypoints alone.
+  See [QUEST_CHAINS.md](QUEST_CHAINS.md) for provider setup and data limits. These
+  new chain interactions still require live controller acceptance.
 - Browsing quests in Blizzard's **Objective Tracker** also counts as hovering for
   **Party Objective Tracker**. It does not change quest focus or focus following.
   POT keeps its display-mode and tooltip preferences and remains a passive HUD.

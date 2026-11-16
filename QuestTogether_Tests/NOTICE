@@ -1,0 +1,48 @@
+QuestTogether notices
+
+Project-owned work: GPL-3.0-only from the license-transition commit onward.
+See LICENSE for the complete license and LICENSING.md for its scope. Existing
+MIT grants on earlier copies remain in force; see LICENSES/MIT.txt. Copyright
+belongs to the respective contributors as recorded by original notices and Git
+history. Do not remove original copyright or attribution notices.
+
+Bundled libchev
+  Repository: https://github.com/AlexAllocated/libchev
+  The exact revision, file list, and hashes are in Libs/libchev/manifest.json
+  in the main addon. Its complete MIT license, including the original
+  Copyright (c) 2026 Alex Ford notice, is in Libs/libchev/LICENSE.
+  Keep that license with bundled copies, including SelfTests.lua in the
+  optional QuestTogether_Tests companion. Vendor files remain unmodified.
+
+TweetNaCl-derived Ed25519 / SHA-512
+  Libs/Ed25519/Ed25519.lua is a Lua adaptation of the signing and SHA-512
+  portions of public-domain TweetNaCl (20140427).
+  Original authors: Daniel J. Bernstein, Tanja Lange, Peter Schwabe.
+  Upstream: https://tweetnacl.cr.yp.to/20140427/tweetnacl.c
+  Preserve Libs/Ed25519/README.md and the source's existing provenance notice.
+  The prospective project license does not restrict the upstream public-domain
+  material. The existing README describes the adaptation and its limitations.
+
+Original audio and editable artwork
+  Media/Audio/NOTICE.txt records Copyright (c) 2026 QuestTogether and identifies
+  original procedural synthesis, with no game sounds or external samples.
+  scripts/build_audio.py and Media/Audio/manifest.json are its editable recipe
+  and output metadata. Original SVG sources and asset-generation scripts are
+  included with deterministic packages; see SOURCE.md and Media/README.md.
+
+Screenshots and game/runtime artwork
+  Screenshots, crops, montages, and converted screenshot textures can contain
+  Blizzard-owned or other third-party material. In particular,
+  Media/ReleaseNotes/* is excluded from the blanket project asset grant.
+  No ownership of Blizzard artwork is claimed, and no permission to use it is
+  granted by the GPL notice. Runtime references to game assets do not bundle or
+  relicense those assets. Existing third-party rights remain with their owners.
+
+Optional provider
+  QuestieDB is installed separately. No QuestieDB source or database is bundled
+  by QuestTogether; this distribution does not grant rights to it.
+
+Package layout
+  Both QuestTogether and QuestTogether_Tests include complete copies of the
+  project license and these notices. The Tests companion uses the main addon;
+  its source-packager TOC refers to sibling source files in QuestTogether.

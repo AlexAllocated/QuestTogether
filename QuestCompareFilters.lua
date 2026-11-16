@@ -163,6 +163,24 @@ function QT:ShowPartyQuestCompareFilters(owner)
 			end
 		end
 		root:CreateDivider()
+		local capability = session.chains and session.chains.capability
+		if capability and (capability.kind == "questiedb" or capability.kind == "retail") then
+			for _, setting in ipairs({
+				{ "compareGroupByChain", L("Group by chain") },
+				{ "compareHideFutureQuestNames", L("Hide future quest names") },
+			}) do
+				local option, label = setting[1], setting[2]
+				root:CreateCheckbox(label, function() return self:GetOption(option) == true end, function()
+					if self.partyQuestCompareSession == session then
+						self:SetOption(option, not self:GetOption(option))
+						self:QueuePartyQuestCompareRender()
+					end
+				end)
+			end
+			if capability and capability.state ~= "ready" and capability.explanation then
+				root:CreateTitle(capability.explanation)
+			end
+		end
 		if not self:IsPartyQuestCompareBackgroundSynced(session) then
 			root:CreateCheckbox(L("Auto-refresh while open"), function() return self:GetOption("compareAutoRefresh") == true end,
 				function() self:SetOption("compareAutoRefresh", not self:GetOption("compareAutoRefresh")) end)

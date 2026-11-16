@@ -69,6 +69,7 @@ end
 function QuestTogether:CancelPartyQuestCompare()
 	local session = self.partyQuestCompareSession
 	self:CancelPartyQuestObjectiveRequests(session)
+	if self.CancelPartyQuestChains then self:CancelPartyQuestChains(session) end
 	self.partyQuestCompareSession = nil
 	for _, member in ipairs(session and session.members or {}) do
 		self:CancelPartyQuestCompletionRequest(member)
@@ -289,6 +290,7 @@ function QuestTogether:RefreshPartyQuestCompare(preferredName, targetName, condi
 			session.collapsedPlayers[name] = true
 		end
 	end
+	if self.AttachPartyQuestChains then self:AttachPartyQuestChains(session, preserveColumns and previous or nil) end
 	self:RefreshLocalPartyQuestCompare()
 	for _, member in ipairs(session.members) do
 		if not member.isLocal then
@@ -567,6 +569,8 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		-- title is plain text, including while local quest data is still loading.
 		local title = self:NormalizeQuestDisplayTitleText(localTitle or entry.questTitle)
 		local row = {
+			rowId = "quest:" .. id,
+			selectable = true,
 			questId = id,
 			title = title ~= "" and title or (L("Quest ") .. id),
 			needsLocalTitle = not localTitle,

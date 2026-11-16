@@ -13,6 +13,31 @@ One source tree supports these current client families. Interface metadata permi
 
 The Classic references are mirrored Blizzard UI/API source. Source inspection and offline fixtures establish expected contracts, not engine-level taint safety, rendering or gameplay validation. Live nameplate transitions and two-client quest synchronization require separate checks. No live test result is inferred from these fixtures.
 
+## Quest-chain providers
+
+Party Quest Log's optional chain view has narrower data coverage than the addon
+itself. Forever uses separately installed QuestieDB, accepting only a provider
+whose `RequireContract(4)` succeeds and whose public status reports the Forever
+flavor. QT reads the composed public getters and documented race/class masks;
+it does not bundle the database, mutate provider data or hook provider internals.
+The pinned [public API](https://github.com/Questie/QuestieDB/blob/v1.1.1/docs/api.md)
+and [quest schema](https://github.com/Questie/QuestieDB/blob/v1.1.1/src/meta/questMeta.lua)
+define that boundary. An absent, incompatible or failing provider preserves
+ordinary party comparison and supplies a localized explanation.
+
+Retail uses guarded native quest-line information and membership with asynchronous
+quest loading. Native ordering does not prove prerequisite relationships or
+character eligibility, and this adapter supplies no quest-giver coordinates.
+Other supported families retain ordinary Party Quest Log without a chain provider.
+Open/Refresh replaces the provider snapshot; native quest-data events update
+Retail's active snapshot. Partial or missing data remains explicit.
+
+[QUEST_CHAINS.md](QUEST_CHAINS.md) covers installation, defaults, spoiler handling
+and available actions. Offline provider and client-profile checks are separate
+from live acceptance; this candidate has no new live chain-validation claim.
+
+## Owned controls and existing adapters
+
 Settings and owned windows use Blizzard's `MinimalCheckboxTemplate`, `ColorSwatchTemplate`, `SearchBoxTemplate`, `MinimalSliderWithSteppersTemplate`, `MinimalScrollBar`, `WowTrimHorizontalScrollBar`, and panel-button templates. Their required contracts are present in the installed Retail/Forever exports and the pinned Classic sources above. QT retains window layout and pixel scroll positions; native controls own their artwork and interaction. Before release, visually check settings, Party Quest Log, patch notes and debug at normal and small window sizes, including search clearing, swatch cancellation, arrow/drag scrolling and closing during a held gesture.
 
 The minimap launcher uses an addon-owned button and tooltip, with a transparent 128×128 TGA generated from the scroll group in `logo.svg` by `scripts/build_minimap_icon.py`. Its guarded Minimap parent supplies position and scale; no scripts or addon fields are installed on Blizzard frames. Drag state is stored separately so an inaccessible parent can cancel the drag without touching quarantined children. Position and visibility are profile settings. Settings > Groups & Sharing > Show minimap icon controls visibility. The minimap menu can hide it and prints a local chat message explaining how to restore it through `/qt options`; a restricted or rejected click cannot report a successful hide. An independent event frame restores deferred layout/visibility after restrictions, including while announcements are disabled. Left-click toggles the Party Quest Log (including closing its preview); right-click opens the menu, including Settings. Shift-click still toggles looking for questing partners. The localized tooltip lists these actions. Menu actions recheck restrictions on click, including the shared chat-window destination action.

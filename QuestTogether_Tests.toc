@@ -10,7 +10,8 @@
 ## Notes: Optional on-demand isolated checks for /qt test.
 ## LoadOnDemand: 1
 ## RequiredDeps: QuestTogether
-## X-QT-TestModules: 66
+## X-License: GPL-3.0-only
+## X-QT-TestModules: 70
 
 scripts/test_bootstrap.lua
 Libs/libchev/SelfTests.lua
@@ -80,4 +81,8 @@ scripts/regression_party_focus_indicators.lua
 scripts/regression_window_layout.lua
 scripts/regression_ui_runtime.lua
 scripts/regression_settings.lua
+scripts/regression_quest_chains.lua
+scripts/regression_quest_compare_chains.lua
+scripts/regression_compare_chains_ui.lua
+scripts/regression_quest_chain_boundaries.lua
 scripts/test_complete.lua

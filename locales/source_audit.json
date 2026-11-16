@@ -268,6 +268,8 @@
       "announcement ",
       "devLogAllAnnouncements = ",
       "dump ",
+      "invalid quest line",
+      "invalid quest lines",
       "libchev must load before Core.lua",
       "|cff33ff99QuestTogether|r: "
     ],
@@ -728,6 +730,22 @@
       "TOOLTIP",
       "TOPLEFT"
     ],
+    "QuestChainGiver.lua": [
+      "ARTWORK",
+      "CENTER",
+      "Frame",
+      "LEFT",
+      "OVERLAY",
+      "RIGHT",
+      "Show",
+      "TOPLEFT"
+    ],
+    "QuestChainProviders.lua": [
+      "Forever",
+      "QuestieDB map data",
+      "invalid provider ID",
+      "return "
+    ],
     "QuestCompare.lua": [
       "Absent",
       "Awaiting confirmation",
@@ -743,6 +761,15 @@
       "Sharing unavailable",
       "WHISPER",
       "party compare local snapshot"
+    ],
+    "QuestCompareChains.lua": [
+      "Absent",
+      "Have",
+      "Missing",
+      "Ready",
+      "party compare chain render",
+      "party compare chains",
+      "party compare world resume"
     ],
     "QuestCompareCommunication.lua": [
       "ERROR",
@@ -1032,7 +1059,8 @@
     "Settings.lua": [
       "Applied active profile state reason=%s character=%s profile=%s",
       "Character",
-      "Unknown"
+      "Unknown",
+      "party compare profile replacement"
     ],
     "TaskArea.lua": [
       "...(%d more)",

@@ -415,6 +415,8 @@ QuestTogether.DEFAULTS = {
 		compareQuestOwnership = "all",
 		compareQuestProgress = "all",
 		compareQuestAction = "all",
+		compareGroupByChain = false,
+		compareHideFutureQuestNames = true,
 		autoAcceptPartyShareRequests = false,
 		sharePartyFocus = true,
 		skipPartyFocusFollowConfirmation = false,
@@ -1236,6 +1238,37 @@ local function CallChatFilterAPI(method, legacy, eventName, filterFunc)
 	-- Blizzard's current public API owns a SecureTypes registry and wraps its
 	-- callbacks securely. Call it intact rather than touching that registry.
 	return pcall(native, eventName, filterFunc)
+end
+
+local function QuestChainID(value)
+	local id = QuestTogether:SafeToNumber(value)
+	return id and id >= 1 and id <= 1000000000 and id % 1 == 0 and id or nil
+end
+
+local function ReadQuestChainLine(info)
+	if not CanAccessForeignTable(info) then return nil end
+	local result = {}
+	for _, key in ipairs({ "questLineID", "questID", "startMapID" }) do
+		result[key] = QuestChainID(info[key])
+	end
+	if not result.questLineID then return nil end
+	for _, key in ipairs({ "questLineName", "questName" }) do
+		local text = ReadOptionalString(info[key])
+		if text and #text <= 1024 then result[key] = text end
+	end
+	for _, key in ipairs({ "x", "y" }) do
+		local value = QuestTogether:SafeToNumber(info[key])
+		if value and value >= 0 and value <= 1 then result[key] = value end
+	end
+	return result
+end
+
+local function ReadQuestChainNative(method, ...)
+	if QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_QuestLine) then return nil end
+	local fn = C_QuestLine[method]
+	if not CanAccessForeignValue(fn) or type(fn) ~= "function" then return nil end
+	local ok, result = pcall(fn, ...)
+	return ok and CanAccessForeignValue(result) and result or nil
 end
 
 QuestTogether.API = QuestTogether.API
@@ -2073,6 +2106,105 @@ QuestTogether.API = QuestTogether.API
 				return nil
 			end
 			return nil
+		end,
+		GetQuestChainClient = function()
+			if QuestTogether:UsesRegionalPlayerNames() then return "forever" end
+			if CanAccessForeignValue(WOW_PROJECT_ID) and CanAccessForeignValue(WOW_PROJECT_MAINLINE)
+				and type(WOW_PROJECT_MAINLINE) == "number" and WOW_PROJECT_ID == WOW_PROJECT_MAINLINE then
+				return "retail"
+			end
+			return "unsupported"
+		end,
+		CanReadNativeQuestChains = function()
+			if QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_QuestLine) then return false end
+			for _, method in ipairs({ "GetQuestLineInfo", "GetQuestLineQuests" }) do
+				local fn = C_QuestLine[method]
+				if not CanAccessForeignValue(fn) or type(fn) ~= "function" then return false end
+			end
+			return true
+		end,
+		GetQuestLineInfo = function(questID, mapID)
+			local id = QuestChainID(questID)
+			if not id then return nil end
+			local raw = ReadQuestChainNative("GetQuestLineInfo", id, QuestChainID(mapID), false)
+			local ok, result = pcall(ReadQuestChainLine, raw)
+			return ok and result or nil
+		end,
+		GetQuestLineQuests = function(lineID)
+			local id = QuestChainID(lineID)
+			if not id then return nil end
+			local raw = ReadQuestChainNative("GetQuestLineQuests", id)
+			if not CanAccessForeignTable(raw) then return nil end
+			local result, seen = {}, {}
+			local ok = pcall(function()
+				for index = 1, 10001 do
+					local value = raw[index]
+					if value == nil then return end
+					local quest = QuestChainID(value)
+					if not quest or index > 10000 then error("invalid quest line", 0) end
+					if not seen[quest] then seen[quest], result[#result + 1] = true, quest end
+				end
+			end)
+			return ok and result or nil
+		end,
+		GetAvailableQuestLines = function(mapID)
+			local id = QuestChainID(mapID)
+			if not id then return nil end
+			local raw = ReadQuestChainNative("GetAvailableQuestLines", id)
+			if not CanAccessForeignTable(raw) then return nil end
+			local result = {}
+			local ok = pcall(function()
+				for index = 1, 1001 do
+					if raw[index] == nil then return end
+					if index > 1000 then error("invalid quest lines", 0) end
+					local line = ReadQuestChainLine(raw[index])
+					if line then result[#result + 1] = line end
+				end
+			end)
+			return ok and result or nil
+		end,
+		RequestQuestLinesForMap = function(mapID)
+			local id = QuestChainID(mapID)
+			if not id or QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_QuestLine) then return false end
+			local fn = C_QuestLine.RequestQuestLinesForMap
+			return CanAccessForeignValue(fn) and type(fn) == "function" and pcall(fn, id) or false
+		end,
+		RequestQuestChainQuestData = function(questID)
+			local id = QuestChainID(questID)
+			if not id or QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_QuestLog) then return false end
+			local fn = C_QuestLog.RequestLoadQuestByID
+			return CanAccessForeignValue(fn) and type(fn) == "function" and pcall(fn, id) or false
+		end,
+		GetQuestChainQuestTitle = function(questID)
+			local id = QuestChainID(questID)
+			if not id or QuestTogether:IsRuntimeRestricted() or not CanAccessForeignTable(C_QuestLog) then return nil end
+			local fn = C_QuestLog.GetTitleForQuestID
+			if not CanAccessForeignValue(fn) or type(fn) ~= "function" then return nil end
+			local ok, value = pcall(fn, id)
+			local title = ok and ReadOptionalString(value)
+			return title and #title <= 1024 and title or nil
+		end,
+		GetQuestChainUnitInfo = function(unitToken)
+			if type(unitToken) ~= "string" or not (unitToken == "player" or unitToken == "target"
+				or unitToken:match("^party[1-4]$") or unitToken:match("^raid%d%d?$"))
+				or QuestTogether:IsRuntimeRestricted() then return nil end
+			local result = {}
+			local ok, _, class, classID = pcall(UnitClass, unitToken)
+			if ok then result.classFile, result.classID = ReadOptionalString(class), QuestChainID(classID) end
+			local raceOK, _, _, raceID = pcall(UnitRace, unitToken)
+			if raceOK then result.raceID = QuestChainID(raceID) end
+			local levelOK, level = pcall(UnitLevel, unitToken)
+			if levelOK then result.level = QuestChainID(level) end
+			local factionOK, faction = pcall(UnitFactionGroup, unitToken)
+			if factionOK then result.faction = ReadOptionalString(faction) end
+			return result
+		end,
+		OpenQuestChainMap = function(mapID)
+			local id = QuestChainID(mapID)
+			if not id or QuestTogether:IsWorkBlocked("foreign_frame_mutation") or not CanAccessForeignTable(C_Map) then return false end
+			local fn = C_Map.OpenWorldMap
+			if not CanAccessForeignValue(fn) or type(fn) ~= "function" or not QuestTogether.API.GetMapInfo(id) then return false end
+			return pcall(fn, id)
 		end,
 		GetCharacterQuestHistoryStatus = function(questID)
 			local id = QuestTogether:SafeToNumber(questID)
@@ -7573,6 +7705,7 @@ end
 
 -- Bootstrap event handlers always registered.
 function QuestTogether:ADDON_LOADED(_, loadedAddonName)
+	if self.OnQuestChainDataEvent then self:OnQuestChainDataEvent("ADDON_LOADED", loadedAddonName) end
 	if self.isInitialized and self.InitializeGamepadIntegration then self:InitializeGamepadIntegration() end
 	if self.hasLoggedIn then
 		self:RefreshDataBroker()
@@ -7612,6 +7745,7 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 	if self.ResumeCommsWorldSession then
 		self:ResumeCommsWorldSession()
 	end
+	if self.ResumePartyQuestChains then self:ResumePartyQuestChains() end
 	-- Refresh after loading screens without synthetic enter/leave announcements.
 	self:SetRuntimeFlag("pendingScheduledTaskAreaRefreshShouldAnnounce", false)
 	self:RefreshTaskAreaStates(false)
@@ -7621,6 +7755,7 @@ function QuestTogether:PLAYER_ENTERING_WORLD()
 end
 
 function QuestTogether:PLAYER_LEAVING_WORLD()
+	if self.RetirePartyQuestChains then self:RetirePartyQuestChains() end
 	self:ResetQTAudio()
 	self:ResetPlayerPhases()
 	self:ResetObjectiveAnnouncements()
@@ -7644,6 +7779,7 @@ function QuestTogether:PLAYER_LEAVING_WORLD()
 end
 
 function QuestTogether:PLAYER_LOGOUT()
+	if self.RetirePartyQuestChains then self:RetirePartyQuestChains() end
 	self:ResetQTAudio()
 	self:RecordRecentCompanions(true)
 	self:ResetRecentCompanionObservation()
@@ -7693,6 +7829,11 @@ function QuestTogether:RegisterBootstrapEvents()
 	for _, eventName in ipairs({ "DISPLAY_SIZE_CHANGED", "UI_SCALE_CHANGED" }) do
 		pcall(self.eventFrame.RegisterEvent, self.eventFrame, eventName)
 	end
+	pcall(self.eventFrame.RegisterEvent, self.eventFrame, "QUESTLINE_UPDATE")
+end
+
+function QuestTogether:QUESTLINE_UPDATE(_, ...)
+	if self.OnQuestChainDataEvent then self:OnQuestChainDataEvent("QUESTLINE_UPDATE", ...) end
 end
 
 QuestTogether.eventFrame = QuestTogether.eventFrame or CreateFrame("Frame")

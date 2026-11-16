@@ -299,15 +299,24 @@ function QT:AppendPartyQuestObjectiveRows(rows, member, questId)
 end
 
 function QT:BuildPartyQuestCompareDisplayRows(quests)
-	local session, rows = self.partyQuestCompareSession, {}
-	for _, quest in ipairs(quests) do
+	local session = self.partyQuestCompareSession
+	local function Append(rows, quest)
+		quest.rowId = quest.rowId or ("quest:" .. quest.questId)
 		quest.partySummary, quest.partySummaryState = self:GetPartyQuestReadiness(quest)
 		rows[#rows + 1] = quest
 		if session.expandedQuestIds and session.expandedQuestIds[quest.questId] then
 			for _, member in ipairs(session.members) do
+				local first = #rows + 1
 				self:AppendPartyQuestObjectiveRows(rows, member, quest.questId)
+				for index = first, #rows do
+					rows[index].rowId = quest.rowId .. ":" .. rows[index].kind .. ":" .. member.name .. ":" .. (index - first)
+					rows[index].parentRowId = quest.rowId
+				end
 			end
 		end
 	end
+	if self.DecoratePartyQuestChainRows then return self:DecoratePartyQuestChainRows(quests, Append) end
+	local rows = {}
+	for _, quest in ipairs(quests) do Append(rows, quest) end
 	return rows
 end

@@ -159,6 +159,10 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 		end
 	end
 	local gamepad = self.GetGamepadIntegrationStatus and self:GetGamepadIntegrationStatus()
+	local chains = self.GetQuestChainProviderDiagnostics and self:GetQuestChainProviderDiagnostics()
+	for key, value in pairs(chains or {}) do Add("questChains.provider." .. key, value) end
+	local chainView = self.GetPartyQuestChainDiagnostics and self:GetPartyQuestChainDiagnostics()
+	for key, value in pairs(chainView or {}) do Add("questChains.view." .. key, value) end
 	for key, value in pairs(gamepad or {}) do Add("gamepad." .. key, value) end
 	local launcher = self.GetGamepadLauncherStatus and self:GetGamepadLauncherStatus()
 	for key, value in pairs(launcher or {}) do Add("gamepad.launcher." .. key, value) end

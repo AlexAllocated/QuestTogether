@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-only
+# See LICENSING.md for scope and preserved third-party notices.
 """Release payload integrity without live services or changing the checkout."""
 import io
 import hashlib
@@ -27,7 +29,12 @@ class PackagingTests(unittest.TestCase):
         ignored = re.findall(r"(?m)^  - (\S+)$", metadata)
         self.assertIn("QuestTogether_Tests.toc", ignored)
         names = set(subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines())
-        names.update(package.source_companion_files((ROOT / "QuestTogether_Tests.toc").read_text()))
+        read = lambda name: (ROOT / name).read_bytes()
+        names.update(package.source_companion_files(read("QuestTogether_Tests.toc").decode(), read))
+        # New required source files must be tested before they have been staged.
+        names.update(package.DOCUMENTS)
+        names.update(package.toc_entries(read("QuestTogether.toc").decode()))
+        names.update(package.toc_entries(read("QuestTogether_Tests.toc").decode()))
         installed = {}
         for name in names:
             if name in ignored or any(part.startswith(".") for part in name.split("/")):
@@ -38,7 +45,13 @@ class PackagingTests(unittest.TestCase):
             installed[path] = (ROOT / name).read_bytes()
         self.assertEqual(destination, "QuestTogether_Tests")
         self.assertEqual({name for name in installed if name.startswith(destination + "/")},
-                         {destination + "/QuestTogether_Tests.toc", destination + "/Bindings.xml"})
+                         {destination + "/QuestTogether_Tests.toc", destination + "/Bindings.xml"}
+                         | {destination + "/" + name for name in package.LEGAL_DOCUMENTS})
+        for name in package.LEGAL_DOCUMENTS:
+            self.assertEqual(installed[destination + "/" + name], read(name))
+            self.assertEqual(installed["QuestTogether/" + name], read(name))
+        for name in package.EDITABLE_ASSETS:
+            self.assertEqual(installed["QuestTogether/" + name], read(name))
         self.assertNotIn("QuestTogether/QuestTogether_Tests.toc", installed)
         self.assertNotIn(source + "/QuestTogether_Tests.toc", installed)
         self.assertEqual(installed[destination + "/Bindings.xml"], package.TEST_BINDINGS)
@@ -62,11 +75,99 @@ class PackagingTests(unittest.TestCase):
 
     def test_source_companion_rejects_stale_version_and_new_modules(self):
         canonical = (ROOT / "QuestTogether_Tests.toc").read_text()
-        saved = package.source_companion_files(canonical)
+        saved = {name: (ROOT / name).read_bytes() for name in package.LEGAL_DOCUMENTS}
+        saved.update(package.source_companion_files(canonical, saved.__getitem__))
         for changed in (canonical.replace("## Version: " + package.version_from_toc(canonical), "## Version: 99.0.0"),
                         canonical.replace("scripts/test_complete.lua", "scripts/regression_new.lua\nscripts/test_complete.lua")):
             with self.assertRaisesRegex(package.PackageError, "stale source companion"):
                 package.check_source_companion(saved.__getitem__, changed)
+
+    def test_source_companion_rejects_stale_legal_notices(self):
+        canonical = (ROOT / "QuestTogether_Tests.toc").read_text()
+        original = {name: (ROOT / name).read_bytes() for name in package.LEGAL_DOCUMENTS}
+        original.update(package.source_companion_files(canonical, original.__getitem__))
+        for name in package.LEGAL_DOCUMENTS:
+            changed = dict(original)
+            changed[name] += b"\nUpdated notice\n"
+            with self.subTest(name=name), self.assertRaisesRegex(package.PackageError, "stale source companion"):
+                package.check_source_companion(changed.__getitem__, canonical)
+
+    @staticmethod
+    def archive_with_manifest(files, schema=3, metadata=None):
+        """Rehash intentional mutations so verification exercises content rules."""
+        manifest_path = package.ADDON + "/" + package.MANIFEST
+        manifest = json.loads(files[manifest_path])
+        manifest["schema"] = schema
+        manifest["files"] = {name: package.digest(value) for name, value in files.items()
+                             if name != manifest_path}
+        manifest.update(metadata or {})
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as archive:
+            for name, value in files.items():
+                archive.writestr(name, json.dumps(manifest).encode() if name == manifest_path else value)
+        return data.getvalue()
+
+    def test_legal_and_editable_source_files_are_mandatory_even_after_rehash(self):
+        _, original = package.payloads(ROOT)
+        required = [addon + "/" + name for addon in (package.ADDON, package.TEST_ADDON)
+                    for name in package.LEGAL_DOCUMENTS]
+        required += [package.ADDON + "/" + name for name in (
+            "logo.svg", "Media/QuestCompareScroll.svg", "scripts/build_audio.py", "Media/README.md")]
+        for name in required:
+            changed = dict(original)
+            del changed[name]
+            with self.subTest(name=name), self.assertRaises(package.PackageError):
+                package.verify_archive(self.archive_with_manifest(changed))
+
+    def test_license_text_and_companion_notices_cannot_be_replaced(self):
+        _, original = package.payloads(ROOT)
+        for mutation in ("truncated_gpl", "stale_notice", "wrong_main_spdx", "wrong_test_spdx"):
+            changed = dict(original)
+            if mutation == "truncated_gpl":
+                for addon in (package.ADDON, package.TEST_ADDON):
+                    changed[addon + "/LICENSE"] = b"GNU GENERAL PUBLIC LICENSE\nVersion 3\n"
+            elif mutation == "stale_notice":
+                changed[package.TEST_ADDON + "/NOTICE"] = b"outdated attribution\n"
+            else:
+                addon = package.ADDON if mutation == "wrong_main_spdx" else package.TEST_ADDON
+                name = addon + "/" + addon + ".toc"
+                changed[name] = changed[name].replace(b"GPL-3.0-only", b"GPL-3.0-or-later")
+            with self.subTest(mutation=mutation), self.assertRaises(package.PackageError):
+                package.verify_archive(self.archive_with_manifest(changed))
+
+    def test_source_and_license_metadata_are_validated(self):
+        _, files = package.payloads(ROOT)
+        for metadata in ({"license": "MIT"}, {"sourceCommit": "HEAD"},
+                         {"sourceRepository": "https://example.invalid/other"},
+                         {"sourceUrl": package.SOURCE_REPOSITORY + "/tree/main"},
+                         {"sourceCommit": "a" * 40, "sourceUrl": None}):
+            with self.subTest(metadata=metadata), self.assertRaises(package.PackageError):
+                package.verify_archive(self.archive_with_manifest(files, metadata=metadata))
+
+    def test_unpacked_size_limit_remains_enforced(self):
+        _, files = package.payloads(ROOT)
+        data = self.archive_with_manifest(files)
+        with patch.object(package, "MAX_BYTES", 1), self.assertRaisesRegex(package.PackageError, "archive exceeds package limits"):
+            package.verify_archive(data)
+
+    def test_historical_schema_two_keeps_its_original_document_requirements(self):
+        _, files = package.payloads(ROOT)
+        for name in package.LEGAL_DOCUMENTS:
+            files.pop(package.TEST_ADDON + "/" + name)
+            if name not in package.LEGACY_DOCUMENTS:
+                files.pop(package.ADDON + "/" + name)
+        for name in package.EDITABLE_ASSETS:
+            files.pop(package.ADDON + "/" + name)
+        for addon in (package.ADDON, package.TEST_ADDON):
+            name = addon + "/" + addon + ".toc"
+            files[name] = files[name].replace(b"GPL-3.0-only", b"MIT License")
+        manifest_path = package.ADDON + "/" + package.MANIFEST
+        historical = json.loads(files[manifest_path])
+        for field in ("license", "sourceRepository", "sourceUrl"):
+            del historical[field]
+        files[manifest_path] = json.dumps(historical).encode()
+        manifest = package.verify_archive(self.archive_with_manifest(files, schema=2))
+        self.assertEqual(manifest["schema"], 2)
 
     def test_live_manifest_and_repeatable_archives(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -77,6 +178,12 @@ class PackagingTests(unittest.TestCase):
             manifest = package.verify_archive(first.read_bytes())
             self.assertTrue({"QuestTogether/" + p for p in package.toc_entries((ROOT / "QuestTogether.toc").read_text())} <= set(manifest["files"]))
             self.assertIn("QuestTogether/Libs/libchev/LICENSE", manifest["files"])
+            for name in package.LEGAL_DOCUMENTS:
+                for addon in (package.ADDON, package.TEST_ADDON):
+                    self.assertEqual(manifest["files"][addon + "/" + name],
+                                     package.digest((ROOT / name).read_bytes()))
+            for name in package.EDITABLE_ASSETS:
+                self.assertIn("QuestTogether/" + name, manifest["files"])
             self.assertIn("QuestTogether/Media/QuestTogetherIcon.tga", manifest["files"])
             self.assertIn("QuestTogether/Media/QuestTogetherTipIcon.tga", manifest["files"])
             self.assertIn("QuestTogether/Media/QuestTogetherTipIcon.png", manifest["files"])
@@ -93,7 +200,11 @@ class PackagingTests(unittest.TestCase):
             self.assertNotIn("QuestTogether/scripts/test.lua", manifest["files"])
             self.assertNotIn("QuestTogether/scripts/offline_numeric_tests.lua", manifest["files"])
             self.assertFalse(any(p.startswith(".local/") or p.endswith("image.png") for p in manifest["files"]))
-            self.assertEqual(manifest["schema"], 2)
+            self.assertEqual(manifest["schema"], 3)
+            self.assertEqual(manifest["license"], "GPL-3.0-only")
+            self.assertEqual(manifest["sourceRepository"], package.SOURCE_REPOSITORY)
+            self.assertIsNone(manifest["sourceCommit"])
+            self.assertIsNone(manifest["sourceUrl"])
             self.assertIn("QuestTogether_Tests/QuestTogether_Tests.toc", manifest["files"])
             self.assertIn("QuestTogether_Tests/Tests.lua", manifest["files"])
             self.assertNotIn("QuestTogether/Tests.lua", manifest["files"])
@@ -133,8 +244,9 @@ class PackagingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             published = {name: b"fixture document\n" for name in package.DOCUMENTS}
+            published["LICENSE"] = (ROOT / "LICENSE").read_bytes()
             published.update({
-                "QuestTogether.toc": b"## Version: 1.0.0\nCore.lua\nLibs/libchev/libchev.lua\n",
+                "QuestTogether.toc": b"## Version: 1.0.0\n## X-License: GPL-3.0-only\nCore.lua\nLibs/libchev/libchev.lua\n",
                 "Core.lua": b"-- published code\n",
                 "Libs/libchev/libchev.lua": b"-- pinned dependency\n",
                 "Media/Published.tga": b"published asset",
@@ -170,6 +282,8 @@ class PackagingTests(unittest.TestCase):
             self.assertEqual({name: data for name, data in files.items() if name != "QuestTogether/" + package.MANIFEST}, {"QuestTogether/" + name: data for name, data in published.items()})
             manifest = json.loads(files["QuestTogether/" + package.MANIFEST])
             self.assertEqual(manifest["sourceCommit"], commit)
+            self.assertEqual(manifest["sourceUrl"], package.SOURCE_REPOSITORY + "/tree/" + commit)
+            self.assertEqual(manifest["license"], "GPL-3.0-only")
             self.assertEqual(manifest["files"], {"QuestTogether/" + name: hashlib.sha256(data).hexdigest() for name, data in published.items()})
 
     def test_rejects_damaged_and_incomplete_payloads(self):

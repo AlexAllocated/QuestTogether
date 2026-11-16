@@ -311,6 +311,7 @@ function QT:QueueLocalizedAnnouncement(event, waitingForTitle)
 end
 
 function QT:QUEST_DATA_LOAD_RESULT(_, questID, success)
+	if self.OnQuestChainDataEvent then self:OnQuestChainDataEvent("QUEST_DATA_LOAD_RESULT", questID, success) end
 	local id = Integer(self, questID, 1, 1000000000)
 	local cache = rawget(self, "localizedQuestTitles")
 	if not id or not cache or not self:CanAccessValue(success) or type(success) ~= "boolean" then return end

@@ -401,8 +401,11 @@ Use the release tag instead of `HEAD` when packaging a published version. The
 source is read directly from Git, so local edits and unrelated screenshots
 cannot enter that archive. Omitting `--ref` builds a working-tree preview.
 The TOC determines Lua load contents; explicit asset rules include game textures,
-release screenshots, localized changelogs and required vendor notices. The
-packager verifies the pinned library manifest and writes a SHA-256 sidecar.
+release screenshots, localized changelogs, editable SVG inputs, asset-generation
+scripts, and complete project and vendor notices. The packager verifies the
+pinned library manifest and writes a SHA-256 sidecar. See `SOURCE.md` for the
+editable source inventory and tool dependencies, and `LICENSING.md` for the
+prospective GPL-3.0-only scope and preserved third-party and historical MIT rights.
 
 The archive installs two sibling folders: `QuestTogether` and the optional
 `QuestTogether_Tests` companion. The latter is load-on-demand: normal gameplay
@@ -416,10 +419,13 @@ checked-in `QuestTogether_Tests/` directory beside the main addon and excludes t
 canonical root companion TOC. Its generated TOC uses sibling-relative paths to
 the original QA files in `QuestTogether`, which remain unloaded during normal
 play. The pinned vendor tree stays intact; no test sources are duplicated.
-After editing the canonical `QuestTogether_Tests.toc`, regenerate this source
-manifest with `python3 scripts/package.py --write-source-companion`.
+After editing the canonical `QuestTogether_Tests.toc` or any packaged legal
+notice, regenerate the source companion with
+`python3 scripts/package.py --write-source-companion`. This also copies the
+complete GPL, historical MIT terms, licensing scope, source guidance, and vendor
+notices into the companion. Both installed addon folders retain those notices.
 `--check-source-companion`, ordinary package builds and release preflight reject
-stale manifests. The bump script regenerates the source manifest after updating
+stale manifests or legal copies. The bump script regenerates the source companion after updating
 the two canonical versions. Package tests simulate the source folder move and
 resolve every companion entry against the actual packaged files.
 
@@ -441,14 +447,28 @@ bindings a second time. These narrow links still pick up source and new regressi
 modules automatically. Adding the new addon folder may require restarting the game
 so it is discovered. Offline tests read both canonical
 manifests; `lua scripts/test_loader.lua` separately verifies cold startup and the
-on-demand loading/failure path. Package schema 2 records installation-relative
-paths for both folders; the verifier retains support for historical schema 1 archives.
+on-demand loading/failure path. Package schema 3 records installation-relative
+paths for both folders, GPL-3.0-only metadata, the source repository, and the exact
+commit URL. The verifier retains the original document requirements for historical
+schema 1 and 2 archives; those releases are not retroactively relabeled.
 
 Every archive contains `package-manifest.json` with its source commit and hashes
 of all installed files. The packager validates the ZIP against those inputs,
 and the Discord release verifier validates the whole installation manifest
 when present. Historical archives without this manifest retain their existing
 notes/version validation so old releases can still be reposted.
+
+An unpublished working-tree preview has null `sourceCommit` and `sourceUrl`;
+it cannot stand in for an exact release source reference. Before a separately
+authorized GPL release, verify the actual release commit descends from the
+license-transition commit identified in `LICENSING.md`. Record the full transition
+hash, first affected tag, and full release source commit in the release description.
+Keep all editable sources and generation tools available at that commit. Verify
+the release's applicable host license metadata says GPL-3.0-only and retains the
+bundled-license and screenshot exceptions. Source-packager releases do not create
+the deterministic manifest, so their release page must explicitly link the exact
+source commit and archive as described in `SOURCE.md`. These checks apply to the
+future license-transition release, not to historical MIT versions.
 
 CI runs the package tests, builds the exact tested commit, and uploads
 `QuestTogether-validated-package`. Use that artifact or the same local command;
