@@ -2,6 +2,53 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.0
+
+¡Seguir juntos una aventura es ahora mucho más fácil! Esta gran actualización de QuestTogether lleva las cadenas al Registro de misiones del grupo. Mira en qué punto está cada personaje, encuentra los pasos que faltan y consulta qué puede impedir un intercambio antes de compartir.
+
+### Abre una cadena de misiones
+
+- Abre el Registro de misiones del grupo con /qt pql. Si hay misiones relacionadas, pulsa el icono de cadena junto al botón del registro o elige «Ver cadena» en el menú de acciones. Los pasos se despliegan en la lista. Pulsa el mismo icono para plegarlos. El título de la misión sigue desplegando sus objetivos por separado.
+- En Forever, instala y activa una versión de QuestieDB compatible con Forever junto a QuestTogether y recarga la interfaz. Después, vuelve a abrir el registro o pulsa «Actualizar». QuestieDB es opcional y se instala por separado. Aporta relaciones, requisitos conocidos y ubicaciones de inicio disponibles. Para consultar el progreso y el historial de tus compañeros, ellos necesitan un QuestTogether compatible. Pueden facilitar esos datos sin QuestieDB. Se descartan los datos destinados a otros clientes.
+- En Retail, WoW proporciona los nombres de las cadenas y qué misiones pertenecen a ellas. Los datos pueden ser parciales o faltar y no indican los requisitos, quién puede aceptar una misión ni dónde empieza. No hace falta QuestieDB. El registro habitual también funciona sin información de cadenas, incluidos los demás clientes compatibles.
+
+### Compara el progreso de cada personaje
+
+- Cada paso usa las columnas de jugadores del registro. Basta un vistazo para ver quién tiene la misión en curso, lista para entregar o completada. «No está en el registro» indica que no figura en el registro de ese personaje. Los estados «Cargando» y «Desconocido» aclaran cuándo aún faltan datos.
+- Abre «Filtros» y activa «Agrupar por cadena» para reunir las misiones activas relacionadas. La opción viene desactivada y se guarda por perfil. Las misiones sueltas quedan fuera de los bloques. En Forever, las cabeceras muestran «Misiones relacionadas» y un título conocido. En Retail, usan el nombre que proporciona WoW.
+- Puedes abrir los detalles de una cadena cada vez. Los pasos lineales se alinean y las bifurcaciones aparecen con sangría. Usa «Mostrar misiones anteriores» y «Mostrar misiones posteriores» para ampliar la vista. Las misiones activas de distintas ramas siguen visibles. La búsqueda, los filtros y el recuento siguen trabajando con las misiones reales del grupo.
+
+### Ayuda a tus compañeros a ponerse al día
+
+- Coloca el cursor sobre la casilla de un compañero al que le falte la misión. Verás los requisitos conocidos, como misiones previas, clase, raza o nivel. Las misiones activas, listas para entregar o completadas prescinden de esos avisos. Si faltan datos, la posibilidad de aceptar la misión queda por confirmar.
+- En Forever, usa el botón QT del mapa del mundo para mostrar los marcadores y selecciona un paso visible de la cadena desplegada. Cada ubicación de inicio conocida tiene sus propias entradas en el menú de acciones. «Encontrar al personaje que da la misión» muestra el lugar en el mapa. Usa «Establecer un punto de ruta» para marcar el destino. Si un objeto inicia la misión o falta la ubicación, verás una explicación. Los pasos ocultos no ofrecen estas acciones.
+- Puedes recorrer la cadena sin cambiar la misión marcada, el seguimiento ni los puntos de ruta. Los detalles, el registro y las acciones de seguimiento y de compartir siguen disponibles cuando corresponda.
+
+### Decide cuánto quieres descubrir
+
+- De forma predeterminada, los nombres de las misiones futuras quedan ocultos y sus filas se atenúan. Pueden aparecer las misiones actuales del grupo, las completadas que el juego confirme en tu personaje y las misiones previas cuyos nombres expliquen un impedimento.
+- En «Filtros», desactiva «Ocultar nombres de misiones futuras» para ver todos los títulos conocidos. El ajuste se guarda por perfil. Los títulos ocultos también quedan fuera de las búsquedas, los menús y las descripciones emergentes.
+
+### Consulta los requisitos antes de compartir
+
+- Usa «Compartir» para ofrecer al grupo una misión de tu registro. Si te falta una misión que tiene un compañero, pídesela con «Solicitar compartir».
+- Bajo «Compartir» y «Solicitar compartir» verás el resultado de la comprobación. El registro evita intentos inútiles si ya consta que alguien tiene la misión activa o completada, o que incumple un requisito de clase, raza, nivel o progreso previo. Al ejecutar la acción o confirmar una solicitud, se comprueban de nuevo los datos disponibles.
+- «Comprobando requisitos» indica que la consulta sigue en marcha. Si ves «Requisitos desconocidos», puedes intentarlo aunque los datos falten o hayan caducado. «Sin impedimentos conocidos» sirve de orientación. WoW decide quién puede aceptar la misión.
+- Sitúa el cursor sobre la acción para ver un resumen por destinatario o sobre la casilla de un compañero sin la misión para consultar los requisitos conocidos. También puedes leerlos con el mando. Las solicitudes pendientes y su resultado siguen a la vista.
+- WoW comparte con todo el grupo, aunque tengas seleccionado a un solo personaje. La misma oferta puede ayudar a un compañero y provocar un rechazo para otro. Una misión repetible o un historial inaccesible no demuestra que falte una misión previa.
+
+### Más información a simple vista
+
+- Las misiones muestran su nivel y el color de dificultad de WoW. El «+» de [25+] indica que el juego recomienda un grupo. [?] marca un nivel desconocido. Pasa el cursor sobre una misión para consultar su «ID de misión» y distinguirla de otras con el mismo nombre.
+- El ratón y el teclado conservan sus controles habituales. En clientes compatibles de Forever, activa la interfaz de mando de WoW y, en «General» de QuestTogether, «Activar navegación nativa con mando». Arriba y Abajo cambian de fila. Izquierda y Derecha cambian de control. Selecciona un título para ver sus objetivos o un paso para abrir sus acciones. Atrás cierra primero un menú abierto. Si la selección está en la cadena desplegada, la pliega y vuelve al control de origen. En los demás casos cierra el registro. Las descripciones aparecen junto al cursor o al control seleccionado.
+- Las flechas dobles del color de cada clase identifican a quienes siguen la misión que has marcado. Así puedes distinguirlos de los botones de cadena.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v10.0.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consejo: Prueba /qt pqlpreview chains para explorar cadenas reales con compañeros simulados donde haya datos compatibles. La vista previa está identificada y no envía solicitudes ni cambia la misión marcada, el seguimiento o tus puntos de ruta. Ciérrala o vuelve al registro con /qt pql.
+
+### Cambio de licencia
+
+- El código, la documentación y los recursos originales del proyecto pasan a GPL-3.0-only. Las versiones anteriores conservan los permisos de su licencia MIT. Siguen vigentes las licencias de terceros y las exclusiones de ilustraciones de Blizzard. La publicación incluye el código fuente, los recursos editables y los archivos para generar la versión.
+
 ## 9.3.3
 
 Mejoras en el seguimiento del enfoque de misiones y en las vistas previas de las placas de nombre.

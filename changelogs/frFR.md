@@ -2,6 +2,53 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.0
+
+Envie de reprendre une aventure ensemble ? Cette grande mise à jour de QuestTogether fait entrer les suites de quêtes dans le Journal de quêtes du groupe. Voyez où chacun en est, retrouvez l’étape qui manque à un membre et vérifiez les conditions de partage avant de repartir.
+
+### Ouvrir une suite de quêtes
+
+- Saisissez /qt pql pour ouvrir le Journal de quêtes du groupe. Sur une quête liée à d’autres, sélectionnez « Voir la suite de quêtes » via l’icône de chaîne à côté du bouton du journal ou dans le menu d’actions. Les étapes s’affichent dans la liste. Sélectionnez de nouveau l’icône pour les replier. Le titre de la quête continue d’ouvrir ses objectifs séparément.
+- Sur Forever, installez et activez une version de QuestieDB compatible avec Forever aux côtés de QuestTogether, puis rechargez l’interface. Rouvrez le journal de groupe ou choisissez « Actualiser ». Cette extension facultative, distribuée séparément, fournit les liens entre quêtes, les prérequis connus et les lieux de départ disponibles. Vos partenaires ont besoin d’un QuestTogether compatible pour fournir leur progression et leur historique, même s’ils n’ont pas QuestieDB. Les données destinées à un autre client sont refusées.
+- Sur Retail, les noms des suites et les quêtes qui en font partie proviennent directement de WoW. Ces données peuvent être incomplètes ou absentes. Elles ne renseignent ni les prérequis, ni l’éligibilité, ni les coordonnées des donneurs de quêtes. QuestieDB y est inutile. Le journal de groupe reste disponible sans données de suites, y compris sur les autres clients pris en charge.
+
+### Suivre le parcours de chaque membre
+
+- Chaque étape reprend les colonnes des membres du groupe. Vous voyez qui a une quête en cours, prête à rendre ou terminée. « Absente du journal » indique simplement que la quête ne figure pas dans le journal du personnage. « Chargement » et « Inconnu » signalent les informations en attente ou indisponibles.
+- Pour réunir les quêtes actives d’une même suite, ouvrez « Filtres » et activez « Regrouper par suite de quêtes ». L’option est désactivée au départ et mémorisée par profil. Les quêtes isolées restent à part. Forever affiche « Quêtes liées » avec un titre connu, tandis que Retail utilise le nom fourni par WoW.
+- Une seule suite peut être dépliée à la fois. Les étapes d’un chemin linéaire restent alignées, avec un retrait pour les embranchements. Utilisez « Afficher les quêtes précédentes » et « Afficher les quêtes suivantes » pour élargir la vue. Les quêtes actives restent visibles dans les différentes branches. Le total, la recherche et les filtres s’appuient sur les quêtes du groupe.
+
+### Retrouver l’étape qui manque
+
+- Survolez la case d’un membre à qui il manque une quête pour consulter les prérequis connus, ainsi que les restrictions de classe, de race ou de niveau. Ces avertissements sont retirés pour les quêtes en cours, prêtes à rendre ou déjà terminées. Si les données manquent, l’acceptation reste incertaine.
+- Sur Forever, affichez les marqueurs via le bouton QT sur la carte du monde, puis sélectionnez une étape visible dans la suite dépliée. Chaque lieu de départ connu a ses propres entrées dans le menu d’actions. « Trouver le donneur de quête » ouvre la carte à cet endroit. Utilisez « Définir un point de passage » pour marquer la destination. Un message s’affiche si la quête commence avec un objet ou si le lieu est inconnu. Les étapes masquées n’offrent pas ces actions.
+- Vous pouvez parcourir la suite sans toucher à la quête suivie, au suivi d’un membre ou à votre point de passage. Les actions habituelles restent proposées quand elles s’appliquent, dont les détails, le journal, le suivi et le partage.
+
+### Garder la surprise
+
+- Par défaut, les titres des quêtes à venir restent masqués et leurs lignes sont estompées. Le journal peut afficher les quêtes en cours dans le groupe, les quêtes dont l’achèvement est confirmé localement et les prérequis nommés qui expliquent un blocage.
+- Pour afficher tous les titres connus, désactivez « Masquer les noms des quêtes à venir » dans « Filtres ». Le choix est mémorisé par profil. Tant qu’un titre est masqué, il le reste dans les menus, les infobulles et la recherche.
+
+### Partager une quête ou la demander
+
+- Choisissez « Partager » pour proposer une quête de votre journal au groupe. Si une quête vous manque, utilisez « Demander le partage » pour la demander à un membre qui l’a.
+- Regardez sous « Partager » ou « Demander le partage » pour connaître le résultat des vérifications. Une quête déjà active ou terminée chez le destinataire, ou un prérequis confirmé de classe, de race, de niveau ou de progression, peut bloquer une tentative inutile. Si les informations sont disponibles, QuestTogether refait la vérification au moment de l’action et à la confirmation d’une demande.
+- « Vérification en cours » indique que les données arrivent. « Éligibilité inconnue » signifie que les informations nécessaires manquent ou ne sont plus à jour. Vous pouvez quand même tenter le partage. « Aucun blocage connu » vous aide à décider, et WoW tranche au moment de l’acceptation.
+- Survolez l’action pour voir le récapitulatif par destinataire. La case du membre à qui il manque la quête donne le détail des conditions connues. Ces explications sont aussi accessibles à la manette. Vous voyez toujours les demandes en attente et leur résultat.
+- WoW partage la quête avec tout le groupe, même si le journal affiche un seul membre. Un partage utile pour l’un peut être refusé pour un autre. Une quête répétable ou un historique indisponible ne suffit pas pour conclure qu’un prérequis reste à faire.
+
+### Des repères plus clairs
+
+- Les niveaux et les couleurs de difficulté du jeu apparaissent dans le journal. Dans [25+], le « + » signale la recommandation de groupe de WoW. Un niveau inconnu s’affiche sous la forme [?]. L’« ID de quête » dans l’infobulle permet de distinguer deux étapes du même nom.
+- La souris et le clavier gardent leurs commandes habituelles. Sur les clients Forever compatibles, activez le mode manette de WoW et l’option « Activer la navigation native à la manette » dans « Général » de QuestTogether. Haut et Bas changent de ligne, Gauche et Droite de contrôle. Sélectionnez un titre pour déplier les objectifs ou une étape pour ouvrir ses actions. Retour ferme d’abord un menu ouvert. Si la sélection appartient à la suite dépliée, Retour la replie et revient au contrôle d’origine. Sinon, il ferme le journal. Les infobulles apparaissent près du pointeur ou du contrôle sélectionné.
+- Les doubles chevrons aux couleurs des classes indiquent les membres qui suivent votre quête sélectionnée. L’icône de chaîne est ainsi facile à repérer quand vous cherchez une suite.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v10.0.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Astuce : Essayez /qt pqlpreview chains pour parcourir de vraies suites avec des membres simulés, selon les données disponibles. L’aperçu est clairement indiqué. Il n’envoie aucune demande de partage et laisse le suivi et les points de passage en jeu tels quels. Fermez-le ou utilisez /qt pql pour revenir au journal du groupe.
+
+### Changement de licence
+
+- Le code, la documentation et les ressources originales du projet passent sous GPL-3.0-only. Les versions antérieures publiées sous MIT conservent ces droits. Les licences des composants tiers et les exclusions concernant les visuels de Blizzard continuent de s’appliquer. La version comprend le code source, les fichiers modifiables et les éléments nécessaires à sa compilation.
+
 ## 9.3.3
 
 Le suivi du focus de quête et les aperçus des barres de nom gagnent en précision.

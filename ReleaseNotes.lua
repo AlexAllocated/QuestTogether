@@ -3,21 +3,65 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "9.3.3",
-	welcome = "Smoother quest-focus following and more accurate nameplate previews.",
+	version = "10.0.0",
+	welcome = "A new chapter for questing together! Your Party Quest Log now brings connected quests, party progress and catch-up guidance into one place, with a clearer sharing experience to help you plan the next adventure together.",
 	sections = {
 		{
-			title = "Keep following through quest pickups",
+			title = "Start exploring your quest chains",
 			items = {
-				"Fixed another timing case where accepting a quest could ask you to stop following a party member’s quest focus. Automatic changes keep following active; deliberately choosing a different quest still asks.",
+				"Open Party Quest Log with /qt pql and look for the chain-link button beside a quest’s journal button, or choose View chain from its actions. Select it to open the related steps right in the list; select it again to close them. Clicking the quest title still expands its objectives separately.",
+				"Playing Forever? Install and enable a compatible QuestieDB build for Forever alongside QuestTogether, then reload. It supplies the chain relationships, requirements and available quest-giver locations. QuestieDB is optional and is not bundled with QT: your ordinary Party Quest Log still works without it. Your party members need compatible QT to share their progress and history, but do not need QuestieDB just to answer those requests.",
+				"On Retail, QT uses native quest-line names and membership where available, with no QuestieDB requirement. These do not establish prerequisites, acceptance eligibility or quest-giver coordinates. Some quests have partial or no native coverage; other client families keep ordinary PQL. Reopen PQL or choose Refresh after changing your quest-data addon.",
 			},
 		},
 		{
-			title = "Nameplates that match your settings",
+			title = "See where everyone stands",
 			items = {
-				"In friendly-player name-only mode, every QT icon position now follows the name text. Left and Prefix share the same position.",
-				"Forever previews now center names above the health bar and show the level badge on its right. The player preview follows name-only mode and explains where to change that Blizzard setting.",
-				"Retail previews now reflect native nameplate styles, sizes, fonts and health-display settings.",
+				"Follow the connected steps across the same player columns you already use. Each person can be In progress, Ready, Completed, Not in log, Loading or Unknown, so a branching story shows the quests people actually have instead of reducing everyone to one progress number.",
+				"Want the bigger picture? Open Filters and enable Group by chain. This starts off and remembers your choice per profile. Clear group boundaries keep related quests together and standalone quests separate. Forever calls these groups Related quests; Retail uses the quest-line names the game provides.",
+				"Straight paths stay neatly aligned, while branches are indented. One detailed chain opens at a time; use Show earlier quests and Show later quests to explore more steps. Your existing search and filters still apply to the party’s actual quests, and the extra context does not inflate your quest totals.",
+			},
+		},
+		{
+			title = "Help your party catch up",
+			items = {
+				"Hover a player’s cell for a quest they do not have to see known prerequisites and class, race or level blockers. Players who already have or completed it skip those acceptance warnings. When information is incomplete, QT says so rather than promising the quest can be accepted.",
+				"On Forever, select a revealed step inside an expanded chain to see its actions. When reliable locations are available, each starter has its own Find quest giver entry to open the map and a separate Set waypoint entry. Enable QT’s world-map markers with the QT button on the map to see the giver marker. Item-started quests and missing locations get an explanation instead of a misleading pin.",
+				"Explore freely: browsing a chain leaves your quest focus, focus-follow and waypoints alone. The familiar details, journal, focus/follow and sharing actions remain available wherever they apply.",
+			},
+		},
+		{
+			title = "Keep the next chapter a surprise",
+			items = {
+				"Unreached quest names are hidden by default, and future steps are muted to keep the view easy to read. Current party quests, your confirmed completed quests and named prerequisites needed to explain a blocker can still be shown.",
+				"Prefer to plan ahead with every known title visible? Turn off Hide future quest names in Filters. QT remembers the choice per profile; while protection is on, hidden names stay concealed in tooltips, menus and search too.",
+			},
+		},
+		{
+			title = "Share with less guesswork",
+			items = {
+				"Share and Request Share now show a compact readiness explanation beneath the action. Known completion, current ownership and confirmed class, race, level or prerequisite blockers can stop a pointless attempt before it is sent. QT checks the current facts again when you act and when a request is confirmed, where that evidence is available.",
+				"Checking eligibility means the initial checks are still arriving. Eligibility unknown means QT cannot establish all the facts, so an attempt remains available. No known blockers gives you a clearer starting point without claiming that the game will accept the quest.",
+				"Hover the action for a compact party summary, or a missing player’s cell for the full known requirements. These explanations are also accessible with the controller, and pending requests and their results keep their place in the Share column.",
+				"WoW shares to the whole party, even when you are comparing one person. A useful share for one member can still produce a refusal for someone else, and the game makes the final acceptance decision. Repeatable quests and unavailable history are handled without inventing prerequisite blockers.",
+			},
+		},
+		{
+			title = "Small touches that make a big difference",
+			items = {
+				"PQL quest titles now show their levels and use the game’s difficulty colors, including the plus sign for quests recommended for a group. Hover tooltips include Quest ID, making separate steps with the same name easier to distinguish. If a level is unknown, it stays clearly marked as unknown.",
+				"Mouse and keyboard controls remain familiar. On supported Forever clients, enable WoW’s Gamepad UI and QT’s General setting Enable native gamepad navigation. Up/Down moves between rows; Left/Right moves between controls. Select expands objectives on ordinary titles and opens actions on chain steps. Back closes a menu first; from the open chain it collapses the section and restores its origin, otherwise it closes PQL. Tooltips follow the mouse pointer or selected controller control.",
+				"Players following your quest focus now use class-colored double chevrons, keeping that marker distinct from the chain-link buttons for quest chains.",
+			},
+			tip = {
+				label = "Tip:",
+				text = "Try /qt pqlpreview chains for a clearly labeled preview using your real quests plus simulated teammates at different stages. It uses the same quest-data coverage and does not send share requests or change your real focus, following or waypoints. Close it or use /qt pql to return to the ordinary log.",
+			},
+		},
+		{
+			title = "Open source, with GPLv3",
+			items = {
+				"QuestTogether’s own code, documentation and original assets now use GPL-3.0-only, with corresponding source, editable asset inputs and build tools supplied with the release. Earlier MIT releases keep their existing permissions, and bundled third-party licenses and Blizzard artwork exclusions remain unchanged.",
 			},
 		},
 	},

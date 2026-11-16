@@ -1,21 +1,66 @@
 {
-  "source_sha256": "655af31dac1a6660031060fad2b960c65c90179e58df72d9cfb2de4ee911ccd2",
+  "source_sha256": "92d507d54f8ff075ac16f76a60668676fddb96cc8c1bac328d5fba84a77d912d",
   "notes": {
-    "version": "9.3.3",
-    "welcome": "Melhorias no acompanhamento do foco de missões e nas prévias das placas de nome.",
+    "version": "10.0.0",
+    "welcome": "Bora retomar aquela aventura em grupo? Nesta grande atualização do QuestTogether, as sequências chegam ao Registro de missões do grupo. Veja em que etapa cada pessoa está, ajude quem precisa alcançar o grupo e confira as condições antes de compartilhar uma missão.",
     "sections": [
       {
-        "title": "Continue acompanhando ao aceitar missões",
+        "title": "Abra uma sequência de missões",
         "items": [
-          "Corrigido outro caso de atraso entre eventos que podia perguntar se você queria parar de acompanhar ao aceitar uma missão. Mudanças automáticas preservam o acompanhamento; escolher outra missão manualmente ainda pede confirmação."
+          "Digite /qt pql para abrir o Registro de missões do grupo. Quando houver etapas relacionadas, selecione o ícone de corrente ao lado do botão do registro ou escolha «Ver sequência» no menu de ações. As etapas se abrem na própria lista. Use o mesmo ícone para recolhê-las. Selecionar o título da missão continua expandindo os objetivos separadamente.",
+          "No Forever, instale e ative uma versão do QuestieDB compatível com o Forever junto com o QuestTogether. Recarregue a interface e reabra o registro ou use «Atualizar». O QuestieDB é opcional e instalado à parte. Ele fornece as relações entre missões, os requisitos conhecidos e os locais de início disponíveis. Para informar progresso e histórico, o restante do grupo só precisa de uma versão compatível do QuestTogether. Os dados destinados a outros clientes são rejeitados.",
+          "No Retail, o WoW fornece os nomes das sequências e as missões que fazem parte delas. Os dados podem estar incompletos ou indisponíveis e não indicam pré-requisitos, quem pode aceitar a missão ou as coordenadas de início. O QuestieDB não é necessário. O registro normal funciona sem dados de sequência nos outros clientes compatíveis também."
         ]
       },
       {
-        "title": "Prévias de acordo com suas configurações",
+        "title": "Acompanhe o progresso de todo mundo",
         "items": [
-          "Quando apenas os nomes de jogadores amistosos são exibidos, todas as posições do ícone QT passam a usar o nome como referência. Esquerda e Prefixo ficam na mesma posição.",
-          "No Forever, as prévias centralizam o nome sobre a barra de vida e exibem o nível à direita. A prévia de jogadores respeita o modo de apenas nomes e explica onde alterar essa opção da Blizzard.",
-          "As prévias do Retail refletem os estilos, tamanhos, fontes e opções de exibição de vida das placas nativas."
+          "Cada etapa aparece nas colunas dos integrantes do grupo. Veja quem está com a missão em andamento, pronta para entregar ou concluída. «Fora do registro» indica que a missão não está no registro daquele personagem. «Carregando» e «Desconhecido» mostram quando os dados ainda não estão disponíveis.",
+          "Em «Filtros», ative «Agrupar por sequência» para reunir missões ativas relacionadas. A opção começa desativada e fica salva por perfil. As missões avulsas ficam fora dos grupos. No Forever, o cabeçalho mostra «Missões relacionadas» e um título conhecido. No Retail, ele usa o nome fornecido pelo WoW.",
+          "Dá para abrir uma sequência por vez. As etapas lineares ficam alinhadas, com recuo nas ramificações. Use «Mostrar missões anteriores» e «Mostrar missões posteriores» para ver mais etapas. Missões ativas continuam visíveis nos diferentes caminhos. A busca, os filtros e a contagem consideram as missões reais do grupo."
+        ]
+      },
+      {
+        "title": "Ajude alguém a chegar na mesma etapa",
+        "items": [
+          "Passe o cursor sobre a célula de quem está sem a missão. Ali aparecem as missões anteriores e os requisitos conhecidos de classe, raça ou nível. Missões em andamento, prontas ou concluídas não mostram avisos de aceitação. Quando faltam dados, ainda não dá para saber se a pessoa poderá aceitar.",
+          "No Forever, ative os marcadores pelo botão QT no mapa-múndi. Depois selecione uma etapa visível dentro da sequência aberta. Cada local de início conhecido tem suas próprias opções no menu de ações. «Encontrar quem oferece a missão» mostra o local no mapa. Use «Definir ponto de referência» para marcar o destino. Se a missão começar com um item ou o local estiver indisponível, aparece uma explicação. Etapas ocultas não oferecem essas ações.",
+          "Explorar as etapas deixa seu foco, acompanhamento e pontos de referência como estão. Quando couber, você ainda pode abrir os detalhes ou o registro, mudar o foco, acompanhar alguém e compartilhar ou pedir uma missão."
+        ]
+      },
+      {
+        "title": "Escolha quando ver os nomes das próximas missões",
+        "items": [
+          "Por padrão, os nomes das missões futuras ficam ocultos e as linhas dessas etapas aparecem atenuadas. Podem aparecer as missões atuais do grupo, as conclusões confirmadas no seu personagem e os nomes de missões anteriores necessários para explicar um impedimento conhecido.",
+          "Quer ver todos os nomes conhecidos? Em «Filtros», desative «Ocultar nomes de missões futuras». O ajuste é salvo por perfil. Os nomes ocultos continuam protegidos na busca, nos menus e nas dicas ao passar o cursor."
+        ]
+      },
+      {
+        "title": "Veja o que pode impedir o compartilhamento",
+        "items": [
+          "Use «Compartilhar» para oferecer uma missão do seu registro ao grupo. Se você ainda não tem uma missão que alguém do grupo já pegou, use «Solicitar Compartilhamento» para pedir.",
+          "Abaixo de «Compartilhar» e «Solicitar Compartilhamento», veja o resultado da verificação. Se alguém já tem a missão ativa ou concluída ou se há um impedimento confirmado de classe, raça, nível ou missão anterior, o registro evita tentativas que não ajudariam. Com dados atuais, ele verifica novamente ao acionar a opção e ao confirmar uma solicitação.",
+          "«Verificando requisitos» aparece enquanto os dados chegam. Se estiverem indisponíveis ou desatualizados, você verá «Requisitos desconhecidos» e ainda poderá tentar. «Nenhum impedimento conhecido» ajuda a orientar a decisão. O WoW é quem decide se a missão pode ser aceita.",
+          "Passe o cursor sobre a ação para ver um resumo por destinatário. Na célula de quem está sem a missão, confira todos os requisitos conhecidos. Também dá para consultar as explicações com o controle. As solicitações em andamento e seus resultados continuam visíveis.",
+          "O WoW compartilha com o grupo todo, mesmo se você selecionar só uma pessoa no registro. O que ajuda um integrante ainda pode ser recusado para outro. Missões repetíveis e históricos indisponíveis não servem de prova de que uma etapa anterior ficou faltando."
+        ]
+      },
+      {
+        "title": "Mais detalhes e uma navegação mais clara",
+        "items": [
+          "O registro mostra o nível da missão e as cores de dificuldade do WoW. O «+» de [25+] indica que o jogo recomenda um grupo. [?] indica um nível desconhecido. Para diferenciar duas missões com o mesmo título, consulte o «ID da missão» na dica ao passar o cursor.",
+          "O mouse e o teclado funcionam como de costume. Em clientes Forever compatíveis, ative a interface de controle do WoW e «Ativar navegação nativa por controle» em «Geral» do QuestTogether. Para cima e para baixo mudam a linha. Para a esquerda e para a direita mudam o controle selecionado. Selecione o título para abrir os objetivos ou uma etapa para ver suas ações. Voltar fecha primeiro um menu aberto. Se a seleção estiver na sequência aberta, ele a recolhe e retorna ao controle de origem. Nos demais casos, fecha o registro. As dicas aparecem perto do cursor ou do controle selecionado.",
+          "As setas duplas na cor da classe mostram quem acompanha sua missão em foco. Assim fica mais fácil reconhecer o ícone de corrente das sequências."
+        ],
+        "tip": {
+          "label": "Dica:",
+          "text": "Experimente /qt pqlpreview chains para explorar sequências reais com integrantes simulados quando houver dados compatíveis. A prévia é identificada e não envia solicitações nem muda o foco, o acompanhamento ou os pontos de referência reais. Feche a prévia ou use /qt pql para voltar ao registro."
+        }
+      },
+      {
+        "title": "Nova licença",
+        "items": [
+          "O código, a documentação e os recursos originais do projeto passam para GPL-3.0-only. As versões anteriores publicadas sob a licença MIT mantêm suas permissões. As licenças de terceiros e as exclusões das artes da Blizzard continuam valendo. A versão inclui o código-fonte, os arquivos editáveis e os materiais para gerar a versão."
         ]
       }
     ]

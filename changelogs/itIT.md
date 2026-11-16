@@ -2,6 +2,53 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.0
+
+Che bello riprendere una storia insieme! Con questo grande aggiornamento di QuestTogether, le catene entrano nel Registro missioni del gruppo. Scopri a che punto sono i tuoi compagni, aiutali a recuperare le tappe mancanti e controlla subito cosa può impedire la condivisione.
+
+### Apri una catena di missioni
+
+- Digita /qt pql per aprire il Registro missioni del gruppo. Se ci sono missioni collegate, seleziona l’icona a catena accanto al pulsante del registro oppure scegli «Mostra catena» dal menu delle azioni. Le tappe si aprono direttamente nell’elenco. Seleziona di nuovo l’icona per richiuderle. Gli obiettivi si aprono a parte selezionando il titolo della missione.
+- Su Forever, installa e attiva una versione di QuestieDB compatibile con Forever insieme a QuestTogether, poi ricarica l’interfaccia. Riapri il registro o scegli «Aggiorna». QuestieDB è facoltativo e si installa a parte. Fornisce i collegamenti, i requisiti noti e i luoghi di inizio disponibili. I tuoi compagni possono fornire progressi e cronologia con una versione compatibile di QuestTogether anche senza QuestieDB. I dati pensati per altri client vengono rifiutati.
+- Su Retail, WoW fornisce i nomi delle catene e le missioni che ne fanno parte. I dati possono essere parziali o mancanti e non indicano i prerequisiti, chi può accettare le missioni o dove cominciano. QuestieDB non serve. Il registro di gruppo continua a funzionare senza catene, anche sugli altri client supportati.
+
+### Confronta i progressi del gruppo
+
+- Ogni tappa usa le colonne dei giocatori che già conosci. Puoi vedere chi è alle prese con la missione, chi può consegnarla e chi l’ha completata. «Non nel registro» indica che la missione è assente dal registro del personaggio. «Caricamento» e «Sconosciuto» segnalano dati in arrivo o non disponibili.
+- Per raccogliere le missioni attive di una stessa catena, apri «Filtri» e attiva «Raggruppa per catena». L’opzione parte disattivata e viene salvata per profilo. Le missioni a sé stanti rimangono separate. Forever mostra «Missioni collegate» con un titolo noto, mentre Retail usa il nome dato da WoW.
+- Puoi aprire i dettagli di una catena per volta. Le tappe lineari sono allineate e le diramazioni sono rientrate. Usa «Mostra missioni precedenti» e «Mostra missioni successive» per vedere altre tappe. Le missioni attive restano visibili nei vari rami. Ricerca, filtri e conteggi si basano sulle missioni effettive del gruppo.
+
+### Aiuta un compagno a rimettersi in pari
+
+- Passa il puntatore sulla casella di chi non ha la missione per vedere i requisiti noti, comprese le missioni precedenti e le restrizioni di classe, razza o livello. Le missioni in corso, pronte da consegnare o completate non mostrano questi avvisi. Se mancano informazioni, resta da verificare se il personaggio potrà accettare la missione.
+- Su Forever, mostra gli indicatori con il pulsante QT sulla mappa del mondo. Poi seleziona una tappa visibile nella catena aperta. Ogni luogo di inizio noto ha le sue voci nel menu delle azioni. «Trova chi assegna la missione» mostra il luogo sulla mappa. Usa «Imposta punto di navigazione» per segnare la destinazione. Se la missione parte da un oggetto o il luogo è sconosciuto, trovi una spiegazione. Le tappe nascoste non offrono queste azioni.
+- Puoi esplorare la catena senza cambiare la missione selezionata, chi segui o i punti di navigazione. I dettagli, il registro, la selezione, il seguito della missione attiva e le azioni di condivisione restano accessibili quando applicabili.
+
+### Goditi la storia senza anticipazioni
+
+- I titoli delle missioni future sono nascosti in partenza e le relative righe appaiono attenuate. Restano visibili le missioni attuali del gruppo. Possono comparire anche quelle confermate come completate sul tuo personaggio e i prerequisiti il cui nome spiega un impedimento noto.
+- Per scoprire tutti i titoli noti, disattiva «Nascondi i nomi delle missioni future» in «Filtri». La scelta viene salvata per profilo. I titoli nascosti restano tali anche nelle descrizioni al passaggio del puntatore, nei menu e nella ricerca.
+
+### Controlla i requisiti prima di condividere
+
+- Usa «Condividi» per proporre una missione del tuo registro al gruppo. Se la missione manca a te e un compagno ce l’ha, seleziona «Richiedi condivisione».
+- Sotto «Condividi» e «Richiedi condivisione» trovi l’esito dei controlli. Se il destinatario ha già la missione attiva o completata, oppure non soddisfa un requisito confermato di classe, razza, livello o progressione, il registro evita un tentativo inutile. Quando ci sono dati aggiornati, ripete il controllo all’attivazione e alla conferma di una richiesta.
+- «Verifica requisiti» indica una verifica in corso. «Requisiti sconosciuti» significa che i dati mancano o non sono aggiornati. In quel caso puoi comunque provare. «Nessun impedimento noto» ti aiuta a scegliere. A decidere se la missione si può accettare è WoW.
+- Passa il puntatore sull’azione per un riepilogo per destinatario. Sulla casella del compagno a cui manca la missione vedi tutti i requisiti noti. Puoi consultare le spiegazioni anche con il controller. Restano visibili le richieste in attesa e il loro esito.
+- WoW condivide la missione con tutto il gruppo, anche se nel registro hai selezionato una sola persona. Un compagno può riceverla mentre a un altro viene rifiutata. Per le missioni ripetibili o quando manca la cronologia, il registro evita di dare per certi requisiti ancora da soddisfare.
+
+### Leggi e naviga più facilmente
+
+- I livelli delle missioni sono visibili nel registro con i colori di difficoltà di WoW. Il «+» di [25+] segnala che il gioco consiglia un gruppo. Un livello sconosciuto appare come [?]. L’«ID missione» nella descrizione al passaggio del puntatore distingue tappe con lo stesso titolo.
+- Mouse e tastiera funzionano come prima. Nei client Forever compatibili, attiva l’interfaccia per controller di WoW e «Abilita la navigazione nativa con controller» in «Generale» di QuestTogether. Su e Giù cambiano riga. Sinistra e Destra cambiano controllo. Seleziona un titolo per aprire gli obiettivi o una tappa per aprire le azioni. Indietro chiude prima un menu aperto. Se la selezione è nella catena aperta, la richiude e torna al controllo di partenza. Altrimenti chiude il registro. Le descrizioni appaiono accanto al puntatore o al controllo selezionato.
+- Le doppie frecce del colore della classe indicano chi segue la tua missione selezionata. L’icona a catena resta così facile da riconoscere.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v10.0.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Suggerimento: Prova /qt pqlpreview chains per esplorare catene reali con compagni simulati, quando i dati sono disponibili. L’anteprima è segnalata e non invia richieste né cambia la missione selezionata, chi segui o i punti di navigazione in gioco. Chiudila o torna al registro con /qt pql.
+
+### Cambio di licenza
+
+- Il codice, la documentazione e le risorse originali del progetto passano a GPL-3.0-only. Le versioni pubblicate in precedenza con licenza MIT conservano quei permessi. Restano valide le licenze di terze parti e le esclusioni per le immagini di Blizzard. Questa versione include il codice sorgente, i file modificabili e i file necessari per creare il pacchetto.
+
 ## 9.3.3
 
 Migliorati il seguito del focus missione e le anteprime delle barre dei nomi.

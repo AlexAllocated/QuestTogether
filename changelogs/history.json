@@ -3,6 +3,228 @@
   "releases": [
     {
       "enUS": {
+        "version": "9.3.3",
+        "welcome": "Smoother quest-focus following and more accurate nameplate previews.",
+        "sections": [
+          {
+            "title": "Keep following through quest pickups",
+            "items": [
+              "Fixed another timing case where accepting a quest could ask you to stop following a party member’s quest focus. Automatic changes keep following active; deliberately choosing a different quest still asks."
+            ]
+          },
+          {
+            "title": "Nameplates that match your settings",
+            "items": [
+              "In friendly-player name-only mode, every QT icon position now follows the name text. Left and Prefix share the same position.",
+              "Forever previews now center names above the health bar and show the level badge on its right. The player preview follows name-only mode and explains where to change that Blizzard setting.",
+              "Retail previews now reflect native nameplate styles, sizes, fonts and health-display settings."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "9.3.3",
+        "welcome": "Verbesserungen beim Folgen des Questfokus und bei den Namensplaketten-Vorschauen.",
+        "sections": [
+          {
+            "title": "Questfokus beim Annehmen beibehalten",
+            "items": [
+              "Eine weitere zeitliche Überschneidung konnte beim Annehmen einer Quest die Nachfrage zum Beenden des Folgens auslösen. Automatische Fokuswechsel lassen das Folgen jetzt aktiv; bei einer bewusst gewählten anderen Quest erscheint die Nachfrage weiterhin."
+            ]
+          },
+          {
+            "title": "Passende Namensplaketten-Vorschauen",
+            "items": [
+              "Wenn bei freundlichen Spielern nur Namen angezeigt werden, richten sich alle QT-Symbolpositionen am Namen aus. Links und Präfix liegen dabei an derselben Stelle.",
+              "In Forever stehen die Namen in der Vorschau mittig über dem Gesundheitsbalken, mit der Stufenanzeige rechts daneben. Die Spielervorschau berücksichtigt den Modus ohne Balken und verweist auf die zugehörige Blizzard-Einstellung.",
+              "Retail-Vorschauen berücksichtigen die nativen Stile, Größen, Schriftarten und Einstellungen zur Gesundheitsanzeige."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "9.3.3",
+        "welcome": "Le suivi du focus de quête et les aperçus des barres de nom gagnent en précision.",
+        "sections": [
+          {
+            "title": "Continuer à suivre en acceptant des quêtes",
+            "items": [
+              "Correction d’un autre décalage entre événements qui pouvait demander d’arrêter le suivi lors de l’acceptation d’une quête. Un changement automatique conserve le suivi ; choisir volontairement une autre quête demande toujours confirmation."
+            ]
+          },
+          {
+            "title": "Des aperçus fidèles aux réglages",
+            "items": [
+              "Lorsque seuls les noms des joueurs amicaux sont affichés, toutes les positions de l’icône QT se placent par rapport au nom. Gauche et Préfixe correspondent alors au même emplacement.",
+              "Sur Forever, les aperçus centrent le nom au-dessus de la barre de vie et affichent le niveau à droite. L’aperçu des joueurs respecte le mode sans barre et indique où modifier ce réglage Blizzard.",
+              "Sur Retail, les aperçus suivent les styles, tailles, polices et réglages d’affichage de la vie des barres de nom natives."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "9.3.3",
+        "welcome": "Mejoras en el seguimiento del enfoque de misiones y en las vistas previas de las placas de nombre.",
+        "sections": [
+          {
+            "title": "Seguir el enfoque al aceptar misiones",
+            "items": [
+              "Corregido otro caso de desfase entre eventos que podía pedirte dejar de seguir al aceptar una misión. Los cambios automáticos mantienen el seguimiento; elegir otra misión manualmente sigue pidiendo confirmación."
+            ]
+          },
+          {
+            "title": "Placas acordes con tus ajustes",
+            "items": [
+              "Al mostrar solo los nombres de jugadores amistosos, todas las posiciones del icono de QT se calculan respecto al nombre. Izquierda y Prefijo ocupan el mismo lugar.",
+              "En Forever, las vistas previas centran el nombre sobre la barra de salud y muestran el nivel a su derecha. La vista previa de jugadores respeta el modo de solo nombres e indica dónde cambiar ese ajuste de Blizzard.",
+              "Las vistas previas de Retail reflejan los estilos, tamaños, fuentes y opciones de salud de las placas nativas."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "9.3.3",
+        "welcome": "Seguimiento de enfoque más consistente y vistas previas de placas de nombre más fieles.",
+        "sections": [
+          {
+            "title": "Aceptar misiones sin interrumpir el seguimiento",
+            "items": [
+              "Se corrigió otro problema de sincronización entre eventos que podía pedirte dejar de seguir al aceptar una misión. Los cambios automáticos conservan el seguimiento; al elegir otra misión por tu cuenta, QT sigue pidiendo confirmación."
+            ]
+          },
+          {
+            "title": "Placas de nombre según tus opciones",
+            "items": [
+              "Con la opción de mostrar solo nombres de jugadores amistosos, todas las posiciones del ícono QT se ajustan al texto. Izquierda y Prefijo quedan en el mismo sitio.",
+              "Las vistas previas de Forever centran el nombre sobre la barra de salud y colocan el nivel a la derecha. La vista previa de jugadores respeta el modo de solo nombres e incluye una explicación con acceso al ajuste de Blizzard.",
+              "En Retail, las vistas previas reflejan los estilos, tamaños, fuentes y opciones de salud de las placas del juego."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "9.3.3",
+        "welcome": "Melhorias no acompanhamento do foco de missões e nas prévias das placas de nome.",
+        "sections": [
+          {
+            "title": "Continue acompanhando ao aceitar missões",
+            "items": [
+              "Corrigido outro caso de atraso entre eventos que podia perguntar se você queria parar de acompanhar ao aceitar uma missão. Mudanças automáticas preservam o acompanhamento; escolher outra missão manualmente ainda pede confirmação."
+            ]
+          },
+          {
+            "title": "Prévias de acordo com suas configurações",
+            "items": [
+              "Quando apenas os nomes de jogadores amistosos são exibidos, todas as posições do ícone QT passam a usar o nome como referência. Esquerda e Prefixo ficam na mesma posição.",
+              "No Forever, as prévias centralizam o nome sobre a barra de vida e exibem o nível à direita. A prévia de jogadores respeita o modo de apenas nomes e explica onde alterar essa opção da Blizzard.",
+              "As prévias do Retail refletem os estilos, tamanhos, fontes e opções de exibição de vida das placas nativas."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "9.3.3",
+        "welcome": "Улучшены следование за фокусом заданий и предпросмотр индикаторов здоровья.",
+        "sections": [
+          {
+            "title": "Принятие заданий без прерывания следования",
+            "items": [
+              "Исправлен ещё один случай задержки событий, при котором принятие задания вызывало запрос на прекращение следования за фокусом участника группы. Автоматическая смена фокуса сохраняет следование; ручной выбор другого задания по-прежнему требует подтверждения."
+            ]
+          },
+          {
+            "title": "Предпросмотр с учётом настроек",
+            "items": [
+              "В режиме показа только имён дружественных игроков все позиции значка QT отсчитываются от текста имени. Позиции слева и перед именем совпадают.",
+              "В предпросмотре Forever имя центрируется над самой полосой здоровья, а справа отображается уровень. Предпросмотр игроков учитывает режим показа только имён и содержит пояснение с переходом к настройке Blizzard.",
+              "Предпросмотр Retail учитывает стандартные стили, размеры, шрифты и настройки отображения здоровья."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "9.3.3",
+        "welcome": "Migliorati il seguito del focus missione e le anteprime delle barre dei nomi.",
+        "sections": [
+          {
+            "title": "Continua a seguire mentre accetti missioni",
+            "items": [
+              "Risolto un altro problema di temporizzazione che poteva chiedere di interrompere il seguito quando accettavi una missione. I cambi automatici mantengono il seguito attivo; scegliere volontariamente una missione diversa richiede ancora conferma."
+            ]
+          },
+          {
+            "title": "Anteprime coerenti con le impostazioni",
+            "items": [
+              "Quando sono visibili solo i nomi dei giocatori amichevoli, tutte le posizioni dell’icona QT sono relative al testo. Sinistra e Prefisso coincidono.",
+              "Su Forever, le anteprime centrano il nome sopra la barra della salute e mostrano il livello alla sua destra. L’anteprima dei giocatori rispetta la modalità con soli nomi e indica dove cambiare la relativa impostazione Blizzard.",
+              "Le anteprime Retail rispecchiano stili, dimensioni, caratteri e opzioni della salute delle barre native."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "9.3.3",
+        "welcome": "퀘스트 집중 따라가기와 이름표 미리보기를 개선했습니다.",
+        "sections": [
+          {
+            "title": "새 퀘스트를 받아도 따라가기 유지",
+            "items": [
+              "퀘스트 수락 이벤트가 늦게 처리되면 파티원의 퀘스트 집중 따라가기를 중단할지 묻던 추가 사례를 수정했습니다. 자동 집중 변경은 따라가기를 유지하며, 직접 다른 퀘스트를 선택하면 여전히 확인을 요청합니다."
+            ]
+          },
+          {
+            "title": "설정에 맞는 이름표 미리보기",
+            "items": [
+              "우호적인 플레이어의 이름만 표시할 때 모든 QT 아이콘 위치가 이름 텍스트를 기준으로 배치됩니다. 왼쪽과 접두 위치는 같아집니다.",
+              "Forever 미리보기는 이름을 생명력 막대 중앙 위에 배치하고 막대 오른쪽에 레벨 표시를 보여 줍니다. 플레이어 미리보기는 이름만 표시 설정을 반영하며, 해당 블리자드 설정으로 이동할 수 있는 안내를 제공합니다.",
+              "Retail 미리보기에 기본 이름표의 스타일, 크기, 글꼴 및 생명력 표시 설정을 반영했습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "9.3.3",
+        "welcome": "改进任务焦点跟随，并让姓名板预览更贴近游戏内效果。",
+        "sections": [
+          {
+            "title": "接取任务时继续跟随",
+            "items": [
+              "修复另一种事件延迟导致的问题：接取任务时可能弹出停止跟随队友任务焦点的确认框。自动切换焦点会保留跟随；主动选择其他任务仍会要求确认。"
+            ]
+          },
+          {
+            "title": "与设置一致的姓名板预览",
+            "items": [
+              "友方玩家启用仅显示姓名时，QT图标的所有位置都以姓名文字为基准。“左侧”和“前缀”在此模式下位置相同。",
+              "Forever预览中的姓名现在居中显示在血条上方，等级标记位于血条右侧。玩家预览会遵循仅显示姓名设置，并提供说明及前往暴雪对应设置的入口。",
+              "Retail预览现在反映原生姓名板的样式、尺寸、字体和生命值显示设置。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "9.3.3",
+        "welcome": "改善任務焦點跟隨，並讓名條預覽更貼近遊戲中的顯示方式。",
+        "sections": [
+          {
+            "title": "接受任務時繼續跟隨",
+            "items": [
+              "修正另一種事件延遲造成的問題：接受任務時可能出現停止跟隨隊友任務焦點的確認視窗。自動切換焦點會保留跟隨；主動選擇其他任務時仍會要求確認。"
+            ]
+          },
+          {
+            "title": "符合設定的名條預覽",
+            "items": [
+              "友方玩家啟用僅顯示姓名時，QT圖示的所有位置皆以姓名文字為基準。「左側」和「前綴」在此模式下位置相同。",
+              "Forever預覽會將姓名置於血條正上方中央，並在血條右側顯示等級標記。玩家預覽會遵循僅顯示姓名設定，並提供說明與前往暴雪對應設定的入口。",
+              "Retail預覽現在會反映原生名條的樣式、尺寸、字型及生命值顯示設定。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "9.3.2",
         "welcome": "Picking up new quests no longer interrupts quest-focus following. QT icons also line up properly with friendly player names when health bars are hidden.",
         "sections": [

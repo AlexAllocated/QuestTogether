@@ -2,6 +2,53 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.0
+
+Bereit für die nächste gemeinsame Quest? Mit diesem großen QuestTogether-Update seht ihr im Gruppenquestlog, wie Quests zusammenhängen, wo jedes Gruppenmitglied steht und welche Schritte euch wieder auf denselben Stand bringen. Die neuen Hinweise beim Teilen sparen euch Rätselraten, bevor ihr loszieht.
+
+### Questreihen öffnen
+
+- Öffne das Gruppenquestlog mit /qt pql. Wähle „Questreihe anzeigen“ über das Kettensymbol neben dem Questlog-Symbol oder im Aktionsmenü der Quest. Die Schritte klappen direkt in der Liste auf. Drücke dasselbe Symbol erneut, um sie einzuklappen. Über den Questtitel kannst du weiterhin unabhängig davon die Ziele aufklappen.
+- Auf Forever kannst du eine kompatible Forever-Version von QuestieDB installieren und neben QuestTogether aktivieren. Lade danach die Benutzeroberfläche neu und öffne das Gruppenquestlog erneut oder wähle „Aktualisieren“. QuestieDB liefert Zusammenhänge, bekannte Voraussetzungen und verfügbare Startorte. Es wird separat installiert. Für den normalen Questvergleich brauchst du es nicht. Für Fortschritt und Abschlusshistorie brauchen deine Mitspieler ein kompatibles QuestTogether. QuestieDB ist dafür bei ihnen nicht erforderlich. Questdaten für andere Clients werden abgelehnt.
+- In Retail nutzt QuestTogether die Reihennamen und zugehörigen Quests aus den WoW-Daten, soweit sie verfügbar sind. Daraus lassen sich weder Voraussetzungen noch Annahmebedingungen oder Questgeber-Koordinaten ableiten. QuestieDB ist dort nicht nötig. Auf anderen unterstützten Clients bleibt der normale Questvergleich verfügbar.
+
+### Den Fortschritt der Gruppe im Blick behalten
+
+- Die Schritte stehen in den gewohnten Spielerspalten. So siehst du pro Person, was läuft, bereit zur Abgabe oder abgeschlossen ist. „Nicht im Questlog“ zeigt nur, dass die Quest fehlt. Bei fehlenden oder ausstehenden Daten siehst du „Unbekannt“ oder „Laden“.
+- Unter „Filter“ kannst du „Nach Questreihe gruppieren“ einschalten. Die Einstellung ist anfangs aus und wird pro Profil gespeichert. Aktive Quests stehen dann unter klar abgegrenzten Überschriften. Auf Forever heißt es „Zusammenhängende Quests“ mit einem bekannten Questtitel. In Retail erscheint der von WoW gelieferte Reihenname. Einzelquests bleiben separat.
+- Gerade Verläufe bleiben bündig, Abzweigungen sind eingerückt. Du kannst jeweils eine Questreihe im Detail öffnen. Nutze „Frühere Quests anzeigen“ und „Spätere Quests anzeigen“, um den sichtbaren Ausschnitt zu erweitern. Aktive Quests bleiben auch in verschiedenen Zweigen sichtbar. Suche und Filter gelten für die tatsächlichen Gruppenquests. Zusätzliche Schritte erhöhen die Questanzahl nicht.
+
+### Mitspieler auf denselben Stand bringen
+
+- Zeige auf das Feld eines Spielers, dem die Quest fehlt. Dort stehen bekannte Vorquests und Hürden durch Klasse, Volk oder Stufe. Bei laufenden, abgabebereiten und abgeschlossenen Quests entfallen diese Hinweise. Sind Voraussetzungen unklar, kann WoW die Annahme weiterhin ablehnen.
+- Blende auf Forever die Kartenmarkierungen über die QT-Schaltfläche auf der Weltkarte ein. Wähle dann einen sichtbaren Schritt in der geöffneten Questreihe. Für jeden bekannten Startort gibt es im Aktionsmenü eigene Einträge. „Questgeber finden“ zeigt den Ort auf der Karte, „Wegpunkt setzen“ markiert dein Ziel. Bei einem Queststart per Gegenstand oder fehlenden Ortsangaben erscheint eine Erklärung. Bei verborgenen Schritten fehlen diese Aktionen.
+- Beim Durchsehen bleiben Questfokus, Folgen und Wegpunkte erhalten. Questdetails, Questlog, Fokus, Folgen und die Optionen zum Teilen stehen weiterhin zur Verfügung, wo sie anwendbar sind.
+
+### Spoiler nach Wunsch
+
+- Weitere Questnamen bleiben standardmäßig verborgen und die zugehörigen Zeilen erscheinen gedimmt. Aktuelle Gruppenquests, lokal bestätigte Abschlüsse und Vorquests, deren Name eine bekannte Hürde erklärt, können angezeigt werden.
+- Schalte unter „Filter“ die Option „Namen späterer Quests ausblenden“ aus, um alle bekannten Titel zu sehen. Die Auswahl gilt pro Profil. Solange Titel verborgen sind, bleiben sie auch in Suche, Menüs und Tooltips verborgen.
+
+### Vor dem Teilen sehen, was möglich ist
+
+- Wähle „Teilen“, um der Gruppe eine Quest aus deinem Log anzubieten. Fehlt dir eine Quest, die jemand in der Gruppe hat, bitte mit „Teilen anfordern“ darum.
+- Unter „Teilen“ und „Teilen anfordern“ siehst du jetzt direkt, wie es um die Voraussetzungen steht. Hat jemand die Quest bereits aktiv oder abgeschlossen, oder steht eine bekannte Voraussetzung wie Klasse, Volk, Stufe oder Vorquest im Weg, hält QuestTogether unnötige Versuche auf. Beim Auslösen und beim Bestätigen einer Anfrage wird anhand der aktuell verfügbaren Daten erneut geprüft.
+- „Eignung wird geprüft“ zeigt eine laufende Prüfung an. Bei „Voraussetzungen unklar“ fehlen aktuelle Angaben und du kannst es trotzdem versuchen. „Keine bekannten Hürden“ ist eine Orientierung. Ob jemand die Quest annehmen kann, entscheidet WoW.
+- Zeige auf die Aktion, um die Lage für die Empfänger zusammengefasst zu sehen. Für alle bekannten Voraussetzungen kannst du auf das Feld der Person zeigen, der die Quest fehlt. Die Hinweise sind auch per Controller erreichbar. Offene Anfragen und ihre Ergebnisse bleiben sichtbar.
+- WoW teilt Quests immer mit der ganzen Gruppe, auch wenn du im Questlog nur eine Person ausgewählt hast. Was einem Mitspieler hilft, kann bei einem anderen zu einer Ablehnung führen. Bei wiederholbaren Quests und fehlender Historie zieht QuestTogether keine voreiligen Schlüsse über offene Vorquests.
+
+### Besser lesbar und leichter zu bedienen
+
+- Queststufen stehen direkt in der Liste, in den Schwierigkeitsfarben von WoW. Ein Plus wie in [25+] kennzeichnet die Gruppenempfehlung des Spiels. Unbekannte Stufen erscheinen als [?]. Im Tooltip hilft die „Quest-ID“, gleichnamige Quests auseinanderzuhalten.
+- Maus und Tastatur funktionieren wie gewohnt. Aktiviere auf unterstützten Forever-Clients die Gamepad-Oberfläche von WoW und in QuestTogether unter „Allgemein“ die Option „Native Gamepad-Navigation aktivieren“. Oben und unten wechseln die Zeile, links und rechts das Bedienelement. Wähle einen Questtitel für die Ziele oder einen Reihenschritt für seine Aktionen. Zurück schließt zuerst ein offenes Menü. Liegt die Auswahl in der offenen Questreihe, klappt Zurück die Reihe ein und kehrt zum Ausgangspunkt zurück. Andernfalls schließt es das Gruppenquestlog. Tooltips erscheinen am Mauszeiger oder beim gewählten Bedienelement.
+- Doppelpfeile in Klassenfarbe zeigen, wer deinem Questfokus folgt. Das Kettensymbol gehört jetzt den Questreihen.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v10.0.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Mit /qt pqlpreview chains kannst du echte Questreihen mit simulierten Mitspielern ausprobieren, sofern die passenden Questdaten verfügbar sind. Die Vorschau ist gekennzeichnet, verschickt keine Anfragen und lässt deinen echten Fokus, deine Folgeziele und Wegpunkte unberührt. Schließe sie oder kehre mit /qt pql zurück.
+
+### Neue Lizenz
+
+- Für den projekteigenen Code, die Dokumentation und die Originalgrafiken gilt ab dieser Version GPL-3.0-only. Frühere MIT-Veröffentlichungen behalten ihre Rechte. Lizenzen mitgelieferter Drittanbieter und Ausnahmen für Blizzard-Grafiken gelten weiter. Quellcode, bearbeitbare Originaldateien und Dateien zum Erstellen der Veröffentlichung werden mitgeliefert.
+
 ## 9.3.3
 
 Verbesserungen beim Folgen des Questfokus und bei den Namensplaketten-Vorschauen.
