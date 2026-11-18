@@ -63,6 +63,7 @@ QT:RegisterTest("welcome cards apply once keyboard chooses presets and closing m
 	local frame = a.presetWindow
 	assert(frame.selected == "full" and #frame.cards == 4 and frame.future:GetChecked())
 	local key = frame:GetScript("OnKeyDown")
+	key(frame, "SPACE"); assert(frame.future:GetChecked() and not frame.future:IsEnabled())
 	key(frame, "DOWN"); key(frame, "DOWN"); key(frame, "DOWN")
 	assert(frame.selected == "kid")
 	key(frame, "ENTER")

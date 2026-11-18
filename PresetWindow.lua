@@ -100,7 +100,8 @@ function QT:OpenPresetWindow()
 			if key == "UP" or key == "DOWN" or key == "LEFT" or key == "RIGHT" then
 				index = math.max(1, math.min(#frame.cards, index + ((key == "UP" or key == "LEFT") and -1 or 1)))
 				frame.selected = frame.cards[index].id; frame:LayoutManagedWindow()
-			elseif key == "SPACE" then frame.future:SetChecked(not frame.future:GetChecked())
+			elseif key == "SPACE" then
+				if not self:IsWelcomeSetupPending() then frame.future:SetChecked(not frame.future:GetChecked()) end
 			elseif key == "ENTER" or key == "NUMPADENTER" then frame.apply:Click()
 			else return end
 			frame:SetPropagateKeyboardInput(false)
@@ -117,6 +118,7 @@ function QT:OpenPresetWindow()
 	frame.profile, frame.finishDefault = self.db.profile, nil
 	frame.selected = self:IsWelcomeSetupPending() and "full" or self:GetMatchingPreset() or "full"
 	frame.future:SetChecked(self:IsWelcomeSetupPending())
+	frame.future:SetEnabled(not self:IsWelcomeSetupPending())
 	frame.apply:SetText(self:IsWelcomeSetupPending() and L("Start questing") or L("Apply preset"))
 	frame:LayoutManagedWindow(); frame:Show(); frame:Raise()
 	self:PresentStandardGamepadWindow(frame, "welcome", function() self:ClosePresetWindow() end,

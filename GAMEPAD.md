@@ -144,8 +144,8 @@ clear native state before further testing. QT never reloads the game itself.
 New installations open the welcome chooser instead of patch notes. Select one
 of the four cards, then **Start questing**. Full experience is initially selected;
 Back or Escape on first setup uses Full experience. On a manually reopened
-chooser, Back cancels. Keyboard arrows select a card, Space toggles the default
-for future characters, and Enter applies. Controller Select chooses a card;
+chooser, Back cancels. Keyboard arrows select a card and Enter applies. First setup remembers the
+choice for future characters; on a reopened chooser, Space toggles that checkbox. Controller Select chooses a card;
 navigate to Start questing to apply it. Existing installations are not reset.
 
 Open **WoW Options > AddOns > QuestTogether > Presets** to revisit the chooser.
