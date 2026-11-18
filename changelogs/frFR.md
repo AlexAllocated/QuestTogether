@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.1
+
+Des canaux de discussion mieux rangés, des suites de quêtes plus lisibles et un suivi de quête corrigé, avec des remerciements automatiques pour les effets bénéfiques.
+
+### Ordre des canaux de discussion
+
+- QT attend dix secondes après l’entrée dans le monde avant de rejoindre ses canaux de répertoire manquants. Ceux déjà rejoints restent utilisables. L’arrivée tardive de canaux de WoW déclenche aussi une nouvelle vérification de l’ordre.
+- Plusieurs problèmes liés aux alias, aux champs de saisie périmés, aux données des canaux et aux réorganisations incomplètes sont corrigés. Les canaux de conversation passent avant les répertoires QT sans changer d’ordre entre eux, dans la limite des états de canaux accessibles.
+
+### Suites de quêtes dans le journal du groupe
+
+- Déployer une suite dans le Journal de quêtes du groupe place les étapes précédentes au-dessus de la quête d’origine et les suivantes en dessous. La quête d’origine apparaît une seule fois, à sa place dans la suite, avec ses commandes habituelles.
+- Une bordure continue, un fond distinct et une mise en évidence renforcée de la quête d’origine délimitent mieux la suite. Le même bouton en forme de maillon permet de la replier.
+
+### Suivi de la quête d’un autre joueur
+
+- Accepter une nouvelle quête ne provoque plus de demande erronée d’arrêt du suivi : vous continuez à suivre la quête choisie par l’autre joueur. Un changement volontaire vers une autre quête demande toujours confirmation.
+
+### Remerciements pour les effets bénéfiques
+
+- Activée par défaut pour chaque profil, cette option peut lancer /thank, /bow ou /applaud après une pause aléatoire de 2–4 secondes lorsqu’un autre joueur identifiable à proximité vous accorde, hors combat, un nouvel effet bénéfique d’au moins 60 secondes. Votre cible reste inchangée.
+- Les effets reçus à la suite sont regroupés et les remerciements répétés sont espacés. Les effets que vous appliquez vous-même, ceux déjà présents et ceux dont la nature ou le lanceur ne peuvent pas être identifiés avec certitude sont ignorés. Tous les effets ne déclenchent donc pas de remerciement.
+- Pour désactiver cette option : /qt → Où annoncer → Remercier automatiquement les joueurs pour leurs effets bénéfiques.
+
 ## 10.0.0
 
 Envie de reprendre une aventure ensemble ? Cette grande mise à jour de QuestTogether fait entrer les suites de quêtes dans le Journal de quêtes du groupe. Voyez où chacun en est, retrouvez l’étape qui manque à un membre et vérifiez les conditions de partage avant de repartir.

@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.1
+
+Este parche mejora el orden del chat, la lectura de cadenas y el seguimiento de misiones. Además, puedes agradecer de forma automática los beneficios que te den otros jugadores.
+
+### Canales de chat más ordenados
+
+- QT espera diez segundos después de entrar al mundo para unirse a los canales de directorio que falten. Los canales ya conectados siguen funcionando; si los canales de WoW aparecen después, también se revisa el orden.
+- Se arreglaron más problemas con alias, cuadros de escritura desactualizados, datos de canales y cambios de orden parciales. Los canales de conversación se colocan antes de los directorios de QT y conservan su orden entre sí, cuando el estado de los canales permite ajustarlos.
+
+### Cadenas en el registro del grupo
+
+- Al abrir una cadena en el Registro de misiones del grupo, verás los pasos anteriores arriba de la misión original y los siguientes abajo. La misión original aparece una sola vez en el lugar que le corresponde, con sus controles de siempre.
+- El borde continuo, el fondo sombreado y el resaltado más claro de la misión original ayudan a distinguir la cadena. Para cerrarla, usa el mismo botón con forma de eslabón.
+
+### Seguimiento de la misión de un compañero
+
+- Si estás siguiendo la misión de otro jugador y aceptas una nueva, ya no aparece por error la pregunta para dejar de seguirlo. El seguimiento se mantiene. Elegir otra misión intencionalmente todavía requiere confirmación.
+
+### Agradecimientos por beneficios
+
+- La opción viene activada en cada perfil. Si, fuera de combate, otro jugador identificable cercano te da un beneficio nuevo que dura al menos 60 segundos, puede activarse /thank, /bow o /applaud tras una pausa aleatoria de 2–4 segundos. Tu objetivo seleccionado no cambia.
+- Los beneficios que llegan juntos se agrupan y se limita la frecuencia de los agradecimientos. Se ignoran tus propios beneficios, los que ya tenías y los efectos o lanzadores que no se puedan identificar con seguridad. No se agradece cada beneficio.
+- Para desactivarla, ve a /qt → Dónde anunciar → Agradecer automáticamente a quienes te den beneficios.
+
 ## 10.0.0
 
 ¡Es un gran momento para volver a hacer misiones en grupo! QuestTogether ahora te muestra las cadenas en el Registro de misiones del grupo. Encuentra dónde va cada compañero, ayúdalo a retomar la historia y revisa qué requisitos faltan antes de compartir una misión.

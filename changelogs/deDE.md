@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.1
+
+Aufgeräumte Chatkanäle, übersichtlichere Questreihen und zuverlässigeres Folgen des Questfokus – dazu ein automatisches Dankeschön für Stärkungszauber.
+
+### Chatkanäle in der richtigen Reihenfolge
+
+- QT tritt fehlenden Verzeichniskanälen erst zehn Sekunden nach dem Betreten der Welt bei. Bereits verbundene QT-Kanäle bleiben nutzbar; später hinzukommende WoW-Kanäle lösen eine erneute Prüfung der Reihenfolge aus.
+- Weitere Fehler mit Kanalaliasen, veralteten Chateingabefeldern, Kanaldaten und unvollständigen Umsortierungen wurden behoben. Gesprächskanäle bleiben vor den QT-Verzeichnissen und behalten ihre Reihenfolge untereinander. Nicht zugängliche Kanalzustände lassen sich weiterhin nicht immer korrigieren.
+
+### Questreihen direkt im Gruppenquestlog
+
+- Beim Öffnen einer Questreihe stehen frühere Schritte über und spätere Schritte unter der ursprünglichen Quest. Diese erscheint nur einmal an ihrer Stelle in der Reihe und behält ihre gewohnten Bedienelemente.
+- Ein durchgehender Rahmen, ein hinterlegter Bereich und eine deutlichere Hervorhebung der Ausgangsquest machen die Reihe leichter erkennbar. Mit derselben Kettenschaltfläche klappst du sie wieder zu.
+
+### Dem Questfokus weiter folgen
+
+- Die Annahme einer neuen Quest unterbricht das Folgen des Questfokus eines anderen Spielers nicht mehr durch eine irrtümliche Rückfrage. Wechselst du selbst bewusst zu einer anderen Quest, wird weiterhin nachgefragt.
+
+### Automatischer Dank für Stärkungszauber
+
+- Pro Profil standardmäßig aktiv: Erhältst du außerhalb des Kampfes einen neuen Stärkungszauber mit mindestens 60 Sekunden Dauer von einem erkennbaren anderen Spieler in der Nähe, kann nach einer zufälligen Pause von 2–4 Sekunden /thank, /bow oder /applaud folgen. Dein ausgewähltes Ziel bleibt erhalten.
+- Mehrere kurz aufeinanderfolgende Stärkungszauber werden zusammengefasst; zwischen wiederholten Danksagungen liegt eine Wartezeit. Eigene, bereits vorhandene oder nicht sicher zuordenbare Stärkungszauber werden übersprungen. Nicht jeder Zauber löst einen Dank aus.
+- Abschalten unter /qt → Wo ankündigen → Spielern automatisch für Stärkungszauber danken.
+
 ## 10.0.0
 
 Bereit für die nächste gemeinsame Quest? Mit diesem großen QuestTogether-Update seht ihr im Gruppenquestlog, wie Quests zusammenhängen, wo jedes Gruppenmitglied steht und welche Schritte euch wieder auf denselben Stand bringen. Die neuen Hinweise beim Teilen sparen euch Rätselraten, bevor ihr loszieht.

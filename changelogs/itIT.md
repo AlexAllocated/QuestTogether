@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.1
+
+Canali di chat più ordinati, catene di missioni più leggibili e una correzione al sistema per seguire la missione attiva di un altro giocatore, con ringraziamenti automatici per i benefici ricevuti.
+
+### Ordine dei canali di chat
+
+- QT attende dieci secondi dopo l’ingresso nel mondo prima di collegarsi ai canali di directory mancanti. Quelli già collegati restano utilizzabili; anche l’arrivo successivo dei canali di WoW avvia un nuovo controllo dell’ordine.
+- Corretti altri problemi con alias, campi di scrittura non aggiornati, dati dei canali e riordinamenti parziali. I canali di conversazione precedono le directory QT senza cambiare ordine fra loro, quando lo stato dei canali consente di riordinarli.
+
+### Catene nel registro del gruppo
+
+- Aprendo una catena nel Registro missioni del gruppo, i passaggi precedenti compaiono sopra la missione originale e quelli successivi sotto. La missione originale appare una sola volta, al suo posto nella catena, con i consueti comandi.
+- Un bordo continuo, uno sfondo ombreggiato e un’evidenziazione più marcata della missione originale distinguono la catena dalle altre righe. Lo stesso pulsante a forma di maglia di catena permette di richiuderla.
+
+### Seguire la missione di un compagno
+
+- Accettare una nuova missione mentre segui quella di un altro giocatore non apre più per errore la richiesta di smettere di seguirla. Continui a seguirne la missione; passare volontariamente a un’altra richiede ancora conferma.
+
+### Ringraziamenti automatici per i benefici
+
+- L’opzione è attiva per impostazione predefinita in ogni profilo. Ricevere fuori dal combattimento un nuovo beneficio di almeno 60 secondi da un altro giocatore identificabile nelle vicinanze può attivare /thank, /bow o /applaud dopo una pausa casuale di 2–4 secondi. Il bersaglio selezionato non cambia.
+- I benefici ricevuti a breve distanza vengono raggruppati e i ringraziamenti ripetuti sono intervallati. Vengono ignorati i benefici propri, quelli già presenti e gli effetti o gli autori che non si possono identificare con sicurezza. Non tutti i benefici ricevono un ringraziamento.
+- Puoi disattivarla in /qt → Dove annunciare → Ringrazia automaticamente i giocatori per i benefici.
+
 ## 10.0.0
 
 Che bello riprendere una storia insieme! Con questo grande aggiornamento di QuestTogether, le catene entrano nel Registro missioni del gruppo. Scopri a che punto sono i tuoi compagni, aiutali a recuperare le tappe mancanti e controlla subito cosa può impedire la condivisione.

@@ -4,6 +4,30 @@
 
 [Other languages](changelogs/README.md)
 
+## 10.0.1
+
+A tidier quest log, steadier chat channels, and a little extra gratitude on your adventures! This patch improves everyday party questing and adds an optional way to thank helpful players.
+
+### Keep your chat channels in order
+
+- QT now waits ten seconds after entering the world before joining missing chat directories, giving the game’s ordinary channels time to settle. Existing QT connections stay usable, and channels that arrive later are checked too.
+- Fixed more cases involving channel aliases, inactive chat boxes and interrupted channel moves that could leave QT ahead of your ordinary channels. Reordering preserves the relative order of your non-QT channels.
+
+### See your quest in its chain
+
+- Expanded chains now surround the quest you opened: earlier steps appear above it and later steps below. Your original quest appears once, in the right place, with its usual controls.
+- A continuous border, shaded background and stronger highlight on the original quest make the chain easier to distinguish from the rest of PQL. Select the chain-link button again to close it.
+
+### Keep following through new quest pickups
+
+- Fixed additional timing cases where accepting a quest could unexpectedly ask you to stop following a party member’s quest focus. QT keeps following their focus; deliberately choosing another quest still asks for confirmation.
+
+### A little thanks for a helpful buff
+
+- Outside combat, QT can now thank an identifiable nearby player who gives you a new buff lasting at least a minute. After a random 2–4 second pause, it chooses /thank, /bow or /applaud without changing your selected target.
+- Buff bursts are combined and repeat thanks are limited. Self-buffs, existing buffs and effects or casters that cannot be identified safely are skipped.
+- Automatic thanks starts enabled for each profile. To turn it off, open /qt → Where to Announce and uncheck Automatically thank players for buffs.
+
 ## 10.0.0
 
 A new chapter for questing together! Your Party Quest Log now brings connected quests, party progress and catch-up guidance into one place, with a clearer sharing experience to help you plan the next adventure together.

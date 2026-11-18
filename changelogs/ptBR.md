@@ -2,6 +2,30 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.1
+
+Chat mais organizado, sequências de missões mais fáceis de acompanhar e uma correção ao seguir o foco de outro jogador, além de agradecimentos automáticos por benefícios.
+
+### Ordem dos canais de chat
+
+- O QT espera dez segundos após a entrada no mundo para entrar nos canais de diretório que estiverem faltando. Os já conectados continuam disponíveis. Canais do WoW que aparecem depois também acionam uma nova verificação da ordem.
+- Foram corrigidos mais casos envolvendo aliases, campos de mensagem desatualizados, dados de canais e reordenações parciais. Canais de conversa ficam antes dos diretórios do QT, mantendo a ordem entre si, quando o estado dos canais permite o ajuste.
+
+### Sequências no registro de missões
+
+- Ao abrir uma sequência no Registro de missões do grupo, as etapas anteriores ficam acima da missão original e as seguintes, abaixo. A missão original aparece uma única vez, na posição certa da sequência, com os controles habituais.
+- Uma borda contínua, o fundo sombreado e um destaque maior na missão original separam melhor a sequência das outras linhas. Use o mesmo botão de elo para fechá-la.
+
+### Continuar seguindo o foco
+
+- Aceitar uma nova missão enquanto você segue o foco de outro jogador não abre mais, por engano, a confirmação para parar de segui-lo. O acompanhamento continua. Escolher outra missão de propósito ainda pede confirmação.
+
+### Agradecimentos automáticos por benefícios
+
+- Ativada por padrão em cada perfil, a opção pode usar /thank, /bow ou /applaud após uma pausa aleatória de 2–4 segundos ao receber, fora de combate, um benefício novo de pelo menos 60 segundos de outro jogador identificável por perto. Seu alvo não muda.
+- Benefícios recebidos em sequência são agrupados, e há um intervalo entre agradecimentos repetidos. Benefícios próprios, já existentes ou cujo efeito ou autor não possa ser identificado com segurança são ignorados. Nem todo benefício gera um agradecimento.
+- Para desativar: /qt → Onde Anunciar → Agradecer automaticamente aos jogadores pelos benefícios.
+
 ## 10.0.0
 
 Bora retomar aquela aventura em grupo? Nesta grande atualização do QuestTogether, as sequências chegam ao Registro de missões do grupo. Veja em que etapa cada pessoa está, ajude quem precisa alcançar o grupo e confira as condições antes de compartilhar uma missão.
