@@ -163,8 +163,13 @@ class ReleaseTests(unittest.TestCase):
         if path == prefix + "/git/ref/tags/" + tag:
             return {"ref": "refs/tags/" + tag,
                     "object": {"sha": self.remote_sha or self.git("rev-parse", "HEAD"), "type": "commit"}}
-        if path == prefix + "/releases/tags/" + tag:
+        if path.startswith(prefix + "/releases?per_page=100&page="):
+            return ([self.request(prefix + "/releases/123")]
+                    if self.existing is not None or self.created else [])
+        if path in (prefix + "/releases/tags/" + tag, prefix + "/releases/123"):
             if self.existing is None and not self.created:
+                raise release.discord.APIHTTPError("GET", 404)
+            if path.endswith("/tags/" + tag) and self.existing != "public":
                 raise release.discord.APIHTTPError("GET", 404)
             archive = self.archive()
             draft = self.existing != "public"
@@ -172,7 +177,7 @@ class ReleaseTests(unittest.TestCase):
                 {"name": archive.name, "state": "uploaded", "size": archive.stat().st_size,
                  "browser_download_url": "https://github.com/" + REPOSITORY
                  + "/releases/download/" + tag + "/" + archive.name}]
-            return {"tag_name": tag, "draft": draft,
+            return {"id": 123, "tag_name": tag, "draft": draft,
                     "published_at": "2026-11-17T00:00:00Z" if self.existing == "public" else None,
                     "html_url": "https://github.com/" + REPOSITORY + "/releases/tag/"
                                 + ("untagged-private-draft" if draft else tag), "assets": assets}
@@ -305,6 +310,28 @@ class ReleaseTests(unittest.TestCase):
         result, message = self.invoke("--tag", "v1.2.4")
         self.assertEqual(result, 0, message)
         self.assertEqual(self.stages(), ["package", "push", "upload", "edit", "announce"])
+        self.assertIn("/repos/" + REPOSITORY + "/releases/123", self.api_calls)
+
+    def test_draft_lookup_paginates_and_rejects_duplicates_or_incomplete_listings(self):
+        class API:
+            def __init__(self, pages):
+                self.pages = pages
+                self.calls = []
+
+            def request(self, path):
+                self.calls.append(path)
+                if "/tags/" in path:
+                    raise release.discord.APIHTTPError("GET", 404)
+                return self.pages[min(int(path.rsplit("=", 1)[1]) - 1, len(self.pages) - 1)]
+
+        other = [{"tag_name": "v0.0." + str(index)} for index in range(100)]
+        draft = {"id": 123, "tag_name": "v1.2.4", "draft": True}
+        api = API([other, [draft]])
+        self.assertEqual(release.find_github_release(api, "/repos/test/repo", "v1.2.4"), draft)
+        self.assertTrue(api.calls[-1].endswith("page=2"))
+        for pages, message in (([[draft, draft]], "multiple"), ([other], "lookup limit"), ([[None]], "invalid")):
+            with self.subTest(message=message), self.assertRaisesRegex(release.ReleaseError, message):
+                release.find_github_release(API(pages), "/repos/test/repo", "v1.2.4")
 
     def test_draft_resume_keeps_matching_assets_and_uploads_only_missing_files(self):
         sha = self.prepare()

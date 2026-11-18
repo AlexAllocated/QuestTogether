@@ -219,6 +219,27 @@ def push_release_refs(root, tag, sha, branch, env):
             print("Remote branch changed during publication; checking it once more.", flush=True)
 
 
+def find_github_release(api, prefix, tag):
+    # The tag endpoint exposes published releases only. Authenticated listings
+    # include drafts; keep their numeric identity for subsequent reads.
+    try:
+        return api.request(prefix + "/releases/tags/" + tag)
+    except discord.APIHTTPError as error:
+        if error.status != 404:
+            raise
+    matches = []
+    for page in range(1, 21):
+        entries = api.request(prefix + "/releases?per_page=100&page=" + str(page))
+        if not isinstance(entries, list) or any(not isinstance(entry, dict) for entry in entries):
+            raise ReleaseError("GitHub returned an invalid release listing")
+        matches.extend(entry for entry in entries if entry.get("tag_name") == tag)
+        if len(matches) > 1:
+            raise ReleaseError("multiple GitHub releases use this tag; resolve the duplicate drafts before resuming")
+        if len(entries) < 100:
+            return matches[0] if matches else None
+    raise ReleaseError("GitHub release listing exceeds the lookup limit; no release was created")
+
+
 def publish_github(root, repository, tag, sha, artifacts, body, env):
     api = discord.API(discord.GITHUB_API, env["GH_TOKEN"])
     prefix = "/repos/" + repository
@@ -227,12 +248,7 @@ def publish_github(root, repository, tag, sha, artifacts, body, env):
         raise ReleaseError("release publication requires the intended public repository")
     if discord.remote_tag_sha(api, prefix, tag) != sha:
         raise ReleaseError("remote release tag differs from the locally validated commit")
-    try:
-        existing = api.request(prefix + "/releases/tags/" + tag)
-    except discord.APIHTTPError as error:
-        if error.status != 404:
-            raise
-        existing = None
+    existing = find_github_release(api, prefix, tag)
     prerelease = "-" in tag
     if existing is not None and existing.get("tag_name") != tag:
         raise ReleaseError("GitHub returned a different release tag")
@@ -251,9 +267,14 @@ def publish_github(root, repository, tag, sha, artifacts, body, env):
         if prerelease:
             command.append("--prerelease")
         run(root, command, env=env)
+        existing = find_github_release(api, prefix, tag)
+    release_id = existing.get("id") if existing else None
+    if type(release_id) is not int or release_id <= 0:
+        raise ReleaseError("GitHub draft release identity is unavailable; resume to check it again")
+    release_path = prefix + "/releases/" + str(release_id)
     # An interrupted upload resumes missing files. Never overwrite an asset,
     # including if a different publisher has already made the release public.
-    existing = api.request(prefix + "/releases/tags/" + tag)
+    existing = api.request(release_path)
     if existing.get("tag_name") != tag or existing.get("draft") is not True:
         raise ReleaseError("draft release changed before its upload; resume to recheck the published release")
     assets = existing.get("assets", [])
@@ -278,7 +299,7 @@ def publish_github(root, repository, tag, sha, artifacts, body, env):
             raise ReleaseError("existing draft asset differs from the local release: " + path.name)
     if missing:
         run(root, ["gh", "release", "upload", tag, "--repo", repository, *map(str, missing)], env=env)
-    current = api.request(prefix + "/releases/tags/" + tag)
+    current = api.request(release_path)
     if current.get("tag_name") != tag or current.get("draft") is not True:
         raise ReleaseError("draft release changed before publication; resume to recheck it")
     run(root, ["gh", "release", "edit", tag, "--repo", repository, "--draft=false",
