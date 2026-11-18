@@ -149,6 +149,76 @@ def release_body(root, tag, sha, repository):
     return "\n".join(lines)
 
 
+def remote_branch_sha(root, branch, env):
+    ref = "refs/heads/" + branch
+    git(root, "check-ref-format", ref)
+    value = run(root, ["git", "ls-remote", "--refs", "origin", ref], capture=True, env=env)
+    if not value:
+        return None
+    fields = value.split()
+    if len(fields) != 2 or fields[1] != ref or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", fields[0]):
+        raise ReleaseError("origin returned an unexpected branch reference")
+    return fields[0]
+
+
+def is_ancestor(root, ancestor, descendant):
+    result = subprocess.run(["git", "merge-base", "--is-ancestor", ancestor, descendant],
+                            cwd=root, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode not in (0, 1):
+        raise ReleaseError("could not compare the release commit with the remote branch")
+    return result.returncode == 0
+
+
+def release_branch_update(root, branch, remote_sha, sha, env):
+    if remote_sha is None:
+        return True
+    try:
+        git(root, "cat-file", "-e", remote_sha + "^{commit}")
+    except ReleaseError:
+        # Fetch the exact observation, not a branch name that can move between
+        # ls-remote and fetch. Leave local branches, tags and FETCH_HEAD alone.
+        try:
+            run(root, ["git", "fetch", "--no-tags", "--no-prune", "--no-prune-tags",
+                       "--no-write-fetch-head", "--recurse-submodules=no", "origin", remote_sha], env=env)
+        except ReleaseError as error:
+            raise ReleaseError("could not fetch the observed origin/" + branch
+                               + " commit; resume the release to recheck the remote branch") from error
+    if git(root, "rev-parse", "--verify", remote_sha + "^{commit}") != remote_sha:
+        raise ReleaseError("remote branch does not identify a commit")
+    if is_ancestor(root, sha, remote_sha):
+        return False
+    if is_ancestor(root, remote_sha, sha):
+        return True
+    raise ReleaseError("origin/" + branch + " has diverged from the validated release commit; "
+                       "publication stopped. Reconcile the branch and prepare a new release "
+                       "that includes its changes before publishing")
+
+
+def push_release_refs(root, tag, sha, branch, env):
+    remote_sha = remote_branch_sha(root, branch, env) if branch else None
+    for attempt in range(2):
+        update_branch = bool(branch) and release_branch_update(root, branch, remote_sha, sha, env)
+        refs = ([sha + ":refs/heads/" + branch] if update_branch else []) + ["refs/tags/" + tag]
+        if branch and not update_branch:
+            print("origin/" + branch + " already contains the release; preserving its current tip.", flush=True)
+        try:
+            # A normal atomic push never rewinds a concurrent branch update,
+            # and a rejected branch cannot leave the tag partially published.
+            run(root, ["git", "push", "--atomic", "origin", *refs], env=env)
+            return
+        except ReleaseError:
+            if not update_branch or attempt:
+                raise
+            latest = remote_branch_sha(root, branch, env)
+            if latest == remote_sha:
+                raise
+            if latest is None:
+                raise ReleaseError("origin/" + branch + " was removed during publication; "
+                                   "check the intended source branch before resuming") from None
+            remote_sha = latest
+            print("Remote branch changed during publication; checking it once more.", flush=True)
+
+
 def publish_github(root, repository, tag, sha, artifacts, body, env):
     api = discord.API(discord.GITHUB_API, env["GH_TOKEN"])
     prefix = "/repos/" + repository
@@ -231,10 +301,9 @@ def publish(root, repository, args, bump):
         body.write_text(release_body(root, tag, sha, repository), encoding="utf-8")
         if exact_checkout(root, tag) != sha:
             raise ReleaseError("checkout changed during validation")
-        branch = git(root, "branch", "--show-current")
-        refs = (["HEAD:refs/heads/" + branch] if branch else []) + ["refs/tags/" + tag]
+        branch = args.branch or git(root, "branch", "--show-current")
         print("Pushing the validated release tag; handing off to CurseForge.", flush=True)
-        run(root, ["git", "push", "--atomic", "origin", *refs], env=env)
+        push_release_refs(root, tag, sha, branch, env)
         publish_github(root, repository, tag, sha, artifacts, body, env)
         print("Posting the release notes to Discord locally...", flush=True)
         run(root, [args.python, "scripts/discord_changelog.py", "--root", str(root), "--post",
@@ -253,6 +322,7 @@ def main(argv=None):
     parser.add_argument("--check", action="store_true", help="local preflight only; no writes or network")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--repository", default=discord.DEFAULT_REPOSITORY)
+    parser.add_argument("--branch", help="source branch to publish from an isolated detached checkout")
     parser.add_argument("--lua51")
     parser.add_argument("--lua52")
     parser.add_argument("--python", default=sys.executable)
@@ -260,6 +330,8 @@ def main(argv=None):
     try:
         root = args.root.resolve()
         repository = discord.repository_name(args.repository)
+        if args.branch:
+            git(root, "check-ref-format", "refs/heads/" + args.branch)
         if args.tag and (args.reuse_notes or args.channel != "stable"):
             raise ReleaseError("--channel and --reuse-notes apply only to --bump")
         check_origin(root, repository)

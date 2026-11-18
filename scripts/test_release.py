@@ -61,6 +61,7 @@ class ReleaseTests(unittest.TestCase):
         self.git("commit", "-qm", "Baseline")
         self.git("tag", "-a", "v1.2.3", "-m", "Baseline")
         self.git("remote", "add", "origin", "https://github.com/" + REPOSITORY + ".git")
+        self.remote_branch = self.git("rev-parse", "HEAD")
         self.calls = []
         self.api_calls = []
         self.existing = None
@@ -122,6 +123,9 @@ class ReleaseTests(unittest.TestCase):
             self.assertIn("--atomic", arguments)
             self.assertIn("refs/tags/" + self.current_tag(), arguments)
             return None
+        if arguments[:2] == ["git", "ls-remote"]:
+            self.assertEqual(arguments[2:], ["--refs", "origin", "refs/heads/main"])
+            return self.remote_branch + "\trefs/heads/main"
         if arguments[:2] == ["gh", "release"]:
             self.assertEqual(env["GH_TOKEN"], "offline-github-token")
             if self.failure == arguments[2]:
@@ -141,7 +145,8 @@ class ReleaseTests(unittest.TestCase):
         if arguments[:3] == ["gh", "auth", "token"]:
             raise release.ReleaseError("injected missing local authentication")
         if arguments[0] == "git":
-            self.assertIn(arguments[1], {"remote", "rev-parse", "status", "branch", "archive"})
+            self.assertIn(arguments[1], {"remote", "rev-parse", "status", "branch", "archive",
+                                         "check-ref-format", "cat-file"})
         else:
             self.assertEqual(arguments[:2], ["bash", "scripts/bump_version.sh"])
             self.assertTrue("--check" in arguments or "--local-only" in arguments)
@@ -280,6 +285,15 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(self.stages(), ["validate", "package", "push"])
         self.assertEqual(self.api_calls, [])
 
+    def test_explicit_source_branch_is_published_from_detached_checkout(self):
+        sha = self.prepare()
+        self.git("checkout", "-q", "--detach", sha)
+        result, message = self.invoke("--tag", "v1.2.4", "--branch", "main")
+        self.assertEqual(result, 0, message)
+        push = next(command for command in self.calls if command[:2] == ["git", "push"])
+        self.assertIn(sha + ":refs/heads/main", push)
+        self.assertEqual(self.git("branch", "--show-current"), "")
+
     def test_draft_resume_uploads_before_publish_and_failed_upload_never_announces(self):
         self.prepare()
         self.existing, self.failure = "draft", "upload"
@@ -408,6 +422,173 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn("Try /qt tip.", body)
         self.assertIn("/tree/" + sha, body)
         self.assertIn("GPL-3.0-only", body)
+
+
+class RemoteBranchPublicationTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="questtogether-remote-release-")
+        self.addCleanup(temporary.cleanup)
+        self.parent = Path(temporary.name)
+        self.root = self.parent / "release checkout"
+        self.remote = self.parent / "origin.git"
+        self.worker = self.parent / "continuing work"
+        environment = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+        environment.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull,
+                           GIT_ALLOW_PROTOCOL="file", GIT_TERMINAL_PROMPT="0",
+                           GIT_AUTHOR_NAME="Offline test", GIT_AUTHOR_EMAIL="test@example.invalid",
+                           GIT_COMMITTER_NAME="Offline test", GIT_COMMITTER_EMAIL="test@example.invalid")
+        patcher = patch.dict(os.environ, environment, clear=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.root.mkdir()
+        self.git(self.root, "init", "-q", "-b", "main")
+        self.commit(self.root, "baseline")
+        self.baseline = self.git(self.root, "rev-parse", "HEAD")
+        self.git(self.parent, "init", "-q", "--bare", str(self.remote))
+        self.git(self.root, "remote", "add", "origin", str(self.remote))
+        self.git(self.root, "push", "-q", "origin", "main")
+        self.git(self.parent, "clone", "-q", "-b", "main", str(self.remote), str(self.worker))
+        self.commit(self.root, "release")
+        self.sha = self.git(self.root, "rev-parse", "HEAD")
+        self.git(self.root, "tag", "-a", "v1.2.4", "-m", "Release")
+        self.git(self.root, "checkout", "-q", "--detach", self.sha)
+        self.calls = []
+
+    def git(self, root, *args):
+        return REAL_RUN(root, ["git", "-c", "commit.gpgsign=false", "-c",
+                              "core.hooksPath=" + os.devnull, *args], capture=True)
+
+    def commit(self, root, value):
+        (root / "work.txt").write_text(value)
+        self.git(root, "add", "work.txt")
+        self.git(root, "commit", "-qm", value)
+        return self.git(root, "rev-parse", "HEAD")
+
+    def advance_remote(self, *, diverge=False):
+        if not diverge:
+            self.git(self.worker, "fetch", "-q", "--no-tags", str(self.root), self.sha)
+            self.git(self.worker, "reset", "-q", "--hard", self.sha)
+        sha = self.commit(self.worker, "continued work")
+        self.git(self.worker, "push", "-q", "origin", "main")
+        return sha
+
+    def publish(self, before_push=None, branch="main"):
+        def execute(root, arguments, *, capture=False, env=None):
+            self.calls.append(list(arguments))
+            if arguments[:2] == ["git", "push"] and before_push:
+                before_push()
+            result = REAL_RUN(root, arguments, capture=True, env=env)
+            return result if capture else None
+
+        with patch.object(release, "run", side_effect=execute), contextlib.redirect_stdout(io.StringIO()):
+            release.push_release_refs(self.root, "v1.2.4", self.sha, branch, dict(os.environ))
+
+    def remote_ref(self, ref):
+        return self.git(self.remote, "rev-parse", "--verify", ref)
+
+    def pushes(self):
+        return [command for command in self.calls if command[:2] == ["git", "push"]]
+
+    def assert_tag_absent(self):
+        self.assertEqual(self.git(self.remote, "tag", "--list", "v1.2.4"), "")
+
+    def test_ancestor_branch_and_tag_are_published_atomically_from_detached_checkout(self):
+        self.publish()
+        self.assertEqual(self.remote_ref("main"), self.sha)
+        self.assertEqual(self.remote_ref("refs/tags/v1.2.4^{commit}"), self.sha)
+        self.assertEqual(self.pushes(), [["git", "push", "--atomic", "origin",
+                                         self.sha + ":refs/heads/main", "refs/tags/v1.2.4"]])
+        self.assertEqual(self.git(self.root, "branch", "--show-current"), "")
+
+    def test_newer_remote_commit_is_fetched_exactly_and_preserved_while_tag_is_published(self):
+        newer = self.advance_remote()
+        refs_before = self.git(self.root, "show-ref")
+        fetch_head = self.root / ".git/FETCH_HEAD"
+        fetch_head.write_text("preserve this fetch state\n")
+        self.publish()
+        self.assertEqual(self.remote_ref("main"), newer)
+        self.assertEqual(self.remote_ref("refs/tags/v1.2.4^{commit}"), self.sha)
+        self.assertEqual(self.git(self.root, "show-ref"), refs_before)
+        self.assertEqual(fetch_head.read_text(), "preserve this fetch state\n")
+        fetch = next(command for command in self.calls if command[:2] == ["git", "fetch"])
+        self.assertEqual(fetch[-1], newer)
+        self.assertIn("--no-write-fetch-head", fetch)
+        self.assertEqual(self.pushes(), [["git", "push", "--atomic", "origin", "refs/tags/v1.2.4"]])
+
+    def test_remote_at_release_commit_only_receives_tag(self):
+        self.git(self.root, "push", "-q", "origin", self.sha + ":refs/heads/main")
+        self.publish()
+        self.assertEqual(self.pushes(), [["git", "push", "--atomic", "origin", "refs/tags/v1.2.4"]])
+
+    def test_divergent_branch_stops_before_any_tag_push(self):
+        divergent = self.advance_remote(diverge=True)
+        with self.assertRaisesRegex(release.ReleaseError, "diverged.*Reconcile"):
+            self.publish()
+        self.assertEqual(self.remote_ref("main"), divergent)
+        self.assertEqual(self.pushes(), [])
+        self.assert_tag_absent()
+
+    def test_unrelated_branch_stops_before_any_tag_push(self):
+        self.git(self.worker, "checkout", "-q", "--orphan", "unrelated")
+        unrelated = self.commit(self.worker, "unrelated history")
+        self.git(self.worker, "push", "-q", "origin", "unrelated")
+        with self.assertRaisesRegex(release.ReleaseError, "diverged"):
+            self.publish(branch="unrelated")
+        self.assertEqual(self.remote_ref("unrelated"), unrelated)
+        self.assertEqual(self.pushes(), [])
+        self.assert_tag_absent()
+
+    def test_racing_descendant_retries_once_as_tag_only_and_preserves_new_work(self):
+        advanced = []
+
+        def race():
+            if not advanced:
+                advanced.append(self.advance_remote())
+
+        self.publish(before_push=race)
+        self.assertEqual(self.remote_ref("main"), advanced[0])
+        self.assertEqual(self.remote_ref("refs/tags/v1.2.4^{commit}"), self.sha)
+        self.assertEqual(len(self.pushes()), 2)
+        self.assertEqual(self.pushes()[-1], ["git", "push", "--atomic", "origin", "refs/tags/v1.2.4"])
+
+    def test_racing_divergence_rejects_atomic_push_without_partial_tag(self):
+        advanced = []
+
+        def race():
+            advanced.append(self.advance_remote(diverge=True))
+
+        with self.assertRaisesRegex(release.ReleaseError, "diverged"):
+            self.publish(before_push=race)
+        self.assertEqual(self.remote_ref("main"), advanced[0])
+        self.assertEqual(len(self.pushes()), 1)
+        self.assert_tag_absent()
+
+    def test_conflicting_immutable_tag_rejects_branch_and_tag_together(self):
+        self.git(self.worker, "tag", "v1.2.4")
+        self.git(self.worker, "push", "-q", "origin", "refs/tags/v1.2.4")
+        with self.assertRaises(release.ReleaseError):
+            self.publish()
+        self.assertEqual(self.remote_ref("main"), self.baseline)
+        self.assertEqual(self.remote_ref("refs/tags/v1.2.4^{commit}"), self.baseline)
+        self.assertEqual(len(self.pushes()), 1)
+
+    def test_missing_branch_is_created_with_tag(self):
+        self.publish(branch="new-release-branch")
+        self.assertEqual(self.remote_ref("new-release-branch"), self.sha)
+        self.assertEqual(self.remote_ref("refs/tags/v1.2.4^{commit}"), self.sha)
+        self.assertEqual(self.remote_ref("main"), self.baseline)
+
+    def test_detached_source_without_branch_only_publishes_tag(self):
+        self.publish(branch="")
+        self.assertEqual(self.remote_ref("main"), self.baseline)
+        self.assertEqual(self.remote_ref("refs/tags/v1.2.4^{commit}"), self.sha)
+        self.assertFalse(any(command[1] in {"ls-remote", "fetch"} for command in self.calls))
+
+
+def load_tests(loader, tests, pattern):
+    import test_deploy
+    tests.addTests(loader.loadTestsFromModule(test_deploy))
+    return tests
 
 
 if __name__ == "__main__":

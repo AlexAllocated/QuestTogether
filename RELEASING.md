@@ -232,8 +232,8 @@ does not automatically stage or commit unrelated work.
 First run a local preflight, for example:
 
 ```sh
-python3 scripts/release.py --bump minor --check
-python3 scripts/release.py --bump patch --channel beta --check
+python3 scripts/deploy.py --bump minor --check
+python3 scripts/deploy.py --bump patch --channel beta --check
 ```
 
 `--check` validates the current authored/generated notes against the exact
@@ -244,7 +244,7 @@ does not count as new content. Reviewers still judge whether the notes actually
 describe the release.
 
 If the release owner explicitly requests identical notes, use the narrow
-exception `python3 scripts/release.py --bump patch --reuse-notes --check`. Without
+exception `python3 scripts/deploy.py --bump patch --reuse-notes --check`. Without
 `--check`, the ordinary authorized publication workflow records the planned
 version and its exact published baseline in `release_notes_reuse.json`:
 
@@ -262,52 +262,94 @@ uses the normal workflow. This tooling metadata is not included in addon ZIPs.
 After the release has been explicitly authorized, omit `--check`:
 
 ```sh
-python3 scripts/release.py --bump minor
+python3 scripts/deploy.py --bump minor
 ```
 
-The local publisher performs these steps in order:
+The launcher prepares the release locally, starts a detached systemd user
+service, and returns a job ID and paths to its local status and log. Once it
+reports that the job has started, you can keep working in the source checkout
+or close the terminal. This requires a working systemd user manager. Keep the
+machine running and connected and the user session active; the service does not
+survive a reboot and does not retry failures automatically.
+
+The deployment performs these steps in order:
 
 1. Prepare the version commit and annotated tag locally, updating the TOCs,
    canonical note versions and generated release files together.
-2. Validate the exact tag in an isolated local checkout and record successful
-   validation for that commit.
+2. Copy the exact tagged commit into a separate checkout and run the local
+   publisher there. Validate the tag and record successful validation for
+   that commit. Later edits in the source checkout are not release inputs.
 3. Build and verify the deterministic installation ZIP, SHA-256 sidecar and
    corresponding source archive locally.
-4. Push the current branch and tag. The tag triggers the existing CurseForge
-   webhook; no polling, download inspection or extra CurseForge validation follows.
+4. Push the release commit and tag. Update the original release branch only
+   when it can advance to that commit. If the remote branch already contains
+   the release plus newer work, leave it ahead; divergent history stops the
+   deployment. The tag triggers the existing CurseForge webhook; no polling,
+   download inspection or extra CurseForge validation follows.
 5. Upload the prepared archives to a draft GitHub release, then publish it.
-6. Post the canonical notes to Discord from the same local process.
+6. Post the canonical notes to Discord from the same detached local job.
 
 Each step must succeed before the next starts. The publisher does not wait for
-GitHub Actions. Keep the local process running until it reports completion.
+GitHub Actions. A successful kickoff means the job started; only a completed
+job means GitHub publication and Discord announcements succeeded.
+The job also attempts a desktop notification on success or failure; the saved
+status and log remain available if desktop notifications are unavailable.
 It performs publication; do not run it merely to generate notes or preview a
 version. Existing alpha/beta sequencing continues to use stable version tags as
 its base. The lower-level `bump_version.sh --local-only` helper prepares a local
-commit and tag; use `release.py` for the complete release sequence.
+commit and tag. `deploy.py` is the usual entrypoint; `release.py` remains the
+foreground worker for the complete release sequence.
 
 Before publication, authenticate `gh` locally or provide `GH_TOKEN`, and make
 `DISCORD_BOT_TOKEN` available in the local environment. The publisher cannot read
 back the old GitHub Actions secret. Keep credentials out of command arguments,
 tracked files and logs.
 
-If a step fails after the local tag is prepared, fix its cause and resume that
-exact release without another version bump:
+Inspect the latest local deployment at any time, or pass the printed job ID:
 
 ```sh
-python3 scripts/release.py --tag vX.Y.Z
+python3 scripts/deploy.py --status
+python3 scripts/deploy.py --status <job-id>
 ```
 
-Resume reuses successful local validation only when both the release commit and
+Job files live under `.local/deployments/<job-id>/`, including `state.json`,
+`deploy.log`, and the isolated `checkout/`. Keep that directory while the job
+is running or may need to be resumed. Status inspection reads only local state
+and the local service; it does not poll GitHub Actions or CurseForge. To watch
+the saved log, use `tail -f .local/deployments/<job-id>/deploy.log`.
+
+If a step fails, fix its cause and resume the same job with publication
+credentials available in the environment:
+
+```sh
+python3 scripts/deploy.py --resume
+python3 scripts/deploy.py --resume <job-id>
+```
+
+Resume uses the saved release checkout and does not create another version bump
+or include later source changes. An already active job cannot be started twice.
+To adopt a local tag that was prepared before starting a deployment:
+
+```sh
+python3 scripts/deploy.py --tag vX.Y.Z
+```
+
+The launcher can import an existing success receipt from
+`.local/releases/<tag>/validation.json`. Use `--receipt <path>` with `--tag` or
+`--resume` when the receipt was saved elsewhere; an explicitly supplied receipt
+must match or the deployment stops.
+
+Successful local validation is reused only when both the release commit and
 validator fingerprint match. Already published Discord parts are skipped. An
-interrupted local process is resumed explicitly; no remote workflow continues it.
+interrupted local job is resumed explicitly; no remote workflow continues it.
 
 ### Local validation environment
 
 The validator needs Git, Bash, OpenSSL, Lua 5.1, Lua 5.2 and Python with
 `services/vip/requirements.txt` installed. Set `LUA51` and `LUA52`, or pass
 `--lua51` and `--lua52`, if the interpreters are not named `lua5.1` and `lua5.2`.
-Use `--python` for a prepared Python environment; `release.py` forwards these
-options to the validator. Dependencies must already be installed: validation
+Use `--python` for a prepared Python environment; `deploy.py` passes these options
+through the publisher to the validator. Dependencies must already be installed: validation
 does not install packages or contact the network.
 
 To validate an existing tag without publishing:
@@ -347,7 +389,7 @@ as well as the version.
 
 Discord publication is the final local release step, after the exact tagged
 commit passes local validation and its versioned ZIP is published on GitHub.
-There is no Actions test dependency or background announcement workflow. The
+There is no Actions test dependency or separate remote announcement workflow. The
 publisher verifies the public release tag and ZIP, including the archive's
 embedded notes, before posting to QuestTogether's `#changelog` and localized
 channels as the existing **Bumblebee** bot.

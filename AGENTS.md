@@ -27,8 +27,11 @@
   to older tag wording.
 - Local automated authoring sends eligible code evidence, facts and locale
   terminology to Codex and uses the saved ChatGPT subscription. Deterministic
-  context export, finalization and validation are offline. Run validation,
-  packaging and publication locally in sequence through `scripts/release.py`;
+  context export, finalization and validation are offline. Start an authorized
+  deployment with `scripts/deploy.py`; it runs validation, packaging and
+  publication locally in sequence through `scripts/release.py` in a detached
+  user service and an isolated checkout, so work can continue in the source
+  checkout. Use the deployment's local status/logs and explicit resume command;
   do not add GitHub Actions workflows or wait for remote validation. The local
   `scripts/validate_release.py` checks the exact release tag before publication.
   The tag push triggers the existing CurseForge webhook;
