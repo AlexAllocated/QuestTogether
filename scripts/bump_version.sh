@@ -2,9 +2,10 @@
 set -euo pipefail
 
 usage() {
-	echo "Usage: $0 <major|minor|patch> [stable|beta|alpha] [--check] [--reuse-notes]"
+	echo "Usage: $0 <major|minor|patch> [stable|beta|alpha] [--check] [--reuse-notes] [--local-only]"
 	echo "--check validates the planned release without writes, network, commits, or tags."
 	echo "--reuse-notes explicitly repeats the current published notes for this release only."
+	echo "--local-only prepares the release commit and tag without contacting or pushing a remote."
 	exit 1
 }
 
@@ -28,10 +29,12 @@ if [[ "$release_channel" != "stable" && "$release_channel" != "beta" && "$releas
 fi
 check_only=false
 reuse_notes=false
+local_only=false
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		--check) [[ "$check_only" == false ]] || usage; check_only=true ;;
 		--reuse-notes) [[ "$reuse_notes" == false ]] || usage; reuse_notes=true ;;
+		--local-only) [[ "$local_only" == false ]] || usage; local_only=true ;;
 		*) usage ;;
 	esac
 	shift
@@ -211,10 +214,12 @@ if [[ "$check_only" == true ]]; then
 	exit 0
 fi
 
-remote_tag="$(git ls-remote --tags origin "refs/tags/${new_tag}")"
-if [[ -n "$remote_tag" ]]; then
-	echo "Error: remote tag '${new_tag}' already exists on origin."
-	exit 1
+if [[ "$local_only" == false ]]; then
+	remote_tag="$(git ls-remote --tags origin "refs/tags/${new_tag}")"
+	if [[ -n "$remote_tag" ]]; then
+		echo "Error: remote tag '${new_tag}' already exists on origin."
+		exit 1
+	fi
 fi
 
 toc_files=("$toc_file")
@@ -252,6 +257,11 @@ fi
 git commit -m "Bump version to ${new_version}" -- "${release_files[@]}"
 
 release_commit="$(git rev-parse --short HEAD)"
+if [[ "$local_only" == true ]]; then
+	git tag -a "${new_tag}" -m "Release ${new_tag}" HEAD
+	echo "Prepared local release ${new_tag} at ${release_commit}; no remote was contacted."
+	exit 0
+fi
 echo "Pushing commit ${release_commit} to origin/${current_branch}..."
 git push origin "${current_branch}"
 

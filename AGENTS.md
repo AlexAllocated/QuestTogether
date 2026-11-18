@@ -7,7 +7,8 @@
   subscription session. The automated workflow uses `codex exec` and defaults to
   `gpt-6.1-sol`. It must verify saved ChatGPT login authentication and fail instead
   of falling back to API-key authentication. Do not call a paid model API, use
-  API credentials, or copy login credentials into CI for release-note preparation.
+  API credentials, or copy login credentials to a remote runner for release-note
+  preparation.
 - Read the release's actual code and commit evidence. Establish the approved
   player-facing facts, prerequisites, defaults and limits first. Write each
   language independently from those facts and the relevant localized UI labels;
@@ -26,10 +27,13 @@
   to older tag wording.
 - Local automated authoring sends eligible code evidence, facts and locale
   terminology to Codex and uses the saved ChatGPT subscription. Deterministic
-  context export, finalization and validation are offline. The GitHub Actions
-  preparation workflow exports evidence only, with no model credentials or model
-  calls. Publishing continues to consume reviewed canonical notes; authoring
-  notes alone does not authorize a release.
+  context export, finalization and validation are offline. Run validation,
+  packaging and publication locally in sequence through `scripts/release.py`;
+  do not add GitHub Actions workflows or wait for remote validation. The local
+  `scripts/validate_release.py` checks the exact release tag before publication.
+  The tag push triggers the existing CurseForge webhook;
+  do not poll CurseForge or validate its generated content. Publishing consumes
+  reviewed canonical notes; authoring notes alone does not authorize a release.
 
 Use the active session for UI catalog wording as well. The optional UI translation
 API utility is separate paid tooling and is not part of the release-note workflow.

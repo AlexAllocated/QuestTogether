@@ -54,7 +54,7 @@ publish or post announcements. Eligible code evidence, facts and locale
 terminology are sent to Codex for these model passes. Only eligible addon
 sources and documentation enter the evidence; private files and credentials are
 excluded. Login credentials stay in the local Codex configuration and must not
-be copied into GitHub Actions. Including local edits in evidence does not include
+be copied to a remote runner. Including local edits in evidence does not include
 them in a release: commit implementation changes before running the release script.
 
 Manual authoring in an active Codex subscription session remains supported.
@@ -111,13 +111,11 @@ not fluency or complete semantic equivalence. Complete the usual Lua,
 client-profile, library and live-client validation appropriate to the change,
 and commit implementation changes and reviewed notes through the normal process.
 
-**Actions → Prepare release notes → Run workflow** on `main` is an optional
-way to obtain the same context as a downloadable artifact. It exports evidence
-only, with read-only repository permissions and no model credentials. Use the
-local command above for automated authoring, or continue writing in an active
-Codex session after downloading the artifact. The workflow
-does not author notes, push a branch or open a PR. CI and release publishing
-validate or consume reviewed canonical notes without generating new prose.
+Context export, note preparation, validation and publication run locally.
+There are no GitHub Actions workflows to dispatch or wait for. Use the local
+commands above for authoring or export the context for the active Codex session.
+Release validation and publishing consume reviewed canonical notes without
+generating new prose.
 The old API-backed note-generation commands, including both forms of
 `translate_locales.py --notes`, are retired; use the subscription authoring path.
 
@@ -204,9 +202,9 @@ check and does not replace patch-note translation validation.
 
 Use a full Git checkout with the published tags available. A shallow checkout
 is rejected for release-history checks; fetch the missing history and tags
-instead of disabling validation. CI uses `fetch-depth: 0`.
+instead of disabling validation.
 
-Commit all implementation, test, documentation and workflow changes first.
+Commit all implementation, test, documentation and tooling changes first.
 Both preflight and publication reject staged, unstaged or unignored untracked
 changes outside this explicit allowlist:
 
@@ -234,8 +232,8 @@ does not automatically stage or commit unrelated work.
 First run a local preflight, for example:
 
 ```sh
-bash scripts/bump_version.sh minor --check
-bash scripts/bump_version.sh patch beta --check
+python3 scripts/release.py --bump minor --check
+python3 scripts/release.py --bump patch --channel beta --check
 ```
 
 `--check` validates the current authored/generated notes against the exact
@@ -246,7 +244,7 @@ does not count as new content. Reviewers still judge whether the notes actually
 describe the release.
 
 If the release owner explicitly requests identical notes, use the narrow
-exception `bash scripts/bump_version.sh patch --reuse-notes --check`. Without
+exception `python3 scripts/release.py --bump patch --reuse-notes --check`. Without
 `--check`, the ordinary authorized publication workflow records the planned
 version and its exact published baseline in `release_notes_reuse.json`:
 
@@ -257,28 +255,79 @@ version and its exact published baseline in `release_notes_reuse.json`:
 Reuse requires identical English and all enabled translated content, including
 tips and illustrations, excluding only the version. The baseline must be the
 reachable published `v<current TOC version>` tag. Check-only never writes this
-acknowledgement. The tracked record lets CI and Discord validate that one release
-normally; it does not waive freshness for subsequent releases. New prose still
+acknowledgement. The tracked record lets local validation and Discord validate
+that one release normally; it does not waive freshness for subsequent releases. New prose still
 uses the normal workflow. This tooling metadata is not included in addon ZIPs.
 
 After the release has been explicitly authorized, omit `--check`:
 
 ```sh
-bash scripts/bump_version.sh minor
+python3 scripts/release.py --bump minor
 ```
 
-The release path repeats the same checks **before** remote access or mutation,
-checks for an existing remote tag, updates the TOC and every notes version,
-regenerates and rechecks both Lua files, then commits the release files and pushes
-the commit and annotated tag. The script performs publication; do not run it
-merely to generate notes or preview a version. Existing alpha/beta sequencing
-continues to use stable version tags as its base.
+The local publisher performs these steps in order:
+
+1. Prepare the version commit and annotated tag locally, updating the TOCs,
+   canonical note versions and generated release files together.
+2. Validate the exact tag in an isolated local checkout and record successful
+   validation for that commit.
+3. Build and verify the deterministic installation ZIP, SHA-256 sidecar and
+   corresponding source archive locally.
+4. Push the current branch and tag. The tag triggers the existing CurseForge
+   webhook; no polling, download inspection or extra CurseForge validation follows.
+5. Upload the prepared archives to a draft GitHub release, then publish it.
+6. Post the canonical notes to Discord from the same local process.
+
+Each step must succeed before the next starts. The publisher does not wait for
+GitHub Actions. Keep the local process running until it reports completion.
+It performs publication; do not run it merely to generate notes or preview a
+version. Existing alpha/beta sequencing continues to use stable version tags as
+its base. The lower-level `bump_version.sh --local-only` helper prepares a local
+commit and tag; use `release.py` for the complete release sequence.
+
+Before publication, authenticate `gh` locally or provide `GH_TOKEN`, and make
+`DISCORD_BOT_TOKEN` available in the local environment. The publisher cannot read
+back the old GitHub Actions secret. Keep credentials out of command arguments,
+tracked files and logs.
+
+If a step fails after the local tag is prepared, fix its cause and resume that
+exact release without another version bump:
+
+```sh
+python3 scripts/release.py --tag vX.Y.Z
+```
+
+Resume reuses successful local validation only when both the release commit and
+validator fingerprint match. Already published Discord parts are skipped. An
+interrupted local process is resumed explicitly; no remote workflow continues it.
+
+### Local validation environment
+
+The validator needs Git, Bash, OpenSSL, Lua 5.1, Lua 5.2 and Python with
+`services/vip/requirements.txt` installed. Set `LUA51` and `LUA52`, or pass
+`--lua51` and `--lua52`, if the interpreters are not named `lua5.1` and `lua5.2`.
+Use `--python` for a prepared Python environment; `release.py` forwards these
+options to the validator. Dependencies must already be installed: validation
+does not install packages or contact the network.
+
+To validate an existing tag without publishing:
+
+```sh
+python3 scripts/validate_release.py --ref vX.Y.Z --receipt /tmp/questtogether-validation.json
+```
+
+The validator creates a temporary local clone at the exact ref, runs the Python,
+Lua, locale, client-profile, package and pinned-library checks sequentially, and
+removes the temporary clone when finished. It streams logs to the terminal and
+writes the success receipt outside tracked sources only after all checks pass.
+Failure removes a stale receipt at that path. This automated suite supplements
+the live-client checks appropriate to the change; it does not run a WoW client.
 
 ## Baseline enforcement
 
-CI runs `--check --release-history`, comparing notes to the highest earlier
-version tag reachable from `HEAD` (including alpha/beta versions). The current
-version's tag is excluded so tag-push builds compare against the prior release,
+Local release validation runs `--check --release-history`, comparing notes to the
+highest earlier version tag reachable from `HEAD` (including alpha/beta versions). The current
+version's tag is excluded so release builds compare against the prior release,
 not themselves. The release script uses the explicit current-version tag before
 it bumps the version, so content authored in earlier feature commits still
 counts. Neither path relies on a shallow checkout's incidental tag list.
@@ -296,61 +345,60 @@ as well as the version.
 
 ## Discord announcements
 
-**Discord Changelog** runs when a GitHub release is published. It checks out the
-exact tag and uses that tag's canonical notes, verifies the generated Lua and
-release history, and waits for the versioned release ZIP and successful Tests
-workflow for the same commit. It checks the ZIP's embedded notes before posting
-them to QuestTogether's `#changelog` as the existing **Bumblebee** bot. It does
-not regenerate or summarize notes at announcement time. The welcome window and
-Discord therefore share the same welcome and bullet points, including patch and
-prerelease notes; automatic window opening still follows the major/minor policy.
+Discord publication is the final local release step, after the exact tagged
+commit passes local validation and its versioned ZIP is published on GitHub.
+There is no Actions test dependency or background announcement workflow. The
+publisher verifies the public release tag and ZIP, including the archive's
+embedded notes, before posting to QuestTogether's `#changelog` and localized
+channels as the existing **Bumblebee** bot.
+
+The exact tag supplies canonical notes, generated Lua, release history and
+screenshots. The publisher does not regenerate or summarize notes at announcement
+time. The welcome window and Discord therefore share the same welcome and bullet
+points, including patch and prerelease notes; automatic window opening still
+follows the major/minor policy. A missing or invalid download fails visibly.
 
 The bot must belong to the QuestTogether server and have View Channels, Send
 Messages, Embed Links and Read Message History in `#changelog`. The script
 verifies its identity, guild, channel and effective permissions before posting.
-GitHub Actions configuration:
+Local publication credentials and destinations:
 
-- `DISCORD_BOT_TOKEN` secret: the existing Bumblebee bot credential.
-- `DISCORD_CHANGELOG_CHANNEL_ID` variable: `1553981217039187978`.
+- `DISCORD_BOT_TOKEN`: the existing Bumblebee bot credential in the local environment.
+- `discord_channels.json`: checked-in English and localized destination IDs.
+- `DISCORD_CHANGELOG_CHANNEL_ID`: optional English-channel override; expected ID
+  `1553981217039187978`.
 
 Expected guild is `1553951084941156502`; expected bot is `890285739940671548`.
-The bot secret is stored in GitHub Actions, not in the addon or workflow YAML.
-It was provisioned from Bumblebee's existing configuration; rotating that shared
-bot credential also requires updating QuestTogether's Actions secret. No model
-API secret is used by the current release-note workflows.
+Keep the bot credential outside the repository and terminal output. It is shared
+with Bumblebee's existing configuration, so credential rotation must also update
+the local publisher's environment. No model API secret is used for release notes.
 
 Preview the current notes locally without network access:
 
 ```sh
-python3 scripts/discord_changelog.py --dry-run
+python3 scripts/discord_changelog.py --dry-run --all-locales
 ```
 
-For a read-only connection check with the bot token and channel variable in the
-environment, run `python3 scripts/discord_changelog.py --check-access`. To retry
-an actual published announcement, manually run **Discord Changelog**, select its
-tag, and disable the default dry-run option. Long notes are split at bullet
+For a read-only connection check with the bot token in the environment, run
+`python3 scripts/discord_changelog.py --check-access --all-locales`. Long notes are split at bullet
 boundaries without dropping text. Bot-authored part markers skip already posted
 parts, including after a partial failure, and a stable nonce protects short
 transport retries. Mentions are disabled. Conflicting notes, a wrong destination,
 missing permissions or an exhausted history scan fail instead of blindly posting.
 The implementation follows [Discord's message limits and nonce contract](https://docs.discord.com/developers/resources/message).
 
-Publishing a release with a workflow's default `GITHUB_TOKEN` does not trigger
-another release-event workflow ([GitHub's event rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)). If packaging is later moved into Actions, invoke
-the changelog workflow explicitly from that pipeline or use the normal authorized
-release publisher. The current maintainer-driven release publication emits the
-release event. Do not send announcements for uncommitted work or a tag whose
-download/validation is not ready.
+Do not send announcements for uncommitted work or a tag whose download or local
+validation is not ready. The tag push invokes CurseForge's existing packaging
+webhook; release publication does not poll CurseForge or inspect its output.
 
 ## Synchronized repository changelogs
 
 Do not hand-edit `CHANGELOG.md` or `changelogs/<locale>.md`. They are generated
 by `python3 scripts/check_release_notes.py --write` from the exact welcome,
 section titles, items, and optional tips used by Discord. Update the canonical JSON and all
-translations first. The check mode, release preflight, CI, and Discord posting
+translations first. The check mode, release preflight, local validation, and Discord posting
 reject missing or stale Markdown. Commit these generated files alongside the
-reviewed canonical notes. The optional preparation workflow exports authoring
-context only.
+reviewed canonical notes. Local context export prepares authoring evidence only.
 
 `changelogs/history.json` preserves the canonical notes from published tags.
 The version-bump step archives the previous version from its reachable Git tag,
@@ -384,7 +432,7 @@ reposted when historical translations are backfilled.
 version bump records the new version's UTC date once and archives the published
 previous notes. If publication moves to another day, update that date before
 publishing and regenerate with `python3 scripts/check_release_notes.py --write`.
-CI rejects missing dates, incomplete historical translations, duplicate versions,
+Local validation rejects missing dates, incomplete historical translations, duplicate versions,
 and stale generated history. Include `ReleaseNotesHistory.lua` and the dates file
 in release commits alongside the existing notes and changelogs.
 
@@ -470,6 +518,6 @@ the deterministic manifest, so their release page must explicitly link the exact
 source commit and archive as described in `SOURCE.md`. These checks apply to the
 GPL-3.0-only releases beginning with 10.0.0, not to historical MIT versions.
 
-CI runs the package tests, builds the exact tested commit, and uploads
-`QuestTogether-validated-package`. Use that artifact or the same local command;
-do not maintain a release-specific file-copy script.
+The local release process runs the package tests and builds the exact tested
+commit with this packager before publication. It uploads that verified ZIP to
+the GitHub release; do not maintain a release-specific file-copy script.

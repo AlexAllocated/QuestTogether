@@ -681,16 +681,9 @@ class ArchiveTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
-    def test_exact_tag_checkout_and_concurrency_keep_different_releases_independent(self):
-        workflow = (Path(__file__).resolve().parents[1] / ".github/workflows/discord-changelog.yml").read_text()
-        self.assertIn("types: [published]", workflow)
-        self.assertIn("default: true", workflow)
-        self.assertIn("ref: refs/tags/${{ github.event.release.tag_name || inputs.tag }}", workflow)
-        self.assertIn("group: discord-changelog-${{ github.repository }}-${{ github.event.release.tag_name || inputs.tag }}", workflow)
-        self.assertIn("persist-credentials: false", workflow)
-        self.assertIn("fetch-depth: 0", workflow)
-        self.assertIn('scripts/discord_changelog.py --post --tag "$RELEASE_TAG"', workflow)
-        self.assertEqual(workflow.count("--all-locales"), 2)
+    def test_release_validation_and_publication_do_not_run_in_github_actions(self):
+        workflows = Path(__file__).resolve().parents[1] / ".github/workflows"
+        self.assertEqual(sorted(workflows.glob("*.yml")) + sorted(workflows.glob("*.yaml")), [])
 
 
 class LocalizationTests(unittest.TestCase):
@@ -806,29 +799,28 @@ class LocalizationTests(unittest.TestCase):
 
 
 class ReleaseTests(unittest.TestCase):
-    def test_public_published_asset_and_exact_successful_workflow_are_required(self):
+    def test_public_published_asset_and_exact_tag_are_required(self):
         changelog.verify_release(GitHub(), REPO, TAG, SHA)
         cases = [lambda g: g.repo.update(private=True), lambda g: g.ref["object"].update(sha="c" * 40),
                  lambda g: g.release.update(draft=True), lambda g: g.release.update(published_at=None),
                  lambda g: g.release.update(html_url="https://example.invalid/release"),
                  lambda g: g.release.update(assets=[]), lambda g: g.release["assets"][0].update(state="new"),
                  lambda g: g.release["assets"][0].update(name="QuestTogether-v0.0.1.zip"),
-                 lambda g: g.release["assets"][0].update(size=0), lambda g: g.runs[0].update(head_sha="c" * 40),
-                 lambda g: g.runs[0].update(event="pull_request"), lambda g: g.runs[0].update(path="other.yml"),
-                 lambda g: g.runs[0].update(status="queued"), lambda g: g.runs[0].update(conclusion="failure")]
+                 lambda g: g.release["assets"][0].update(size=0)]
         for mutation in cases:
             api = GitHub()
             mutation(api)
             with self.assertRaises(changelog.ChangelogError):
                 changelog.verify_release(api, REPO, TAG, SHA)
 
-    def test_annotated_tags_and_newer_failed_run_do_not_reuse_old_success(self):
+    def test_annotated_tags_do_not_depend_on_retired_github_actions(self):
         api = GitHub()
         api.ref["object"] = {"sha": "b" * 40, "type": "tag"}
         changelog.verify_release(api, REPO, TAG, SHA)
-        api.runs.append(dict(api.runs[0], id=2, conclusion="failure"))
-        with self.assertRaisesRegex(changelog.ChangelogError, "did not succeed"):
+        for runs in ([], [dict(api.runs[0], status="queued")], [dict(api.runs[0], conclusion="failure")]):
+            api.runs = runs
             changelog.verify_release(api, REPO, TAG, SHA)
+        self.assertFalse(any("/actions/" in path for path, _ in api.calls))
 
     def test_readiness_wait_is_bounded_and_can_recover(self):
         now, sleeps = [0], []

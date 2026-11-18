@@ -2,8 +2,9 @@
 """Post canonical QuestTogether release notes with the Bumblebee Discord bot.
 
 Default/--dry-run is offline. --check-access only reads Discord. --post requires
-a clean, exact release-tag checkout and a public release with an uploaded ZIP
-and successful Tests workflow. Credentials are read only from named env vars.
+a clean, exact release-tag checkout and a public release with an uploaded ZIP.
+The local release command performs validation before pushing that tag.
+Credentials are read only from named env vars.
 """
 
 import argparse
@@ -52,7 +53,6 @@ LOCALE_CHANNEL_NAMES = {
     "zhTW": "更新日誌",
 }
 DEFAULT_REPOSITORY = "AlexAllocated/QuestTogether"
-TEST_WORKFLOW = "test.yml"
 DISCORD_API = "https://discord.com/api/v10"
 GITHUB_API = "https://api.github.com"
 MAX_HISTORY_PAGES = 20
@@ -69,6 +69,12 @@ REQUIRED_PERMISSIONS = VIEW_CHANNEL | SEND_MESSAGES | EMBED_LINKS | ATTACH_FILES
 
 class ChangelogError(ValueError):
     pass
+
+
+class APIHTTPError(ChangelogError):
+    def __init__(self, method, status):
+        self.status = status
+        super().__init__("API " + method + " failed with HTTP " + str(status))
 
 
 class ReleaseNotReady(ChangelogError):
@@ -153,7 +159,7 @@ class API:
                 return data
             if status != 429 and not 500 <= status < 600:
                 # Do not echo response bodies or request headers containing secrets.
-                raise ChangelogError("API " + method + " failed with HTTP " + str(status))
+                raise APIHTTPError(method, status)
             if status >= 500 and method != "GET" and not (payload and payload.get("enforce_nonce") and payload.get("nonce")):
                 raise ChangelogError("ambiguous API write failed; refusing an unsafe retry")
             if attempt == MAX_ATTEMPTS - 1:
@@ -654,19 +660,6 @@ def verify_release(api, repository, tag, sha):
         raise ChangelogError("release is not publicly published at the expected URL")
     version_key(tag.removeprefix("v"))
     release_archive(release, repository, tag)
-    runs = api.request(prefix + "/actions/workflows/" + TEST_WORKFLOW + "/runs?" + urllib.parse.urlencode(
-        {"head_sha": sha, "event": "push", "per_page": 100}))
-    eligible = [run for run in runs.get("workflow_runs", [])
-                if run.get("head_sha") == sha and run.get("event") == "push"
-                and run.get("path") == ".github/workflows/" + TEST_WORKFLOW
-                and run.get("head_repository", {}).get("full_name", "").casefold() == repository.casefold()]
-    if not eligible:
-        raise ReleaseNotReady("no push Tests workflow has run for the release commit")
-    latest = max(eligible, key=lambda run: run["id"])
-    if latest.get("status") != "completed":
-        raise ReleaseNotReady("Tests workflow is still running for the release commit")
-    if latest.get("conclusion") != "success":
-        raise ChangelogError("latest Tests workflow did not succeed for the release commit")
     return release
 
 
@@ -694,7 +687,7 @@ def main(argv=None):
     locales = parser.add_mutually_exclusive_group()
     locales.add_argument("--locale", default="enUS", choices=[*LOCALE_CHANNEL_NAMES])
     locales.add_argument("--all-locales", action="store_true", help="validate and post English plus all ten translations")
-    parser.add_argument("--wait-seconds", type=int, default=0, help="wait up to 600 seconds for the release ZIP/tests")
+    parser.add_argument("--wait-seconds", type=int, default=0, help="optional bounded wait for an uploaded release ZIP; default: no wait")
     args = parser.parse_args(argv)
     try:
         if not 0 <= args.wait_seconds <= 600:

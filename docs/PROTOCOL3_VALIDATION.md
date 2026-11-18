@@ -157,8 +157,8 @@ python3 scripts/bindings_smoke.py lua
 lua scripts/benchmark_mesh_hash.lua
 ```
 
-The complete CI command list, including locale and client-profile loops, is in
-`.github/workflows/test.yml`. Build this working tree without `--ref HEAD` until
+The complete local validation command list, including locale and client-profile
+loops, is in `scripts/validate_release.py`. Build this working tree without `--ref HEAD` until
 it is committed; the packager otherwise intentionally builds the old commit.
 
 ## Remaining release gate

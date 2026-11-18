@@ -97,7 +97,7 @@ excluding texture and atlas payloads. Add tests for newly encountered markup.
 
 Behavioral fixtures use an explicit English registration policy by default. For
 presentation coverage, register with `RegisterTest(name, callback, { locale =
-"client" })`; isolation preserves the client locale for these cases. The CI locale
+"client" })`; isolation preserves the client locale for these cases. The local validation locale
 matrix runs actual tooltip, notice, menu, settings-status, comparison/consent and
 notes renderers under each selected locale and prints the presentation-case count.
 New presentation paths need a client-locale case, not just English assertions.
@@ -171,9 +171,9 @@ python3 scripts/check_release_notes.py --check --release-history
 
 Finalization validates the brief, all languages and implementation context before
 replacing canonical JSON and computing source digests. Rendering generates the
-Lua and Markdown. Neither step contacts a model service. The optional Prepare
-release notes workflow exports an evidence artifact only; automated writing runs
-locally with the saved ChatGPT login. Do not copy login credentials into CI.
+Lua and Markdown. Neither step contacts a model service. Context export and
+automated writing both run locally, with writing using the saved ChatGPT login.
+Do not copy login credentials to a remote runner.
 Version bumps and publishing reuse the reviewed canonical files
 without model calls. Any English wording change invalidates every old patch-note
 source digest, so review all languages and finalize the complete set again.

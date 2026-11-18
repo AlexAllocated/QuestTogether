@@ -1075,7 +1075,7 @@ The production TOC excludes test definitions. `/qt test` loads the bundled optio
 starts. It shares QT's private pinned library through a namespace bridge. Every QA
 module reports completion, and the final marker checks the manifest's module count;
 a missing or failed middle file cannot yield an apparently successful partial suite.
-Version mismatch, loading errors and incomplete registration abort visibly. CI
+Version mismatch, loading errors and incomplete registration abort visibly. Local validation
 loads these same two manifests and separately checks normal startup contains no QA
 definitions, native load failures/continuation, one-time loading and both API forms.
 Packages include both sibling folders, with matched interface/version metadata and
@@ -1088,7 +1088,7 @@ Presented runs schedule one complete isolated case per frame through LibChev;
 fixtures and announcement suppression are restored before each frame returns.
 Explicitly marked `offline` stress, soak and expensive matrix cases remain in
 the full headless suite and are counted as skipped in live reports. Never yield
-inside a fixture or silently time out a case. CI exercises the real staggered
+inside a fixture or silently time out a case. Local validation exercises the real staggered
 controller in both orders with live-state updates between callbacks.
 Fixtures detach unknown runtime tables to `nil`, so component constructors own
 their shape; they must not turn initialized stores into empty placeholder tables.
@@ -1097,8 +1097,9 @@ WoW can reject division by zero: live numeric fixtures use supported nonfinite
 constants, while mandatory real NaN assertions remain outside the TOC.
 
 Run Lua 5.1 and 5.2 suites in both orders; settings construction, all locale and
-client profiles, crypto, localization, release-note and packaging checks are CI
-requirements. `scripts/check_architecture.py` protects key ownership boundaries;
+client profiles, crypto, localization, release-note and packaging checks are local
+release requirements. `scripts/validate_release.py` runs them sequentially before
+publication. `scripts/check_architecture.py` protects key ownership boundaries;
 behavioral tests cover cancellation, incomplete observations, replay, recovery
 and the protocol upgrade boundary. Do not replace those with only source-pattern tests.
 
@@ -1133,9 +1134,9 @@ wire sizes, contents and outcomes must not simply reuse the implementation being
 tested to compute their answers.
 
 `lua scripts/test.lua . locale` runs every case tagged `locale = "client"` in
-the selected `QT_TEST_LOCALE`. CI uses that subset for each additional locale;
+the selected `QT_TEST_LOCALE`. Local validation uses that subset for each additional locale;
 the full default and reverse runs already cover the fixtures that force English.
-Python-only validators run once in CI. Generated release-note Lua, bindings and
+Python-only validators run once. Generated release-note Lua, bindings and
 crypto checks still run under both interpreters because they execute Lua code.
 Avoid fixed test/catalog counts and exact UI geometry assertions unless those
 numbers are the product contract and the fixture actually models that behavior.
