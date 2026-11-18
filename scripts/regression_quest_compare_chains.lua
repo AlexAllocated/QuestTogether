@@ -186,7 +186,7 @@ end
 local function CheckBranchDepths(rows, graph, expected)
 	local step = 0
 	for _, row in ipairs(rows) do
-		if row.kind == "chainStep" then
+		if row.kind == "chainStep" or row.chainAnchor then
 			step = step + 1
 			Equal(row.questId, graph.order[step])
 			Equal(row.depth, expected[row.questId] or 0)
@@ -194,6 +194,117 @@ local function CheckBranchDepths(rows, graph, expected)
 	end
 	Equal(step, #graph.order)
 end
+
+QT:RegisterTest("chain expansion replaces its origin step with the ordinary quest and objective rows", function()
+	for _, grouped in ipairs({ false, true }) do
+		local a, session, own, friend = Fixture()
+		a.options.compareGroupByChain = grouped
+		own.entries[8], friend.entries[8] = Entry(8), Entry(8)
+		own.objectiveDetails = { [2] = { questId = 2, state = "ready", objectives = {
+			{ text = "Collect things", kind = "item", current = 1, required = 3, finished = false },
+		} } }
+		session.expandedQuestIds[2] = true
+		local objectiveID = assert(Find(Rows(a), "objective", 2)).rowId
+		local graph = BranchGraph({ 1, 2, 3, 4 }, { { 1, 2 }, { 1, 3 }, { 2, 4 }, { 3, 4 } })
+		Open(a, session, graph)
+		local roots = a:BuildPartyQuestDiffRows()
+		local origin = assert(Find(roots, nil, 2))
+		local title, cells, action, owner = origin.title, origin.cells, origin.action, origin.owner
+		local rows = a:BuildPartyQuestCompareDisplayRows(roots)
+		Equal(Find(rows, nil, 2), origin); Equal(origin.rowId, "quest:2")
+		Equal(origin.title, title); Equal(origin.cells, cells); Equal(origin.action, action); Equal(origin.owner, owner)
+		assert(origin.chainAnchor and origin.chainExpanded); Equal(origin.depth, 1)
+		Equal(Find(rows, "chainStep", 2), nil)
+		Equal(session.totalQuests, 3); Equal(#session.unfilteredQuests, 3)
+		local order, originIndex, objectiveIndex, laterIndex, ended = {}, nil, nil, nil, false
+		local instance = origin.chainInstanceId
+		for index, row in ipairs(rows) do
+			if row.kind == "chainStep" or row.chainAnchor then order[#order + 1] = row.questId end
+			if row == origin then originIndex = index end
+			if row.kind == "objective" and row.questId == 2 then objectiveIndex = index end
+			if row.kind == "chainStep" and row.questId == 3 then laterIndex = index end
+			if row.chainInstanceId then
+				assert(not ended, "expanded section must remain contiguous")
+				Equal(row.chainInstanceId, instance)
+			elseif originIndex then ended = true end
+		end
+		Equal(table.concat(order, ","), "1,2,3,4")
+		assert(originIndex < objectiveIndex and objectiveIndex < laterIndex)
+		for index = originIndex + 1, laterIndex - 1 do
+			Equal(rows[index].parentRowId, "quest:2"); Equal(rows[index].chainInstanceId, instance)
+		end
+		Equal(Find(rows, "objective", 2).rowId, objectiveID)
+		Equal(Find(rows, nil, 4).chainInstanceId, nil); Equal(Find(rows, nil, 8).chainInstanceId, nil)
+		assert(a:SetPartyQuestChainSelection(Find(rows, "chainStep", 3)))
+		Equal(session.chains.selectedQuestID, 3)
+		assert(a:SetPartyQuestChainSelection(origin)); Equal(session.chains.selectedQuestID, 2)
+		Equal(a:SetPartyQuestChainSelection(Find(rows, nil, 4)), false)
+		local closed, back = a:ClosePartyQuestChain(); assert(closed); Equal(back, "quest:2")
+		Equal(a:SetPartyQuestChainSelection(origin), false)
+		rows = a:BuildPartyQuestCompareDisplayRows(roots)
+		Equal(Find(rows, nil, 2), origin); Equal(origin.chainAnchor, nil); Equal(origin.depth, nil)
+		Equal(origin.memberPrerequisiteText, nil); Equal(origin.relationshipText, nil)
+		Equal(Find(rows, "objective", 2).rowId, objectiveID)
+		for _, row in ipairs(rows) do Equal(row.chainInstanceId, nil) end
+	end
+end)
+
+QT:RegisterTest("chain paging surrounds the retained origin and preserves its identity as context grows", function()
+	local a, session = Fixture()
+	local graph = Graph({ 1, 2, 3, 4 })
+	graph.partial, graph.frontier.earlier, graph.frontier.later = true, { 10 }, { 5 }
+	local rows = Open(a, session, graph)
+	local instance, earlierID, laterID = Find(rows, nil, 2).chainInstanceId
+	local function CheckPage(currentRows, expected)
+		local order, first, last, earlier, later = {}, nil, nil, nil, nil
+		for index, row in ipairs(currentRows) do
+			if row.kind == "chainStep" or row.chainAnchor then
+				order[#order + 1] = row.questId; first, last = first or index, index
+				Equal(row.chainInstanceId, instance)
+			elseif row.kind == "chainMore" then
+				if row.direction == "earlier" then earlier, earlierID = index, row.rowId
+				else later, laterID = index, row.rowId end
+			end
+		end
+		Equal(table.concat(order, ","), expected); assert(earlier < first and later > last)
+		Equal(Find(currentRows, nil, 2).rowId, "quest:2"); Equal(Find(currentRows, "chainStep", 2), nil)
+	end
+	CheckPage(rows, "1,2,3,4")
+	local oldEarlier, oldLater = earlierID, laterID
+	graph.order, graph.nodes[10] = { 10, 1, 2, 3, 4 }, { questID = 10 }
+	assert(a:ExpandPartyQuestChain("earlier")); a:Flush()
+	CheckPage(Rows(a), "10,1,2,3,4")
+	graph.order, graph.nodes[5] = { 10, 1, 2, 3, 4, 5 }, { questID = 5 }
+	assert(a:ExpandPartyQuestChain("later")); a:Flush()
+	CheckPage(Rows(a), "10,1,2,3,4,5")
+	Equal(earlierID, oldEarlier); Equal(laterID, oldLater)
+	Equal(session.chains.earlier, 119); Equal(session.chains.later, 120)
+	Equal(session.totalQuests, 2)
+end)
+
+QT:RegisterTest("chain missing origin snapshots retain the ordinary row without inventing its graph position", function()
+	local a, session = Fixture()
+	local graph = Graph({ 1, 3, 4 })
+	graph.partial = true
+	local rows = Open(a, session, graph)
+	local function FirstSectionRow(currentRows)
+		for index, row in ipairs(currentRows) do if row.chainInstanceId then return row, index end end
+	end
+	local origin = FirstSectionRow(rows)
+	Equal(origin.rowId, "quest:2"); assert(origin.chainAnchor)
+	Equal(Find(rows, "chainStep", 2), nil)
+	local order = {}
+	for _, row in ipairs(rows) do if row.kind == "chainStep" then order[#order + 1] = row.questId end end
+	Equal(table.concat(order, ","), "1,3,4")
+	-- A replacement session can paint before its deferred graph preparation.
+	session.chains.graphs, session.chains.depths = {}, nil
+	rows = Rows(a)
+	local index
+	origin, index = FirstSectionRow(rows)
+	Equal(origin.rowId, "quest:2"); Equal(origin.depth, 0)
+	Equal(rows[index + 1].kind, "chainNotice"); Equal(rows[index + 1].chainInstanceId, origin.chainInstanceId)
+	assert(a:TogglePartyQuestChain(2, "quest:2")); Equal(session.chains.rootQuestID, nil)
+end)
 
 QT:RegisterTest("chain branch layout keeps straight paths flat despite duplicate and ancestor shortcuts", function()
 	local a, session = Fixture()
@@ -269,7 +380,7 @@ QT:RegisterTest("chain session preserves active counts and independent objective
 	Equal(Find(rows, "chainStep", 3).title, "Future quest")
 	Equal(Find(rows, "chainStep", 4).title, "Active 4")
 	Equal(Find(rows, "chainStep", 1).cells[1], "Absent")
-	Equal(Find(rows, "chainStep", 2).memberPrerequisiteText[1], "")
+	Equal(Find(rows, nil, 2).memberPrerequisiteText[1], "")
 	Equal(Find(rows, "chainClose"), nil)
 	assert(Find(rows, nil, 2).chainExpanded)
 	Equal(Find(rows, "chainMore"), nil)
@@ -300,7 +411,7 @@ QT:RegisterTest("chain search and filters consider active roots without hidden f
 	a:TogglePartyQuestChainGroup(group.groupId)
 	Equal(#Rows(a), 1)
 	a:TogglePartyQuestChainGroup(group.groupId)
-	assert(Find(Rows(a), "chainStep", 2))
+	assert(Find(Rows(a), nil, 2).chainAnchor)
 end)
 
 QT:RegisterTest("chain aliases survive a merge and earlier later expansion is explicit", function()
@@ -387,6 +498,16 @@ QT:RegisterTest("chain grouping keeps a filtered open origin inside its matching
 	Equal(standalone, #rows)
 	assert(rows[standalone - 1].chainGroupEnd)
 	Equal(rows[standalone].chainGroupId, nil)
+	a.options.compareGroupByChain = false
+	rows = a:BuildPartyQuestCompareDisplayRows(visible)
+	Equal(Find(rows, nil, 2), nil); Equal(Find(rows, "chainGroup"), nil)
+	local origins, context = 0, assert(Find(rows, "chainStep", 2))
+	for _, row in ipairs(rows) do
+		if row.questId == 2 then origins = origins + 1 end
+		if row.kind == "chainStep" then Equal(row.chainInstanceId, context.chainInstanceId) end
+	end
+	Equal(origins, 1); Equal(context.chainAnchor, nil)
+	Equal(session.totalQuests, 3); Equal(#visible, 2)
 end)
 
 QT:RegisterTest("chain owned and completed players omit acceptance requirements without hiding missing peers blockers", function()
@@ -581,7 +702,7 @@ QT:RegisterTest("chain prerequisite explanations distinguish evaluated gates and
 	assert(text:find("Requires level 20", 1, true)); assert(text:find("Warrior, Mage", 1, true))
 	assert(text:find("Human", 1, true)); assert(text:find("Not evaluated", 1, true))
 	assert(text:find("Signed prerequisite semantics unknown", 1, true))
-	assert(Find(Rows(a), "chainStep", 2).relationshipText:find("Breadcrumb quest: Future quest", 1, true))
+	assert(Find(Rows(a), nil, 2).relationshipText:find("Breadcrumb quest: Future quest", 1, true))
 	Equal(Find(Rows(a), "chainStep", 1).title, "Future quest") -- An unevaluated ancestor is not a named blocker.
 	Equal(own.entries[90], nil)
 end)
@@ -623,6 +744,39 @@ QT:RegisterTest("chain revealed details and peer focus actions reuse current ava
 	Equal(details, 1); Equal(follows, 1); assert(detail)
 	a.detailsUnavailable = true
 	Equal(detail.action(), false); Equal(details, 1)
+end)
+
+QT:RegisterTest("chain origin retains guarded context actions without duplicating its ordinary controls", function()
+	local a, session, _, friend = Fixture()
+	a.metadata[2] = { title = "Current quest", locations = {
+		{ mapID = 12, x = 0.3, y = 0.4, name = "Guide", kind = "npc" },
+	} }
+	local details, focus, follows, givers, waypoints = 0, 0, 0, 0, 0
+	function a:GetQuestDetailsAvailability(id) return id end
+	function a:ShowQuestDetails(id, title)
+		Equal(id, 2); Equal(title, "Current quest"); details = details + 1; return true
+	end
+	function a:RequestPartyQuestFocus(name, id) Equal(name, friend.name); Equal(id, 2); focus = focus + 1; return true end
+	function a:FollowPartyQuestFocus(name) Equal(name, friend.name); follows = follows + 1; return true end
+	function a:ShowQuestChainGiver(location, valid) Equal(location.mapID, 12); assert(valid()); givers = givers + 1; return true end
+	function a:OpenPingWaypoint(map) Equal(map, 12); waypoints = waypoints + 1; return true end
+	local rows = Open(a, session, Graph({ 1, 2, 3, 4 }))
+	local origin = assert(Find(rows, nil, 2))
+	Equal(origin.action, "share")
+	local actions = a:GetPartyQuestChainActions(origin, friend.name)
+	local labels = {}
+	for _, action in ipairs(actions) do
+		assert(not labels[action.label], "duplicate anchor action")
+		labels[action.label] = true
+		assert(action.label ~= "Open in Quest Log" and action.label ~= "Expand or collapse quest"
+			and action.label ~= "Share" and action.label ~= "Request Share")
+		assert(action.action())
+	end
+	Equal(details, 1); Equal(focus, 1); Equal(follows, 1); Equal(givers, 1); Equal(waypoints, 1)
+	assert(labels["Focus quest"] and labels["Follow quest focus"] and labels["Quest Details"])
+	assert(a:ClosePartyQuestChain())
+	for _, action in ipairs(actions) do Equal(action.action(), false) end
+	Equal(details, 1); Equal(focus, 1); Equal(follows, 1); Equal(givers, 1); Equal(waypoints, 1)
 end)
 
 QT:RegisterTest("chain eligibility preserves fresher active history over an older absent snapshot", function()
@@ -715,7 +869,7 @@ QT:RegisterTest("chain large session presentation buckets relationship work once
 	end
 	local rows = Open(a, session, graph)
 	Equal(sourceReads, size - 1)
-	local steps = 0; for _, row in ipairs(rows) do if row.kind == "chainStep" then steps = steps + 1 end end
+	local steps = 0; for _, row in ipairs(rows) do if row.kind == "chainStep" or row.chainAnchor then steps = steps + 1 end end
 	Equal(steps, size)
 	local bucketReads, bucketCount = 0, 0
 	for _, bucket in pairs(session.chains.relationshipsByQuest) do
@@ -913,7 +1067,7 @@ QT:RegisterTest("quest group recommendations preserve authoritative false and ca
 	Equal(Find(rows, nil, 2).questGroupRecommended, true)
 	Equal(Find(rows, nil, 4).questGroupRecommended, false)
 	Equal(Find(rows, "chainStep", 1).questGroupRecommended, true)
-	Equal(Find(rows, "chainStep", 2).questGroupRecommended, true)
+	Equal(Find(rows, nil, 2).questGroupRecommended, true)
 	Equal(Find(rows, "chainStep", 3).questGroupRecommended, nil, "chain groups never imply party recommendation")
 	native, snapshots = {}, {}
 	a.metadata[1].questGroupRecommended = nil
@@ -929,7 +1083,7 @@ QT:RegisterTest("quest group recommendations preserve authoritative false and ca
 	Equal(Find(Rows(a), nil, 2).questGroupRecommended, false)
 	a.API.GetQuestGroupRecommended = function() error("render queried native group recommendation") end
 	rows = Rows(a)
-	Equal(Find(rows, "chainStep", 2).questGroupRecommended, false)
+	Equal(Find(rows, nil, 2).questGroupRecommended, false)
 	Equal(Find(rows, "chainStep", 3).title, "Future quest")
 end)
 

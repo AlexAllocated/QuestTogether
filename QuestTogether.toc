@@ -34,6 +34,8 @@ Localization.lua
 Locales.lua
 Core.lua
 Audio.lua
+AutoThanks.lua
+AutoThanksNative.lua
 Settings.lua
 Libs/Ed25519/Ed25519.lua
 DeveloperPublicKey.lua

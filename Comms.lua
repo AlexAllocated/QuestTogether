@@ -848,6 +848,54 @@ function QuestTogether:HideAnnouncementChannelFromChatWindows(channelName)
 	end
 end
 
+local function ChannelClock(self)
+	local getter = self.API and self.API.GetTime
+	local ok, value = false, nil
+	if type(getter) == "function" then ok, value = pcall(getter) end
+	local now = ok and SafeNumber(self, value)
+	return now and now >= 0 and now < math.huge and now or nil
+end
+
+-- Blizzard's normal channels get the first opportunity to join after loading.
+-- Saved memberships remain usable immediately; no delayed callback owns a join.
+function QuestTogether:BeginAnnouncementChannelStartup()
+	self.chatChannelJoinState = { awaitingWorld = true }
+end
+
+function QuestTogether:SuspendAnnouncementChannelJoins()
+	local state = rawget(self, "chatChannelJoinState") or {}
+	self.chatChannelJoinState = state
+	state.awaitingWorld, state.notBefore, state.needsClock = true, nil, nil
+end
+
+function QuestTogether:ResumeAnnouncementChannelJoins()
+	local state = rawget(self, "chatChannelJoinState")
+	if state and state.awaitingWorld then
+		local now = ChannelClock(self)
+		if now then
+			state.awaitingWorld, state.notBefore, state.lastTime, state.needsClock = false, now + 10, now, nil
+		else
+			state.awaitingWorld, state.needsClock = false, true
+		end
+	end
+	self:InvalidateAnnouncementChannelOrder()
+end
+
+function QuestTogether:CanJoinAnnouncementChannel()
+	if not self.isEnabled or self.isLoggingOut or self:IsRuntimeRestricted()
+		or self:IsRuntimeRestrictionTypeActive("chat") then return false end
+	local state = rawget(self, "chatChannelJoinState")
+	if not state then return true end
+	if state.awaitingWorld then return false end
+	local now = ChannelClock(self)
+	if not now then return false end
+	if state.needsClock or state.lastTime and now < state.lastTime then
+		state.needsClock, state.notBefore = nil, now + 10
+	end
+	state.lastTime = now
+	return not state.notBefore or now >= state.notBefore
+end
+
 function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 	if not channelName then
 		return self:EnsureAnnouncementChannelJoined(self.announcementChannelName)
@@ -871,7 +919,8 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 		end
 		local bindings = rawget(self, "announcementChannelBindings") or {}
 		self.announcementChannelBindings = bindings
-		if bindings[channelName] ~= currentLocalID and not self:IsRuntimeRestricted() then
+		if bindings[channelName] ~= currentLocalID and not self:IsRuntimeRestricted()
+			and not self:IsRuntimeRestrictionTypeActive("chat") then
 			self:HideAnnouncementChannelFromChatWindows(channelName)
 			bindings[channelName] = currentLocalID
 		end
@@ -883,27 +932,33 @@ function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
 	if self.announcementChannelBindings then
 		self.announcementChannelBindings[channelName] = nil
 	end
+	if not self:CanJoinAnnouncementChannel() then return false end
 
 	if not self.API or not self.API.JoinPermanentChannel then
 		self:Debug("JoinPermanentChannel API unavailable", "comms")
 		return false
 	end
 
-	local chatFrameId = (DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.GetID and DEFAULT_CHAT_FRAME:GetID()) or 1
+	-- Directory text is hidden from every chat window after joining. Use the
+	-- native primary window rather than inspecting a replaceable foreign frame.
+	local chatFrameId = 1
 	self:Debugf(
 		"comms",
 		"Joining peer directory name=%s chatFrameId=%s",
 		SafeAddonString(self, channelName),
 		SafeAddonString(self, chatFrameId)
 	)
-	self.API.JoinPermanentChannel(channelName, nil, chatFrameId, 1)
+	local joined = pcall(self.API.JoinPermanentChannel, channelName, nil, chatFrameId, 1)
+	self:InvalidateAnnouncementChannelOrder()
+	if not joined or not self.isEnabled or self.isLoggingOut then return false end
 
 	currentLocalID = self:GetAnnouncementChannelLocalID(channelName)
 	if currentLocalID then
 		if cacheKey then
 			self[cacheKey] = currentLocalID
 		end
-		if self.HideAnnouncementChannelFromChatWindows then
+		if self.HideAnnouncementChannelFromChatWindows and not self:IsRuntimeRestricted()
+			and not self:IsRuntimeRestrictionTypeActive("chat") then
 			self:HideAnnouncementChannelFromChatWindows(channelName)
 			self.announcementChannelBindings = self.announcementChannelBindings or {}
 			self.announcementChannelBindings[channelName] = currentLocalID
@@ -918,69 +973,129 @@ end
 
 -- Keep hidden directories behind human channels. RuntimeCoordinator owns the
 -- cadence; every step resolves names again instead of retaining native indices.
-function QuestTogether:UpdateAnnouncementChannelOrder()
-	local api = self.API or {}
-	if not self.isEnabled or self.isLoggingOut
-		or not api.GetChatChannelList or not api.SwapChatChannelsPreservingState
-		or self:IsRuntimeRestricted() or self:IsRuntimeRestrictionTypeActive("chat") then
-		return
-	end
+local function OwnedDirectory(self, name)
+	if MatchesAnnouncementChannelName(self, name) or self:IsGeographicChannelName(name) then return true end
+	local base = name:gsub("^%d+%.%s+", ""):lower()
+	if base == "questtogether3" or base == "questtogetherannounce1" then return true end
+	local zone = tonumber(base:match("^questtogether3z([1-9]%d*)$") or base:match("^questtogetherz([1-9]%d*)$"))
+	return zone ~= nil and zone <= 1000000
+end
+
+function QuestTogether:InvalidateAnnouncementChannelOrder()
 	local state = rawget(self, "chatChannelOrderState")
-	if not state then
-		state = {}
-		self.chatChannelOrderState = state
-	end
-	local now = SafeNumber(self, api.GetTime and api.GetTime()) or 0
-	if state.suspended or now < (state.nextAt or 0) then return end
-	state.nextAt = now + 1
+	if not state then return end
+	state.dirty = true
+	if not state.recoveryPending then state.lastResult, state.lastStage = "pending", "channel_change" end
+	-- Channel events can fire synchronously inside a native swap. Wake an idle
+	-- check without ever bypassing the current attempt's one-second floor.
+	local now = ChannelClock(self)
+	if now then state.nextAt = math.max(state.nextAttemptAt or now, math.min(state.nextAt or now, now)) end
+end
+
+local function ReadChannelOrder(self, api)
+	if type(api.GetChatChannelList) ~= "function" then return nil, "unavailable" end
 	local ok, list = pcall(api.GetChatChannelList)
-	if not ok or not self:CanAccessTable(list) or #list > 90 or #list % 3 ~= 0 then return end
+	if not ok or not self:CanAccessTable(list) or type(list) ~= "table" then return nil, "unreadable" end
+	if #list > 90 or #list % 3 ~= 0 then return nil, "invalid" end
 	local rows, ids, names = {}, {}, {}
 	for index = 1, #list, 3 do
 		local id = SafeChannelNumber(self, list[index])
+		if not self:CanAccessValue(list[index + 1]) or type(list[index + 1]) ~= "string" then return nil, "unreadable" end
 		local name = SafeTrimAddonString(self, list[index + 1], "")
-		if not id or id < 1 or id > 30 or id ~= math.floor(id) or name == "" or ids[id] or names[name] then return end
-		ids[id], names[name] = true, true
-		rows[#rows + 1] = { id = id, name = name,
-			qt = MatchesAnnouncementChannelName(self, name) or self:IsGeographicChannelName(name) }
+		if not id or id < 1 or id > 30 or id ~= math.floor(id) or name == "" or #name > 256
+			or name:find("[%c|]") or ids[id] or names[name:lower()] then return nil, "invalid" end
+		ids[id], names[name:lower()] = true, true
+		rows[#rows + 1] = { id = id, name = name, qt = OwnedDirectory(self, name) }
 	end
 	table.sort(rows, function(a, b) return a.id < b.id end)
+	return rows
+end
+
+function QuestTogether:UpdateAnnouncementChannelOrder()
+	if not self.isEnabled or self.isLoggingOut then return end
+	local api = self.API or {}
+	local state = rawget(self, "chatChannelOrderState")
+	if not state then state = {}; self.chatChannelOrderState = state end
+	if state.inFlight then return end
+	if self:IsRuntimeRestricted() or self:IsRuntimeRestrictionTypeActive("chat") then
+		state.lastResult, state.lastStage = "restricted", "restrictions"
+		return
+	end
+	local now = ChannelClock(self)
+	if not now then state.lastResult, state.lastStage = "unavailable", "clock"; return end
+	if state.lastTime and now < state.lastTime then state.nextAt, state.nextAttemptAt = nil, nil end
+	state.lastTime = now
+	if now < (state.nextAt or 0) then return end
+	state.nextAt, state.nextAttemptAt, state.dirty = now + 1, now + 1, false
+	local function Current()
+		return rawget(self, "chatChannelOrderState") == state and self.isEnabled and not self.isLoggingOut
+	end
+	local function RecoveryFailure(reason, stage)
+		state.recoveryPending, state.suspended = true, true
+		state.lastResult, state.lastStage = reason, stage
+		state.nextAt = now + 5
+		if not state.reportedRecovery then
+			state.reportedRecovery = true
+			self:RecordDiagnosticError("chat channel ordering", "Native reorder requires verification; further changes wait for safe recovery.")
+		end
+	end
+	if state.recoveryPending or type(api.CheckChatChannelOrderRecovery) == "function" then
+		if type(api.CheckChatChannelOrderRecovery) ~= "function" then
+			state.lastResult, state.lastStage, state.nextAt = "unavailable", "recovery", now + 5
+			return
+		end
+		state.inFlight = true
+		local called, resolved, reason, stage = pcall(api.CheckChatChannelOrderRecovery)
+		state.inFlight = nil
+		if not Current() then return end
+		if not called or resolved ~= true then
+			RecoveryFailure(called and (reason or "pending") or "pending", called and stage or "recovery")
+			return
+		end
+		if state.recoveryPending or reason ~= "none" then
+			state.recoveryPending, state.suspended, state.reportedRecovery = false, false, nil
+			state.recoveries = (state.recoveries or 0) + 1
+			if reason == "swapped" then state.swaps = (state.swaps or 0) + 1 end
+			state.lastResult, state.lastStage = "recovered", nil
+			return
+		end
+	end
+	local rows, failure = ReadChannelOrder(self, api)
+	if not Current() then return end
+	if not rows then state.lastResult, state.lastStage = failure, "channel_list"; return end
+	state.checkedAt, state.channelCount = now, #rows
 	for index = 2, #rows do
 		if rows[index - 1].qt and not rows[index].qt then
-			local called, swapped, reason, stage = pcall(api.SwapChatChannelsPreservingState, rows[index - 1].name, rows[index].name)
-			-- A native swap may synchronously deliver a channel event.
-			state.nextAt = now + 1
-			state.lastResult = swapped == true and "swapped" or "deferred"
-			state.lastStage = called and stage or nil
-			if called and swapped ~= true and (reason == "busy" or reason == "restricted"
-				or reason == "invalid" or reason == "inaccessible" or reason == "prepare") then
-				state.lastResult = reason
+			if type(api.SwapChatChannelsPreservingState) ~= "function" then
+				state.lastResult, state.lastStage, state.nextAt = "unavailable", "native_helpers", now + 5
+				return
 			end
-			if not called or reason == "inconsistent" then
-				-- Never guess at a rollback after a partial native operation. The
-				-- adapter pins chat destinations to names before changing any index.
-				state.suspended = true
-				state.lastResult = "inconsistent"
-				self:RecordDiagnosticError("chat channel ordering", "Unexpected native reorder result; further sorting is suspended until reload.")
-			elseif swapped ~= true and reason == "unavailable" then
-				state.nextAt = now + 30
-				state.lastResult = "unavailable"
+			state.inFlight = true
+			local called, swapped, reason, stage = pcall(api.SwapChatChannelsPreservingState, rows[index - 1].name, rows[index].name)
+			state.inFlight = nil
+			if not Current() then return end
+			state.lastResult, state.lastStage = swapped == true and "swapped" or (called and reason or "pending"), called and stage or "native_reorder"
+			if not called or reason == "pending" or reason == "inconsistent" then
+				RecoveryFailure(called and reason or "pending", state.lastStage)
 			elseif swapped == true then
 				state.swaps = (state.swaps or 0) + 1
+				state.suspended = false
+			elseif reason == "unavailable" then
+				state.nextAt = now + 5
+			else
+				state.lastResult = reason or "deferred"
 			end
 			return
 		end
 	end
-	state.lastResult = "ordered"
-	state.lastStage = nil
+	state.lastResult, state.lastStage, state.suspended = "ordered", nil, false
 	state.nextAt = now + 5
 end
 
 function QuestTogether:CHANNEL_COUNT_UPDATE()
+	self:InvalidateAnnouncementChannelOrder()
 	local state = rawget(self, "geographicCommsState")
-	if state then
-		state.reconciledChannels = nil
-	end
+	if state then state.reconciledChannels = nil end
 end
 
 function QuestTogether:LeaveAnnouncementChannel()

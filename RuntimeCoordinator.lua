@@ -73,6 +73,7 @@ function QT:InitializeRuntimeCoordinator()
 		elapsed = 0
 		self:UpdateAnnouncementChannelOrder()
 		self:UpdateQTAudio()
+		self:UpdateAutoThanks()
 		self:UpdatePartyNavigation()
 		self:UpdatePartyQuestFocusIndicators()
 		self:RefreshQuestTogetherMapControl()
@@ -89,6 +90,7 @@ function QT:InitializeRuntimeCoordinator()
 end
 
 function QT:ResetRuntimeCoordinator()
+	self:ResetAutoThanks()
 	if self.HidePartyMapPins then self:HidePartyMapPins() end
 	self:HideQuestTogetherMapControl()
 	self:ResetPartyNavigation()

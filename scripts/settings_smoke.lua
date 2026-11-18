@@ -477,6 +477,26 @@ scope.DecrementButton.scripts.OnClick()
 assert(QuestTogether:GetOption("qtChatScope") == "zone_only")
 print("Native settings dropdowns, profile changes, and disabled controls passed")
 
+local autoThankBuffs = assert(QuestTogether.whereToAnnounceControls.autoThankBuffs)
+assert(autoThankBuffs.template == "MinimalCheckboxTemplate")
+assert(autoThankBuffs.Label.text == "Automatically thank players for buffs")
+assert(autoThankBuffs:GetChecked() == true, "buff thanks starts enabled")
+autoThankBuffs:SetChecked(false)
+autoThankBuffs.scripts.OnClick(autoThankBuffs)
+assert(QuestTogether:GetOption("autoThankBuffs") == false, "the checkbox must persist the opt-out")
+assert(QuestTogether:SetActiveProfile("Dropdown test profile"))
+assert(autoThankBuffs:GetChecked() == true, "buff thanks follows the newly selected profile")
+assert(QuestTogether:SetActiveProfile(firstProfile))
+assert(autoThankBuffs:GetChecked() == false, "returning to a profile preserves its buff-thanks choice")
+local autoThanksPoint = autoThankBuffs.points[#autoThankBuffs.points]
+assert(autoThankBuffs.parent == QuestTogether.whereToAnnounceControls.emoteOnNearbyPlayerLevelUp.parent,
+	"buff thanks belongs to the same native settings navigation container as the other emotes")
+assert(autoThankBuffs.parent:GetHeight() >= -autoThanksPoint[5] + 48,
+	"the emote settings content must leave space below the buff-thanks checkbox")
+autoThankBuffs:SetChecked(true)
+autoThankBuffs.scripts.OnClick(autoThankBuffs)
+print("Buff-thanks opt-out, profile refresh, and scrollable native checkbox placement passed")
+
 local ownBubble = QuestTogether.whereToAnnounceControls.ownChatBubbleModeDropdown
 assert(QuestTogether.whereToAnnounceControls.hideMyOwnChatBubbles == nil)
 assert(ownBubble.title.text == "My chat bubble")

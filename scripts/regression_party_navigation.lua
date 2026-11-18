@@ -607,6 +607,124 @@ QT:RegisterTest("accepted quest batches preserve the first automatic focus and i
 	Equal(a.dialogCount, 1)
 	Equal(#a.writes, 1)
 end)
+QT:RegisterTest("accepted quest batches restore each pickup before the followed partner accepts", function()
+	for _, manualQuest in ipairs({ 2, 4 }) do
+		local a, b = Pair()
+		-- The partner still focuses the shared quest and has neither new pickup.
+		b.owned[2], b.owned[3] = nil, nil
+		a.owned[3], a.owned[4] = 3, 4
+		assert(a:FollowPartyQuestFocus(b.name))
+		local token = a.partyNavigationState.followToken
+		a:OnPartyNavigationQuestAccepted(2)
+		a.time = a.time + 0.016
+		a:OnPartyNavigationQuestAccepted(3)
+		for index, questID in ipairs({ 2, 3 }) do
+			a.native.questID = questID
+			a:OnPartyNavigationTrackingChanged()
+			a:Tick()
+			Equal(a.native.questID, 1)
+			Equal(b.native.questID, 1)
+			Equal(a.partyNavigationState.followToken, token)
+			Equal(a.partyNavigationState.following, b.name)
+			Equal(a.dialogCount, nil)
+			Equal(#a.writes, index)
+		end
+		-- Neither a consumed pickup nor an unrelated quest is automatic now.
+		a.native.questID = manualQuest
+		a:OnPartyNavigationTrackingChanged()
+		a:Tick()
+		Equal(a.native.questID, manualQuest)
+		Equal(a.dialogCount, 1)
+		Equal(#a.writes, 2)
+		assert(a.cancelAction())
+		Equal(a.native.questID, 1)
+		Equal(a.partyNavigationState.following, b.name)
+	end
+end)
+QT:RegisterTest("accepted quest batch restoration does not extend another pickup deadline", function()
+	local a, b = Pair()
+	b.owned[2], b.owned[3], a.owned[3] = nil, nil, 3
+	assert(a:FollowPartyQuestFocus(b.name))
+	a:OnPartyNavigationQuestAccepted(2)
+	a.time = a.time + 0.016
+	a:OnPartyNavigationQuestAccepted(3)
+	local secondAcceptanceAt = a.time
+	a.time = a.time + 1.7
+	a.native.questID = 2
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick(0.016)
+	Equal(a.native.questID, 1)
+	Equal(a.dialogCount, nil)
+	Equal(#a.writes, 1)
+	-- Matching quest 2 must not give unused quest 3 a fresh two seconds.
+	a.time = secondAcceptanceAt + 2.1
+	a.native.questID = 3
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick()
+	Equal(a.native.questID, 3)
+	Equal(a.dialogCount, 1)
+	Equal(#a.writes, 1)
+	Equal(a.partyNavigationState.following, b.name)
+end)
+QT:RegisterTest("accepted quest pending pickups cannot hide consumed unrelated or explicit choices", function()
+	for _, manualQuest in ipairs({ 2, 4, 3 }) do
+		local a, b = Pair()
+		b.owned[2], b.owned[3] = nil, nil
+		a.owned[3], a.owned[4] = 3, 4
+		assert(a:FollowPartyQuestFocus(b.name))
+		a:OnPartyNavigationQuestAccepted(2)
+		a:OnPartyNavigationQuestAccepted(3)
+		a.native.questID = 2
+		a:OnPartyNavigationTrackingChanged()
+		a:Tick()
+		Equal(a.native.questID, 1)
+		Equal(a.dialogCount, nil)
+		-- Quest 3 is still an unused pickup; it cannot excuse another choice.
+		if manualQuest == 3 then
+			assert(a:GetPartyFocusController():Request(a.name, manualQuest))
+		else
+			a.native.questID = manualQuest
+			a:OnPartyNavigationTrackingChanged()
+		end
+		a:Tick()
+		Equal(a.native.questID, manualQuest == 3 and 1 or manualQuest)
+		Equal(a.dialogCount, 1)
+		Equal(#a.writes, 1)
+		Equal(a.partyNavigationState.following, b.name)
+	end
+end)
+QT:RegisterTest("accepted quest native samples restore following before or after an unchanged tracking notification", function()
+	for _, trackingFirst in ipairs({ false, true }) do
+		local a, b = Pair()
+		b.owned[2] = nil
+		assert(a:FollowPartyQuestFocus(b.name))
+		local token = a.partyNavigationState.followToken
+		a:OnPartyNavigationQuestAccepted(2)
+		if trackingFirst then a:OnPartyNavigationTrackingChanged() end
+		a:Tick(0.016) -- Native focus still matches; the accepted quest has not appeared yet.
+		Equal(a.native.questID, 1)
+		Equal(#a.writes, 0)
+		a.native.questID = 2
+		a:Tick(0.016) -- No new tracking callback accompanies this readable transition.
+		Equal(a.native.questID, 1)
+		Equal(b.native.questID, 1)
+		Equal(a.partyNavigationState.followToken, token)
+		Equal(a.partyNavigationState.following, b.name)
+		Equal(a.dialogCount, nil)
+		Equal(#a.writes, 1)
+		a:OnPartyNavigationTrackingChanged() -- A later notification sees the restored focus.
+		a:Tick()
+		Equal(a.dialogCount, nil)
+		Equal(#a.writes, 1)
+		-- Once consumed, the same quest still requires the manual-choice prompt.
+		a.native.questID = 2
+		a:OnPartyNavigationTrackingChanged()
+		a:Tick()
+		Equal(a.native.questID, 2)
+		Equal(a.dialogCount, 1)
+		Equal(#a.writes, 1)
+	end
+end)
 QT:RegisterTest("accepted quest unchanged tracking preserves the pending pickup and late notifications stay quiet", function()
 	local a, b = Pair()
 	assert(a:FollowPartyQuestFocus(b.name))

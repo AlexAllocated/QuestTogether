@@ -1128,8 +1128,8 @@ return pushable end or nil,
 		-- remembered destinations by identity before any channel number changes.
 		-- These contracts model secure dispatch, not the engine's taint tracking.
 		do
-			local keys = { "C_ChatInfo", "GetChannelList", "GetChannelName", "ChatTypeInfo", "CHAT_FRAMES",
-				"NUM_CHAT_WINDOWS", "ChatFrame1", "ChatFrame12", "ChatFrame1EditBox", "ChatFrame12EditBox",
+			local keys = { "C_ChatInfo", "C_AddOns", "LoadAddOn", "GetChannelList", "GetChannelName", "GetChatTypeIndex", "ChatTypeInfo", "CHAT_FRAMES",
+				"NUM_CHAT_WINDOWS", "ChatFrame1", "ChatFrame12", "ChatFrame15", "ChatFrame1EditBox", "ChatFrame12EditBox",
 				"ChatConfigChannelSettings_SwapChannelsByIndex", "securecallfunction", "issecurevariable",
 				"ChannelFrame", "ChatConfigFrame", "ChatConfigChannelSettingsLeft", "ColorPickerFrame",
 				"ACTIVE_CHAT_EDIT_BOX", "InCombatLockdown", "GetCurrentKeyBoardFocus" }
@@ -1141,7 +1141,8 @@ return pushable end or nil,
 			local ok, err = pcall(function()
 				local state, boxes, records, active
 				local function Reset()
-					state = { channels = { "QuestTogether", "General", "Trade" }, swaps = 0, helperCalls = 0 }
+					state = { channels = { "QuestTogether", "General", "Trade" }, swaps = 0, helperCalls = 0, nativeCalls = 0, loadCalls = 0 }
+					LoadAddOn = nil
 					addon.isEnabled, addon.isRunningTests, addon.isLoggingOut = true, nil, nil
 					records = {
 						{ r = 1, g = 1, b = 1, id = 31, sticky = 0, flashTab = false },
@@ -1149,11 +1150,13 @@ return pushable end or nil,
 						{ r = 1, g = 0.5, b = 0.2, id = 33, sticky = 1, colorNameByClass = true },
 					}
 					ChatTypeInfo = { CHANNEL1 = records[1], CHANNEL2 = records[2], CHANNEL3 = records[3] }
+					GetChatTypeIndex = function(key) return tonumber(key:match("^CHANNEL(%d+)$")) + 30 end
 					GetChannelName = function(target)
 						if state.failNumericLookup and type(target) == "number" then return 0, nil end
 						for id, name in pairs(state.channels) do
 							local canonical = state.canonicalNames and state.canonicalNames[name] or name
 							if state.failCanonicalLookup and target == canonical and canonical ~= name then return 0, nil end
+							if state.inconsistentNumericName and target == id then return id, "Different identity" end
 							if target == id or target == name or target == canonical then return id, canonical end
 						end
 						return 0, nil
@@ -1168,22 +1171,34 @@ return pushable end or nil,
 						return (table.unpack or unpack)(result)
 					end
 					boxes = {}
-					for index, target in ipairs({ 2, 1 }) do
-						local box = { target = target, text = "", focused = false, shown = false }
-						function box:IsForbidden() return false end
-						function box:IsProtected() return false end
+					for index, target in ipairs({ 2, 1, 3 }) do
+						local box = { target = target, text = "", focused = false, shown = false,
+							chatType = "CHANNEL", stickyType = "CHANNEL", writes = 0 }
+						function box:IsForbidden() return self.forbidden == true end
+						function box:IsProtected() return self.protected == true end
 						function box:IsShown() return self.shown end
+						function box:IsVisible()
+							if self.visible ~= nil then return self.visible end
+							return self.shown
+						end
 						function box:HasFocus() return self.focused end
-						function box:GetText() error("sorting must not inspect draft contents") end
-						function box:GetNumLetters() return #self.text end
+						function box:GetText()
+							assert(active == self.GetText, "draft checks must use the trusted native getter")
+							self.textReads = (self.textReads or 0) + 1
+							return self.text
+						end
+						function box:GetNumLetters() return self.lengthOverride or #self.text end
 						function box:GetAttribute(key)
+							if key == "channelTarget" and self.hideTargetAfterSwap and state.swaps > 0 then return inaccessible end
 							if key == "channelTarget" then return self.target end
-							if key == "chatType" or key == "stickyType" then return "CHANNEL" end
+							if key == "chatType" then return self.chatType end
+							if key == "stickyType" then return self.stickyType end
 						end
 						function box:GetChannelTarget() return GetChannelName(self.target) end
 						function box:SetChannelTarget(value)
 							assert(active == self.SetChannelTarget, "dispatch the native setter, never an addon closure")
 							if self.reject then error("target unavailable") end
+							self.writes = self.writes + 1
 							self.target = self.normalize and GetChannelName(value) or value
 						end
 						function box:UpdateHeader() self.target = GetChannelName(self.target) end
@@ -1191,8 +1206,8 @@ return pushable end or nil,
 					end
 					-- Temporary chat windows live beyond NUM_CHAT_WINDOWS but still
 					-- own a destination that must survive a reorder.
-					CHAT_FRAMES, NUM_CHAT_WINDOWS = { "ChatFrame1", "ChatFrame12" }, 1
-					ChatFrame1, ChatFrame12 = { editBox = boxes[1] }, { editBox = boxes[2] }
+					CHAT_FRAMES, NUM_CHAT_WINDOWS = { "ChatFrame1", "ChatFrame12", "ChatFrame15" }, 1
+					ChatFrame1, ChatFrame12, ChatFrame15 = { editBox = boxes[1] }, { editBox = boxes[2] }, { editBox = boxes[3] }
 					ChatFrame1EditBox, ChatFrame12EditBox = boxes[1], boxes[2]
 					ChannelFrame, ColorPickerFrame, ACTIVE_CHAT_EDIT_BOX = nil, nil, nil
 					ChatConfigFrame = { IsShown = function() return false end }
@@ -1213,13 +1228,28 @@ return pushable end or nil,
 						return true
 					end
 					C_ChatInfo = { SwapChatChannelsByChannelIndex = function(first, second)
-						assert(active == ChatConfigChannelSettings_SwapChannelsByIndex,
-							"raw C swaps bypass the metadata-preserving native helper")
+						assert(active == ChatConfigChannelSettings_SwapChannelsByIndex
+							or (state.allowPartialCompletion and active == C_ChatInfo.SwapChatChannelsByChannelIndex
+								and state.helperCalls == 1 and state.swaps == 0
+								and ChatTypeInfo["CHANNEL" .. first] == records[second]
+								and ChatTypeInfo["CHANNEL" .. second] == records[first]),
+							"raw C swaps may only complete the verified missing half of a prior native helper")
+						state.nativeCalls = state.nativeCalls + 1
+						if state.reentrantRecovery then
+							local done, reason, stage = addon.API.CheckChatChannelOrderRecovery()
+							assert(done == false and reason == "pending" and stage == "recovery_pending")
+							state.reentrantChecks = (state.reentrantChecks or 0) + 1
+						end
 						assert(type(boxes[1].target) == "string" and type(boxes[2].target) == "string",
 							"pin every affected destination before native mutation")
 						if state.failure == "before" then error("native swap refused") end
 						state.swaps = state.swaps + 1
 						state.channels[first], state.channels[second] = state.channels[second], state.channels[first]
+						if state.normalizeMetadataIDs then
+							ChatTypeInfo["CHANNEL" .. first].id, ChatTypeInfo["CHANNEL" .. second].id = first + 30, second + 30
+						end
+						if state.corruptMetadata then records[1].sticky = 42 end
+						if state.unreadableAfterSwap then state.failNumericLookup = true end
 						if state.refreshHeaders then
 							for _, box in ipairs(boxes) do box:UpdateHeader() end
 						end
@@ -1229,10 +1259,28 @@ return pushable end or nil,
 						assert(active == ChatConfigChannelSettings_SwapChannelsByIndex,
 							"the Blizzard helper must enter through securecallfunction")
 						state.helperCalls = state.helperCalls + 1
+						if state.reentrantRecovery then
+							local done, reason = addon.API.CheckChatChannelOrderRecovery()
+							assert(done == false and reason == "pending")
+							state.reentrantChecks = (state.reentrantChecks or 0) + 1
+						end
+						if state.failure == "no-op" then return end
+						if state.failure == "unreadable-no-op" then state.failNumericLookup = true; return end
 						ChatTypeInfo["CHANNEL" .. first], ChatTypeInfo["CHANNEL" .. second] =
 							ChatTypeInfo["CHANNEL" .. second], ChatTypeInfo["CHANNEL" .. first]
 						C_ChatInfo.SwapChatChannelsByChannelIndex(first, second)
 					end
+					local nativeSwapHelper = ChatConfigChannelSettings_SwapChannelsByIndex
+					C_AddOns = { LoadAddOn = function(name)
+						assert(active == C_AddOns.LoadAddOn and name == "Blizzard_ChatFrame",
+							"load the native chat UI only through its trusted native entry point")
+						state.loadCalls = state.loadCalls + 1
+						if state.loadNativeHelper then
+							ChatConfigChannelSettings_SwapChannelsByIndex = nativeSwapHelper
+							return true
+						end
+						return false, "MISSING"
+					end }
 					securecallfunction = function(fn, ...)
 						local previous = active
 						active = fn
@@ -1245,21 +1293,138 @@ return pushable end or nil,
 					end
 				end
 				Reset()
+				state.reentrantRecovery = true
 				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
 				assert(state.channels[1] == "General" and state.channels[2] == "QuestTogether")
 				assert(ChatTypeInfo.CHANNEL1 == records[2] and ChatTypeInfo.CHANNEL2 == records[1],
 					"full record identity, not just RGB, must follow each channel")
 				assert(GetChannelName(boxes[1].target) == 1 and GetChannelName(boxes[2].target) == 2)
 				assert(state.swaps == 1 and state.helperCalls == 1)
+				assert(state.reentrantChecks == 2 and state.nativeCalls == 1,
+					"reentrant callbacks during the native helper must not dispatch a nested swap")
+
+				assert(not boxes[1].textReads and not boxes[2].textReads and not boxes[3].textReads,
+					"empty edit boxes must not require draft contents")
+				assert(state.channels[3] == "Trade" and ChatTypeInfo.CHANNEL3 == records[3]
+					and boxes[3].target == 3 and boxes[3].writes == 0,
+					"unrelated channels and remembered destinations must remain untouched")
 				boxes[1]:UpdateHeader(); boxes[2]:UpdateHeader()
 				assert(boxes[1].target == 1 and boxes[2].target == 2,
 					"later native header normalization must retain the same channels")
+				Reset()
+				ChatFrame15.editBox = nil
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
+					"an output-only chat window has no edit destination to preserve")
+				assert(boxes[3].writes == 0 and ChatTypeInfo.CHANNEL3 == records[3])
+				Reset()
+				ChatFrame12.editBox = nil
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
+				assert(boxes[2].writes == 1 and GetChannelName(boxes[2].target) == 2,
+					"a missing frame association must still preserve its native named editbox destination")
+				for _, invalidBox in ipairs({ false, 1, secret, inaccessible }) do
+					Reset()
+					ChatFrame15.editBox = invalidBox
+					local before = inaccessibleReads
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+					assert(state.swaps == 0 and inaccessibleReads == before,
+						"a nonnil unreadable or invalid editbox must not be treated as an output-only window")
+				end
+				Reset()
+				state.normalizeMetadataIDs = true
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
+					"native refresh may normalize per-slot message type IDs using the engine's verified index")
+				assert(ChatTypeInfo.CHANNEL1 == records[2] and records[2].id == 31 and records[2].sticky == 1
+					and records[2].flashTab == true and records[2].r == 0.2
+					and ChatTypeInfo.CHANNEL2 == records[1] and records[1].id == 32 and records[1].sticky == 0,
+					"ID normalization must preserve full per-channel record identity and every other preference")
+				Reset()
+				state.corruptMetadata = true
+				local metadataAccepted, metadataReason = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+				assert(metadataAccepted == false and metadataReason == "inconsistent" and state.swaps == 1)
+				local metadataRecovered, metadataRecoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(metadataRecovered == false and metadataRecoveryReason == "inconsistent" and state.nativeCalls == 1,
+					"a changed sticky setting must remain quarantined rather than being excused as an ID refresh")
+				records[1].sticky = 0
+				metadataRecovered, metadataRecoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(metadataRecovered == true and metadataRecoveryReason == "swapped" and state.nativeCalls == 1)
+				Reset()
+				state.unreadableAfterSwap = true
+				local unreadableAccepted, unreadableReason = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+				assert(unreadableAccepted == false and unreadableReason == "pending" and state.swaps == 1)
+				local unreadableRecovered, unreadableRecoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(unreadableRecovered == false and unreadableRecoveryReason == "pending" and state.nativeCalls == 1)
+				state.failNumericLookup = false
+				unreadableRecovered, unreadableRecoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(unreadableRecovered == true and unreadableRecoveryReason == "swapped" and state.nativeCalls == 1,
+					"transient channel lookup failures must recover without replaying a completed native swap")
+				Reset()
+				boxes[2].hideTargetAfterSwap = true
+				local targetAccepted, targetReason = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+				assert(targetAccepted == false and targetReason == "pending" and state.swaps == 1)
+				boxes[2].hideTargetAfterSwap = false
+				local targetRecovered, targetRecoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(targetRecovered == true and targetRecoveryReason == "swapped" and state.nativeCalls == 1,
+					"transient destination unreadability must settle through revalidation")
 
 				Reset()
 				boxes[1].shown, state.refreshHeaders = true, true
 				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
 					"idle visible IM editboxes may refresh their headers after the native swap")
 				assert(boxes[1].target == 1 and boxes[2].target == 2)
+				Reset()
+				ACTIVE_CHAT_EDIT_BOX = boxes[2]
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
+					"a stale active-box pointer without focused input must not block sorting forever")
+				assert(ACTIVE_CHAT_EDIT_BOX == boxes[2] and not boxes[2].focused and boxes[2].text == "")
+				Reset()
+				CHAT_FRAMES[3], ACTIVE_CHAT_EDIT_BOX, boxes[3].target = nil, boxes[3], 2
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
+				assert(GetChannelName(boxes[3].target) == 1 and boxes[3].writes == 1,
+					"an unregistered stale active editbox still needs its affected destination preserved")
+				Reset()
+				ACTIVE_CHAT_EDIT_BOX, boxes[3].focused = boxes[3], true
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+				assert(state.swaps == 0 and not boxes[3].textReads,
+					"focused unrelated chat input must defer before reading or changing destinations")
+				Reset()
+				boxes[2].text = "unfinished message"
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
+					"hidden plain-text drafts can keep their verified channel identity")
+				assert(boxes[2].text == "unfinished message" and boxes[2].textReads > 0
+					and GetChannelName(boxes[2].target) == 2)
+				boxes[2]:UpdateHeader()
+				assert(boxes[2].target == 2 and boxes[2].text == "unfinished message")
+				Reset()
+				boxes[3].text = "saved trade message"
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
+				assert(boxes[3].text == "saved trade message" and boxes[3].target == 3 and boxes[3].writes == 0,
+					"an unrelated hidden plain-text draft must retain both its contents and destination")
+				Reset()
+				boxes[2].shown, boxes[2].visible, boxes[2].text = true, false, "hidden by parent"
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
+					"effective visibility decides whether a retained draft is on screen")
+				Reset()
+				boxes[2].shown, boxes[2].text = true, "on screen"
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+				assert(not boxes[2].textReads and state.swaps == 0 and boxes[2].text == "on screen",
+					"visible drafts must defer without inspecting their contents")
+				for _, draft in ipairs({ "/2", " \t/1", "/say hello", string.rep("x", 4097), secret, inaccessible }) do
+					Reset()
+					boxes[2].text, boxes[2].lengthOverride = draft, 4
+					local before = inaccessibleReads
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false,
+						"hidden command drafts and unreadable text must remain deferred")
+					assert(state.swaps == 0 and boxes[2].target == 1 and boxes[2].text == draft
+						and inaccessibleReads == before)
+				end
+				for _, getter in ipairs({ false, secret, inaccessible }) do
+					Reset()
+					boxes[2].text, boxes[2].GetText = "retained message", getter or nil
+					local before = inaccessibleReads
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+					assert(state.swaps == 0 and inaccessibleReads == before,
+						"unavailable native text reads cannot establish a hidden draft is safe")
+				end
 
 				for alias, canonical in pairs({ General = "General - Ironforge", LocalDefense = "LocalDefense - Ironforge",
 					Services = "Trade (Services) - English 43", TradeLocal = "Trade (Local) - Ironforge" }) do
@@ -1275,9 +1440,16 @@ return pushable end or nil,
 				Reset()
 				state.canonicalNames, state.failCanonicalLookup = { General = "General - Ironforge" }, true
 				local resolved, resolutionReason, resolutionStage = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+				assert(resolved == true, "an exact alias and numeric identity can bind a channel when its display name cannot")
+				assert(boxes[1].target == "General" and GetChannelName(boxes[1].target) == 1)
+				boxes[1]:UpdateHeader()
+				assert(boxes[1].target == 1 and ChatTypeInfo.CHANNEL1 == records[2])
+				Reset()
+				state.canonicalNames, state.inconsistentNumericName = { General = "General - Ironforge" }, true
+				resolved, resolutionReason, resolutionStage = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
 				assert(resolved == false and resolutionReason == "invalid" and resolutionStage == "channel_identity")
 				assert(state.helperCalls == 0 and state.swaps == 0 and boxes[1].target == 2,
-					"an unresolvable canonical identity must not mutate remembered destinations or channel ordering")
+					"contradictory numeric identity must stop before destination changes")
 
 				for _, kind in ipairs({ "focus", "draft", "blocked", "channel-ui", "settings-ui", "reject", "normalize", "tainted" }) do
 					Reset()
@@ -1298,18 +1470,43 @@ return pushable end or nil,
 					assert(stage == expectedStage, "channel ordering must identify its blocked stage: " .. kind)
 					assert(state.helperCalls == 0 and state.swaps == 0, kind .. " must defer before any swap")
 					assert(GetChannelName(boxes[1].target) == 2 and GetChannelName(boxes[2].target) == 1)
+					boxes[2].focused, boxes[2].text, boxes[2].reject, boxes[2].normalize = false, "", false, false
+					state.blocked, state.tainted, ChannelFrame = false, false, nil
+					ChatConfigFrame = { IsShown = function() return false end }
+					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
+						kind .. " must recover after the transient blocker ends")
 				end
 				for _, value in ipairs({ false, secret, inaccessible }) do
 					Reset()
 					ChatConfigChannelSettings_SwapChannelsByIndex = value or nil
 					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
 					assert(state.swaps == 0, "missing helper cannot fall back to raw channel swaps")
+					assert(state.loadCalls == (value == false and 1 or 0),
+						"only a genuinely absent helper may trigger a native addon load")
 					Reset()
 					boxes[2].target = value
 					local before = inaccessibleReads
 					assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
 					assert(state.swaps == 0 and inaccessibleReads == before)
 				end
+				Reset()
+				ChatConfigChannelSettings_SwapChannelsByIndex = nil
+				state.loadNativeHelper = true
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
+				assert(state.loadCalls == 1 and state.helperCalls == 1 and state.swaps == 1,
+					"loading an absent native helper may unblock the metadata-preserving path")
+				Reset()
+				ChatConfigChannelSettings_SwapChannelsByIndex = nil
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+				state.loadNativeHelper = true
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
+				assert(state.loadCalls == 2 and state.swaps == 1,
+					"a transient native addon load failure must be retryable")
+				Reset()
+				ChatConfigChannelSettings_SwapChannelsByIndex, C_AddOns = nil, nil
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+				assert(state.helperCalls == 0 and state.swaps == 0,
+					"clients without a native helper or loader must fail before mutation")
 				for _, field in ipairs({ "metadata", "frame", "method" }) do
 					Reset()
 					local before = inaccessibleReads
@@ -1327,6 +1524,124 @@ return pushable end or nil,
 				assert(state.swaps == 0 and state.helperCalls == 1, "never blindly reverse a partial failure")
 				assert(GetChannelName(boxes[1].target) == 2 and GetChannelName(boxes[2].target) == 1,
 					"even a partial native failure must leave sends bound to their original channel names")
+				state.allowPartialCompletion, state.reentrantRecovery = true, true
+				local recovered, recoveryReason, recoveryStage = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == false and recoveryReason == "inconsistent" and state.swaps == 0)
+				state.failure, state.allowPartialCompletion = nil, true
+				state.blocked = true
+				recovered, recoveryReason, recoveryStage = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == false and recoveryReason == "pending" and recoveryStage == "recovery_restrictions")
+				assert(state.swaps == 0 and state.helperCalls == 1)
+				local retry, retryReason, retryStage = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+				assert(retry == false and retryReason == "pending" and retryStage == "recovery_pending",
+					"an outstanding partial native swap must prevent another ordinary transaction")
+				state.blocked = false
+				boxes[2].focused = true
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == false and recoveryReason == "pending" and state.swaps == 0,
+					"partial completion must wait for active input to end")
+				boxes[2].focused = false
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == true and recoveryReason == "swapped")
+				assert(state.swaps == 1 and state.helperCalls == 1 and state.channels[1] == "General"
+					and ChatTypeInfo.CHANNEL1 == records[2] and ChatTypeInfo.CHANNEL2 == records[1],
+					"recovery may finish only the missing native channel swap, never repeat the metadata exchange")
+				assert(GetChannelName(boxes[1].target) == 1 and GetChannelName(boxes[2].target) == 2)
+				assert(state.reentrantChecks == 2, "native callbacks must not reenter either partial recovery attempt")
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == true and recoveryReason == "none", "a resolved receipt must be cleared")
+				Reset()
+				state.failure = "before"
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+				state.failure, state.allowPartialCompletion = nil, true
+				local newBox = setmetatable({ target = 2, text = "/2", focused = true, shown = false, writes = 0 },
+					{ __index = boxes[3] })
+				ChatFrame15.editBox, ACTIVE_CHAT_EDIT_BOX = newBox, newBox
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == false and recoveryReason == "pending" and state.nativeCalls == 1,
+					"new focused temporary windows must prevent partial completion")
+				newBox.focused = false
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == false and recoveryReason == "pending" and state.nativeCalls == 1,
+					"new hidden command drafts must also prevent partial completion")
+				newBox.text = "new temporary message"
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == true and recoveryReason == "swapped" and state.nativeCalls == 2)
+				assert(newBox.writes == 1 and GetChannelName(newBox.target) == 1
+					and newBox.text == "new temporary message" and boxes[3].target == 3,
+					"recovery must pin newly created windows before completing the channel number change")
+				Reset()
+				state.failure = "before"
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+				state.failure, state.allowPartialCompletion, boxes[3].target = nil, true, 1
+				local savedNativeSwap = C_ChatInfo.SwapChatChannelsByChannelIndex
+				C_ChatInfo.SwapChatChannelsByChannelIndex = nil
+				recovered, recoveryReason, recoveryStage = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == false and recoveryReason == "pending" and recoveryStage == "recovery_helpers"
+					and state.nativeCalls == 1)
+				C_ChatInfo.SwapChatChannelsByChannelIndex = savedNativeSwap
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == true and recoveryReason == "swapped" and boxes[3].writes == 1
+					and GetChannelName(boxes[3].target) == 2,
+					"recovery must preserve an existing window newly aimed at an affected channel")
+				Reset()
+				state.failure = "before"
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+				state.failure, state.allowPartialCompletion = nil, true
+				state.canonicalNames = { General = "General - Different Zone" }
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == false and recoveryReason == "pending" and state.nativeCalls == 1,
+					"a changed canonical identity must not be guessed from a reused alias during recovery")
+				state.canonicalNames = nil
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == true and recoveryReason == "swapped" and state.nativeCalls == 2)
+				Reset()
+				state.failure = "before"
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == false)
+				state.allowPartialCompletion = true
+				local retainedBoxes, bounded = {}, false
+				for index = 1, 130 do
+					local temporary = setmetatable({ target = 2, text = "", focused = false, shown = false, writes = 0 },
+						{ __index = boxes[3] })
+					ChatFrame15.editBox = temporary
+					local callsBefore = state.nativeCalls
+					recovered, recoveryReason, recoveryStage = addon.API.CheckChatChannelOrderRecovery()
+					assert(recovered == false and state.swaps == 0)
+					if temporary.writes > 0 then retainedBoxes[#retainedBoxes + 1] = temporary end
+					if recoveryReason == "pending" and recoveryStage == "recovery_chat_input" then
+						bounded = true
+						assert(state.nativeCalls == callsBefore, "a full receipt must defer before the remaining native mutation")
+					end
+				end
+				assert(bounded and #retainedBoxes <= 126,
+					"repeated new windows must not grow one recovery receipt beyond its retained-frame bound")
+				ChatFrame15.editBox, state.failure = boxes[3], nil
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == true and recoveryReason == "swapped")
+				for _, box in ipairs(retainedBoxes) do
+					assert(GetChannelName(box.target) == 1, "every retained temporary destination must survive eventual completion")
+				end
+				Reset()
+				state.failure = "no-op"
+				swapped, reason, recoveryStage = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+				assert(swapped == false and reason == "no_op" and recoveryStage == "result_validation")
+				assert(state.swaps == 0 and state.helperCalls == 1 and ChatTypeInfo.CHANNEL1 == records[1]
+					and ChatTypeInfo.CHANNEL2 == records[2])
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == true and recoveryReason == "none", "a verified no-op must not leave a quarantine")
+				state.failure = nil
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
+				assert(state.helperCalls == 2 and state.swaps == 1, "a harmless rejected swap can retry normally")
+				Reset()
+				state.failure = "unreadable-no-op"
+				swapped, reason = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
+				assert(swapped == false and reason == "pending" and state.swaps == 0)
+				state.failNumericLookup = false
+				recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+				assert(recovered == true and recoveryReason == "no_op" and state.nativeCalls == 0,
+					"an initially unreadable no-op can clear its receipt after identity verification")
+				state.failure = nil
+				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true)
 				Reset()
 				state.failure = "after"
 				assert(addon.API.SwapChatChannelsPreservingState("QuestTogether", "General") == true,
@@ -1345,9 +1660,17 @@ return pushable end or nil,
 						Reset()
 						state.taintKind, state.taintAfter = kind, after
 						local accepted, detail = addon.API.SwapChatChannelsPreservingState("QuestTogether", "General")
-						assert(accepted == false and detail == (after and "inconsistent" or "inaccessible"))
+						assert(accepted == false and detail == (after and "pending" or "inaccessible"))
 						assert(state.swaps == (after and 1 or 0), "metadata taint must stop the transaction")
 						assert(state.helperCalls == (after and 1 or 0), "taint must not trigger a blind repair")
+						if after then
+							local recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+							assert(recovered == false and recoveryReason == "pending")
+							state.taintKind = nil
+							recovered, recoveryReason = addon.API.CheckChatChannelOrderRecovery()
+							assert(recovered == true and recoveryReason == "swapped" and state.swaps == 1,
+								"readability recovery must validate the completed transaction without another swap")
+						end
 					end
 				end
 				Reset()

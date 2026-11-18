@@ -400,6 +400,7 @@ function QuestTogether:FlushDeferredWork(reason)
 end
 
 function QuestTogether:ADDON_RESTRICTION_STATE_CHANGED()
+	self:SuspendAutoThanks()
 	-- RestrictedActionsDocumentation sequences this event before activation
 	-- and after deactivation. Retire the hover while native object permissions
 	-- may still allow clearing it; combat has its own visibility driver.

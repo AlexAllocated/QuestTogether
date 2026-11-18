@@ -73,6 +73,11 @@ function QuestTogether:BuildDiagnosticReport(questId, extraFields)
 	Add("comms.channelOrder.stage", channelOrder.lastStage or "none")
 	Add("comms.channelOrder.swaps", channelOrder.swaps or 0)
 	Add("comms.channelOrder.suspended", channelOrder.suspended == true)
+	Add("comms.channelOrder.recoveryPending", channelOrder.recoveryPending == true)
+	Add("comms.channelOrder.recoveries", channelOrder.recoveries or 0)
+	local channelJoins = rawget(self, "chatChannelJoinState") or {}
+	Add("comms.channelJoin.awaitingWorld", channelJoins.awaitingWorld == true)
+	Add("comms.channelJoin.notBefore", channelJoins.notBefore or "none")
 	local keys = {}
 	for key in pairs(pending) do
 		keys[#keys + 1] = key

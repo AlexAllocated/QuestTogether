@@ -13,6 +13,24 @@ local function QuestTitle(row)
 	if row.kind and row.kind ~= "chainStep" then return row.title or "" end
 	return "[" .. tostring(row.questLevel or "?") .. (row.questGroupRecommended and "+" or "") .. "] " .. (row.title or "")
 end
+local function LayoutChainSection(row, data, previous, following, width, indent, dark)
+	for _, edge in ipairs(row.chainEdges) do edge:Hide() end
+	local instance = data.chainInstanceId
+	if not instance then return end
+	local left, right, height = 4 + indent, width - 2, row:GetHeight()
+	local r, g, b = dark and 0.78 or 0.48, dark and 0.62 or 0.32, dark and 0.30 or 0.12
+	local function Edge(index, x, y, w, h)
+		local edge = row.chainEdges[index]
+		edge:ClearAllPoints(); edge:SetPoint("TOPLEFT", x, y)
+		edge:SetSize(w, h); edge:SetColorTexture(r, g, b, 0.85); edge:Show()
+	end
+	-- Every pooled row draws its part of the same outline, including objective
+	-- details and paging controls. Only real section ends receive a cap.
+	Edge(1, left, 0, 2, height)
+	Edge(2, right - 2, 0, 2, height)
+	if not previous or previous.chainInstanceId ~= instance then Edge(3, left, 0, right - left, 2) end
+	if not following or following.chainInstanceId ~= instance then Edge(4, left, 2 - height, right - left, 2) end
+end
 local function CompareRowHeight(rows, index)
 	local row, previous, following = rows[index], rows[index - 1], rows[index + 1]
 	local firstDetail = ObjectiveDetail(row) and (not ObjectiveDetail(previous) or previous.questId ~= row.questId)
@@ -389,6 +407,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			local first = not ObjectiveDetail(previous) or previous.questId ~= data.questId
 			local last = not ObjectiveDetail(following) or following.questId ~= data.questId
 			local top, bottom = LayoutDetailsPanel(row, width, ObjectiveDetail(data), first, last, expanded, dark)
+			LayoutChainSection(row, data, previous, following, width, groupIndent, dark)
 			row.expander:SetTextColor(dark and 0.92 or 0.4, dark and 0.78 or 0.25, dark and 0.45 or 0.08)
 			row.expander:SetText((not data.kind or data.kind == "chainGroup") and (expanded and "-" or "+") or "")
 			row.expander:ClearAllPoints(); row.expander:SetPoint("TOPLEFT", 6 + groupIndent, -8)
@@ -397,8 +416,9 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			ColorPanel(row.hover, dark and 1 or 0.35, dark and 1 or 0.24, dark and 1 or 0.10, 0.08)
 			row.title:ClearAllPoints()
 			local indent = data.kind == "objective" and 64 or data.kind == "member" and 48
-				or data.kind == "chainStep" and 40 + math.min(8, data.depth or 0) * 14 or 28
+				or (data.kind == "chainStep" or data.chainAnchor) and 40 + math.min(8, data.depth or 0) * 14 or 28
 			indent = indent + groupIndent
+			if data.chainAnchor then row.expander:ClearAllPoints(); row.expander:SetPoint("TOPLEFT", indent - 22, -8) end
 			local chainRow = data.kind and data.kind:sub(1, 5) == "chain"
 			local questRow = not data.kind or data.kind == "chainStep"
 			local chainVisible = not data.kind and data.chainAvailable == true and self.TogglePartyQuestChain ~= nil
@@ -428,8 +448,9 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				row.journal:Hide()
 			end
 			row.partySummary:SetText(data.partySummary or "")
-			row.partySummary:ClearAllPoints(); row.partySummary:SetPoint("TOPLEFT", 28 + groupIndent, -25)
-			row.partySummary:SetWidth(QUEST_WIDTH - 36 - groupIndent)
+			local summaryIndent = data.chainAnchor and indent or 28 + groupIndent
+			row.partySummary:ClearAllPoints(); row.partySummary:SetPoint("TOPLEFT", summaryIndent, -25)
+			row.partySummary:SetWidth(QUEST_WIDTH - summaryIndent - 8)
 			row.partySummary:SetTextColor(unpack(colors[data.partySummaryState or "Unknown"]))
 			if ObjectiveDetail(data) then
 				row.accent:Hide()
@@ -447,7 +468,8 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 					dark and 1 or 0.4,
 					dark and 0.85 or 0.28,
 					dark and 0.55 or 0.12,
-					(expanded or data.kind == "chainGroup") and 0.16 or (chainRow and 0.08 or (slot.index % 2 == 0 and 0.055 or 0.015))
+					data.chainAnchor and 0.25 or (expanded or data.kind == "chainGroup") and 0.16
+						or data.chainInstanceId and 0.12 or (chainRow and 0.08 or (slot.index % 2 == 0 and 0.055 or 0.015))
 				)
 			end
 			Style.LayoutProgressBar(row, data, dark, 64 + groupIndent, 22 + top, actionX - 80 - groupIndent)
@@ -642,13 +664,23 @@ local function CompareHeight(frame)
 	return height
 end
 
-function QuestTogether:CapturePartyQuestScrollAnchor()
+function QuestTogether:CapturePartyQuestScrollAnchor(rowID, visibleOnly)
 	local frame, session = rawget(self, "partyQuestCompareWindow"), rawget(self, "partyQuestCompareSession")
 	if not frame or not session or frame.displaySession ~= session then return end
 	local pixels, y, anchor = session.scrollPixels or 0, 0
 	for i, row in ipairs(frame.displayRows or {}) do
-		if Selectable(row) and y <= pixels then anchor = { rowId = RowID(row), questId = row.questId, offset = pixels - y } end
-		y = y + CompareRowHeight(frame.displayRows, i)
+		local height = CompareRowHeight(frame.displayRows, i)
+		if Selectable(row) then
+			if rowID and RowID(row) == rowID then
+				if not visibleOnly or y + height > pixels and y < pixels + frame.rowsViewport:GetHeight() then
+					return { rowId = rowID, questId = row.questId, offset = pixels - y }
+				end
+				return
+			elseif not rowID and y <= pixels then
+				anchor = { rowId = RowID(row), questId = row.questId, offset = pixels - y }
+			end
+		end
+		y = y + height
 	end
 	return anchor
 end
@@ -877,6 +909,10 @@ local function PrepareExpansions(self, frame, session, rows)
 		local transition = transitions[row.questId]
 		if not row.kind and transition and transition.closingRows then
 			for _, detail in ipairs(transition.closingRows) do
+				-- The retained animation follows the current row's section, even
+				-- when a chain is opened or closed before the animation finishes.
+				detail.chainInstanceId = row.chainInstanceId
+				detail.chainGroupId, detail.chainGroupMember = row.chainGroupId, row.chainGroupMember
 				display[#display + 1] = detail
 			end
 		end
@@ -965,7 +1001,7 @@ function QuestTogether:PopulatePartyQuestContextMenu(frame, selected, root)
 			if Current() then self:ActivatePartyQuestListRow(frame, data); self:RequestPartyQuestKeyboardFocus(frame) end
 		end)
 	end
-	if data.kind == "chainStep" and self.GetPartyQuestChainActions then
+	if (data.kind == "chainStep" or data.chainAnchor) and self.GetPartyQuestChainActions then
 		for _, descriptor in ipairs(self:GetPartyQuestChainActions(data, selected.player) or {}) do
 			local action = descriptor.action
 			local choice = root:CreateButton(descriptor.label, function()
@@ -1324,6 +1360,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.branchStem = row:CreateTexture(nil, "ARTWORK")
 			row.groupRail = row:CreateTexture(nil, "ARTWORK")
 			row.groupEnd = row:CreateTexture(nil, "ARTWORK")
+			row.chainEdges = {}
+			for edge = 1, 4 do row.chainEdges[edge] = row:CreateTexture(nil, "OVERLAY") end
 			row.accent = row:CreateTexture(nil, "ARTWORK")
 			row.accent:SetPoint("TOPLEFT", 8, 0)
 			row.accent:SetSize(2, ROW_HEIGHT)
@@ -1673,6 +1711,17 @@ function QuestTogether:RenderPartyQuestCompare()
 		return
 	end
 	if self.ParkPartyQuestGamepadSelection and not self:ParkPartyQuestGamepadSelection(frame) then return end
+	local chainRoot = session.chains and session.chains.rootQuestID
+	if frame.displaySession == session and not session.restoreAnchor then
+		local origin = chainRoot or frame.chainAnchorQuestID
+		if origin then
+			-- Keep the actual log row under the cursor as ancestors arrive above
+			-- it. If the reader has scrolled away, preserve their reading position.
+			session.restoreAnchor = self:CapturePartyQuestScrollAnchor("quest:" .. origin, true)
+				or self:CapturePartyQuestScrollAnchor()
+		end
+	end
+	frame.chainAnchorQuestID = chainRoot
 	frame.columns, frame.memberColumnsWidth = self:GetPartyQuestCompareColumns(session)
 	frame:UpdateResizeBounds(#session.members)
 	frame:Layout()

@@ -4304,7 +4304,9 @@ QuestTogether:RegisterTest("QT-last directory lifecycle preserves human channel 
 end)
 
 QuestTogether:RegisterTest("channel ordering paces retries and respects stopped restricted and inconsistent lifetimes", function()
-	for _, case in ipairs({ { "deferred", 1 }, { "unavailable", 30 }, { "inconsistent", false } }) do
+	-- A real channel change wakes a deferred check, but cannot bypass the
+	-- one-second attempt floor even when callbacks reenter synchronously.
+	for _, case in ipairs({ { "deferred", 1 }, { "unavailable", 1 }, { "inconsistent", false } }) do
 		local addon, calls = NewChannelOrderingFixture(), 0
 		addon.API.SwapChatChannelsPreservingState = function()
 			calls = calls + 1
@@ -4347,6 +4349,288 @@ QuestTogether:RegisterTest("channel ordering paces retries and respects stopped 
 		Equal(calls, 2)
 		Equal(#addon.delayed, 0)
 	end
+end)
+
+QuestTogether:RegisterTest("channel startup waits for world entry without native joins retirement or retry debt", function()
+	local addon = NewChannelOrderingFixture()
+	addon.channels = { "General", "Trade", "QuestTogether3" }
+	addon.geographicCommsState.subscriptions.QuestTogether3Z12 = true
+	addon:BeginAnnouncementChannelStartup()
+	local function AssertWaiting()
+		for _, name in ipairs({ "QuestTogether", "QuestTogether3Z12" }) do
+			Equal(addon:EnsureMeshDirectoryJoined(name), false)
+			Equal(addon:EnsureAnnouncementChannelJoined(name), false)
+		end
+		Equal(next(addon.meshNetworkState.joins), nil)
+		Equal(addon.meshNetworkState.metrics.directoryJoinAttempts or 0, 0)
+		Equal(next(addon.leaves), nil)
+		Equal(table.concat(addon.channels, ","), "General,Trade,QuestTogether3")
+		Equal(#addon.delayed, 0)
+	end
+	AssertWaiting()
+	addon.now = addon.now + 20
+	AssertWaiting()
+	addon:ResumeAnnouncementChannelJoins()
+	addon.now = addon.now + 4
+	addon:ResumeAnnouncementChannelJoins()
+	AssertWaiting()
+	addon.now = 129.99
+	AssertWaiting()
+	addon.now = 130
+	Equal(addon:EnsureMeshDirectoryJoined("QuestTogether"), true)
+	Equal(addon:EnsureMeshDirectoryJoined("QuestTogether3Z12"), true)
+	Equal(addon.leaves.QuestTogether3, 1)
+	Equal(table.concat(addon.channels, ","), "General,Trade,QuestTogether,QuestTogether3Z12")
+	Equal(addon.meshNetworkState.metrics.directoryJoinAttempts, 2)
+	Equal(#addon.delayed, 0)
+end)
+
+QuestTogether:RegisterTest("channel startup accepts and repairs saved memberships before new joins become eligible", function()
+	local addon = NewChannelOrderingFixture()
+	addon.channels = { "QuestTogether", "General", "Trade" }
+	addon:BeginAnnouncementChannelStartup()
+	addon.API.JoinPermanentChannel = function() error("saved membership must not be rejoined") end
+	Equal(addon:EnsureMeshDirectoryJoined("QuestTogether"), true)
+	Equal(addon.announcementChannelLocalID, 1)
+	Equal(addon:CanJoinAnnouncementChannel(), false)
+	addon:UpdateAnnouncementChannelOrder()
+	Equal(addon.channels[1], "General")
+	addon.now = addon.now + 1
+	addon:UpdateAnnouncementChannelOrder()
+	Equal(table.concat(addon.channels, ","), "General,Trade,QuestTogether")
+	Equal(next(addon.meshNetworkState.joins), nil)
+	Equal(#addon.delayed, 0)
+end)
+
+QuestTogether:RegisterTest("channel join grace survives restrictions disable and world reentry without orphan native work", function()
+	local addon = NewChannelOrderingFixture()
+	addon.channels = { "General", "Trade" }
+	addon:BeginAnnouncementChannelStartup()
+	addon:ResumeAnnouncementChannelJoins()
+	addon.now = 110
+	for _, flag in ipairs({ "blocked", "chatBlocked", "isLoggingOut", "isEnabled" }) do
+		addon[flag] = flag ~= "isEnabled"
+		Equal(addon:CanJoinAnnouncementChannel(), false)
+		Equal(addon:EnsureAnnouncementChannelJoined("QuestTogether"), false)
+		addon[flag] = flag == "isEnabled"
+	end
+	Equal(addon:CanJoinAnnouncementChannel(), true)
+	local clock = addon.API.GetTime
+	addon.API.GetTime = function() return nil end
+	Equal(addon:CanJoinAnnouncementChannel(), false)
+	addon.API.GetTime = clock
+	addon:SuspendAnnouncementChannelJoins()
+	addon.now = 200
+	Equal(addon:CanJoinAnnouncementChannel(), false)
+	addon:ResumeAnnouncementChannelJoins()
+	addon.now = 209.99
+	Equal(addon:CanJoinAnnouncementChannel(), false)
+	addon:ResumeAnnouncementChannelJoins()
+	addon.now = 210
+	Equal(addon:EnsureMeshDirectoryJoined("QuestTogether"), true)
+	Equal(table.concat(addon.channels, ","), "General,Trade,QuestTogether")
+	Equal(addon.meshNetworkState.metrics.directoryJoinAttempts, 1)
+	Equal(#addon.delayed, 0)
+end)
+
+QuestTogether:RegisterTest("channel startup grace follows login world entry and enable lifetimes", function()
+	local net = QuestTogether:CreateTestNetwork()
+	local addon = net:AddPeer("Self-Realm")
+	addon.isEnabled, addon.hasLoggedIn, addon.db.profile.enabled = false, false, false
+	for _, method in ipairs({ "InitializeMinimapLauncher", "InitializeReleaseNotes", "NotifyAddonUpdate",
+		"ScheduleStartupHint", "RegisterRuntimeEvents", "EnableNameplateAugmentation",
+		"TryInstallPersonalBubbleEditModeHooks" }) do addon[method] = function() end end
+	local joins = 0
+	addon.API.JoinPermanentChannel = function(name)
+		joins = joins + 1
+		net:Join(addon, name, true)
+	end
+	addon:OnLogin()
+	addon.now = 130
+	addon:Enable()
+	Equal(addon:CanJoinAnnouncementChannel(), false)
+	Equal(joins, 0)
+	addon:PLAYER_ENTERING_WORLD()
+	addon.now = 135
+	addon:PLAYER_ENTERING_WORLD()
+	addon:Disable()
+	addon:Enable()
+	Equal(addon:CanJoinAnnouncementChannel(), false)
+	Equal(joins, 0)
+	addon.now = 140
+	Equal(addon:CanJoinAnnouncementChannel(), true)
+	addon:PLAYER_LEAVING_WORLD()
+	addon.now = 200
+	Equal(addon:CanJoinAnnouncementChannel(), false)
+	addon:PLAYER_ENTERING_WORLD()
+	Equal(addon:CanJoinAnnouncementChannel(), false)
+	Equal(joins, 0)
+	addon.now = 210
+	Equal(addon:EnsureMeshDirectoryJoined("QuestTogether"), true)
+	Equal(joins, 1)
+end)
+
+QuestTogether:RegisterTest("channel ordering replaces stale success on unreadable lists and recovers without channel events", function()
+	local invalidLists = {
+		function() error("native list unavailable") end,
+		function() return nil end,
+		function() return "unreadable" end,
+		function() return { 1, "QuestTogether" } end,
+		function() return { 1, "QuestTogether", false, 2, "", false } end,
+		function() return { 1, "QuestTogether", false, 1, "General", false } end,
+		function() return { 1, "QuestTogether", false, 2, "QuestTogether", false } end,
+		function() return { 0, "QuestTogether", false, 2, "General", false } end,
+		function() return { 31, "QuestTogether", false, 2, "General", false } end,
+		function() return { 1.5, "QuestTogether", false, 2, "General", false } end,
+	}
+	for _, unreadable in ipairs(invalidLists) do
+		local addon = NewChannelOrderingFixture()
+		addon.channels = { "General", "QuestTogether" }
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(addon.chatChannelOrderState.lastResult, "ordered")
+		local list = addon.API.GetChatChannelList
+		addon.API.GetChatChannelList = unreadable
+		addon.channels = { "QuestTogether", "General" }
+		addon.now = addon.now + 5
+		addon:UpdateAnnouncementChannelOrder()
+		assert(addon.chatChannelOrderState.lastResult == "unreadable" or addon.chatChannelOrderState.lastResult == "invalid",
+			"unreadable native data must not retain a successful ordering diagnosis")
+		Equal(addon.chatChannelOrderState.lastStage, "channel_list")
+		Equal(#addon.swaps, 0)
+		addon.API.GetChatChannelList = list
+		addon.now = addon.now + 30
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(addon.channels[1], "General")
+		Equal(addon.channels[2], "QuestTogether")
+		Equal(#addon.swaps, 1)
+		Equal(#addon.delayed, 0)
+	end
+end)
+
+QuestTogether:RegisterTest("channel count events retire stale ordering without bypassing the native swap cadence", function()
+	local addon = NewChannelOrderingFixture()
+	addon.channels = { "QuestTogether" }
+	addon:UpdateAnnouncementChannelOrder()
+	Equal(addon.chatChannelOrderState.lastResult, "ordered")
+	addon.channels[2], addon.channels[3] = "General", "Trade"
+	addon.now = addon.now + 0.25
+	addon:CHANNEL_COUNT_UPDATE()
+	assert(addon.chatChannelOrderState.lastResult ~= "ordered",
+		"a newly arrived human channel invalidates the previous ordered snapshot")
+	for _ = 1, 20 do
+		addon:CHANNEL_COUNT_UPDATE()
+		addon:UpdateAnnouncementChannelOrder()
+	end
+	Equal(#addon.swaps, 0)
+	addon.now = 101
+	addon:UpdateAnnouncementChannelOrder()
+	Equal(#addon.swaps, 1)
+	Equal(addon.channels[1], "General")
+	local swap = addon.API.SwapChatChannelsPreservingState
+	addon.API.SwapChatChannelsPreservingState = function(...)
+		for _ = 1, 20 do
+			addon:CHANNEL_COUNT_UPDATE()
+			addon:UpdateAnnouncementChannelOrder()
+		end
+		return swap(...)
+	end
+	for _ = 1, 20 do
+		addon:CHANNEL_COUNT_UPDATE()
+		addon:UpdateAnnouncementChannelOrder()
+	end
+	Equal(#addon.swaps, 1)
+	addon.now = 102
+	addon:UpdateAnnouncementChannelOrder()
+	Equal(#addon.swaps, 2)
+	Equal(table.concat(addon.channels, ","), "General,Trade,QuestTogether")
+	Equal(#addon.delayed, 0)
+end)
+
+QuestTogether:RegisterTest("channel ordering retries unchanged native deferrals and eventually restores human channels", function()
+	for _, reason in ipairs({ "busy", "restricted", "invalid", "inaccessible", "prepare", "unavailable" }) do
+		local addon, attempts = NewChannelOrderingFixture(), 0
+		addon.channels = { "QuestTogether", "General" }
+		local swap = addon.API.SwapChatChannelsPreservingState
+		addon.API.SwapChatChannelsPreservingState = function(...)
+			attempts = attempts + 1
+			if attempts == 1 then return false, reason, "native_reorder" end
+			return swap(...)
+		end
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(addon.channels[1], "QuestTogether")
+		Equal(addon.chatChannelOrderState.lastResult, reason)
+		assert(not addon.chatChannelOrderState.recoveryPending,
+			"a verified unchanged native refusal must remain an ordinary retry")
+		addon.now = addon.now + (reason == "unavailable" and 5 or 1)
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(table.concat(addon.channels, ","), "General,QuestTogether")
+		Equal(attempts, 2)
+		Equal(#addon.swaps, 1)
+		Equal(#addon.delayed, 0)
+	end
+end)
+
+QuestTogether:RegisterTest("channel ordering reconciles pending native state even when channels already look ordered", function()
+	for _, channelsAlreadyMoved in ipairs({ false, true }) do
+		local addon, attempts, recoveryChecks, ready, unresolved = NewChannelOrderingFixture(), 0, 0, false, false
+		addon.channels = { "QuestTogether", "General" }
+		local swap = addon.API.SwapChatChannelsPreservingState
+		addon.API.SwapChatChannelsPreservingState = function(...)
+			attempts = attempts + 1
+			if attempts == 1 then unresolved = true; return false, "inconsistent", "result_validation" end
+			return swap(...)
+		end
+		addon.API.CheckChatChannelOrderRecovery = function()
+			if not unresolved then return true, "none" end
+			recoveryChecks = recoveryChecks + 1
+			if not ready then return false, "pending", "result_validation" end
+			unresolved = false
+			return true, channelsAlreadyMoved and "swapped" or "no_op"
+		end
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(attempts, 1)
+		Equal(addon.chatChannelOrderState.recoveryPending, true)
+		if channelsAlreadyMoved then addon.channels = { "General", "QuestTogether" } end
+		addon.now = addon.now + 5
+		addon:UpdateAnnouncementChannelOrder()
+		Equal(recoveryChecks, 1)
+		Equal(attempts, 1)
+		Equal(addon.chatChannelOrderState.recoveryPending, true)
+		ready = true
+		for _ = 1, 12 do
+			addon.now = addon.now + 1
+			addon:UpdateAnnouncementChannelOrder()
+		end
+		assert(recoveryChecks >= 2)
+		assert(not addon.chatChannelOrderState.recoveryPending)
+		Equal(table.concat(addon.channels, ","), "General,QuestTogether")
+		Equal(attempts, channelsAlreadyMoved and 1 or 2)
+		Equal(addon.chatChannelOrderState.lastResult, "ordered")
+		Equal(#addon.delayed, 0)
+	end
+end)
+
+QuestTogether:RegisterTest("channel ordering preserves human lookalikes while sorting current and retired hidden directories", function()
+	local addon = NewChannelOrderingFixture()
+	addon.channels = { "questtogether", "QuestTogether3Z12", "QuestTogether3", "General", "QuestTogetherAnnounce1",
+		"QuestTogether3ZFriends", "Trade", "QuestTogetherZ45", "QuestTogether3Other", "QUESTTOGETHER3Z99" }
+	addon.geographicCommsState.subscriptions.QuestTogether3Z12 = true
+	addon.colors = { [4] = "general-gold", [6] = "friends-blue", [7] = "trade-pink", [9] = "other-green" }
+	addon.chatFrames[1].target, addon.chatFrames[2].target = 6, 7
+	for _ = 1, 30 do
+		addon:UpdateAnnouncementChannelOrder()
+		addon.now = addon.now + 1
+	end
+	Equal(table.concat(addon.channels, ","), "General,QuestTogether3ZFriends,Trade,QuestTogether3Other,questtogether,QuestTogether3Z12,"
+		.. "QuestTogether3,QuestTogetherAnnounce1,QuestTogetherZ45,QUESTTOGETHER3Z99")
+	for name, color in pairs({ General = "general-gold", QuestTogether3ZFriends = "friends-blue", Trade = "trade-pink",
+		QuestTogether3Other = "other-green" }) do
+		Equal(addon.colors[addon.API.GetChannelName(name)], color)
+	end
+	Equal(addon.chatFrames[1].target, "QuestTogether3ZFriends")
+	Equal(addon.chatFrames[2].target, "Trade")
+	Equal(addon.chatChannelOrderState.lastResult, "ordered")
+	Equal(#addon.delayed, 0)
 end)
 
 QuestTogether:RegisterTest("QT slash chat emits one global mesh event and echoes only admitted text", function()

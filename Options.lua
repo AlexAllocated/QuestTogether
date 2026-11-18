@@ -683,6 +683,7 @@ local CHECKBOX_OPTION_KEYS = {
 	"emoteOnNearbyPlayerQuestCompletion",
 	"emoteOnLevelUp",
 	"emoteOnNearbyPlayerLevelUp",
+	"autoThankBuffs",
 	"autoAcceptPartyShareRequests",
 	"sharePartyFocus",
 	"sharePartyWaypoint",
@@ -1706,7 +1707,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 	frame.name = L("Where to Announce")
 	frame.parent = "QuestTogether"
 
-	local _, content = CreateScrollablePanelContent(frame, 820)
+	local _, content = CreateScrollablePanelContent(frame, 852)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
@@ -1834,6 +1835,14 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		16,
 		-736
 	)
+	local autoThankBuffs = CreateCheckbox(
+		content,
+		"autoThankBuffs",
+		L("Automatically thank players for buffs"),
+		L("After a short, random pause, thank a nearby player who gives you a lasting buff outside combat. Repeated buffs are grouped and thanks are rate-limited."),
+		16,
+		-768
+	)
 	self.whereToAnnounceControls = {
 		showQTChat = showQTChat,
 		qtChatScopeDropdown = qtChatScopeDropdown,
@@ -1841,6 +1850,7 @@ function QuestTogether:InitializeWhereToAnnounceWindow(parentCategory)
 		emoteOnNearbyPlayerQuestCompletion = emoteOnNearbyPlayerQuestCompletion,
 		emoteOnLevelUp = emoteOnLevelUp,
 		emoteOnNearbyPlayerLevelUp = emoteOnNearbyPlayerLevelUp,
+		autoThankBuffs = autoThankBuffs,
 		showChatBubbles = showChatBubbles,
 		ownChatBubbleModeDropdown = ownChatBubbleModeDropdown,
 		showChatLogs = showChatLogs,

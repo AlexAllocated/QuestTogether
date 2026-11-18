@@ -207,8 +207,9 @@ function Controller:OnQuestAccepted(questID)
 	local a, s = self.adapter, self.adapter.peek()
 	questID = a.questID(questID)
 	local now = a.now and a.now()
-	if not self:IsActive() or not s or not s.following or self.choice or a.loggingOut()
+	if not self:IsActive() or not s or not s.following or a.loggingOut()
 		or not questID or questID <= 0 or not now then return end
+	if self.choice then self:Trace("acceptance_during_choice", questID); return end
 	local accepted = self:GetAcceptances(s, now)
 	if not accepted then
 		accepted = { state = s, token = s.followToken, quests = {}, count = 0 }
@@ -243,15 +244,23 @@ function Controller:ObserveNative()
 	end
 	local s = a.state()
 	if self:IsActive() then
+		if s.following and self.observedQuestID ~= native.questID then
+			self.observedQuestID = native.questID
+			self:Trace("native_observed", native.questID)
+		end
 		local now = a.now and a.now()
 		local accepted = self:GetAcceptances(s, now)
 		local acceptedAt = accepted and accepted.quests[native.questID]
-		if acceptedAt and not self.choice and s.checkExternal and native.questID ~= s.expectedQuest and self.trackingAt
-			and now >= self.trackingAt and math.abs(acceptedAt - self.trackingAt) <= ACCEPTANCE_SECONDS then
+		local recentAcceptance = acceptedAt and now >= acceptedAt and now - acceptedAt <= ACCEPTANCE_SECONDS
+		local pendingAcceptance = acceptedAt and s.checkExternal and self.trackingAt
+			and now >= self.trackingAt and math.abs(acceptedAt - self.trackingAt) <= ACCEPTANCE_SECONDS
+		if acceptedAt and not self.choice and native.questID ~= s.expectedQuest and (recentAcceptance or pendingAcceptance) then
 			-- An unchanged early sample must not consume this evidence. Once the
-			-- accepted quest actually takes focus, consume the batch before Apply
-			-- restores following. Selecting it again later is a fresh choice.
-			self.acceptances = nil
+			-- accepted quest becomes readable, match it even if its notification
+			-- was coalesced or arrived before that sample. Only this exact quest's
+			-- ticket is consumed; other pickups keep their original deadlines.
+			accepted.quests[native.questID], accepted.count = nil, accepted.count - 1
+			if accepted.count == 0 then self.acceptances = nil end
 			s.checkExternal, s.attempt = nil, nil
 			self:Trace("acceptance_matched", native.questID)
 			return native

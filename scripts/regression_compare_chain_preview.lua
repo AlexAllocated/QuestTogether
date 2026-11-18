@@ -81,7 +81,9 @@ local function Rows(preview)
 	return preview:BuildPartyQuestCompareDisplayRows(preview:BuildPartyQuestDiffRows())
 end
 local function Step(rows, id)
-	for _, row in ipairs(rows) do if row.kind == "chainStep" and row.questId == id then return row end end
+	for _, row in ipairs(rows) do
+		if (row.kind == "chainStep" or row.chainAnchor) and row.questId == id then return row end
+	end
 end
 
 QT:RegisterTest("chain preview prepares native levels and colors before cache-only painting", function()
@@ -115,6 +117,8 @@ QT:RegisterTest("chain preview augments copied real quests with earlier ready la
 	a:FlushPreview()
 	local rows = Rows(p)
 	Equal(session.chains.rootQuestID, 20)
+	Equal(Step(rows, 20).kind, nil); Equal(Step(rows, 20).rowId, "quest:20")
+	assert(Step(rows, 20).chainAnchor)
 	Equal(own.entries[10], nil); Equal(own.entries[25], nil); Equal(own.entries[30], nil)
 	Equal(own.questHistory[10].status, "completed")
 	Equal(p:GetPartyQuestFocusID(session.playerName), 20)

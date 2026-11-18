@@ -893,6 +893,9 @@ function QT:EnsureMeshDirectoryJoined(channelName)
 	if self:GetAnnouncementChannelLocalID(channelName) then
 		return self:EnsureAnnouncementChannelJoined(channelName)
 	end
+	-- Waiting for normal login/zone channels is not a failed directory join.
+	-- Do not consume retry backoff, channel slots or discovery metrics yet.
+	if not self:CanJoinAnnouncementChannel() then return false end
 	local now = Now(self)
 	local join = s.joins[channelName]
 	if not join then

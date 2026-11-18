@@ -11,7 +11,7 @@
 ## LoadOnDemand: 1
 ## RequiredDeps: QuestTogether
 ## X-License: GPL-3.0-only
-## X-QT-TestModules: 71
+## X-QT-TestModules: 73
 
 scripts/test_bootstrap.lua
 Libs/libchev/SelfTests.lua
@@ -19,6 +19,8 @@ Tests.lua
 scripts/ui_fixture.lua
 scripts/regression_gamepad_actions.lua
 scripts/regression_audio.lua
+scripts/regression_auto_thanks.lua
+scripts/regression_auto_thanks_native.lua
 scripts/regression_data_broker.lua
 scripts/regression_player_notes.lua
 scripts/regression_recent_companions.lua

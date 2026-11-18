@@ -734,7 +734,9 @@ QT:RegisterTest("enabled option preserves pre-login deferral and rejects nonbool
 	Equal(addon.events.QUEST_LOG_UPDATE, true)
 end)
 
-local function ObserveWorldLifecycleWork(addon)
+local function ObserveWorldLifecycleWork(addon, clock)
+	clock = clock or QT:CreateTestClock(100)
+	addon.API.GetTime = function() return clock:GetTime() end
 	local calls = { refresh = 0, join = 0, presence = 0, location = 0 }
 	addon.RefreshTaskAreaStates = function()
 		calls.refresh = calls.refresh + 1
@@ -750,12 +752,12 @@ local function ObserveWorldLifecycleWork(addon)
 	end
 	addon.InitializeMinimapLauncher, addon.NotifyAddonUpdate = Noop, Noop
 	addon.InitializePlayerLocations, addon.InitializeRuntimeCoordinator = Noop, Noop
-	return calls
+	return calls, clock
 end
 
 QT:RegisterTest("bootstrap world events survive disable and re-enable without disabled runtime work", function()
 	local addon = NewEnabledOptionFixture()
-	local calls = ObserveWorldLifecycleWork(addon)
+	local calls, clock = ObserveWorldLifecycleWork(addon)
 	Equal(addon:DeliverRegisteredEvent("PLAYER_LEAVING_WORLD"), true)
 	Equal(addon.isLoggingOut, true)
 	Equal(calls.presence, 1)
@@ -763,9 +765,15 @@ QT:RegisterTest("bootstrap world events survive disable and re-enable without di
 	Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
 	Equal(addon.isLoggingOut, false)
 	Equal(calls.refresh, 1)
-	Equal(calls.join, 1)
+	Equal(calls.join, 0, "world entry must allow normal channels to join first")
+	clock:Advance(9)
+	addon:EnsureMeshDirectoryJoined(addon.announcementChannelName)
+	Equal(calls.join, 0, "directory join must wait through the whole startup grace")
+	clock:Advance(1)
+	addon:EnsureMeshDirectoryJoined(addon.announcementChannelName)
+	Equal(calls.join, 1, "directory discovery must resume when startup grace expires")
 	addon:Disable()
-	calls = ObserveWorldLifecycleWork(addon)
+	calls = ObserveWorldLifecycleWork(addon, clock)
 	Equal(addon:DeliverRegisteredEvent("PLAYER_LEAVING_WORLD"), true)
 	Equal(addon.isLoggingOut, true)
 	Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
@@ -780,12 +788,18 @@ QT:RegisterTest("bootstrap world events survive disable and re-enable without di
 	Equal(addon.events.QUEST_LOG_UPDATE, true)
 	Equal(addon.registeredRuntimeEvents.PLAYER_ENTERING_WORLD, nil, "bootstrap event must have one lifecycle owner")
 	Equal(calls.refresh, 1)
-	Equal(calls.join, 1)
+	Equal(calls.join, 0, "re-enable must preserve the loading-screen channel grace")
+	clock:Advance(9)
+	addon:EnsureMeshDirectoryJoined(addon.announcementChannelName)
+	Equal(calls.join, 0)
+	clock:Advance(1)
+	addon:EnsureMeshDirectoryJoined(addon.announcementChannelName)
+	Equal(calls.join, 1, "re-enabled discovery must resume after the retained grace")
 end)
 
 QT:RegisterTest("initially disabled login and zoning retain bootstrap state without runtime work", function()
 	local addon = NewEnabledOptionFixture(false)
-	local calls = ObserveWorldLifecycleWork(addon)
+	local calls, clock = ObserveWorldLifecycleWork(addon)
 	Equal(addon:DeliverRegisteredEvent("PLAYER_LOGIN"), true)
 	Equal(addon.isEnabled, false)
 	for _ = 1, 2 do
@@ -803,9 +817,18 @@ QT:RegisterTest("initially disabled login and zoning retain bootstrap state with
 	Equal(addon.isEnabled, true)
 	Equal(addon.isLoggingOut, false)
 	Equal(calls.refresh, 1)
-	Equal(calls.join, 1)
+	Equal(calls.join, 0, "enabling during startup grace must not join early")
 	Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
 	Equal(calls.refresh, 2, "enabled world entry must retain the runtime refresh")
+	Equal(calls.join, 0, "repeated entry must not bypass startup grace")
+	clock:Advance(9)
+	addon:EnsureMeshDirectoryJoined(addon.announcementChannelName)
+	Equal(calls.join, 0)
+	clock:Advance(1)
+	addon:EnsureMeshDirectoryJoined(addon.announcementChannelName)
+	Equal(calls.join, 1, "repeated entry must not extend the original grace")
+	Equal(addon:DeliverRegisteredEvent("PLAYER_ENTERING_WORLD"), true)
+	Equal(calls.refresh, 3)
 	Equal(calls.join, 1, "immediate reentry respects directory retry backoff")
 end)
 

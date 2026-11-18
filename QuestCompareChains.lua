@@ -146,7 +146,8 @@ end
 
 function QT:SetPartyQuestChainSelection(row)
 	local state = self.partyQuestCompareSession and self.partyQuestCompareSession.chains
-	if not state or not row or row.kind ~= "chainStep" or row.chainInstanceId ~= "chain:" .. state.instance then return false end
+	if not state or not row or (row.kind ~= "chainStep" and not row.chainAnchor)
+		or row.chainInstanceId ~= "chain:" .. state.instance then return false end
 	if state.selectedQuestID ~= row.questId then
 		state.selectedQuestID = row.questId
 		self:QueuePartyQuestChainRefresh()
@@ -711,24 +712,58 @@ local function NeedsQuestRequirements(status)
 	return status ~= "Have" and status ~= "Ready" and status ~= "Completed"
 end
 
-function QT:AppendPartyQuestChainSection(rows, rootRows)
+function QT:AppendPartyQuestChainSection(rows, rootRows, anchor, append)
 	local session, state = self.partyQuestCompareSession, self.partyQuestCompareSession.chains
 	if not state.rootQuestID then return end
 	local graph = state.graphs[state.rootQuestID]
 	local instance = "chain:" .. state.instance
+	local anchored = false
+	local function AppendAnchor(context)
+		if not anchor or anchored then return end
+		anchored = true
+		anchor.chainInstanceId, anchor.chainId, anchor.chainAnchor = instance, instance, true
+		anchor.depth, anchor.spoilerHidden = math.min(12, state.depths and state.depths[anchor.questId] or 0), false
+		if context then
+			anchor.requirements, anchor.memberPrerequisiteText = context.requirements, context.memberPrerequisiteText
+			anchor.relationshipText = context.relationshipText
+		end
+		local first = #rows + 1
+		append(rows, anchor)
+		-- The retained ordinary row owns its usual objective descendants. Keep
+		-- them inside this section without changing their parent or row IDs.
+		for index = first, #rows do rows[index].chainInstanceId = instance end
+	end
 	local function Notice(key, title)
 		rows[#rows + 1] = { rowId = instance .. ":" .. key, kind = "chainNotice", title = title, cells = {}, chainInstanceId = instance }
 	end
 	if not graph then
+		AppendAnchor()
 		Notice("state", state.capability.state == "loading" and L("Loading") or state.capability.explanation or L("Quest chain information is unavailable."))
 		return
 	end
+	local order = graph.order or IDs(graph.nodes)
+	local hasAnchor = false
+	for _, id in ipairs(order) do if anchor and id == anchor.questId then hasAnchor = true; break end end
+	-- A partial provider snapshot can omit the origin. Keep its ordinary row
+	-- first in that case rather than inventing a position among known steps.
+	if not hasAnchor then AppendAnchor() end
 	if graph.loading then Notice("loading", L("Loading quest chain information")) end
 	if graph.membershipOnly then Notice("membership", L("Quest line order does not establish prerequisites.")) end
 	if graph.partial then Notice("partial", L("Partial quest chain information")) end
 	if graph.cycle then Notice("cycle", L("Quest relationships contain a cycle.")) end
 	if graph.reasons and graph.reasons.missing then Notice("missing", L("Some referenced quests are unavailable.")) end
-	local order = graph.order or IDs(graph.nodes)
+	local frontier = graph.frontier or {}
+	local function More(direction)
+		if (type(frontier[direction]) == "table" and #frontier[direction] > 0)
+			or (type(frontier[direction]) == "number" and frontier[direction] > 0) then
+			rows[#rows + 1] = {
+				rowId = instance .. ":more:" .. direction, kind = "chainMore", selectable = true, cells = {},
+				chainInstanceId = instance, chainId = instance, direction = direction,
+				title = direction == "earlier" and L("Show earlier quests") or L("Show later quests"),
+			}
+		end
+	end
+	More("earlier")
 	local own = session.byName[session.playerName]
 	local completed, completionKnown = 0, true
 	for _, id in ipairs(order) do
@@ -770,22 +805,13 @@ function QT:AppendPartyQuestChainSection(rows, rootRows)
 		elseif not own.entries[id] and not (history and (history.status == "incomplete" or history.status == "repeatable")) then
 			completionKnown = false
 		end
-		rows[#rows + 1] = row
+		if anchor and id == anchor.questId then AppendAnchor(row)
+		else rows[#rows + 1] = row end
 	end
 	if graph.completeLinearPath == true and completionKnown and not graph.partial and not graph.loading and #order > 0 then
 		Notice("progress", string.format(L("%d/%d completed"), completed, #order))
 	end
-	local frontier = graph.frontier or {}
-	for _, direction in ipairs({ "earlier", "later" }) do
-		if (type(frontier[direction]) == "table" and #frontier[direction] > 0)
-			or (type(frontier[direction]) == "number" and frontier[direction] > 0) then
-			rows[#rows + 1] = {
-				rowId = instance .. ":more:" .. direction, kind = "chainMore", selectable = true, cells = {},
-				chainInstanceId = instance, chainId = instance, direction = direction,
-				title = direction == "earlier" and L("Show earlier quests") or L("Show later quests"),
-			}
-		end
-	end
+	More("later")
 end
 
 -- Layout consumes only this prepared session snapshot. It neither reads the provider nor sends requests.
@@ -806,7 +832,12 @@ function QT:DecoratePartyQuestChainRows(quests, append)
 	local groupByChain = self:GetOption("compareGroupByChain") == true
 	local openGroup = state.rootQuestID and Resolve(state, state.questGroups[state.rootQuestID])
 	local rootRows, groups, ordered = {}, {}, {}
-	for _, row in ipairs(session.unfilteredQuests or quests) do rootRows[row.questId] = row end
+	for _, row in ipairs(session.unfilteredQuests or quests) do
+		rootRows[row.questId] = row
+		-- Callers can reuse roots across paints, filters and chain replacement.
+		row.chainInstanceId, row.chainId, row.chainAnchor, row.depth, row.spoilerHidden = nil, nil, nil, nil, nil
+		row.requirements, row.memberPrerequisiteText, row.relationshipText = nil, nil, nil
+	end
 	for _, row in ipairs(quests) do
 		row.rowId, row.selectable = "quest:" .. row.questId, true
 		row.chainExpanded = state.rootQuestID == row.questId
@@ -825,8 +856,9 @@ function QT:DecoratePartyQuestChainRows(quests, append)
 	local inserted = false
 	local function AppendRoot(row)
 		local first = #rows + 1
-		append(rows, row)
-		if row.questId == state.rootQuestID then self:AppendPartyQuestChainSection(rows, rootRows); inserted = true end
+		if row.questId == state.rootQuestID then
+			self:AppendPartyQuestChainSection(rows, rootRows, row, append); inserted = true
+		else append(rows, row) end
 		ScopeRows(first)
 	end
 	for _, item in ipairs(ordered) do
@@ -900,13 +932,13 @@ function QT:GetPartyQuestChainActions(row, memberName)
 		actions[#actions + 1] = { label = label, title = row.title, disabled = disabled,
 			action = function() if Valid() and not disabled then return action() end; return false end }
 	end
-	if row.kind ~= "chainStep" then return actions end
+	if row.kind ~= "chainStep" and not row.chainAnchor then return actions end
 	local own = session.byName[session.playerName]
-	if own and own.entries[id] then
+	if not row.chainAnchor and own and own.entries[id] then
 		Add(L("Open in Quest Log"), function() return self:OpenPartyQuestJournal(id) end)
 	end
 	if state.union[id] then
-		Add(L("Expand or collapse quest"), function() return self:TogglePartyQuestObjectives(id) end)
+		if not row.chainAnchor then Add(L("Expand or collapse quest"), function() return self:TogglePartyQuestObjectives(id) end) end
 		local target = memberName or (own and own.entries[id] and session.playerName)
 		if target and self.RequestPartyQuestFocus then
 			Add(L("Focus quest"), function() return self:RequestPartyQuestFocus(target, id) end)
@@ -915,8 +947,10 @@ function QT:GetPartyQuestChainActions(row, memberName)
 	if memberName and member and not member.isLocal and self.FollowPartyQuestFocus then
 		Add(L("Follow quest focus"), function() return self:FollowPartyQuestFocus(memberName) end)
 	end
-	if row.action == "share" then Add(L("Share"), function() return self:SharePartyDiffQuest(id) end)
-	elseif row.action == "request" then Add(L("Request Share"), function() return self:RequestPartyQuestShare(id, row.owner) end) end
+	if not row.chainAnchor then
+		if row.action == "share" then Add(L("Share"), function() return self:SharePartyDiffQuest(id) end)
+		elseif row.action == "request" then Add(L("Request Share"), function() return self:RequestPartyQuestShare(id, row.owner) end) end
+	end
 	if row.spoilerHidden then return actions end
 	if self.GetQuestDetailsAvailability and self.ShowQuestDetails then
 		local available = self:GetQuestDetailsAvailability(id)

@@ -3,8 +3,12 @@
 
 Open **Party Quest Log** with `/qt pql`, then choose **View chain** beside a
 quest's journal button or in its actions menu. The chain-link button turns gold
-while open; select it again to close that chain. The chain opens inside the same
-list and player columns. One chain section stays open at a time. Clicking an
+while open; select it again to close that chain. Earlier steps appear above the
+quest's existing log row and later steps below it, inside the same list and
+player columns. That quest appears once, in its place in the chain, with its
+usual controls. A continuous border and shaded section separate the expanded
+chain from unrelated rows, and the original row has a stronger highlight.
+One chain section stays open at a time. Clicking an
 ordinary quest title still expands its objectives; objective expansions and the
 open chain are independent.
 

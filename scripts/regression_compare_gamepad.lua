@@ -406,6 +406,83 @@ QT:RegisterTest("chain native recycled step identities disarm Select and retire 
 	Equal(a.invalidCalls, nil)
 end)
 
+QT:RegisterTest("chain native inline origin retains controls across earlier later and collapsed rows", function()
+	local a, frame, session = Open(2)
+	a.chainFixtureOpen = false
+	local original = a.BuildPartyQuestCompareDisplayRows
+	function a:BuildPartyQuestCompareDisplayRows(quests)
+		local roots, rows = original(self, quests), {}
+		local instance = "chain:" .. session.chains.instance
+		local function Steps(first, last)
+			for id = first, last do
+				rows[#rows + 1] = { rowId = instance .. ":quest:" .. id, kind = "chainStep", questId = id,
+					title = "Related quest " .. id, cells = { "Unknown", "Absent" },
+					selectable = true, chainInstanceId = instance }
+			end
+		end
+		for index, row in ipairs(roots) do
+			if not row.kind and row.questId == 1 then
+				row.chainAvailable, row.chainExpanded = true, self.chainFixtureOpen
+				row.chainAnchor = self.chainFixtureOpen or nil
+				row.chainInstanceId = self.chainFixtureOpen and instance or nil
+				if self.chainFixtureOpen then Steps(100, 139) end
+			end
+			rows[#rows + 1] = row
+			if self.chainFixtureOpen and row.questId == 1 and (not roots[index + 1] or roots[index + 1].questId ~= 1) then
+				Steps(200, 239)
+			end
+		end
+		return rows
+	end
+	function a:TogglePartyQuestChain(id, origin)
+		Equal(id, 1); Equal(origin, "quest:1")
+		self.chainFixtureOpen = not self.chainFixtureOpen
+		session.chains.rootQuestID = self.chainFixtureOpen and 1 or nil
+		session.chains.instance = session.chains.instance + 1
+		self:RenderPartyQuestCompare()
+		return true
+	end
+	function a:ClosePartyQuestChain()
+		self.chainFixtureOpen, session.chains.rootQuestID = false, nil
+		session.chains.instance = session.chains.instance + 1
+		return true, "quest:1"
+	end
+	a:RenderPartyQuestCompare()
+	local function Expect(id, role)
+		local selected = assert(Selected(a, frame))
+		Equal(selected.rowId, id); Equal(selected.role, role)
+		assert(a.nativeButton:IsVisible())
+	end
+	local function StepID(id) return "chain:" .. session.chains.instance .. ":quest:" .. id end
+	local function Toggle()
+		Expect("quest:1", "chain")
+		a.nativeButton.OnSmartNavClick(a.nativeButton)
+		Expect("quest:1", "chain")
+		Equal(Selected(a, frame).row.data.kind, nil)
+	end
+	Expect("quest:1", "quest")
+	Move(a, frame, "RIGHT"); Toggle()
+	Equal(a.chainFixtureOpen, true)
+	Equal(#frame.navigationRows, 82)
+	assert(session.scrollPixels > 0) -- The retained origin is past the first virtual slice.
+	for id = 139, 100, -1 do Move(a, frame, "UP"); Expect(StepID(id), "step") end
+	for id = 101, 139 do Move(a, frame, "DOWN"); Expect(StepID(id), "step") end
+	Move(a, frame, "DOWN"); Expect("quest:1", "quest")
+	Equal(session.chains.selectedQuestID, 1)
+	for id = 200, 239 do Move(a, frame, "DOWN"); Expect(StepID(id), "step") end
+	a.nativePolicies[frame].close()
+	Equal(a.chainFixtureOpen, false); Expect("quest:1", "quest")
+	Equal(frame:IsShown(), true); Equal(frame.keyboardSession, nil)
+	Move(a, frame, "RIGHT"); Toggle(); Equal(a.chainFixtureOpen, true)
+	Toggle(); Equal(a.chainFixtureOpen, false)
+	Toggle(); Equal(a.chainFixtureOpen, true)
+	Move(a, frame, "UP"); Expect(StepID(139), "step")
+	Move(a, frame, "DOWN"); Expect("quest:1", "quest")
+	a.nativePolicies[frame].close()
+	Equal(a.chainFixtureOpen, false); Expect("quest:1", "quest")
+	Equal(frame:IsShown(), true); Equal(a.invalidCalls, nil)
+end)
+
 QT:RegisterTest("share readiness native navigation inspects blocked cells and owns enabled action tooltips", function()
 	local a, frame, session = Open(2)
 	local friend = session.members[2]

@@ -526,6 +526,7 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 		return false
 	end
 	-- Revocation must happen before any restart or asynchronous effect.
+	if Has("autoThankBuffs") then Invoke(self, "InitializeAutoThanks") end
 	if all then
 		Invoke(self, "ClearPlayerMapSelection")
 		Invoke(self, "ResetObjectiveAnnouncements")

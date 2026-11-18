@@ -321,13 +321,30 @@ reach every QT user. Old-protocol messages are rejected without fallback.
 QT keeps its hidden directories after human channels using Blizzard's reorder
 helper through `securecallfunction`. The adapter preserves full native channel
 metadata and binds affected chat destinations to names before moving indices;
-it never uses the bare index-swap API or writes `ChatTypeInfo` itself. Sorting
-waits during typing, channel configuration and restricted states. Missing native
-support leaves the order unchanged, and inconsistent results stop sorting until
-reload. RuntimeCoordinator paces one swap per second without an extra timer.
+it never writes `ChatTypeInfo` itself or uses an unverified bare index swap.
+New directory joins wait ten seconds after world entry so normal channels have
+time to join first. Saved memberships remain usable, and this wait does not consume
+mesh join retry backoff. RuntimeCoordinator paces one swap per second without an
+extra timer; channel events wake idle checks without bypassing that floor.
+Visible chat/channel editing and restrictions still defer changes. Hidden plain
+message drafts retain their text and destination; hidden slash drafts defer because
+an unparsed numeric channel command could change meaning after reordering. Draft
+contents are classified transiently and are never retained, logged or rewritten.
+
+Native name aliases and verified message-type ID normalization no longer falsely
+reject otherwise consistent swaps. Missing native chat helpers can load their own
+addon without opening its UI. One private receipt retains an unfinished transaction;
+each retry verifies it before any new swap, even if the channel order already looks
+correct. A proved metadata-only partial operation can finish its missing native
+index swap after all safety checks pass. No speculative rollback or whole-operation
+retry is permitted. Unavailable or genuinely inconsistent native state stays guarded
+and is rechecked automatically. Diagnostics distinguish malformed enumeration,
+temporary deferral and pending recovery instead of claiming stale success.
 Directory reconciliation reads `GetChannelList` and resolves membership by name.
 Channel count changes invalidate reconciliation so stale QT memberships can
-still be removed. Current-client taint and reload persistence require live checks.
+still be removed. Private tests cover login/reentry grace, aliases, drafts, late
+channels, native no-ops/partial completion, inaccessible state and paced recovery.
+Current-client taint, chat destinations/colors and reload persistence require live checks.
 Roster enumeration uses guarded display-list APIs, distinct native channel IDs,
 asynchronous loading and selection restoration. QT defers when the user is
 interacting with the channel UI or native access is unsafe.
@@ -648,3 +665,32 @@ Private regressions exercise display changes, malformed layout data, restricted 
 Party comparison snapshots use the guarded `C_QuestLog.IsComplete` adapter as the authority for completion, matching `QuestMixin:IsComplete` and the native objective tracker's POI style in the installed Retail and Forever exports. Quest-log row completion is retained only when that query is unavailable. The same completion bit drives the local Ready label, party summary, POI icon, and outgoing comparison entry; no extra message or receiver-side guess is introduced. Only current-protocol senders can supply remote snapshots. Private tests cover disagreeing flags, false as an authoritative result, inaccessible/failed reads, wire round trips and icon selection.
 
 The comparison preview reads an owned copy of the current local quest log and objective details, then creates four simulated teammates and two private synthetic quests the player does not own. Synthetic IDs never reach the native setter or party transport. Focus actions in this mode deliberately change the real Blizzard super-tracked quest and use the production follow/confirmation state machine with private membership, no-op transport, and no saved follow writes. An owned event listener observes native tracking changes even when the addon runtime is disabled; its short update loop runs only while the preview is open. The actual party follow is suspended while the preview is open and resumes afterward; its target is retained but not advertised as active during preview. Closing or refreshing discards simulated following and invalidates pending confirmation callbacks. Share, request-share and journal actions remain simulations. A fully fictional fallback remains available when native adapters or a reliable local snapshot are unavailable. The preview labels its real navigation effects. Missing quests now show Not shareable or Shareability unknown when no sharing action is available; these do not claim knowledge of another player's prerequisites.
+
+
+## Automatic buff gratitude
+
+`autoThankBuffs` defaults on per profile and is controlled in **Where to Announce**.
+A newly observed helpful aura lasting at least 60 seconds can schedule one directed
+`thank`, `bow`, or `applaud` after a random 2–4 seconds. The same caster's buffs
+are combined; attempts have a 15-second global and five-minute per-caster cooldown.
+Pending work expires after ten seconds, with at most four pending casters and 64
+cooldown identities. Self buffs, pet/NPC sources, permanent passive auras, short
+combat effects, ignored players and unresolvable identities cannot trigger thanks.
+Refreshing an existing aura instance does not count as a new buff.
+
+The guarded `C_UnitAuras` adapter reads only the local player's helpful auras,
+with a 256-aura cap and primitive copies. It optionally uses native caster GUIDs;
+it never reads combat logs or accepts remote QT requests to emote. The first
+complete snapshot after enable, reload, world transition or restricted/unreadable
+data is a silent baseline. Combat/restriction transitions cancel pending work,
+and profile changes or disabling the setting retire its lifetime. RuntimeCoordinator
+owns the clock; there is no independent timer or Blizzard-frame state.
+
+Before the emote, QT reads a fresh aura snapshot and resolves the native caster
+identity again. It passes an explicit full name to the existing native emote API
+without changing the selected target. On regional-name clients, ambiguous
+GUID-only first names are skipped rather than guessing a surname. Caster lookup
+and emote delivery therefore still require live acceptance, especially a drive-by
+buff with friendly nameplates hidden. A nonthrowing native call establishes an
+attempt, not proof that chat displayed it. Offline tests use private adapters and
+cannot send live emotes.

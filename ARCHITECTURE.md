@@ -11,6 +11,7 @@ private `.local` notes are historical context, not the source of truth.
 | Settings | Profile storage, migrations, value validation, atomic edits and effect dispatch | Widget construction, native navigation or frame mutation |
 | RuntimeCoordinator | The enabled addon's periodic lifetime and feature tick order | Individual feature caches or wire codecs |
 | Audio | Cue catalog, per-profile sound preferences, bounded suppression and QT-owned playback handles | Shared game sound settings, other addons' sounds or a delayed notification queue |
+| AutoThanks / AutoThanksNative | Readable local buff observations, bounded gratitude delay/cooldowns and directed native emotes | Network-triggered reactions, target selection, combat-log access or foreign aura storage |
 | DataBroker | Optional toolbar launcher registration, copied display fields and click routing | A bundled library, display-owned frames or another minimap button |
 | HotPathRuntime | Explicit timing, work classes, owner cancellation and restriction gates | Quest or presentation policy |
 | QuestObservations | Quest-log acquisition, confirmed classifications, complete snapshot publication | Area entry/exit history or announcements |
@@ -75,6 +76,11 @@ private `.local` notes are historical context, not the source of truth.
   pending. Follow application pauses until the choice is resolved: acceptance
   keeps the selection and stops following; cancellation resumes the latest
   eligible peer focus. Superseded choices cannot change a newer selection.
+  Newly accepted quests carry bounded, quest-specific correlation tickets.
+  Matching one pickup consumes only its own ticket; other pickups retain their
+  original deadlines. A readable native sample can match that exact quest even
+  when a coalesced tracking event preceded the changed value. Unrelated choices,
+  consumed tickets, and explicit QT focus actions retain confirmation behavior.
 - PQL and POT subscribe to party-owned quest data. Small parties bootstrap and
   conditionally refresh quest lists every 30 seconds without an open window.
   Background detail acquisition progressively warms every member's log; visible
@@ -551,9 +557,17 @@ share that one discovery source. Display-list indices and native channel IDs rem
 Membership is resolved by name. RuntimeCoordinator paces QT-last channel ordering
 through a guarded native adapter: chat destinations are bound to channel names
 before Blizzard's secure-dispatched reorder helper moves the full channel metadata.
-QT never directly rewrites ChatTypeInfo or falls back to a bare native index swap.
-Typing, channel configuration and restrictions defer sorting; inconsistent native
-results suspend it for the session without a speculative rollback.
+QT never directly rewrites ChatTypeInfo. New directory joins wait ten seconds
+after world entry, without consuming mesh retry backoff; existing memberships
+remain usable. Active typing, visible channel configuration and restrictions defer
+sorting. Hidden plain-text drafts keep their text and name-bound destination;
+unparsed slash drafts still defer. A single private native transaction receipt
+blocks further swaps while its outcome is uncertain. Recovery revalidates channel
+identity, metadata and destinations, and can complete only the missing C swap
+when the native helper has demonstrably exchanged metadata first. It never blindly
+repeats the helper or rolls back. Transient failures retry; genuinely unsafe states
+remain guarded. Channel events wake paced checks, including after late default
+channels appear, and malformed enumeration cannot leave an old ordered diagnosis.
 Directory selection is guarded, restored and deferred while unsafe. Missing,
 suspended or incomplete directories are degraded discovery, not a reason to send
 channel payloads. `Transport` does not admit the CHANNEL distribution. Bootstrap

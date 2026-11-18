@@ -83,6 +83,118 @@ local function Row(frame, rowID)
 	for _, row in ipairs(frame.rows) do if row.data and row.data.rowId == rowID then return row end end
 end
 
+local function CenteredChain()
+	local a, frame, session = Open(false)
+	a.chainFixtureGrouped = false
+	function a:BuildPartyQuestCompareDisplayRows(roots)
+		local rows, instance = {}, self.chainFixtureInstance
+		for id = 10, 16 do
+			rows[#rows + 1] = { rowId = "quest:" .. id, questId = id, title = "Unrelated quest", cells = {} }
+		end
+		local root = roots[1]
+		root.rowId, root.chainAvailable, root.chainExpanded = "quest:1", true, self.chainFixtureOpen
+		root.chainAnchor, root.chainInstanceId, root.depth = self.chainFixtureOpen or nil, self.chainFixtureOpen and instance or nil, 0
+		local function Step(id)
+			rows[#rows + 1] = { rowId = instance .. ":quest:" .. id, kind = "chainStep", questId = id,
+				title = "Related quest", cells = { "Completed", "Absent" }, chainInstanceId = instance, depth = 0, selectable = true }
+		end
+		if self.chainFixtureOpen then
+			for id = 101, 100 + (self.earlierCount or 30) do Step(id) end
+		end
+		rows[#rows + 1] = root
+		if self.chainFixtureObjectives then
+			rows[#rows + 1] = { rowId = "quest:1:objective", kind = "objective", questId = 1,
+				title = "Objective", cells = {}, chainInstanceId = root.chainInstanceId }
+		end
+		if self.chainFixtureOpen then for id = 201, 230 do Step(id) end end
+		roots[2].rowId = "quest:2"; rows[#rows + 1] = roots[2]
+		return rows
+	end
+	local toggle = a.TogglePartyQuestChain
+	function a:TogglePartyQuestChain(id, origin)
+		session.chains.rootQuestID = not self.chainFixtureOpen and id or nil
+		return toggle(self, id, origin)
+	end
+	a:RenderPartyQuestCompare()
+	return a, frame, session
+end
+
+QT:RegisterTest("chain UI keeps the retained origin onscreen through ancestors arriving and collapse", function()
+	local a, frame, session = CenteredChain()
+	a.chainFixtureObjectives, session.expandedQuestIds[1] = true, true
+	a:RenderPartyQuestCompare()
+	a:SelectPartyQuestKeyboardRow(frame, { rowId = "quest:1", questId = 1 }, "chain")
+	local offset = a:CapturePartyQuestScrollAnchor("quest:1").offset
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	assert(Row(frame, "quest:1")); Equal(a:CapturePartyQuestScrollAnchor("quest:1").offset, offset)
+	Equal(session.keyboardRowId, "quest:1"); Equal(session.keyboardRole, "chain")
+	local occurrences = 0
+	for _, row in ipairs(frame.navigationRows) do if row.questId == 1 then occurrences = occurrences + 1 end end
+	Equal(occurrences, 1)
+	-- An asynchronously extended provider result must not move the clicked row.
+	a.earlierCount = 60; a:RenderPartyQuestCompare()
+	assert(Row(frame, "quest:1")); Equal(a:CapturePartyQuestScrollAnchor("quest:1").offset, offset)
+	Key(frame, "UP"); Equal(session.keyboardRowId, "chain:fixture:quest:160")
+	Key(frame, "DOWN"); Equal(session.keyboardRowId, "quest:1")
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	assert(Row(frame, "quest:1")); Equal(a:CapturePartyQuestScrollAnchor("quest:1").offset, offset)
+	Equal(session.expandedQuestIds[1], true); assert(Row(frame, "quest:1:objective"))
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain UI outline covers earlier origin objectives and later rows but never unrelated rows", function()
+	local a, frame, session = CenteredChain()
+	a.chainFixtureObjectives, session.expandedQuestIds[1] = true, true
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	local root, detail = assert(Row(frame, "quest:1")), assert(Row(frame, "quest:1:objective"))
+	Equal(root.title.points[1][2], 40); Equal(root.partySummary.points[1][2], 40)
+	for _, row in ipairs({ root, detail }) do
+		assert(row.chainEdges[1]:IsShown() and row.chainEdges[2]:IsShown())
+		Equal(row.chainEdges[3]:IsShown(), false); Equal(row.chainEdges[4]:IsShown(), false)
+		Equal(row.chainEdges[1]:GetHeight(), row:GetHeight())
+	end
+	local columnX = root.cellShades[1].points[1][2]
+	a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:101")
+	local first = assert(Row(frame, "chain:fixture:quest:101"))
+	assert(first.chainEdges[3]:IsShown()); Equal(first.chainEdges[4]:IsShown(), false)
+	Equal(first.cellShades[1].points[1][2], columnX)
+	a:ScrollPartyQuestCompareToRow(frame, "quest:2")
+	local last, unrelated = assert(Row(frame, "chain:fixture:quest:230")), assert(Row(frame, "quest:2"))
+	assert(last.chainEdges[4]:IsShown()); Equal(last.chainEdges[3]:IsShown(), false)
+	for _, edge in ipairs(unrelated.chainEdges) do Equal(edge:IsShown(), false) end
+	a:ScrollPartyQuestCompareToRow(frame, "quest:1")
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	for _, edge in ipairs(Row(frame, "quest:1").chainEdges) do Equal(edge:IsShown(), false) end
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain UI objective closing animation inherits the current section outline", function()
+	local a, frame, session = CenteredChain()
+	a.options.reduceMotion = false
+	local build = a.BuildPartyQuestCompareDisplayRows
+	function a:BuildPartyQuestCompareDisplayRows(roots)
+		self.chainFixtureObjectives = session.expandedQuestIds[1] == true
+		return build(self, roots)
+	end
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Row(frame, "quest:1"):RunScript("OnMouseUp", "LeftButton"); a:RenderPartyQuestCompare()
+	for _ = 1, 3 do frame.expansionAnimator:RunScript("OnUpdate", 0.1) end
+	assert(Row(frame, "quest:1:objective"))
+	Row(frame, "quest:1"):RunScript("OnMouseUp", "LeftButton"); a:RenderPartyQuestCompare()
+	assert(frame.expansions[1].closingRows)
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	local closing = assert(Row(frame, "quest:1:objective"))
+	Equal(closing.data.chainInstanceId, nil)
+	for _, edge in ipairs(closing.chainEdges) do Equal(edge:IsShown(), false) end
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	closing = assert(Row(frame, "quest:1:objective"))
+	Equal(closing.data.chainInstanceId, a.chainFixtureInstance)
+	assert(closing.chainEdges[1]:IsShown() and closing.chainEdges[2]:IsShown())
+	for _ = 1, 3 do frame.expansionAnimator:RunScript("OnUpdate", 0.1) end
+	Equal(Row(frame, "quest:1:objective"), nil)
+	assert(Row(frame, "quest:1")); Equal(a.invalidCalls, nil)
+end)
+
 QT:RegisterTest("chain UI group boundaries indent only members and survive scrolling collapse and ungrouping", function()
 	local a, frame, session = Open()
 	a.chainFixtureObjectives, session.expandedQuestIds[1] = true, true
