@@ -9,6 +9,8 @@ private `.local` notes are historical context, not the source of truth.
 | --- | --- | --- |
 | Core / EventHandlers | Native adapters, initialization, event routing, quest lifecycle orchestration | Feature timers, profile effects, live classification caches |
 | Settings | Profile storage, migrations, value validation, atomic edits and effect dispatch | Widget construction, native navigation or frame mutation |
+| Presets / PresetWindow | Ordinary option bundles, account first-run/default selection and an owned chooser | Runtime feature policy keyed to preset names or profile reset |
+| FeatureOptions | Individually editable presentation and sharing policies, revocation and cleanup dispatch | Another network or focus controller |
 | RuntimeCoordinator | The enabled addon's periodic lifetime and feature tick order | Individual feature caches or wire codecs |
 | Audio | Cue catalog, per-profile sound preferences, bounded suppression and QT-owned playback handles | Shared game sound settings, other addons' sounds or a delayed notification queue |
 | AutoThanks / AutoThanksNative | Readable local buff observations, bounded gratitude delay/cooldowns and directed native emotes | Network-triggered reactions, target selection, combat-log access or foreign aura storage |
@@ -38,7 +40,7 @@ private `.local` notes are historical context, not the source of truth.
 | QuestCompletion | Bounded visible/chain-owned character-history interests, evidence age and completed/absent classification | Account-wide completion, full history broadcasts or static quest relationships |
 | QuestSharingResults | Exact native share-result matching and recent per-player explanations | Guessing which quest a native result belongs to |
 | QuestCompareInteraction | Column presentation and keyboard selection geometry | Removing members from comparison calculations or global key bindings |
-| PartyFocusController | Following and manual-choice state machine, missing-quest and confirmation policy | Party networking, persistence policy or preview fixtures |
+| PartyFocusController | Manual and automatic party-leader following, missing-quest fallback and confirmation policy | Party networking, persistence policy or preview fixtures |
 | PartyNavigation / QuestComparePreview | Live/preview adapters, persistence and ownership of native focus | Copies of the following state machine or repair of another controller's fields |
 | QuestCompareChainPreview | Read-only real log and provider adapters, private asynchronous chain sample and simulated teammate evidence | Live PQL/provider state, native focus/follow/waypoints, saved completion or simulated packets |
 | Hints | Local tip catalog, capability eligibility, account-wide no-repeat pool, startup display and whitelisted navigation links | Network announcements or implicit setting changes |

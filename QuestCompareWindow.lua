@@ -1552,6 +1552,13 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame.stopFollowing = Button(self, frame.content, QUEST_WIDTH - 124, -22, 116, L("Stop following"), function()
 		self:StopPartyQuestFollow()
 	end)
+	frame.stopFollowing:HookScript("OnEnter", function()
+		if self:GetAutomaticLeaderFocusTarget() then
+			self:ShowSettingsTooltip(frame.stopFollowing, L("Stop following"), L("Turn off Automatically follow the party leader's quest focus in QT settings to stop following or choose another person."))
+		end
+	end)
+	frame.stopFollowing:HookScript("OnLeave", function() self:HideSettingsTooltip(frame.stopFollowing) end)
+	frame.stopFollowing:HookScript("OnHide", function() self:HideSettingsTooltip(frame.stopFollowing) end)
 	frame.stopFollowing:Hide()
 	local function EnsureRows(count)
 		for i = #frame.rows + 1, count do

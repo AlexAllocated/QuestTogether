@@ -138,3 +138,69 @@ safety or physical controller behavior.
 If an unexpected native failure occurs, QT stops controller integration for the
 session and records a bounded diagnostic. Save `/qt diagnostics`, then reload to
 clear native state before further testing. QT never reloads the game itself.
+
+## Welcome and configuration
+
+New installations open the welcome chooser instead of patch notes. Select one
+of the four cards, then **Start questing**. Full experience is initially selected;
+Back or Escape on first setup uses Full experience. On a manually reopened
+chooser, Back cancels. Keyboard arrows select a card, Space toggles the default
+for future characters, and Enter applies. Controller Select chooses a card;
+navigate to Start questing to apply it. Existing installations are not reset.
+
+Open **WoW Options > AddOns > QuestTogether > Presets** to revisit the chooser.
+Each choice changes only the listed feature options, not layouts, bindings,
+notes or the addon's enabled state. Individual edits produce **Custom**. The
+future-character checkbox sets the account default; copied and existing
+profiles keep their settings.
+
+- **Full experience:** the usual QT defaults, with automatic leader-follow off.
+- **Quiet companion:** maps, plates, PQL and tracker remain. Automatic messages,
+  bubbles, sounds, emotes, startup tips and update interruptions are off.
+- **Party log only:** PQL on demand with minimap and controller shortcuts.
+  Map overlays/buttons, plate additions, identifiers, tracker/focus indicators,
+  automatic output and incoming QT share-request prompts are off.
+- **Kid mode:** no automatic QT windows, launchers or visual additions. Reports
+  stay within the current party, diagnostic sharing and public discovery are
+  off, and automatic leader-follow is on. **Thanks and celebration emotes stay
+  on** and can be changed individually. Deliberate shortcuts and WoW Options
+  still work. Blizzard's own UI and native quest-sharing dialogs are unchanged.
+
+The main QT options page exposes automatic notes/update notices, map and Data
+Broker buttons, tracker focus indicators, controller shortcut installation,
+incoming QT share requests, sharing audience and automatic leader-follow.
+Controller navigation and shortcut installation are independent. Disabling the
+shortcut removes only an unchanged action whose placement QT recorded; custom
+macros/bindings are retained. Turning it on can restore that same removed action
+if its slot remains empty. Existing unbound macros are not automatically remapped.
+If another toolbar has already registered the Data Broker launcher, use the
+explicit **Reload UI** button to remove it for the next session.
+
+Automatic leader-follow uses the actual small-party leader and fresh QT focus
+information. When both characters have the selected quest, local focus follows
+without confirmation. While it is usable, other focus and waypoint actions
+cannot replace it. Native WoW selection can briefly change before QT restores
+it through the normal API. If the leader disconnects, has no usable QT focus,
+or chooses a quest you lack, manual local focus works until following resumes.
+Solo, self-leadership and raids retain ordinary local behavior. Stop following
+and `/qt unfollow` explain which setting to turn off; neither disables it.
+Turning the setting off leaves the current quest selected.
+
+### Welcome and leader-follow live acceptance
+
+Offline fixtures cannot establish live rendering, native input ownership or
+actual delivery between clients. Before release, check:
+
+1. A fresh test account sees welcome once; an existing account keeps its settings.
+   Try mouse, keyboard and controller, including Back and a combat transition.
+2. Choose Kid mode before startup completes. Check for no QT launcher, automatic
+   chat/window/map/plate/tracker output while another grouped client receives
+   quest, focus, history, waypoint and location updates. Emotes should remain.
+3. Follow a leader with QT and a shared quest. Change leadership and quest focus;
+   accept another quest and attempt a manual focus/waypoint switch. No stop-follow
+   warning should appear while automatic following can operate.
+4. Disconnect the leader or choose a quest the follower lacks. Try a local focus,
+   then restore a usable leader quest and confirm automatic resumption.
+5. Recover settings through WoW Options. Change presets and individual options,
+   disable leader-follow, and test launcher preservation and the toolbar reload
+   notice. Reopen or copy a profile and confirm unrelated customization survives.

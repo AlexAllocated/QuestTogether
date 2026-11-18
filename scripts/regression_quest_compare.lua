@@ -421,6 +421,22 @@ QuestTogether:RegisterTest("party diff share rechecks live ownership shareabilit
 	Equal(a.pushes, 1)
 end)
 
+QuestTogether:RegisterTest("share requests disabled by an ordinary option decline and retire pending prompts", function()
+	local a = Fixture(nil, {Quest(1, nil, true)})
+	a:SetOption("allowIncomingShareRequests", false)
+	local replies = {}
+	function a:SendPartyQuestShareMessage(_, _, _, status) replies[#replies+1] = status; return true end
+	assert(not a:HandlePartyQuestShareMessage(SharePacket(a), "Friend-Realm", "PARTY"))
+	assert(not a:GetNextPartyQuestShareRequest() and a.pushes == 0 and replies[1] == "declined")
+	a:SetOption("allowIncomingShareRequests", true); a:Advance(6)
+	assert(a:HandlePartyQuestShareMessage(SharePacket(a, "second"), "Friend-Realm", "PARTY"))
+	local pending = assert(a:GetNextPartyQuestShareRequest())
+	a:SetOption("allowIncomingShareRequests", false)
+	a:ApplyFeaturePolicies({allowIncomingShareRequests=true}, false)
+	assert(not a:GetNextPartyQuestShareRequest() and replies[#replies] == "declined")
+	assert(not a:ConfirmPartyQuestShare(pending, true, false) and a.pushes == 0)
+end)
+
 QuestTogether:RegisterTest("party share requests ask by default and remember explicit always allow consent", function()
 	local a = Fixture(nil, { Quest(1, nil, true) })
 	Equal(a:HandlePartyQuestShareMessage(SharePacket(a), "Friend-Realm", "PARTY"), true)

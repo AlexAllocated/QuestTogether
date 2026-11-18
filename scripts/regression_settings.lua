@@ -1,5 +1,109 @@
 -- Settings transactions use private services and never touch live frames.
 local QT = _G.QuestTogether
+
+QT:RegisterTest("preset bundles preserve unrelated preferences and kid emotes", function()
+	local a = setmetatable({ db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} } }, { __index = QT })
+	function a:IsRuntimeRestricted() return false end
+	function a:ApplySettingsTransaction(changed) self.applied = changed; return true end
+	function a:RefreshOptionsWindow() end
+	a.db.profile.lightMode, a.db.profile.windowScale, a.db.profile.compareGroupByChain = true, 125, true
+	a.db.profile.enabled = false
+	assert(a:ApplyPreset("kid", true))
+	assert(a:GetOption("automaticLeaderFocus") and a:GetOption("sharingAudience") == "party")
+	assert(a:GetOption("autoThankBuffs") and a:GetOption("emoteOnQuestCompletion") and a:GetOption("emoteOnLevelUp"))
+	assert(not a:GetOption("showTrackerFocusIndicators") and not a:GetOption("showMinimapButton"))
+	assert(not a:GetOption("showChatLogs") and not a:GetOption("showQTChat") and not a:GetOption("audioEnabled"))
+	assert(a.db.profile.enabled == false and a.db.profile.lightMode and a.db.profile.windowScale == 125 and a.db.profile.compareGroupByChain)
+	assert(a:GetMatchingPreset() == "kid" and a.db.global.defaultPreset == "kid")
+	local new = a:CreateDefaultProfile()
+	assert(new.enabled and new.automaticLeaderFocus and new.windowScale == 100)
+	assert(a:SetOption("showMinimapButton", true) and a:GetMatchingPreset() == nil)
+	assert(a:ApplyPreset("full", false) and a:GetMatchingPreset() == "full")
+	assert(a.db.global.defaultPreset == "kid" and not a.db.profile.enabled and a.db.profile.windowScale == 125)
+	for _, entry in ipairs(a:GetPresetDefinitions()) do
+		local values = a:GetPresetValues(entry.id)
+		for key, value in pairs(values) do assert(a:ValidateSetting(key, value) ~= nil, key) end
+	end
+	assert(a:GetPresetValues("unknown") == nil and not a:ApplyPreset("unknown"))
+end)
+
+QT:RegisterTest("welcome detects genuinely fresh storage and acknowledges only successful setup", function()
+	local function Model(db)
+		local a = setmetatable({}, { __index = QT })
+		function a:GetCurrentCharacterKey() return "NewCharacter" end
+		function a:RefreshOptionsWindow() end
+		function a:ApplySettingsTransaction() return true end
+		function a:IsRuntimeRestricted() return self.restricted == true end
+		function a:OnLogin() self.logins = (self.logins or 0) + 1 end
+		function a:GetAddonVersion() return "10.1.0" end
+		a:InitializeDatabase(db)
+		return a
+	end
+	local a = Model({})
+	assert(a:IsWelcomeSetupPending() and not a:IsPublicSharingAllowed())
+	a.restricted = true
+	assert(not a:ApplyPreset("kid") and a:IsWelcomeSetupPending())
+	a.restricted = false
+	assert(a:ApplyPreset("kid") and not a:IsWelcomeSetupPending())
+	assert(a.logins == 1 and a.db.global.releaseNotesSeenVersion == "10.1.0")
+	local existing = Model({global = {releaseNotesSeenVersion = ""}, profiles = {}})
+	assert(not existing:IsWelcomeSetupPending())
+	local inherited = Model({global = {welcomeSetupComplete = true, defaultPreset = "kid"}})
+	assert(not inherited:IsWelcomeSetupPending() and inherited:GetOption("automaticLeaderFocus"))
+end)
+
+QT:RegisterTest("sharing audience fences routes senders discovery and setup independently of presets", function()
+	local a = setmetatable({db = {profile = {sharingAudience = "party"}, global = {}}}, {__index = QT})
+	function a:GetGroupAnnouncementDistribution() return "PARTY" end
+	function a:IsGroupedSender(name) return name == "Parent" end
+	assert(not a:IsPublicSharingAllowed())
+	for _, route in ipairs({{distribution="MESH",scope="global"}, {distribution="CHANNEL",target=1},
+		{distribution="WHISPER",target="Stranger"}, {distribution="WHISPER",target="Parent",meshTraffic=true},
+		{distribution="RAID"}, {distribution="PARTY",recipient="Stranger"}}) do assert(not a:IsSharingRouteAllowed(route)) end
+	assert(a:IsSharingRouteAllowed({distribution="PARTY"}) and a:IsSharingRouteAllowed({distribution="WHISPER",target="Parent"}))
+	assert(a:IsSharingSenderAllowed("Parent", "PARTY") and not a:IsSharingSenderAllowed("Stranger", "PARTY"))
+	assert(not a:IsSharingSenderAllowed("Parent", "CHANNEL"))
+	a.db.global.welcomeSetupComplete = false
+	assert(not a:IsSharingRouteAllowed({distribution="PARTY"}) and not a:IsSharingSenderAllowed("Parent", "WHISPER"))
+	a.db.global.welcomeSetupComplete = true
+	a.db.profile.sharingAudience = "normal"
+	assert(a:IsPublicSharingAllowed() and a:IsSharingRouteAllowed({distribution="MESH",scope="global"}))
+end)
+QT:RegisterTest("welcome pending startup cannot register launchers or emit runtime announcements", function()
+	local a = setmetatable({db={global={welcomeSetupComplete=false},profile={enabled=true}}}, {__index=QT})
+	local attempts = 0
+	for _, key in ipairs({"BeginAnnouncementChannelStartup", "RegisterAddonWhisperChatFilter", "ReconcileQuestLogChatDestination",
+		"InitializeMinimapLauncher", "RefreshDataBroker", "NotifyAddonUpdate", "InitializeReleaseNotes", "ScheduleStartupHint"}) do
+		a[key] = function() attempts = attempts + 1 end
+	end
+	function a:RetirePublicSharingChannels() self.retired = true end
+	function a:InitializePresetWelcome() self.welcome = true end
+	a:OnLogin()
+	assert(a.welcome and a.retired and attempts == 0 and not a:Enable() and not rawget(a, "isEnabled"))
+end)
+QT:RegisterTest("preset values match manual option transactions and keep copied profiles independent", function()
+	for _, entry in ipairs(QT:GetPresetDefinitions()) do
+		local function Model()
+			local a = setmetatable({db={profile=QT:DeepCopy(QT.DEFAULTS.profile),global={}}}, {__index=QT})
+			function a:IsRuntimeRestricted() return false end
+			function a:ApplySettingsTransaction() return true end
+			function a:RefreshOptionsWindow() end
+			return a
+		end
+		local bundled, manual = Model(), Model()
+		assert(bundled:ApplyPreset(entry.id))
+		assert(manual:SetOptions(manual:GetPresetValues(entry.id)))
+		for key, value in pairs(bundled.db.profile) do
+			if type(value) ~= "table" then assert(manual:GetOption(key) == value, key) end
+		end
+		bundled.db.global.defaultPreset = "kid"
+		local copy = bundled:DeepCopy(bundled.db.profile)
+		bundled.db.profiles = {Existing=copy}
+		bundled:EnsureProfile("Existing")
+		assert(bundled.db.profiles.Existing == copy and copy.automaticLeaderFocus == (entry.id == "kid"))
+	end
+end)
+
 local function Fixture()
 	local a = setmetatable(
 		{ db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} }, effects = {} },

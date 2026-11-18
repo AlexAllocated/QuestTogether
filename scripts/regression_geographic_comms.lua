@@ -368,6 +368,25 @@ local function CommunicationNetwork(count, questCount, regional)
 	end, network
 end
 
+QT:RegisterTest("sharing audience keeps native group state flowing without public discovery", function()
+	local a, b = Fixture("Child-Realm"), Fixture("Parent-Realm")
+	a.other = b; a.inParty, b.inParty = true, true
+	a.db.profile.sharingAudience = "party"
+	function a:GetGroupAnnouncementDistribution() return "PARTY" end
+	function b:GetGroupAnnouncementDistribution() return "PARTY" end
+	a:UpdateGeographicSubscriptions()
+	Stage(a, false); Tick(a, 12)
+	assert(#a.sent > 0)
+	for _, packet in ipairs(a.sent) do assert(packet.route == "PARTY" and not packet.scope) end
+	for channel in pairs(a.joined) do assert(channel == "QuestTogether") end
+	assert(b.playerLocationState and b.playerLocationState.peers[a.name])
+	local frames = StateFrames(b)
+	a.inParty = false
+	assert(not a:ReceiveCommunication(a.commPrefix, frames[1], "WHISPER", b.name))
+	a.inParty = true
+	assert(a:IsSharingSenderAllowed(b.name, "PARTY"))
+end)
+
 QT:RegisterTest("stationary geographic dots use heartbeats while movement and new routes publish promptly", function()
 	local a, b = Fixture("Alice-Realm"), Fixture("Bob-Realm")
 	a.other = b

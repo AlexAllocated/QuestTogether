@@ -284,6 +284,7 @@ end
 -- direct context-menu action. Delayed choices belong to one profile/lifetime
 -- and cannot replace a follow decision made while the dialog was open.
 function QuestTogether:RequestPartyQuestFocusFollow(name)
+	if self:GetAutomaticLeaderFocusTarget() then self:ExplainAutomaticLeaderFocus(); return false end
 	if not self:CanAccessValue(name) or type(name) ~= "string" then return false end
 	name = self:NormalizeMemberName(name)
 	local function Eligible()

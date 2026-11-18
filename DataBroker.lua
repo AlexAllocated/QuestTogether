@@ -80,6 +80,7 @@ function QT:PopulateDataBrokerTooltip(tooltip)
 end
 
 function QT:RefreshDataBroker()
+	if self:IsWelcomeSetupPending() or self:GetOption("showDataBrokerLauncher") == false then return false end
 	if not self.hasLoggedIn or not self.db or self.isLoggingOut or self:IsRuntimeRestricted() then return false end
 	local state = rawget(self, "dataBrokerState")
 	if state and state.busy then return false end

@@ -44,8 +44,68 @@ local function Fixture()
 	function a:GetLocationPinTooltipParent()
 		return root
 	end
+	function a:GetReleaseNotesUIParent() return root end
+	function a:CreateReleaseNotesWakeFrame() return QT:CreateTestUIRegion(self) end
 	return a, clock, root
 end
+
+QT:RegisterTest("welcome cards apply once keyboard chooses presets and closing manual setup cancels", function()
+	local a = Fixture()
+	a.hasLoggedIn = true
+	a.db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {welcomeSetupComplete = false} }
+	a.GetOption = QT.GetOption
+	a.API.IsPartyQuestKeyboardInputBlocked = function() return false end
+	function a:ApplySettingsTransaction() self.applies = (self.applies or 0) + 1; return true end
+	function a:RefreshOptionsWindow() end
+	function a:OnLogin() self.logins = (self.logins or 0) + 1 end
+	function a:GetAddonVersion() return "10.1.0" end
+	assert(a:OpenPresetWindow())
+	local frame = a.presetWindow
+	assert(frame.selected == "full" and #frame.cards == 4 and frame.future:GetChecked())
+	local key = frame:GetScript("OnKeyDown")
+	key(frame, "DOWN"); key(frame, "DOWN"); key(frame, "DOWN")
+	assert(frame.selected == "kid")
+	key(frame, "ENTER")
+	assert(not frame:IsShown() and a:GetMatchingPreset() == "kid" and a.logins == 1)
+	assert(a:GetOption("autoThankBuffs") and a:GetOption("emoteOnQuestCompletion"))
+	assert(a:OpenPresetWindow())
+	frame.cards[1]:Click()
+	frame.close:Click()
+	assert(a:GetMatchingPreset() == "kid" and not frame:IsShown())
+	a.db.global.welcomeSetupComplete = false
+	assert(a:OpenPresetWindow())
+	frame.close:Click()
+	assert(a:GetMatchingPreset() == "full" and a.logins == 2 and not frame:IsShown())
+	a.db.global.welcomeSetupComplete = false
+	assert(a:OpenPresetWindow())
+	frame:GetScript("OnKeyDown")(frame, "ESCAPE")
+	assert(not frame:IsShown() and not a:IsWelcomeSetupPending())
+	if a.presetWakeFrame then
+		local update = a.presetWakeFrame:GetScript("OnUpdate")
+		if update then update(a.presetWakeFrame, 1) end
+	end
+	assert(not frame:IsShown(), "a stale wake must not reopen completed welcome")
+	assert((a.invalidCalls or 0) == 0)
+end)
+
+QT:RegisterTest("welcome ignores stale profile actions and keyboard input owned by another surface", function()
+	local a = Fixture()
+	a.hasLoggedIn = true
+	a.db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {welcomeSetupComplete = true} }
+	a.GetOption = QT.GetOption
+	function a:RefreshOptionsWindow() end
+	assert(a:OpenPresetWindow())
+	local frame = a.presetWindow
+	a.API.IsPartyQuestKeyboardInputBlocked = function() return true end
+	frame:GetScript("OnKeyDown")(frame, "DOWN")
+	assert(frame.selected == "full")
+	a.db.profile = QT:DeepCopy(a.db.profile)
+	frame.cards[4]:Click(); frame.apply:Click()
+	assert(a:GetOption("automaticLeaderFocus") == false and frame.selected == "full")
+	a.blocked = true
+	assert(not a:OpenPresetWindow())
+	assert((a.invalidCalls or 0) == 0)
+end)
 
 QT:RegisterTest("runtime timing modes keep next-frame discovery separate and bound refresh deadlines", function()
 	local a, clock = Fixture()

@@ -80,6 +80,7 @@ function QT:GetAvailableAddonUpdate()
 end
 
 function QT:NotifyAddonUpdate()
+	if self:GetOption("showUpdateNotifications") == false or self:IsWelcomeSetupPending() then return false end
 	local version = self:GetAvailableAddonUpdate()
 	if not version or not self.hasLoggedIn or self.isLoggingOut then
 		return false

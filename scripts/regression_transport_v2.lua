@@ -49,6 +49,35 @@ local function Fixture()
 	return a
 end
 
+QT:RegisterTest("sharing audience stops queued public packets and retries after roster departure", function()
+	local a = Fixture()
+	a.db = {profile = {sharingAudience = "normal"}, global = {}}
+	local member = true
+	function a:IsGroupedSender(name) return member and name == "Peer-Realm" end
+	function a:GetGroupAnnouncementDistribution() return "PARTY" end
+	assert(a:Queue("public"))
+	a.db.profile.sharingAudience = "party"; member = false; a:Advance(1)
+	assert(#a.sent == 0 and not a:Queue("outsider"))
+	assert(not a:SendTransportNow("direct", "test", {distribution="WHISPER",target="Peer-Realm"}))
+	member = true; assert(a:Queue("group-member")); a:Advance(1)
+	assert(#a.sent == 1 and a.sent[1].wire == "group-member")
+	a.native = function() return 3 end
+	assert(a:Queue("retry")); a:Advance(1); local attempts = #a.sent
+	member = false; a:Advance(2); assert(#a.sent == attempts)
+	assert(not a:QueueTransportWire("mesh", "test", {distribution="WHISPER",target="Peer-Realm",meshTraffic=true}))
+end)
+QT:RegisterTest("sharing audience rechecks membership after whisper tracking callbacks", function()
+	local a = Fixture(); a.db = {profile={sharingAudience="party"},global={}}
+	local member = true
+	function a:IsGroupedSender() return member end
+	local track = a.RecordAddonWhisperAttempt
+	function a:RecordAddonWhisperAttempt(...)
+		local receipt, reason = track(self, ...); member = false; return receipt, reason
+	end
+	assert(not a:SendTransportNow("late", "test", {distribution="WHISPER",target="Peer-Realm"}))
+	assert(#a.sent == 0)
+end)
+
 local function WhisperReceiptFixture()
 	local a = Fixture()
 	a.retired = 0

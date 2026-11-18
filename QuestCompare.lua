@@ -1163,6 +1163,10 @@ function QuestTogether:HandlePartyQuestShareMessage(data, sender, context)
 		return false
 	end
 	state.peers[sender] = now + SHARE_COOLDOWN
+	if self:GetOption("allowIncomingShareRequests") == false then
+		self:SendPartyQuestShareMessage(sender, questId, requestId, "declined")
+		return false
+	end
 	local index, _, reasonCode = self:GetQuestShareAvailability(questId)
 	if not index then
 		self:SendPartyQuestShareMessage(sender, questId, requestId, "unavailable", reasonCode)
@@ -1224,6 +1228,9 @@ function QuestTogether:FinishPartyQuestShare(request, status, reasonCode)
 end
 
 function QuestTogether:ConfirmPartyQuestShare(request, alwaysAllow, automatic)
+	if self:GetOption("allowIncomingShareRequests") == false then
+		if request then self:FinishPartyQuestShare(request, "declined") end; return false
+	end
 	local state = self.partyQuestShareState
 	if not request or not state or state.incoming[request.key] ~= request then
 		return false

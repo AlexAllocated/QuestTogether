@@ -33,7 +33,7 @@ end
 
 function QT:GetPartyQuestFocusRows()
 	local rows = {}
-	if not self.isEnabled or self.isLoggingOut or not self:GetPartyNavigationRoute() then return rows end
+	if self:GetOption("showTrackerFocusIndicators") == false or not self.isEnabled or self.isLoggingOut or not self:GetPartyNavigationRoute() then return rows end
 	for _, name in ipairs(self.partyMemberOrder or {}) do
 		if not self:IsSelfSender(name) then
 			local questID = self:NormalizeQuestID(self:GetPartyQuestFocusID(name))
@@ -208,6 +208,7 @@ function QT:UpdatePartyQuestFocusIndicators()
 end
 
 function QT:RefreshPartyQuestFocusIndicatorGeometry()
+	if self:GetOption("showTrackerFocusIndicators") == false then self:ResetPartyQuestFocusIndicators(); return end
 	local state = rawget(self, "partyFocusIndicatorState")
 	if not state or #state.rows == 0 then return end
 	if not self.isEnabled or self.isLoggingOut or self:IsWorkBlocked("foreign_frame_mutation") then

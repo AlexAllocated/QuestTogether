@@ -15,6 +15,35 @@ end
 function Controller:IsActive()
 	return self.adapter.active()
 end
+function Controller:IsAutomaticLocked()
+	local a = self.adapter
+	if not self.automaticMode or not a.automaticTarget then return false end
+	local governed, leader, usable = a.automaticTarget()
+	return governed and usable and leader == self:GetTarget() and not self:WouldCycle(leader)
+end
+function Controller:ReconcileAutomatic()
+	local a = self.adapter
+	if self.reconcilingAutomatic or not a.automaticTarget or not self:IsActive() or a.loggingOut() or a.restricted() then return end
+	self.reconcilingAutomatic = true
+	local governed, leader, usable = a.automaticTarget()
+	if governed then
+		if not self.automaticMode or self.automaticLeader ~= leader then
+			self:Stop(true)
+			if a.dismissChoices then a.dismissChoices() end
+		end
+		self.automaticMode, self.automaticLeader = true, leader
+		if usable and not self:WouldCycle(leader) then
+			if self:GetTarget() ~= leader then self:Follow(leader, true) end
+		elseif self:GetTarget() then
+			-- The option retains intent while native/local focus remains usable.
+			self:Stop(true)
+		end
+	elseif self.automaticMode then
+		self:Stop(true)
+		self.automaticMode, self.automaticLeader = nil, nil
+	end
+	self.reconcilingAutomatic = nil
+end
 function Controller:Trace(event, questID)
 	if self.adapter.trace then self.adapter.trace(event, questID or 0) end
 end
@@ -48,7 +77,14 @@ function Controller:GetTarget()
 		return s.following, s.followToken
 	end
 end
-function Controller:Stop()
+function Controller:Stop(force)
+	if not force and self.adapter.automaticTarget then
+		local governed = self.adapter.automaticTarget()
+		if governed then
+			if self.adapter.explainAutomatic then self.adapter.explainAutomatic() end
+			return false
+		end
+	end
 	self.choice = nil
 	self.acceptances, self.trackingAt, self.trackingStartedAt = nil, nil, nil
 	local a, s = self.adapter, self.adapter.peek()
@@ -92,8 +128,12 @@ function Controller:WouldCycle(name)
 	end
 	return true
 end
-function Controller:Follow(name)
+function Controller:Follow(name, automatic)
 	local a = self.adapter
+	if not automatic and a.automaticTarget and a.automaticTarget() then
+		if a.explainAutomatic then a.explainAutomatic() end
+		return false
+	end
 	name = a.normalize(name)
 	local peer = name and a.peer(name)
 	if
@@ -118,21 +158,23 @@ function Controller:Follow(name)
 	return true
 end
 function Controller:Reconcile()
+	self:ReconcileAutomatic()
 	local a, s = self.adapter, self.adapter.peek()
 	if not s or not s.following or a.loggingOut() then
 		return
 	end
 	if not a.member(s.following) or a.ignored(s.following) or a.groupInvalid() then
-		self:Stop()
+		self:Stop(true)
 	end
 end
 function Controller:Apply()
+	self:ReconcileAutomatic()
 	local a, s = self.adapter, self.adapter.peek()
 	if not self:IsActive() or not s or not s.following then
 		return
 	end
 	if not a.member(s.following) or a.ignored(s.following) or a.raid() or self:WouldCycle(s.following) then
-		self:Stop()
+		self:Stop(true)
 		return
 	end
 	-- Native selection already changed before its tracking event reached us.
@@ -243,6 +285,13 @@ function Controller:ObserveNative()
 		return nil
 	end
 	local s = a.state()
+	if self:IsActive() and self:IsAutomaticLocked() then
+		self.choice, self.acceptances = nil, nil
+		s.checkExternal, s.resuming = nil, nil
+		local peer = a.peer(s.following)
+		if peer and native.questID ~= peer.questID then s.attempt = nil end
+		return native
+	end
 	if self:IsActive() then
 		if s.following and self.observedQuestID ~= native.questID then
 			self.observedQuestID = native.questID
@@ -277,7 +326,7 @@ function Controller:ObserveNative()
 			elseif native.questID > 0 or native.questCleared == true then
 				if a.blocked() then s.checkExternal = true; return nil end
 				s.checkExternal = nil
-				if not self:Request(a.ownName(), native.questID, true) then self:Stop() end
+				if not self:Request(a.ownName(), native.questID, true) then self:Stop(true) end
 				return native
 			end
 		end
@@ -308,16 +357,18 @@ function Controller:ObserveNative()
 						s.checkExternal = true
 						return nil
 					end
-					if not self:Request(a.ownName(), native.questID, true) then self:Stop() end
+					if not self:Request(a.ownName(), native.questID, true) then self:Stop(true) end
 					return native
 				end
-				self:Stop()
+				self:Stop(true)
 			end
 		end
 	end
 	return native
 end
 function Controller:Select(name, questID)
+	self:ReconcileAutomatic()
+	if self:IsAutomaticLocked() then return false end
 	local a = self.adapter
 	if not self:IsActive() or a.restricted() then
 		return false
@@ -327,7 +378,7 @@ function Controller:Select(name, questID)
 			return false
 		end
 		if (a.currentQuest() or 0) == questID then
-			self:Stop()
+			self:Stop(true)
 			self:OnTrackingChanged()
 			return true
 		end
@@ -340,7 +391,7 @@ function Controller:Select(name, questID)
 			s.applying = nil
 		end
 		if ok and applied == true then
-			self:Stop()
+			self:Stop(true)
 			self:OnTrackingChanged()
 			return true
 		end
@@ -353,6 +404,8 @@ function Controller:Select(name, questID)
 	return self:Follow(name)
 end
 function Controller:Request(name, questID, nativeOverride)
+	self:ReconcileAutomatic()
+	if self:IsAutomaticLocked() then return false end
 	local a = self.adapter
 	if not self:IsActive() or a.blocked() then
 		return false

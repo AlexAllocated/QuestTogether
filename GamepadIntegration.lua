@@ -566,7 +566,7 @@ Reconcile = function()
 				break
 			end
 		end
-		if state.worldReady and state.enabled and not state.failed and QT.TryInstallDefaultGamepadLauncher
+		if state.worldReady and not state.failed and QT.TryInstallDefaultGamepadLauncher
 			and QT:IsDefaultGamepadLauncherPending() then
 			QT:TryInstallDefaultGamepadLauncher()
 		end
@@ -1196,6 +1196,11 @@ function QT:SetGamepadIntegrationEnabled(enabled)
 		Reconcile()
 	end
 	Notify()
+end
+function QT:RequestGamepadLauncherRefresh()
+	if self ~= QT or rawget(QT, "isRunningTests") == true then return false end
+	Schedule()
+	return true
 end
 function QT:GetGamepadIntegrationStatus()
 	if self ~= QT or rawget(QT, "isRunningTests") == true then

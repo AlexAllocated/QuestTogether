@@ -34,6 +34,7 @@ function Addon:GetReleaseNotesSeries(version)
 end
 
 function Addon:ShouldShowReleaseNotes(version)
+	if self:IsWelcomeSetupPending() or self:GetOption("showAutomaticReleaseNotes") == false then return false end
 	if not self.db or type(self.db.global) ~= "table" then
 		return false
 	end
@@ -199,6 +200,7 @@ function Addon:OpenReleaseNotes(automatic)
 		-- release series on a downgrade, or repeat for another character/profile.
 		global.releaseNotesSeenVersion = version
 	end
+	self.releaseNotesAutomatic = automatic == true
 	self:StopReleaseNotesWakeup()
 	if self.PresentStandardGamepadWindow then
 		local frame = rawget(self, "releaseNotesWindow")

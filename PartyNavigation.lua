@@ -86,6 +86,34 @@ end
 function QT:StopPartyQuestFollow()
 	return self:GetPartyFocusController():Stop()
 end
+function QT:GetAutomaticLeaderFocusTarget()
+	if self:GetOption("automaticLeaderFocus") ~= true or not self:GetPartyNavigationRoute() then return false end
+	local getter = self.API.GetPartyVisualLeaderUnit
+	local ok, unit = pcall(getter or function() end)
+	if not ok or not self:CanAccessValue(unit) or type(unit) ~= "string" then return true end
+	if unit == "player" then return false end
+	if not unit:match("^party[1-4]$") then return false end
+	local name = Name(self, self:GetUnitFullName(unit))
+	if not name or not self:IsGroupedSender(name) or self:IsIgnoredPlayerName(name) then return true end
+	local connected = self.API.IsPartyFocusUnitConnected
+	if connected and connected(unit) ~= true then return true, name, false end
+	local peer = self:GetPartyNavigationPeer(name)
+	local usable = peer and peer.questID > 0 and self.API.IsOnQuest(peer.questID) == true
+	return true, name, usable == true
+end
+function QT:ExplainAutomaticLeaderFocus()
+	self:Print(L("Turn off Automatically follow the party leader's quest focus in QT settings to stop following or choose another person."))
+end
+function QT:IsPartyFocusChangeLocked()
+	if rawget(self, "nativePartyFocusOwner") then return false end
+	local governed, leader, usable = self:GetAutomaticLeaderFocusTarget()
+	return governed and usable and not self:WouldPartyQuestFollowCycle(leader) or false
+end
+function QT:ReconcileAutomaticLeaderFocus()
+	local controller = self:GetPartyFocusController()
+	controller:ReconcileAutomatic()
+	controller:Apply()
+end
 -- Departures preserve follow intent; the controller resumes when a peer returns.
 function QT:RetirePartyNavigationPeer(name)
 	local state = rawget(self, "partyNavigationState")
@@ -130,6 +158,13 @@ function QT:GetPartyFocusController()
 	end
 	local a = self
 	controller = self:CreatePartyFocusController({
+		automaticTarget = function() return a:GetAutomaticLeaderFocusTarget() end,
+		explainAutomatic = function() a:ExplainAutomaticLeaderFocus() end,
+		dismissChoices = function()
+			a:CancelPartyQuestFocusFollowRequest()
+			local frame = rawget(a, "partyFocusChangeDialog")
+			if frame then a:DismissManagedWindow(frame, "replace") end
+		end,
 		state = function()
 			return a:GetPartyNavigationState()
 		end,
@@ -307,6 +342,8 @@ function QT:OnPartyNavigationQuestAccepted(questID)
 end
 function QT:SamplePartyNavigation()
 	local controller = self:GetPartyFocusController()
+	controller:ReconcileAutomatic()
+	if controller:IsAutomaticLocked() then controller:Apply() end
 	local native = controller:ObserveNative()
 	if not native then
 		return nil
@@ -530,7 +567,7 @@ function QT:UpdatePartyNavigation()
 	end
 end
 function QT:ResetPartyNavigation()
-	self:StopPartyQuestFollow()
+	self:GetPartyFocusController():Stop(true)
 	local state = rawget(self, "partyNavigationState")
 	self.partyNavigationState = nil
 	if state then
@@ -627,6 +664,11 @@ function QT:PopulatePartyFocusMenu(root, name)
 	then
 		return
 	end
+	if self:GetAutomaticLeaderFocusTarget() then
+		root:CreateButton(L("Automatically follow the party leader's quest focus"), function() self:ExplainAutomaticLeaderFocus() end)
+		root:CreateTitle(self:GetPartyFocusLabel(name))
+		return
+	end
 	local s = rawget(self, "partyNavigationState")
 	local following = s and s.following == self:NormalizeMemberName(name)
 	local p = self:GetPartyNavigationPeer(name)
@@ -668,6 +710,7 @@ function QT:GetPartyWaypointRows()
 	return rows
 end
 function QT:NavigateToPartyWaypoint(name)
+	if self:IsPartyFocusChangeLocked() then return false end
 	local p = self:GetPartyNavigationPeer(name)
 	if not p or p.mapID <= 0 or self:IsRuntimeRestricted() then
 		return false

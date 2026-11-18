@@ -21,7 +21,7 @@ function QT:ConfigureStandardGamepadWindow(frame, role, close, initial, scroll)
         role = role, kind = "window", footer = true, scrollFrame = scroll,
         -- Startup patch notes are readable/dismissible immediately. Other
         -- automatic windows and incoming requests remain passive.
-        allowAutomaticFocus = role == "release_notes",
+        allowAutomaticFocus = role == "release_notes" or role == "welcome",
         defaultFocus = function() return initial or frame.cancel or frame.close or frame.Close end,
         close = close or function() self:DismissManagedWindow(frame) end,
     } })

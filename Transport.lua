@@ -118,6 +118,7 @@ local function Valid(a, wire, route)
 		and #wire <= 255
 		and not wire:find("\0", 1, true)
 		and type(route) == "table"
+		and (not a.IsSharingRouteAllowed or a:IsSharingRouteAllowed(route))
 		and NATIVE_ROUTES[route.distribution] == true
 		and a.API
 		and type(a.API.SendAddonMessage) == "function"
@@ -203,6 +204,7 @@ local function ReportNativeFailure(a, s, context, route, nativeKey, nativeLabel)
 	a:RecordDiagnosticError("communication send", detail)
 end
 local function NativeSend(a, s, wire, context, route)
+	if a.IsSharingRouteAllowed and not a:IsSharingRouteAllowed(route) then return false, "cancelled" end
 	local target, receipt = route.target, nil
 	-- A failed destination is suppressed before cancellation callbacks run.
 	-- Keep this final guard for direct sends and reentrant cleanup controls.
@@ -219,6 +221,10 @@ local function NativeSend(a, s, wire, context, route)
 			RecordTrackingBlock(s, reason)
 			return false, TrackingFailure(reason)
 		end
+	end
+	if a.IsSharingRouteAllowed and not a:IsSharingRouteAllowed(route) then
+		if receipt and a.FinalizeAddonWhisperAttempt then a:FinalizeAddonWhisperAttempt(receipt, true) end
+		return false, "cancelled"
 	end
 	Count(s, "attempts")
 	local ok, result = pcall(a.API.SendAddonMessage, a.commPrefix, wire, route.distribution, target)

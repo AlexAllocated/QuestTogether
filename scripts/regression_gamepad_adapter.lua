@@ -1260,11 +1260,12 @@ do
 	h:event("PLAYER_ENTERING_WORLD")
 	h.qt:SetGamepadIntegrationEnabled(false)
 	h:flushAll()
-	assert(attempts == 2, "Queued launcher work ignored navigation disable")
+	assert(attempts > 2, "Launcher preference must remain independent of window navigation")
+	local afterDisable = attempts
 	h.qt:SetGamepadIntegrationEnabled(true)
 	h:event("CURSOR_CHANGED")
 	h:flushAll()
-	assert(attempts == 3)
+	assert(attempts == afterDisable + 1)
 	pending = false
 	h:event("CURSOR_CHANGED")
 	h:event("UPDATE_MACROS")
@@ -1274,13 +1275,13 @@ do
 	function h.qt:OnGamepadLauncherMacroUpdate() macroChecks = macroChecks + 1; pending = true end
 	function h.qt:OnGamepadLauncherSlotUpdate() slotChecks = slotChecks + 1; if waitingSlot then pending = true end end
 	h:event("ACTIONBAR_SLOT_CHANGED"); h:flushAll()
-	assert(attempts == 3 and slotChecks == 1, "Unbinding a surviving macro scheduled placement")
+	assert(attempts == afterDisable + 1 and slotChecks == 1, "Unbinding a surviving macro scheduled placement")
 	h:event("UPDATE_MACROS"); h:event("UPDATE_MACROS"); h:flushAll()
-	assert(macroChecks == 2 and attempts == 4, "Macro deletion did not coalesce into one check")
+	assert(macroChecks == 2 and attempts == afterDisable + 2, "Macro deletion did not coalesce into one check")
 	pending, waitingSlot = false, true
 	h:event("ACTIONBAR_SLOT_CHANGED"); h:flushAll()
-	assert(attempts == 5 and slotChecks == 2, "An emptied slot did not resume missing-macro setup")
-	print("PASS: default launcher waits for world entry, coalesces native events, defers combat, cancels on departure/disable and becomes idle")
+	assert(attempts == afterDisable + 3 and slotChecks == 2, "An emptied slot did not resume missing-macro setup")
+	print("PASS: default launcher waits for world entry, coalesces native events, defers combat, cancels on departure, remains independent of navigation and becomes idle")
 end
 
 do
@@ -1311,5 +1312,16 @@ do
 	assert(not h.qt:PresentStandardGamepadWindow(other, "notes", nil, nil, nil, "automatic"),
 		"Automatic focus escaped patch-notes policy")
 	print("PASS: automatic patch notes opt in to focus/scrolling, return from popups and release input on Back; other windows stay passive")
+end
+do
+	local h = newHarness()
+	h:load("GamepadWindows.lua")
+	local frame = h.env.CreateFrame("Frame", "AdapterWelcome", h.env.UIParent)
+	local first = h.env.CreateFrame("Button", nil, frame)
+	assert(h.qt:PresentStandardGamepadWindow(frame, "welcome", function() frame:Hide() end, first, nil, "automatic"))
+	assert(h.nav.button == first and not h.nav.rightStickScrolling)
+	frame:SmartNavigationCloseHandler(); h:flushAll()
+	assert(not frame:IsShown() and not h.nav.bindingActive and not h.qt:GetGamepadIntegrationStatus().failed)
+	print("PASS: welcome uses one automatic native owner and Back releases its input")
 end
 print("OFFLINE ONLY: no WoW taint, protected API, physical input, cursor geometry or production live proof")

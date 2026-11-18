@@ -21,6 +21,7 @@ local function Harness()
 	env._G = env
 	local q = { db = { global = {}, profile = {} }, isInitialized = true }
 	env.QuestTogether = q
+	function q:GetOption(key) return self.db.profile[key] end
 	function q:IsRuntimeRestricted() return h.restricted == true end
 	function q:GetGamepadIntegrationStatus() return h.native end
 	function q:IsNativeGamepadMode() return h.mode end
@@ -196,7 +197,7 @@ local function Test(name, callback)
 end
 
 Test("disabled, unsupported, restricted, uninitialized and live-test gates do not mutate state", function()
-	for _, scenario in ipairs({ "disabled", "unsupported", "failed", "world", "mode", "restricted", "combat", "login", "init", "logout", "tests" }) do
+	for _, scenario in ipairs({ "unsupported", "failed", "world", "mode", "restricted", "combat", "login", "init", "logout", "tests" }) do
 		local h = Harness()
 		if scenario == "disabled" then h.native.enabled = false
 		elseif scenario == "unsupported" then h.native.available = false
@@ -759,7 +760,7 @@ Test("failed ghost cleanup remains terminal and preserves unknown cursor content
 end)
 
 Test("macro deletion events still obey all native and runtime preflight gates", function()
-	for _, scenario in ipairs({ "mode", "disabled", "world", "combat", "restricted", "login", "cursor" }) do
+	for _, scenario in ipairs({ "mode", "world", "combat", "restricted", "login", "cursor" }) do
 		local h = Harness(); h:run("installed"); h:deleteCharacterMacro(1)
 		local foreign = { "item", 18 }
 		if scenario == "mode" then h.mode = false
@@ -784,6 +785,59 @@ Test("unexpected owner exceptions fail-stop for the current session without repe
 	h:run("failed"); assert(#h.writes == 0 and #h.errors == 1)
 	h.qt.GetGamepadIntegrationStatus = original
 	h:run("failed"); assert(#h.writes == 0 and #h.errors == 1)
+end)
+
+Test("launcher preference is independent of native window navigation", function()
+	local h = Harness(); h.native.enabled = false; h:run("installed")
+	h.qt.db.profile.automaticGamepadLauncher = false; h.mode = false
+	h.qt:RefreshAutomaticGamepadLauncher()
+	assert(h.actions[h.slot] == nil and h.cursor == nil and #h.character == 1)
+end)
+Test("disabled launcher cannot create a macro or consume assignment", function()
+	local h = Harness(); h.qt.db.profile.automaticGamepadLauncher = false
+	h:run("disabled"); h:untouched()
+	h.qt.db.profile.automaticGamepadLauncher = true; h.qt:RefreshAutomaticGamepadLauncher(); h:run("installed")
+end)
+Test("owned shortcut removal and deferred restoration preserve the macro", function()
+	local h = Harness(); h:run("installed")
+	h.qt.db.profile.automaticGamepadLauncher = false; h.restricted = true
+	h.qt:RefreshAutomaticGamepadLauncher(); assert(h.actions[h.slot])
+	h.restricted = false; h:run("disabled")
+	assert(h.record and h:record().removedByOption and not h.actions[h.slot] and not h.cursor and #h.character == 1)
+	h.qt.db.profile.automaticGamepadLauncher = true; h.restricted = true
+	h.qt:RefreshAutomaticGamepadLauncher(); assert(not h.actions[h.slot])
+	h.restricted = false; h:run("installed")
+	assert(h:count("CreateMacro") == 1 and h:count("PlaceAction") == 2 and not h:record().removedByOption)
+end)
+Test("launcher cleanup preserves edited macros, foreign slots and legacy unproven assignments", function()
+	for _, scenario in ipairs({"body", "icon", "name", "slot", "legacy", "cursor"}) do
+		local h = Harness(); h:run("installed"); local writes = #h.writes
+		if scenario == "body" then h.character[1].body = "/dance"
+		elseif scenario == "icon" then h.character[1].icon = 999
+		elseif scenario == "name" then h.character[1].name = "Mine"
+		elseif scenario == "slot" then h.actions[h.slot] = {"spell", 99}
+		elseif scenario == "legacy" then h:record().placedSlot = nil
+		else h.cursor = {"item", 88} end
+		h.qt.db.profile.automaticGamepadLauncher = false; h.qt:RefreshAutomaticGamepadLauncher()
+		assert(#h.writes == writes and h.actions[h.slot] and #h.character == 1, scenario)
+	end
+end)
+Test("an occupied removed slot is never reclaimed later", function()
+	local h = Harness(); h:run("installed")
+	h.qt.db.profile.automaticGamepadLauncher = false; h.qt:RefreshAutomaticGamepadLauncher()
+	h.actions[h.slot] = {"spell", 12}; h.qt.db.profile.automaticGamepadLauncher = true
+	h.qt:RefreshAutomaticGamepadLauncher(); assert(h.actions[h.slot][1] == "spell")
+	h.actions[h.slot] = nil; h.qt:RefreshAutomaticGamepadLauncher(); h.qt:TryInstallDefaultGamepadLauncher()
+	assert(not h.actions[h.slot] and h:count("CreateMacro") == 1 and h:count("PlaceAction") == 1)
+end)
+Test("cleanup callbacks cannot remove a foreign cursor after a profile change", function()
+	local h = Harness(); h:run("installed")
+	h.qt.db.profile.automaticGamepadLauncher = false
+	h:once("after", "PickupAction", function()
+		h.qt.db.profile = {}; h.cursor = {"item", 87}; h.qt:RefreshAutomaticGamepadLauncher()
+	end)
+	h.qt:RefreshAutomaticGamepadLauncher()
+	assert(h.cursor and h.cursor[1] == "item" and h.cursor[2] == 87 and not h:record().removedByOption)
 end)
 
 print(string.format("Gamepad launcher offline checks: %d passed, %d failed", passed, #failures))

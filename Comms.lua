@@ -285,7 +285,7 @@ function QuestTogether:GetAnnouncementWireRoutes()
 			requiresChannelJoin = false,
 		}
 	end
-	routes[#routes + 1] = { distribution = "MESH", scope = "global" }
+	if self:IsPublicSharingAllowed() then routes[#routes + 1] = { distribution = "MESH", scope = "global" } end
 	return routes
 end
 
@@ -897,6 +897,7 @@ function QuestTogether:CanJoinAnnouncementChannel()
 end
 
 function QuestTogether:EnsureAnnouncementChannelJoined(channelName)
+	if not self:IsPublicSharingAllowed() then return false end
 	if not channelName then
 		return self:EnsureAnnouncementChannelJoined(self.announcementChannelName)
 	end

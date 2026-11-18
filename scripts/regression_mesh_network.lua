@@ -24,6 +24,22 @@ local function NoChannels(net)
 	end
 end
 
+QT:RegisterTest("sharing audience disables mesh discovery without erasing saved seeds", function()
+	local net = QT:CreateTestNetwork({now=10000})
+	local peer = Peer(net, "Child-Realm")
+	peer.db.profile.sharingAudience = "party"
+	local saved = {["Friend-Realm"] = peer:GetAnnouncementServerTime()}
+	peer.db.global.meshPeerSeeds = {["test:US:realm:Child-Realm"] = saved}
+	local before = QT:DeepCopy(saved)
+	net:StartPeer(peer)
+	local state = peer:InitializeMeshNetwork()
+	for _ = 1, 4 do peer:UpdateMeshNetwork(); assert(peer:InitializeMeshNetwork() == state) end
+	assert(not peer:EnsureAnnouncementChannelJoined() and not peer:EnsureMeshDirectoryJoined("QuestTogether"))
+	assert(not next(state.candidates) and not next(state.neighbors))
+	for key,value in pairs(before) do assert(saved[key] == value) end
+	for _, event in ipairs(net.trace) do assert(event.kind ~= "attempts") end
+end)
+
 QT:RegisterTest("mesh shared links reuse completed bundles across subscribers and renewals but not sessions", function()
 	local net = QT:CreateTestNetwork({ now = 10000 })
 	local peer = Peer(net, "Owner-Realm")

@@ -49,18 +49,21 @@ local function Own(a)
 	return Name(a, a:GetPlayerFullName())
 end
 local function Allowed(a)
-	return a.isEnabled
+	return a:IsPublicSharingAllowed() and a.isEnabled
 		and not a.isLoggingOut
 		and not a:IsRuntimeRestricted()
 		and not a:IsRuntimeRestrictionTypeActive("chat")
 end
-local function Current(a, s)
+local function LifetimeCurrent(a, s)
 	return rawget(a, "meshNetworkState") == s
 		and a.isEnabled
 		and not a.isLoggingOut
 		and rawget(a, "communicationState") == s.communication
 		and not s.communication.departing
 		and (not a.db or a.db.profile == s.profile)
+end
+local function Current(a, s)
+	return a:IsPublicSharingAllowed() and LifetimeCurrent(a, s)
 end
 local function ValidZone(a, zone)
 	zone = a:SafeToNumber(zone)
@@ -334,7 +337,7 @@ local function RememberSeed(a, name)
 end
 function QT:InitializeMeshNetwork()
 	local s = rawget(self, "meshNetworkState")
-	if s and Current(self, s) then
+	if s and LifetimeCurrent(self, s) then
 		return s
 	end
 	if s then
@@ -377,6 +380,7 @@ function QT:InitializeMeshNetwork()
 	s.failureRows = FailureStore(self)
 	PruneFailures(self, s.failureRows)
 	local seeds, stamp = SeedStore(self), Server(self)
+	if not self:IsPublicSharingAllowed() then return s end
 	local loaded = 0
 	for name, at in pairs(seeds or {}) do
 		at = self:SafeToNumber(at)
@@ -2343,7 +2347,7 @@ local function RotateNeighbor(a, s, now)
 end
 function QT:UpdateMeshNetwork(now)
 	self:RestoreMeshDirectorySelection()
-	if not self.isEnabled or self.isLoggingOut then
+	if not self:IsPublicSharingAllowed() or not self.isEnabled or self.isLoggingOut then
 		return
 	end
 	local s = self:InitializeMeshNetwork()

@@ -131,6 +131,11 @@ function QT:GetCommunicationRoutes(operation, routes)
 		return routes
 	end
 	local spec = self:GetCommOperation(operation)
+	if not self:IsPublicSharingAllowed() then
+		if spec.privateOnly or spec.meshOnly or spec.globalOnly then return {} end
+		local distribution = self:GetGroupAnnouncementDistribution()
+		return distribution and { { distribution = distribution, requiresGroup = true } } or {}
+	end
 	if spec.privateOnly then
 		return {}
 	end
@@ -148,6 +153,7 @@ function QT:GetCommunicationRoutes(operation, routes)
 	return self:GetAnnouncementWireRoutes()
 end
 function QT:IsCommunicationRouteCurrent(route, fingerprint)
+	if not self:IsSharingRouteAllowed(route) then return false end
 	if route.developerAnnouncement and not self:IsDeveloperAnnouncementRouteCurrent(route) then
 		return false
 	end
@@ -249,7 +255,9 @@ function QT:NormalizeCommunicationRoutes(operation, routes)
 		if self:GetCommOperation(operation).globalOnly and (distribution ~= "MESH" or route.scope ~= "global") then
 			return nil
 		end
-		if seen[key] then
+		if not self:IsSharingRouteAllowed(route) then
+			-- Omit forbidden audiences before queue admission.
+		elseif seen[key] then
 			seen[key].requiresGroup = seen[key].requiresGroup or route.requiresGroup
 		else
 			seen[key] = route
@@ -956,6 +964,7 @@ local function DispatchOperation(self, frame, data, sender, context)
 	return false
 end
 function QT:DispatchCommRecord(frame, data, sender, context)
+	if not self:IsSharingSenderAllowed(sender, context.distribution) then return false end
 	local s = self:InitializeCommunications()
 	local spec = self:GetCommOperation(frame.operation)
 	if not Current(self, s) or not spec or type(data) ~= "table" then
@@ -1099,7 +1108,7 @@ local function Receive(self, prefix, wire, distribution, sender, localID, channe
 		return false
 	end
 	sender = Name(self, sender)
-	if not sender or not AdmitIncoming(self, wire, distribution, sender) then
+	if not sender or not self:IsSharingSenderAllowed(sender, distribution) or not AdmitIncoming(self, wire, distribution, sender) then
 		return false
 	end
 	if self:IsSelfSender(sender) or self:IsIgnoredPlayerName(sender) then
@@ -1110,6 +1119,7 @@ local function Receive(self, prefix, wire, distribution, sender, localID, channe
 		return false
 	end
 	local spec = self:GetCommOperation(frame.operation)
+	if not self:IsPublicSharingAllowed() and (spec.meshOnly or spec.privateOnly or spec.globalOnly) then return false end
 	local context = { distribution = distribution, localID = localID, channelName = channelName }
 	if spec.privateOnly and (distribution ~= "WHISPER" or not self:IsDeveloperLocationSubscriptionCurrent()) then
 		return false

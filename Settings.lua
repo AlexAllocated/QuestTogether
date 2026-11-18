@@ -172,7 +172,7 @@ function QuestTogether:EnsureProfile(profileKey, sourceProfile)
 	end
 
 	if type(self.db.profiles[normalizedKey]) ~= "table" then
-		self.db.profiles[normalizedKey] = self:DeepCopy(sourceProfile or self.DEFAULTS.profile)
+		self.db.profiles[normalizedKey] = sourceProfile and self:DeepCopy(sourceProfile) or self:CreateDefaultProfile()
 	end
 	self:MigratePlayerLocationOptions(self.db.profiles[normalizedKey])
 	self:MigrateOwnChatBubbleMode(self.db.profiles[normalizedKey])
@@ -342,9 +342,11 @@ function QuestTogether:InitializeDatabase(savedDatabase)
 		self.db = _G.QuestTogetherDB
 	end
 
+	local fresh = next(self.db) == nil
 	if type(self.db.global) ~= "table" then
 		self.db.global = {}
 	end
+	if self.db.global.welcomeSetupComplete == nil then self.db.global.welcomeSetupComplete = not fresh end
 	self:ApplyDefaults(self.db.global, self.DEFAULTS.global)
 	self.db.global.debugLogLines = nil
 	if type(self.db.global.debugLogSearchFilter) ~= "string" then
@@ -373,7 +375,7 @@ function QuestTogether:InitializeDatabase(savedDatabase)
 	end
 
 	if type(self.db.profiles[assignedProfileKey]) ~= "table" then
-		self.db.profiles[assignedProfileKey] = self:DeepCopy(self.DEFAULTS.profile)
+		self.db.profiles[assignedProfileKey] = self:CreateDefaultProfile()
 	end
 
 	self.activeCharacterKey = characterKey
@@ -385,6 +387,7 @@ function QuestTogether:InitializeDatabase(savedDatabase)
 end
 
 local validators = {
+	sharingAudience = function(_, v) if v == "normal" or v == "party" then return v end end,
 	ownChatBubbleMode = function(a, v) return a:IsOwnChatBubbleMode(v) and v or nil end,
 	playerTooltipIdentifierMode = function(a, v) return a:IsPlayerTooltipIdentifierMode(v) and v or nil end,
 	brokerLeftClick = function(a, v) return a:IsDataBrokerAction(v) and v or nil end,
@@ -526,6 +529,7 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 		return false
 	end
 	-- Revocation must happen before any restart or asynchronous effect.
+	if self.ApplyFeaturePolicies then self:ApplyFeaturePolicies(changed, all) end
 	if Has("autoThankBuffs") then Invoke(self, "InitializeAutoThanks") end
 	if all then
 		Invoke(self, "ClearPlayerMapSelection")

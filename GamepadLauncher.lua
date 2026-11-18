@@ -39,12 +39,15 @@ local function SetStatus(value)
 		or value:match("failed$") or value:match("unverified$") or value:match("cancelled$") then finished = true end
 	return value
 end
-local function CanInstall()
+local RefreshAutomaticLauncher
+local function CanInstall(cleanup)
+	if QT.IsWelcomeSetupPending and QT:IsWelcomeSetupPending() then return false end
+	if not cleanup and QT:GetOption("automaticGamepadLauncher") == false then return false end
 	if rawget(QT, "isRunningTests") or not QT.isInitialized or QT.isLoggingOut or QT:IsRuntimeRestricted() then
 		return false
 	end
 	local native = QT:GetGamepadIntegrationStatus()
-	if not native or not native.available or not native.worldReady or not native.enabled or native.failed or not QT:IsNativeGamepadMode() then
+	if not native or not native.available or not native.worldReady or native.failed or (not cleanup and not QT:IsNativeGamepadMode()) then
 		return false
 	end
 	local ok, combat = Read(InCombatLockdown)
@@ -149,6 +152,10 @@ local function Install()
 	if not names then return SetStatus("waiting_macros") end
 	if type(ledger) ~= "table" then ledger = {}; QT.db.global.gamepadLauncherCharacters = ledger end
 	local existing = ExistingLauncher(type(previous) == "table" and previous or nil, entries)
+	if existing and type(previous) == "table" and previous.removedByOption then
+		RefreshAutomaticLauncher()
+		return status
+	end
 	if existing then
 		local record = type(previous) == "table" and previous or {}
 		RememberMacro(record, existing, macroCount)
@@ -268,11 +275,83 @@ local function Install()
 	local actionOK, actionKind, actionIndex = Read(GetActionInfo, slot)
 	if not placed or not actionOK or actionKind ~= "macro" or actionIndex ~= index
 		or FindMacro(macro.name, macro.icon) ~= index then return Finish("placement_unverified") end
+	record.placedSlot, record.placedName, record.placedIcon = slot, macro.name, macro.icon
 	return Finish("installed")
+end
+
+RefreshAutomaticLauncher = function()
+	local self = QT
+	if rawget(self, "isRunningTests") then return false end
+	finished = false
+	if not CanInstall(true) then return false end
+	local ok, guid = Read(UnitGUID, "player")
+	local regionOK, region = Read(GetCurrentRegion)
+	if not ok or type(guid) ~= "string" or not regionOK or not Integer(region, 100) then return false end
+	local ledger = self.db and self.db.global and self.db.global.gamepadLauncherCharacters
+	local record = type(ledger) == "table" and ledger["forever:" .. region .. ":" .. guid]
+	if type(record) ~= "table" or not record.placedSlot then
+		if self:GetOption("automaticGamepadLauncher") == false then finished = true; status = "disabled" end
+		return false
+	end
+	local util = GamepadActionBarBindingUtil
+	local slotOK, slot = Read(util and util.GetGamepadStorageSlotIndexFromPageAndPageUnitSlotID, 1, 26)
+	local validOK, valid = Read(C_GamepadUI and C_GamepadUI.IsValidGamepadActionStorageSlotIndex, slot)
+	if not slotOK or slot ~= record.placedSlot or not validOK or valid ~= true then return false end
+	local profile, disabled = self.db.profile, self:GetOption("automaticGamepadLauncher") == false
+	local function Current()
+		local identityOK, identity = Read(UnitGUID, "player")
+		local regionRead, currentRegion = Read(GetCurrentRegion)
+		return CanInstall(true) and self.db and self.db.profile == profile and self.db.global and self.db.global.gamepadLauncherCharacters == ledger
+			and ledger["forever:" .. region .. ":" .. guid] == record and identityOK and identity == guid
+			and regionRead and currentRegion == region and DefaultBindings() == "default"
+			and (self:GetOption("automaticGamepadLauncher") == false) == disabled
+	end
+	local index = FindMacro(record.placedName, record.placedIcon)
+	if not index or not CursorEmpty() or DefaultBindings() ~= "default" then return false end
+	local actionOK, kind, id = Read(GetActionInfo, record.placedSlot)
+	if self:GetOption("automaticGamepadLauncher") == false then
+		if not actionOK or kind ~= "macro" or id ~= index then status, finished = "disabled", true; return false end
+		if not Current() or not CursorEmpty() then return false end
+		local picked = Read(PickupAction, record.placedSlot)
+		local cursorOK, cursorKind, cursorID = Read(GetCursorInfo)
+		if picked and cursorOK and cursorKind == "macro" and cursorID == index and Current()
+			and FindMacro(record.placedName, record.placedIcon) == index then
+			Read(ClearCursor)
+			record.removedByOption = SlotEmpty(record.placedSlot) == true
+		end
+		status, finished = "disabled", true
+	elseif record.removedByOption and Current() and CursorEmpty() and SlotEmpty(record.placedSlot) == true then
+		local picked = Read(PickupMacro, index)
+		local cursorOK, cursorKind, cursorID = Read(GetCursorInfo)
+		if picked and cursorOK and cursorKind == "macro" and cursorID == index and Current()
+			and FindMacro(record.placedName, record.placedIcon) == index and SlotEmpty(record.placedSlot) == true then
+			Read(PlaceAction, record.placedSlot)
+			DropOwnCursor(index, {name = record.placedName, icon = record.placedIcon})
+			local valid, newKind, newID = Read(GetActionInfo, record.placedSlot)
+			if valid and newKind == "macro" and newID == index then
+				record.removedByOption = nil; status, finished = "installed", true
+			end
+		end
+	elseif record.removedByOption and actionOK and SlotEmpty(record.placedSlot) == false then
+		-- An action deliberately placed in the cleared slot wins permanently.
+		record.removedByOption = nil; status, finished = "occupied", true
+	end
+	return true
+end
+
+function QT:RefreshAutomaticGamepadLauncher(skipSchedule)
+	if self ~= QT or busy or rawget(self, "isRunningTests") then return false end
+	busy = true
+	local ok, result = pcall(RefreshAutomaticLauncher)
+	busy = false
+	if not ok then status, finished = "cleanup_failed", true; self:RecordDiagnosticError("gamepad_launcher", status) end
+	if ok and not skipSchedule and self.RequestGamepadLauncherRefresh then self:RequestGamepadLauncherRefresh() end
+	return ok and result
 end
 
 function QT:TryInstallDefaultGamepadLauncher()
 	if self ~= QT or busy or stopped or finished or rawget(QT, "isRunningTests") then return false end
+	if self:GetOption("automaticGamepadLauncher") == false then self:RefreshAutomaticGamepadLauncher(true); return false end
 	busy = true
 	local ok, result = pcall(Install)
 	busy = false

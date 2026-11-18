@@ -4056,6 +4056,12 @@ QuestTogether.API = QuestTogether.API
 				count,
 				grouped and not raid and not instance and count >= 2 and count < 5
 		end,
+		IsPartyFocusUnitConnected = function(unit)
+			if QuestTogether:IsRuntimeRestricted() or not CanAccessForeignValue(unit) or type(unit) ~= "string"
+				or not CanAccessForeignValue(UnitIsConnected) or type(UnitIsConnected) ~= "function" then return nil end
+			local ok, connected = pcall(UnitIsConnected, unit)
+			return ok and CanAccessForeignValue(connected) and type(connected) == "boolean" and connected or false
+		end,
 		GetPartyVisualLeaderUnit = function()
 			if
 				QuestTogether:IsRuntimeRestricted()
@@ -5139,6 +5145,7 @@ function QuestTogether:ActivateQuestLogChatFrame(chatFrame)
 end
 
 function QuestTogether:EnsureQuestLogChatFrame()
+	if self:GetOption("showChatLogs") == false and self:GetOption("showQTChat") == false then return nil end
 	local existingFrame, existingID = self:FindQuestLogChatFrame()
 	if existingFrame then
 		self:ActivateQuestLogChatFrame(existingFrame)
@@ -5195,6 +5202,9 @@ function QuestTogether:CloseQuestLogChatFrame()
 end
 
 function QuestTogether:ReconcileQuestLogChatDestination()
+	if self:GetOption("showChatLogs") == false and self:GetOption("showQTChat") == false then
+		self:CloseQuestLogChatFrame(); return
+	end
 	local visibleFrame, visibleID = self:FindVisibleQuestLogChatFrame()
 	if visibleFrame and visibleID then
 		self:SetConfiguredQuestLogChatFrameID(visibleID)
@@ -6341,6 +6351,7 @@ function QuestTogether:PrintPingResponse(pongData)
 end
 
 function QuestTogether:CreateTomTomWaypoint(mapID, coordX, coordY)
+	if self:IsPartyFocusChangeLocked() then return false end
 	local numericMapID = self:SafeToNumber(mapID)
 	local numericX = self:SafeToNumber(coordX)
 	local numericY = self:SafeToNumber(coordY)
@@ -6370,6 +6381,7 @@ function QuestTogether:CreateTomTomWaypoint(mapID, coordX, coordY)
 end
 
 function QuestTogether:CreateBlizzardWaypoint(mapID, coordX, coordY)
+	if self:IsPartyFocusChangeLocked() then return false end
 	local numericMapID = self:SafeToNumber(mapID)
 	local numericX = self:SafeToNumber(coordX)
 	local numericY = self:SafeToNumber(coordY)
@@ -6384,6 +6396,7 @@ function QuestTogether:CreateBlizzardWaypoint(mapID, coordX, coordY)
 	end
 
 	local function applyWaypoint()
+		if self:IsPartyFocusChangeLocked() then return false end
 		if not (self.API and self.API.CanSetUserWaypointOnMap and self.API.CanSetUserWaypointOnMap(numericMapID)) then
 			return false
 		end
@@ -6432,6 +6445,7 @@ function QuestTogether:CreateBlizzardWaypoint(mapID, coordX, coordY)
 end
 
 function QuestTogether:OpenPingWaypoint(mapID, coordX, coordY)
+	if self:IsPartyFocusChangeLocked() then return false end
 	-- Explicit coordinate navigation also ends following when TomTom handles it.
 	self:StopPartyQuestFollow()
 	if self:CreateTomTomWaypoint(mapID, coordX, coordY) then
@@ -6891,6 +6905,7 @@ function QuestTogether:TryInstallChatLogLinkHandler()
 end
 
 function QuestTogether:PrintChatLogDestinationMessage()
+	if self:GetOption("showChatLogs") == false then return end
 	self:PrintConsoleAnnouncement(L("You will now see QuestTogether logs here."))
 end
 
@@ -7164,6 +7179,7 @@ function QuestTogether:UnregisterRuntimeEvents()
 end
 
 function QuestTogether:Enable()
+	if self.IsWelcomeSetupPending and self:IsWelcomeSetupPending() then return false end
 	self.db.profile.enabled = true
 
 	if not self.hasLoggedIn then
@@ -7731,6 +7747,7 @@ function QuestTogether:ReconcileQuestTracking(snapshot)
 end
 
 function QuestTogether:PrintQuestScanAnnouncement(monitoredCount)
+	if self:GetOption("showChatLogs") == false then self.pendingQuestScanAnnouncement = nil; return end
 	if self:IsLocalVIPVerificationPending() and not self:IsVerifiedDeveloper(self:GetPlayerFullName()) then
 		-- Only the local presentation waits. Keep at most the latest scan count;
 		-- quest tracking and the wire announcement retain their normal timing.
@@ -7742,6 +7759,7 @@ function QuestTogether:PrintQuestScanAnnouncement(monitoredCount)
 end
 
 function QuestTogether:FlushPendingQuestScanAnnouncement()
+	if self:GetOption("showChatLogs") == false then self.pendingQuestScanAnnouncement = nil; return end
 	local pending = self.pendingQuestScanAnnouncement
 	if not pending then
 		return
@@ -7955,6 +7973,8 @@ end
 function QuestTogether:OnLogin()
 	self.hasLoggedIn = true
 	self.isLoggingOut = false
+	if self:IsWelcomeSetupPending() then self:RetirePublicSharingChannels(); self:InitializePresetWelcome(); return end
+	self:RetirePublicSharingChannels()
 	self:BeginAnnouncementChannelStartup()
 	-- Preserve ordinary whisper intent before a disabled profile is enabled.
 	-- This passive observer/filter does not initialize transport or send data.

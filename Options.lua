@@ -1131,6 +1131,13 @@ function QuestTogether:RefreshHomeWindow()
 
 	local controls = self.homeControls
 	RefreshCheckboxOptions(controls, self)
+	if controls and controls.featureControls then
+		RefreshCheckboxOptions(controls.featureControls, self)
+		local _, label = self:GetMatchingPreset()
+		controls.presets:SetText(L("Presets") .. ": " .. label)
+		RefreshDropdownControl(controls.audience, self:GetOption("sharingAudience") == "party" and L("Party only") or L("Normal sharing"))
+		controls.reload:SetShown(self.dataBrokerReloadRequired == true)
+	end
 	if type(controls) ~= "table" then
 		return
 	end
@@ -1157,7 +1164,7 @@ function QuestTogether:RefreshHomeWindow()
 		-- Text can wrap for long profile names, translations, or an update notice.
 		controls.content:SetHeight(controls.description:GetStringHeight() + controls.statusText:GetStringHeight()
 			+ controls.dataBrokerHint:GetStringHeight() + controls.gamepadHint:GetStringHeight()
-			+ controls.nativeGamepadNavigation:GetHeight() + controls.gamepadBindings:GetHeight() + 520)
+			+ controls.nativeGamepadNavigation:GetHeight() + controls.gamepadBindings:GetHeight() + 1000)
 	end
 end
 
@@ -2611,7 +2618,10 @@ function QuestTogether:InitializeOptionsWindow()
 	statusText:SetWordWrap(true)
 
 	local generalHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	generalHeader:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -20)
+	local presets = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+	presets:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -14); presets:SetSize(340, 28)
+	presets:SetScript("OnClick", function() self:OpenPresetWindow() end)
+	generalHeader:SetPoint("TOPLEFT", presets, "BOTTOMLEFT", 0, -20)
 	generalHeader:SetText(L("General"))
 	local showMinimapButton = CreateCheckbox(content, "showMinimapButton", L("Show minimap icon"),
 		L("Show the QuestTogether minimap menu. Drag the button to move it around the minimap."), 16, 0)
@@ -2690,7 +2700,40 @@ function QuestTogether:InitializeOptionsWindow()
 		L("Learn about VIP rewards, contact @chevcast, and activate your cosmetics."), discord, 8,
 		function() QuestTogether:OpenVIPWindow() end)
 
+	local featureControls = {}
+	local featurePrevious = vip
+	for _, item in ipairs({
+		{ "showAutomaticReleaseNotes", L("Show patch notes automatically") },
+		{ "showUpdateNotifications", L("Show update notifications") },
+		{ "showWorldMapButton", L("Show the QT world-map button") },
+		{ "showTrackerFocusIndicators", L("Show party focus indicators on the quest tracker") },
+		{ "showDataBrokerLauncher", L("Show the Data Broker launcher") },
+		{ "automaticGamepadLauncher", L("Automatically add the PQL controller shortcut") },
+		{ "allowIncomingShareRequests", L("Allow incoming QT quest-share requests") },
+		{ "automaticLeaderFocus", L("Automatically follow the party leader's quest focus") },
+	}) do
+		local hint = item[1] == "automaticLeaderFocus"
+			and L("Follow shared quests without asking. While the leader's focus is available, other focus selections are ignored. If unavailable, manual focus works until following resumes. Turn this option off to stop automatic following.")
+			or item[1] == "automaticGamepadLauncher"
+			and L("Install the PQL shortcut only in an empty default controller slot. Turning this off removes only an unchanged shortcut placed by QT; custom macros and bindings stay yours.")
+			or item[1] == "showDataBrokerLauncher"
+			and L("An already registered toolbar launcher may need a UI reload to disappear.")
+			or item[1] == "allowIncomingShareRequests"
+			and L("Allow QT prompts asking you to share a quest. Disabled requests are declined; ordinary WoW quest sharing is unchanged.") or item[2]
+		local control = CreateCheckbox(content, item[1], item[2], hint, 16, 0)
+		control:ClearAllPoints(); control:SetPoint("TOPLEFT", featurePrevious, "BOTTOMLEFT", 0, -10)
+		featureControls[item[1]], featurePrevious = control, control
+	end
+	local audience = CreateOptionDropdown(content, L("Sharing audience"),
+		L("Party only keeps quest, focus, waypoint and location reporting within your current group and disables public discovery."),
+		16, 0, 246, { "normal", "party" }, function(value) return value == "party" and L("Party only") or L("Normal sharing") end,
+		"sharingAudience", function() return self:GetOption("sharingAudience") end)
+	audience.title:ClearAllPoints(); audience.title:SetPoint("TOPLEFT", featurePrevious, "BOTTOMLEFT", 0, -16)
+	local reload = CreateHomeActionButton(L("Reload UI"), L("An already registered toolbar launcher may need a UI reload to disappear."), audience, 16,
+		function() if not self:IsRuntimeRestricted() then self.API.ReloadUI() end end)
+
 	self.homeControls = {
+		presets = presets, featureControls = featureControls, audience = audience, reload = reload,
 		generalHeader = generalHeader,
 		content = content,
 		description = description,

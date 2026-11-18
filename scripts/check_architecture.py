@@ -29,6 +29,8 @@ def check(root=ROOT, source_overrides=None):
     only(r"peerUpdateContext|WithPeerUpdateContext", set(), "peer observations must be explicit")
     only(r"function (?:QuestTogether|QT):(?:ConfigureWindowController|DismissManagedWindow)\(",
          {"WindowController.lua"}, "window lifecycle belongs to WindowController")
+    only(r"\bdefaultPreset\b|\bGetPresetValues\s*\(", {"Presets.lua"},
+         "preset identities seed settings only; runtime services must read ordinary options")
     only(r"function (?:QuestTogether|QT):(?:SetOption|SetOptions|ApplyActiveProfileState|InitializeDatabase)\(",
          {"Settings.lua"}, "settings mutations belong to Settings")
     only(r"function (?:QuestTogether|QT):(?:UpdatePlayerCommunications|InitializeRuntimeCoordinator)\(",

@@ -147,6 +147,7 @@ local function Tooltip(a, state)
 end
 
 local function Refresh(a)
+	if a:IsWelcomeSetupPending() or a:GetOption("showWorldMapButton") == false then a:HideQuestTogetherMapControl(); return false end
 	if not a.isEnabled or a:IsRuntimeRestricted() then a:HideQuestTogetherMapControl(); return false end
 	local geometry = a:GetLocationPinSurface("map")
 	if not geometry or geometry.width < 42 or geometry.height < 42 then

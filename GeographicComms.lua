@@ -116,6 +116,7 @@ function QT:IsGeographicChannelName(value)
 end
 
 function QT:UpdateGeographicSubscriptions()
+	if not self:IsPublicSharingAllowed() then return end
 	local s, now = rawget(self, "geographicCommsState"), Now(self)
 	if
 		not s
@@ -180,7 +181,7 @@ function QT:UpdateGeographicSubscriptions()
 	end
 	for name in pairs(s.subscriptions) do
 		if not desired[name] then
-			if self.API.LeaveChannelByName then
+			if not deferChannelLeave and self.API.LeaveChannelByName then
 				pcall(self.API.LeaveChannelByName, name)
 			end
 			s.subscriptions[name] = nil
@@ -214,7 +215,7 @@ function QT:GetGeographicAnnouncementRoutes()
 	if group then
 		routes[#routes + 1] = { distribution = group }
 	end
-	routes[#routes + 1] = Mesh(s.currentZone or "global")
+	if self:IsPublicSharingAllowed() then routes[#routes + 1] = Mesh(s.currentZone or "global") end
 	return routes
 end
 
@@ -382,8 +383,9 @@ function QT:UpdateGeographicComms()
 		return
 	end
 	self:UpdateGeographicSubscriptions()
-	local routes = { { route = Mesh("global"), global = true } }
-	if s.currentZone then
+	local routes = {}
+	if self:IsPublicSharingAllowed() then routes[1] = { route = Mesh("global"), global = true } end
+	if self:IsPublicSharingAllowed() and s.currentZone then
 		routes[#routes + 1] = { route = Mesh(s.currentZone) }
 	end
 	local group = self:GetGroupAnnouncementDistribution()
@@ -513,11 +515,11 @@ function QT:UpdateGeographicComms()
 	return sampledLocation
 end
 
-function QT:ResetGeographicComms()
+function QT:ResetGeographicComms(deferChannelLeave)
 	local s = rawget(self, "geographicCommsState")
 	if s then
 		for name in pairs(s.subscriptions) do
-			if self.API.LeaveChannelByName then
+			if not deferChannelLeave and self.API.LeaveChannelByName then
 				pcall(self.API.LeaveChannelByName, name)
 			end
 		end

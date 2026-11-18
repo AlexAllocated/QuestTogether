@@ -193,6 +193,104 @@ local function ShortcutFixture(a, regional)
 	return a
 end
 
+local function AutomaticPair()
+	local a, b = Pair()
+	a.options.automaticLeaderFocus = true
+	a.leader = b.name
+	a.API.GetPartyVisualLeaderUnit = function() return a.leader == a.name and "player" or a.leader and "party1" end
+	a.API.IsPartyFocusUnitConnected = function() return not a.disconnected end
+	function a:GetUnitFullName() return self.leader end
+	function a:CancelPartyQuestFocusFollowRequest() self.dismissed = true end
+	function a:Print(text) self.explanation = text end
+	a:Tick()
+	return a, b
+end
+QT:RegisterTest("automatic leader focus rejects replacements and restores native focus without a dialog", function()
+	local a, b = AutomaticPair()
+	Equal(a:GetPartyQuestFollowTarget(), b.name)
+	Equal(a.native.questID, 1)
+	assert(not a:RequestPartyQuestFocus(a.name, 2))
+	Equal(a.native.questID, 1)
+	assert(not a:StopPartyQuestFollow() and a.explanation)
+	Equal(a:GetPartyQuestFollowTarget(), b.name)
+	a.native.questID = 2
+	a:OnPartyNavigationTrackingChanged()
+	a:Tick()
+	Equal(a.native.questID, 1)
+	Equal(a.dialogCount, nil)
+	assert(not a:OpenPingWaypoint(37, 40, 50))
+	a.options.automaticLeaderFocus = false
+	a:ReconcileAutomaticLeaderFocus()
+	Equal(a:GetPartyQuestFollowTarget(), nil)
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	Equal(a.native.questID, 2)
+end)
+QT:RegisterTest("automatic leader focus allows unavailable manual selection and resumes only a usable leader", function()
+	local a, b = AutomaticPair()
+	a.disconnected = true; a:Tick()
+	Equal(a:GetPartyQuestFollowTarget(), nil)
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	Equal(a.native.questID, 2)
+	a.disconnected = false; a:Tick()
+	Equal(a.native.questID, 1)
+	a.owned[1] = nil; a:Tick()
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	a.owned[1] = 1; a:Tick()
+	Equal(a.native.questID, 1)
+	a.partyNavigationState.peers[b.name] = nil; a:Tick()
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+	Equal(a.native.questID, 1)
+	Equal(a.dialogCount, nil)
+end)
+QT:RegisterTest("automatic leader focus retires old leaders and respects self leadership raids and cycles", function()
+	local a, b = AutomaticPair()
+	a.leader = a.name; a:Tick()
+	Equal(a:GetPartyQuestFollowTarget(), nil)
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	a.leader = b.name; a:Tick()
+	Equal(a.native.questID, 1)
+	a.raid = true; a:Tick()
+	Equal(a:GetPartyQuestFollowTarget(), nil)
+	a.raid = false; a:Tick()
+	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+	a.partyNavigationState.peers[b.name].following = a.name
+	a:Tick()
+	Equal(a:GetPartyQuestFollowTarget(), nil)
+	assert(not a:IsPartyFocusChangeLocked())
+	Equal(a.dialogCount, nil)
+end)
+
+QT:RegisterTest("automatic leader focus retires a pending manual choice and survives acceptance restrictions", function()
+	local a, b = AutomaticPair()
+	a.options.automaticLeaderFocus = false; a:Tick()
+	assert(a:FollowPartyQuestFocus(b.name))
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	local stale = assert(a.confirmAction)
+	a.options.automaticLeaderFocus = true; a:Tick()
+	assert(not stale() and a.native.questID == 1 and a:GetPartyQuestFollowTarget() == b.name)
+	local dialogs = a.dialogCount
+	a.blocked = true; a.native.questID = 2
+	a:OnPartyNavigationQuestAccepted(2); a:OnPartyNavigationTrackingChanged(); a:Tick()
+	assert(a.native.questID == 2)
+	a.blocked = false; a:Tick()
+	assert(a.native.questID == 1 and a.dialogCount == dialogs)
+end)
+QT:RegisterTest("automatic leader focus does not follow the former leader after leadership changes", function()
+	local a, b = AutomaticPair()
+	local third = "Third-Realm"
+	a:Roster(a.name, b.name, third)
+	a.partyNavigationState.peers[third] = {questID=2, at=a.time, following=""}
+	a.leader = third; a:Tick()
+	assert(a:GetPartyQuestFollowTarget() == third and a.native.questID == 2)
+	b.native.questID = 1; b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+	assert(a.native.questID == 2 and a:GetPartyQuestFollowTarget() == third)
+	a.partyNavigationState.peers[third].questID = 0; a:Tick()
+	assert(a:GetPartyQuestFollowTarget() == nil and a:RequestPartyQuestFocus(a.name, 1))
+	a.partyNavigationState.peers[third].questID = 2; a:Tick()
+	assert(a.native.questID == 2)
+end)
+
 QT:RegisterTest("party focus shortcuts resolve full and unique short roster names without guessing", function()
 	local a = ShortcutFixture()
 	a:Roster("Me Realm", "Friend Surname", "Third Person")

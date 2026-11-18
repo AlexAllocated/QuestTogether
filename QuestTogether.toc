@@ -37,6 +37,8 @@ Audio.lua
 AutoThanks.lua
 AutoThanksNative.lua
 Settings.lua
+FeatureOptions.lua
+Presets.lua
 Libs/Ed25519/Ed25519.lua
 DeveloperPublicKey.lua
 VIPPublicKey.lua
@@ -62,6 +64,7 @@ LocalizedReleaseNotes.lua
 ReleaseNotesHistory.lua
 Welcome.lua
 ReleaseNotesWindow.lua
+PresetWindow.lua
 Debug.lua
 HotPathState.lua
 HotPathRuntime.lua
