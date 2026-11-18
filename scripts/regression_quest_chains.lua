@@ -276,6 +276,51 @@ QT:RegisterTest("quest chain race and class requirements use provider masks beyo
 	end)
 end, { offline = true })
 
+QT:RegisterTest("quest chain maximum acceptance level becomes permanent only above a known positive level", function()
+	WithProvider(Provider({ [1] = { requiredMaxLevel = 10 } }), function()
+		local a = Fixture(); a:Open(); a:Flush(); Metadata(a, { 1 })
+		for _, case in ipairs({
+			{ level = 9, state = "met" }, { level = 10, state = "met" },
+			{ level = 11, state = "blocked", permanent = true },
+			{ state = "unknown" }, { level = 0, state = "unknown" }, { level = -1, state = "unknown" },
+		}) do
+			local result = a:EvaluateQuestChainRequirements(1, {}, { level = case.level })
+			Equal(result.state, case.state, "maximum level boundary " .. tostring(case.level))
+			Equal(result.permanentlyBlocked == true, case.permanent == true)
+			Equal(#result.requirements, 1)
+			local requirement = result.requirements[1]
+			Equal(requirement.kind, "max_level"); Equal(requirement.value, 10)
+			Equal(requirement.state, case.state); Equal(requirement.permanent == true, case.permanent == true)
+		end
+	end)
+end, { offline = true })
+
+QT:RegisterTest("quest chain recoverable and unevaluated restrictions never acquire permanent blockers", function()
+	local rows = {
+		[1] = { requiredLevel = 10 }, [2] = { requiredClasses = 128 },
+		[3] = { requiredRaces = 4294967296 }, [4] = { preQuestGroup = { 99 } },
+		[5] = { exclusiveTo = { 99 } }, [6] = { disabledByQuest = 99 },
+		[7] = { parentQuest = 98 }, [8] = { requiredSkill = { 1, 50 } },
+		[9] = { requiredMaxLevel = 10, requiredSkill = { 1, 50 } },
+		[98] = {}, [99] = {},
+	}
+	WithProvider(Provider(rows), function()
+		local a = Fixture(); a:Open(); a:Flush(); Metadata(a, { 1, 2, 3, 4, 5, 6, 7, 8, 9 })
+		local evidence = { [98] = { active = false }, [99] = { active = true, completed = false } }
+		local character = { level = 9, classFile = "WARRIOR", raceID = 96 }
+		for id = 1, 8 do
+			local result = a:EvaluateQuestChainRequirements(id, evidence, character)
+			Equal(result.state, id == 8 and "unknown" or "blocked", "restriction " .. id)
+			Equal(result.permanentlyBlocked == true, false)
+			for _, requirement in ipairs(result.requirements) do Equal(requirement.permanent == true, false) end
+		end
+		local result = a:EvaluateQuestChainRequirements(9, evidence, { level = 11 })
+		Equal(result.state, "blocked"); Equal(result.permanentlyBlocked, true)
+		Equal(result.requirements[1].permanent, true); Equal(result.requirements[2].state, "unknown")
+		Equal(result.requirements[2].permanent == true, false)
+	end)
+end, { offline = true })
+
 QT:RegisterTest("native quest chains load asynchronously and never infer requirements or completion from order", function()
 	local a, loaded, lineLoads = Fixture("retail"), false, 0
 	a.API.GetQuestLineInfo = function(id) if id == 10 or id == 20 then return { questLineID = 70, questLineName = "Native story" } end end

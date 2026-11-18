@@ -762,6 +762,7 @@
       "Request sent",
       "Share attempted",
       "Sharing unavailable",
+      "Unavailable",
       "WHISPER",
       "party compare local snapshot"
     ],
@@ -798,7 +799,8 @@
       "Completed",
       "Have",
       "Missing",
-      "Ready"
+      "Ready",
+      "Unavailable"
     ],
     "QuestCompareGamepad.lua": [
       "DOWN",

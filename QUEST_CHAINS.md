@@ -12,8 +12,15 @@ One chain section stays open at a time. Clicking an
 ordinary quest title still expands its objectives; objective expansions and the
 open chain are independent.
 
+Chain sections animate open and closed around the retained quest row, keeping
+the current selection and scroll position stable. **Reduce Motion** skips these
+transitions. Rows disappearing during collapse cannot activate stale actions.
+
 The chain control appears only when QT has another related quest to show;
-standalone quests keep their ordinary controls. Quest hover tooltips include
+while QT checks unresolved relationships, a loading ring occupies its place.
+It becomes the chain control when related quests are found, or disappears once
+the quest is known to be standalone. Standalone quests keep their ordinary
+controls. Quest hover tooltips include
 quest IDs, so distinct steps with the same title can be told apart. Hidden
 future titles stay hidden even when their IDs are shown.
 
@@ -110,7 +117,13 @@ The **Filters** menu includes two saved preferences:
 - **Hide future quest names** starts on. Concealed titles stay hidden in rows,
   search, tooltips and actions. Current party quests, locally confirmed completed
   quests and names needed to explain a known prerequisite blocker can be shown.
-  Turn this preference off to reveal future titles where data is available.
+  Quests displayed above the quest you expanded also show their names, including
+  lower-level alternatives you never completed. This applies to their tooltips
+  and menus too; it does not change completion or eligibility status. Unreached
+  names below that quest remain concealed as **Quest name hidden**. Related
+  quests can include alternative level-bracket versions and repeatable
+  follow-ups, so display order alone does not establish a required or completed
+  earlier step. Turn this preference off to reveal all available titles.
 
 Search and filters still select the actual quests in the comparison. Added chain
 context does not increase the quest, Missing, Ready or sharing counts. Group
@@ -124,12 +137,25 @@ active quests; **Completed** requires character-specific completion evidence.
 completion does not certify this character's progress, and repeatable quests are
 not treated as permanently satisfied by an earlier completion.
 
+**Unavailable** identifies a confirmed requirement the character can no longer
+meet, such as having exceeded a quest's maximum level. Its tooltip puts the
+reason under **Cannot be met**, separately from ordinary unmet prerequisites.
+Active and completed quests keep their existing status. This status uses fresh
+provider and character evidence; it is not inferred from a quest's display
+position, class/race mismatch or temporary exclusion by another active quest.
+
 Prerequisite explanations are separate from those log states. **Known
 prerequisites met** means only the conditions QT can evaluate from available
 evidence. Other availability conditions may still apply. Skill, reputation,
 profession-rank, item, spell and specialization requirements are listed without
 claiming they have been checked. Signed prerequisite IDs with undocumented
 meaning remain unevaluated.
+
+Hover a player's quest status to see their prerequisites. Unmet conditions appear
+first, followed by unevaluated and satisfied checks in separate colored sections.
+Identical satisfied checks are counted together, and a relationship already
+explained by a requirement is not repeated. Alternative prerequisites are shown
+as one group, so an unchosen alternative does not look like an extra blocker.
 
 Branches retain their indentation and relationship information. Exclusions,
 replacements, active-parent requirements, breadcrumbs and availability conditions

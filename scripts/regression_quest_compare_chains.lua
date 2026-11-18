@@ -107,6 +107,121 @@ local function UseProviderSnapshot(a, kind)
 	return snapshot
 end
 
+local function MaximumLevelFixture()
+	local a, session, own, friend = Fixture()
+	local snapshot = a.questChainProviderSnapshot
+	snapshot.kind, snapshot.state, snapshot.revision = "questiedb", "ready", 1
+	snapshot.nodes, snapshot.metadata, snapshot.relations = {}, {}, {}
+	for _, id in ipairs({ 1, 2, 3, 4 }) do
+		snapshot.nodes[id], snapshot.metadata[id] = { questID = id }, { requiredMaxLevel = 10 }
+	end
+	a.EvaluateQuestChainRequirements = QT.EvaluateQuestChainRequirements
+	a.API.GetQuestChainUnitInfo = function() return { level = 20 } end
+	a.partyMembers[friend.name] = { unit = "party1" }
+	function a:GetUnitFullName(unit) return unit == "party1" and friend.name or self.name end
+	friend.entries = {}
+	friend.questHistory[2] = { status = "incomplete", sampledAt = a.now }
+	a:QueuePartyQuestCompareRender(); a:Flush()
+	return a, session, own, friend
+end
+
+QT:RegisterTest("chain permanent eligibility marks ordinary and contextual absence without changing history or counts", function()
+	local a, session, own, friend = MaximumLevelFixture()
+	local row = assert(Find(Rows(a), nil, 2))
+	Equal(row.cells[1], "Have"); Equal(row.cells[2], "Unavailable"); Equal(row.missing, 1)
+	Equal(row.action, "share"); Equal(row.shareReadiness.disabled, true)
+	Equal(row.shareReadiness.byName[friend.name].state, "blocked")
+	Equal(a:GetPartyQuestAbsenceState(friend, 2), "Missing")
+	local rows = Open(a, session, Graph({ 1, 2, 3, 4 }))
+	Equal(Find(rows, nil, 2).cells[2], "Unavailable")
+	local future = assert(Find(rows, "chainStep", 3))
+	Equal(future.cells[1], "Unavailable"); Equal(future.cells[2], "Unavailable")
+	Equal(future.title, "Quest name hidden"); Equal(future.spoilerHidden, true)
+	Equal(session.totalQuests, 2); Equal(#session.unfilteredQuests, 2)
+	Equal(friend.entries[2], nil); Equal(friend.questHistory[2].status, "incomplete")
+	Equal(own.entries[3], nil); Equal(friend.entries[3], nil)
+	assert(not own.questHistory[3] or own.questHistory[3].status ~= "unavailable")
+	assert(not friend.questHistory[3] or friend.questHistory[3].status ~= "unavailable")
+end)
+
+QT:RegisterTest("chain permanent eligibility preserves active completed and unknown status precedence", function()
+	local a, session, _, friend = MaximumLevelFixture()
+	Open(a, session, Graph({ 1, 2, 3, 4 }))
+	for _, status in ipairs({ "Have", "Ready", "Completed", "Loading", "Unknown" }) do
+		Equal(a:GetPartyQuestEligibilityStatus(friend, 2, status), status)
+	end
+	Equal(a:GetPartyQuestEligibilityStatus(friend, 2, "Missing"), "Unavailable")
+	Equal(a:GetPartyQuestEligibilityStatus(friend, 2, "Absent"), "Unavailable")
+	for _, case in ipairs({
+		{ entry = Entry(2), expected = "Have" },
+		{ entry = { questId = 2, questTitle = "Ready quest", isComplete = true }, expected = "Ready" },
+		{ history = "completed", expected = "Completed" },
+		{ history = "active", expected = "Unknown" },
+		{ state = "loading", expected = "Loading" }, { state = "error", expected = "Unknown" },
+		{ history = "incomplete", expected = "Unavailable" }, { expected = "Unavailable" },
+	}) do
+		friend.entries = case.entry and { [2] = case.entry } or {}
+		friend.state = case.state or "ready"
+		friend.questHistory[2] = case.history and { status = case.history, sampledAt = a.now } or nil
+		a:RefreshPartyQuestShareRequirements(friend, 2)
+		local row = assert(Find(Rows(a), nil, 2))
+		Equal(row.cells[2], case.expected)
+		Equal(a:GetPartyQuestChainStatus(friend, 2), case.expected)
+		if case.history == "active" then Equal(row.memberPrerequisiteText[2], "") end
+	end
+end)
+
+QT:RegisterTest("chain permanent eligibility expires with its evidence certificate", function()
+	for _, change in ipairs({ "ttl", "revision", "snapshot", "entries", "history", "retire", "session" }) do
+		local a, session, _, friend = MaximumLevelFixture()
+		Open(a, session, Graph({ 1, 2, 3, 4 }))
+		Equal(a:GetPartyQuestEligibilityStatus(friend, 2, "Missing"), "Unavailable")
+		if change == "ttl" then a.now = a.now + 60
+		elseif change == "revision" then a.questChainProviderSnapshot.revision = 2
+		elseif change == "snapshot" then a.questChainProviderSnapshot = { generation = 1, revision = 1 }
+		elseif change == "entries" then friend.entries = {}
+		elseif change == "history" then friend.historyGeneration = (friend.historyGeneration or 0) + 1
+		elseif change == "retire" then a:RetirePartyQuestChains()
+		else
+			a.partyQuestCompareSession = { playerName = session.playerName, members = session.members,
+				byName = session.byName, mode = "party", expandedQuestIds = {}, search = "", objectiveOwner = {} }
+			a:AttachPartyQuestChains(a.partyQuestCompareSession, session)
+		end
+		Equal(a:GetPartyQuestCachedShareRequirements(friend, 2), nil)
+		Equal(a:GetPartyQuestEligibilityStatus(friend, 2, "Missing"), "Missing")
+		Equal(a:GetPartyQuestEligibilityStatus(friend, 2, "Absent"), "Absent")
+		local row = assert(Find(Rows(a), nil, 2))
+		assert(row.cells[2] ~= "Unavailable")
+		local tooltip = row.memberPrerequisiteText and row.memberPrerequisiteText[2] or ""
+		assert(not tooltip:find("No longer obtainable", 1, true))
+		assert(not tooltip:find("Level exceeds the maximum", 1, true))
+	end
+end)
+
+QT:RegisterTest("chain unavailable cells remain known missing for filters and preserve partywide share readiness", function()
+	local a, session, _, friend = MaximumLevelFixture()
+	local rows = a:BuildPartyQuestDiffRows()
+	Equal(#rows, 2); Equal(rows[1].missing, 1); Equal(rows[2].missing, 1)
+	a.options.compareQuestOwnership = "someoneMissing"
+	Equal(#a:BuildPartyQuestDiffRows(), 2)
+	a.options.compareQuestProgress = "unknown"
+	Equal(#a:BuildPartyQuestDiffRows(), 0)
+	a.options.compareQuestProgress, a.options.compareQuestOwnership = "all", "shared"
+	Equal(#a:BuildPartyQuestDiffRows(), 0)
+	a.options.compareQuestOwnership, a.options.compareQuestAction = "all", "share"
+	Equal(#a:BuildPartyQuestDiffRows(), 0)
+	local blocked = a:GetPartyQuestMemberShareReadiness(friend, 2)
+	Equal(blocked.state, "blocked"); Equal(blocked.canAttempt, false)
+	Equal(blocked.requirements.state, "blocked"); Equal(blocked.requirements.permanentlyBlocked, true)
+	Equal(a:GetPartyQuestShareReadiness(2, "share").disabled, true)
+	a.partyMembers["Other-Realm"] = {}
+	a.partyMemberOrder = { friend.name, "Other-Realm" }
+	local readiness = a:GetPartyQuestShareReadiness(2, "share")
+	Equal(readiness.disabled, false); Equal(readiness.counts.blocked, 1); Equal(readiness.counts.unknown, 1)
+	Equal(readiness.byName["Other-Realm"].canAttempt, true)
+	Equal(#a:BuildPartyQuestDiffRows(), 2); Equal(session.totalQuests, 2)
+end)
+
 QT:RegisterTest("chain controls hide singleton Forever and Retail graphs including one-quest lines", function()
 	for _, kind in ipairs({ "questiedb", "retail" }) do
 		local a, session = Fixture()
@@ -118,6 +233,7 @@ QT:RegisterTest("chain controls hide singleton Forever and Retail graphs includi
 		a:QueuePartyQuestCompareRender(); a:Flush()
 		local rows = Rows(a)
 		Equal(Find(rows, nil, 2).chainAvailable, false); Equal(Find(rows, nil, 4).chainAvailable, false)
+		Equal(Find(rows, nil, 2).chainLoading, false); Equal(Find(rows, nil, 4).chainLoading, false)
 		Equal(Find(rows, "chainGroup"), nil); Equal(Find(rows, "chainStep"), nil)
 		Equal(session.totalQuests, 2)
 		if kind == "retail" then Equal(session.chains.graphs[2].lineID, 7)
@@ -128,6 +244,7 @@ QT:RegisterTest("chain controls hide singleton Forever and Retail graphs includi
 			a:QueuePartyQuestCompareRender(); a:Flush()
 			assert(session.chains.graphs[2].partial and session.chains.graphs[2].cycle)
 			Equal(Find(Rows(a), nil, 2).chainAvailable, false); Equal(Find(Rows(a), "chainGroup"), nil)
+			Equal(Find(Rows(a), nil, 2).chainLoading, false)
 		end
 	end
 end)
@@ -141,6 +258,7 @@ QT:RegisterTest("chain controls appear after async discovery and keep retired ex
 		else snapshot.metadata[2].loading = true end
 		a:QueuePartyQuestCompareRender(); a:Flush()
 		Equal(Find(Rows(a), nil, 2).chainAvailable, false); Equal(Find(Rows(a), "chainGroup"), nil)
+		Equal(Find(Rows(a), nil, 2).chainLoading, true)
 		assert(session.chains.graphs[2].loading)
 		local callback = a.providerCallbacks[1]
 		if kind == "retail" then
@@ -157,6 +275,7 @@ QT:RegisterTest("chain controls appear after async discovery and keep retired ex
 		callback(); a:Flush()
 		local rows = Rows(a)
 		assert(Find(rows, nil, 2).chainAvailable and Find(rows, "chainGroup"))
+		Equal(Find(rows, nil, 2).chainLoading, false)
 		Equal(Find(rows, nil, 4).chainAvailable, false)
 		assert(session.chains.graphs[2].loading and session.chains.graphs[2].partial)
 		assert(a:TogglePartyQuestChain(2, "quest:2")); a:Flush()
@@ -166,10 +285,35 @@ QT:RegisterTest("chain controls appear after async discovery and keep retired ex
 		a:QueuePartyQuestCompareRender(); a:Flush()
 		rows = Rows(a)
 		assert(Find(rows, nil, 2).chainAvailable and Find(rows, nil, 2).chainExpanded)
+		Equal(Find(rows, nil, 2).chainLoading, false)
 		Equal(Find(rows, "chainGroup"), nil); Equal(Find(rows, "chainStep", 1), nil)
 		assert(a:TogglePartyQuestChain(2, "quest:2")); a:Flush()
 		Equal(Find(Rows(a), nil, 2).chainAvailable, false)
+		Equal(Find(Rows(a), nil, 2).chainLoading, false)
 	end
+end)
+
+QT:RegisterTest("chain loading indicators retire after failed or unavailable discovery", function()
+	local a, session = Fixture()
+	a:AttachPartyQuestChains(session)
+	Equal(Find(Rows(a), nil, 2).chainLoading, true)
+	a:Flush()
+	Equal(Find(Rows(a), nil, 2).chainLoading, false)
+	for _, providerState in ipairs({ "loading", "failed", "unavailable" }) do
+		a.providerState = providerState
+		a:QueuePartyQuestCompareRender(); a:Flush()
+		Equal(Find(Rows(a), nil, 2).chainLoading, providerState == "loading")
+		Equal(Find(Rows(a), nil, 2).chainAvailable, false)
+	end
+	a.providerState = "loading"
+	a:QueuePartyQuestCompareRender(); a:Flush()
+	local loadingRow = Find(Rows(a), nil, 2)
+	Equal(loadingRow.chainLoading, true)
+	a:CancelPartyQuestChains(session)
+	Equal(Find(Rows(a), nil, 2).chainLoading, false)
+	session.chains = nil
+	a:DecoratePartyQuestChainRows({ loadingRow }, function(rows, row) rows[#rows + 1] = row end)
+	Equal(loadingRow.chainLoading, false)
 end)
 
 local function BranchGraph(ids, edges)
@@ -377,7 +521,7 @@ QT:RegisterTest("chain session preserves active counts and independent objective
 	Equal(session.totalQuests, 2)
 	Equal(#session.unfilteredQuests, 2)
 	Equal(Find(rows, "chainStep", 1).title, "Secret 1") -- Required blocker context is intentional.
-	Equal(Find(rows, "chainStep", 3).title, "Future quest")
+	Equal(Find(rows, "chainStep", 3).title, "Quest name hidden")
 	Equal(Find(rows, "chainStep", 4).title, "Active 4")
 	Equal(Find(rows, "chainStep", 1).cells[1], "Absent")
 	Equal(Find(rows, nil, 2).memberPrerequisiteText[1], "")
@@ -412,6 +556,115 @@ QT:RegisterTest("chain search and filters consider active roots without hidden f
 	Equal(#Rows(a), 1)
 	a:TogglePartyQuestChainGroup(group.groupId)
 	assert(Find(Rows(a), nil, 2).chainAnchor)
+end)
+
+QT:RegisterTest("chain displayed earlier alternatives reveal titles without completion or eligibility inference", function()
+	for _, grouped in ipairs({ false, true }) do
+		local a, session, own = Fixture()
+		a.options.compareGroupByChain = grouped
+		local graph = Graph({ 10, 20, 2, 30, 4 })
+		graph.edges = {} -- Alternative variants need not be evaluated prerequisites.
+		a.metadata[10] = { title = "Orders (Level 10)", questLevel = 10 }
+		a.metadata[20] = { title = "Orders (Level 20)", questLevel = 20 }
+		a.metadata[30] = { title = "Unreached orders", questLevel = 5 }
+		Open(a, session, graph)
+		own.questHistory[10] = { status = "incomplete", sampledAt = a.now }
+		local rows = Rows(a)
+		for _, id in ipairs({ 10, 20 }) do
+			local row = assert(Find(rows, "chainStep", id))
+			Equal(row.title, a.metadata[id].title); Equal(row.spoilerHidden, false)
+			Equal(own.entries[id], nil); assert(row.cells[1] ~= "Completed")
+			Equal(row.requirements[1].state, "unknown")
+			Equal(session.chains.revealBlockers[id], nil)
+			Equal(row.action, nil)
+		end
+		Equal(own.questHistory[10].status, "incomplete")
+		Equal(Find(rows, "chainStep", 30).title, "Quest name hidden")
+		Equal(Find(rows, "chainStep", 30).spoilerHidden, true)
+		Equal(Find(rows, "chainStep", 4).title, "Active 4")
+		local reads, requests = a.graphReads, #a.metadataRequests
+		session.search = "Active 4" -- The matching group still displays the opened origin's context.
+		rows = Rows(a)
+		Equal(Find(rows, "chainStep", 10).title, "Orders (Level 10)")
+		Equal(Find(rows, "chainStep", 30).title, "Quest name hidden")
+		Equal(a.graphReads, reads); Equal(#a.metadataRequests, requests)
+	end
+end)
+
+QT:RegisterTest("chain earlier title context follows displayed order and requires an origin position", function()
+	local a, session = Fixture()
+	local graph = Graph({ 10, 2, 30, 4 })
+	graph.edges = {}
+	local rows = Open(a, session, graph)
+	Equal(Find(rows, "chainStep", 10).title, "Secret 10")
+	Equal(Find(rows, "chainStep", 30).title, "Quest name hidden")
+	graph.order = { 30, 2, 10, 4 }
+	a:QueuePartyQuestCompareRender(); a:Flush()
+	rows = Rows(a)
+	Equal(Find(rows, "chainStep", 30).title, "Secret 30")
+	Equal(Find(rows, "chainStep", 10).title, "Quest name hidden")
+	graph.order = { 30, 10, 4 } -- No origin means there is no established earlier prefix.
+	a:QueuePartyQuestCompareRender(); a:Flush()
+	rows = Rows(a)
+	assert(Find(rows, nil, 2).chainAnchor)
+	Equal(Find(rows, "chainStep", 30).title, "Quest name hidden")
+	Equal(Find(rows, "chainStep", 10).title, "Quest name hidden")
+	graph.order = { 10, 2, 30, 4 }
+	a:QueuePartyQuestCompareRender(); a:Flush(); Rows(a)
+	local replacement = Graph({ 2, 10, 30, 4 })
+	replacement.edges = {}
+	a.graphs[2], a.graphs[4] = replacement, replacement
+	a:QueuePartyQuestCompareRender(); a:Flush()
+	Equal(a:GetPartyQuestChainDisplayTitle(10), "Quest name hidden")
+	Equal(Find(Rows(a), "chainStep", 10).title, "Quest name hidden")
+end)
+
+QT:RegisterTest("chain earlier title actions retire with hidden or replaced displayed context", function()
+	for _, changed in ipairs({ "close", "filter", "collapse", "root", "retire", "session" }) do
+		local a, session = Fixture()
+		a.options.compareGroupByChain = changed == "collapse"
+		local graph = Graph({ 10, 2, 30, 4 })
+		graph.edges = {}
+		a.metadata[10] = { title = "Earlier alternative", locations = {
+			{ mapID = 12, x = 0.3, y = 0.4, name = "Earlier guide" },
+		} }
+		local validGiver, placed
+		function a:ShowQuestChainGiver(_, valid) validGiver = valid; assert(valid()); return true end
+		function a:OpenPingWaypoint() placed = (placed or 0) + 1; return true end
+		local rows = Open(a, session, graph)
+		local giver, waypoint
+		for _, action in ipairs(a:GetPartyQuestChainActions(Find(rows, "chainStep", 10))) do
+			if action.label:find("Find quest giver", 1, true) then giver = action end
+			if action.label:find("Set waypoint", 1, true) then waypoint = action end
+		end
+		assert(giver and waypoint); assert(giver.action()); assert(waypoint.action()); Equal(placed, 1)
+		if changed == "close" then assert(a:ClosePartyQuestChain())
+		elseif changed == "filter" then session.search = "no matching roots"; Equal(#Rows(a), 0)
+		elseif changed == "collapse" then assert(a:TogglePartyQuestChainGroup(Find(rows, "chainGroup").groupId))
+		elseif changed == "root" then
+			assert(a:OpenPartyQuestChain(4, "quest:4"))
+			graph.order = { 4, 10, 2, 30 }; a:Flush(); Rows(a)
+		elseif changed == "retire" then a:RetirePartyQuestChains()
+		else
+			local replacement = { playerName = session.playerName, members = session.members, byName = session.byName,
+				mode = "party", expandedQuestIds = {}, search = "", objectiveOwner = {} }
+			a.partyQuestCompareSession = replacement
+			a:AttachPartyQuestChains(replacement, session); a:Flush()
+		end
+		Equal(a:GetPartyQuestChainDisplayTitle(10), "Quest name hidden")
+		Equal(validGiver(), false); Equal(giver.action(), false); Equal(waypoint.action(), false); Equal(placed, 1)
+	end
+end)
+
+QT:RegisterTest("chain earlier titles become visible only when the reopened section is painted", function()
+	local a, session = Fixture()
+	local graph = Graph({ 10, 2, 30, 4 })
+	graph.edges = {}
+	Open(a, session, graph)
+	assert(a:ClosePartyQuestChain()); a:Flush()
+	assert(a:OpenPartyQuestChain(2, "quest:2")); a:Flush()
+	Equal(a:GetPartyQuestChainDisplayTitle(10), "Quest name hidden")
+	Equal(Find(Rows(a), "chainStep", 10).title, "Secret 10")
 end)
 
 QT:RegisterTest("chain aliases survive a merge and earlier later expansion is explicit", function()
@@ -559,7 +812,7 @@ QT:RegisterTest("chain linear progress requires verified complete proof and char
 	local progress
 	for _, row in ipairs(rows) do if row.rowId:match(":progress$") then progress = row.title end end
 	Equal(progress, "1/3 completed")
-	Equal(Find(rows, "chainStep", 3).title, "Future quest") -- Peers' completion cannot reveal local spoilers.
+	Equal(Find(rows, "chainStep", 3).title, "Quest name hidden") -- Peers' completion cannot reveal local spoilers.
 	graph.partial = true
 	a:QueuePartyQuestCompareRender(); a:Flush()
 	for _, row in ipairs(Rows(a)) do assert(not row.rowId:match(":progress$")) end
@@ -702,9 +955,240 @@ QT:RegisterTest("chain prerequisite explanations distinguish evaluated gates and
 	assert(text:find("Requires level 20", 1, true)); assert(text:find("Warrior, Mage", 1, true))
 	assert(text:find("Human", 1, true)); assert(text:find("Not evaluated", 1, true))
 	assert(text:find("Signed prerequisite semantics unknown", 1, true))
-	assert(Find(Rows(a), nil, 2).relationshipText:find("Breadcrumb quest: Future quest", 1, true))
-	Equal(Find(Rows(a), "chainStep", 1).title, "Future quest") -- An unevaluated ancestor is not a named blocker.
+	assert(Find(Rows(a), nil, 2).relationshipText:find("Breadcrumb quest: Quest name hidden", 1, true))
+	Equal(Find(Rows(a), "chainStep", 1).title, "Secret 1") -- Displayed earlier titles do not require a named blocker.
 	Equal(own.entries[90], nil)
+end)
+
+local function PlainRequirements(text)
+	return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+end
+local function RequirementCount(text, label)
+	local count, position = 0, 1
+	while true do
+		local first, last = text:find(label, position, true)
+		if not first then return count end
+		count, position = count + 1, last + 1
+	end
+end
+local function RequirementSection(text, heading)
+	local section, active = {}, false
+	for line in (PlainRequirements(text) .. "\n"):gmatch("([^\n]*)\n") do
+		if line == heading or line == heading .. ":" then active = true
+		elseif active then
+			if line == "" then break end
+			section[#section + 1] = line
+		end
+	end
+	return table.concat(section, "\n")
+end
+
+QT:RegisterTest("chain permanent prerequisite tooltip separates impossible recoverable and unknown gates", function()
+	local a = Fixture()
+	local text = a:DescribePartyQuestChainRequirements({ state = "blocked", permanentlyBlocked = true, requirements = {
+		{ kind = "level", value = 20, state = "blocked" },
+		{ kind = "requiredSkill", state = "unknown" },
+		{ kind = "max_level", value = 10, state = "blocked", permanent = true },
+		{ kind = "class", allowedNames = { "Mage" }, state = "met" },
+	} })
+	local plain, reason = PlainRequirements(text), "Level exceeds the maximum of 10."
+	assert(plain:find("No longer obtainable", 1, true))
+	local permanent = assert(plain:find("\n\nCannot be met", 1, true))
+	local recoverable = assert(plain:find("\n\nNot met", 1, true))
+	local unknown = assert(plain:find("\n\nNot evaluated", 1, true))
+	assert(permanent < recoverable and recoverable < unknown)
+	assert(RequirementSection(text, "Cannot be met"):find(reason, 1, true))
+	assert(RequirementSection(text, "Not met"):find("Requires level 20", 1, true))
+	assert(RequirementSection(text, "Not evaluated"):find("Skill requirement", 1, true))
+	assert(RequirementSection(text, "Satisfied"):find("Class requirement: Mage", 1, true))
+	Equal(RequirementCount(plain, reason), 1)
+	assert(not RequirementSection(text, "Not met"):find(reason, 1, true))
+	assert(not plain:find("Prerequisites not met", 1, true))
+	Equal(RequirementCount(plain, "Other availability conditions may apply."), 0)
+	local ordinary = a:DescribePartyQuestChainRequirements({ state = "unknown", requirements = {
+		{ kind = "max_level", value = 10, state = "unknown" },
+	} })
+	Equal(RequirementSection(ordinary, "Cannot be met"), "")
+	assert(RequirementSection(ordinary, "Not evaluated"):find("Maximum level: 10", 1, true))
+	assert(not PlainRequirements(ordinary):find("No longer obtainable", 1, true))
+end)
+
+QT:RegisterTest("chain prerequisite tooltip puts blockers before unknown and satisfied checks", function()
+	local a = Fixture()
+	local text = a:DescribePartyQuestChainRequirements({ state = "blocked", requirements = {
+		{ kind = "class", allowedNames = { "Mage" }, state = "met" },
+		{ kind = "requiredSkill", state = "unknown" },
+		{ kind = "level", value = 20, state = "blocked" },
+	} })
+	local plain = PlainRequirements(text)
+	assert(plain:find("Prerequisites not met", 1, true))
+	local blocked = assert(plain:find("\n\nNot met", 1, true))
+	local unknown = assert(plain:find("\n\nNot evaluated", 1, true))
+	local met = assert(plain:find("\n\nSatisfied", 1, true))
+	assert(blocked < unknown and unknown < met)
+	assert(RequirementSection(text, "Not met"):find("Requires level 20", 1, true))
+	assert(RequirementSection(text, "Not evaluated"):find("Skill requirement", 1, true))
+	assert(RequirementSection(text, "Satisfied"):find("Class requirement: Mage", 1, true))
+	Equal(RequirementCount(plain, "Requires level 20"), 1)
+	Equal(RequirementCount(plain, "Other availability conditions may apply."), 1)
+	assert(plain:find("\n\nOther availability conditions may apply.", 1, true))
+	assert(not plain:find(" — ", 1, true), "each gate should use its section status once")
+end)
+
+QT:RegisterTest("chain prerequisite tooltip deduplicates gates without losing distinct hidden quests", function()
+	local a = Fixture()
+	local text = a:DescribePartyQuestChainRequirements({ state = "met", requirements = {
+		{ kind = "active_parent", questID = 90, state = "met" },
+		{ kind = "active_parent", questID = 90, state = "met" },
+		{ kind = "active_parent", questID = 91, state = "met" },
+		{ kind = "active_parent", questID = 92, state = "met" },
+		{ kind = "starting_with", questID = 90, state = "met" },
+	} }, {
+		{ kind = "active_parent", relatedQuestID = 90 },
+		{ kind = "active_parent", relatedQuestID = 91 },
+		{ kind = "active_parent", relatedQuestID = 92 },
+		{ kind = "starting_with", relatedQuestID = 90 },
+		{ kind = "breadcrumb", relatedQuestID = 90 },
+		{ kind = "breadcrumb", relatedQuestID = 90 },
+	})
+	local plain = PlainRequirements(text)
+	assert(RequirementSection(text, "Satisfied"):find("Requires active quest: Quest name hidden (3)", 1, true))
+	Equal(RequirementCount(plain, "Requires active quest:"), 1)
+	Equal(RequirementCount(plain, "Requires active or completed quest: Quest name hidden"), 1)
+	assert(not plain:find("Active parent quest:", 1, true))
+	assert(not plain:find("Available starting with quest:", 1, true))
+	Equal(RequirementCount(RequirementSection(text, "Related quests"), "Breadcrumb quest: Quest name hidden"), 1)
+	assert(not plain:find("Quest 90", 1, true) and not plain:find("Quest 91", 1, true))
+end)
+
+QT:RegisterTest("chain prerequisite tooltip retains separate blocked and unknown hidden quest gates", function()
+	local a = Fixture()
+	local text = a:DescribePartyQuestChainRequirements({ state = "blocked", requirements = {
+		{ kind = "active_parent", questID = 90, state = "blocked" },
+		{ kind = "active_parent", questID = 90, state = "blocked" },
+		{ kind = "active_parent", questID = 91, state = "blocked" },
+		{ kind = "starting_with", questID = 92, state = "unknown" },
+		{ kind = "starting_with", questID = 93, state = "unknown" },
+	} })
+	Equal(RequirementCount(RequirementSection(text, "Not met"), "Requires active quest: Quest name hidden"), 2)
+	Equal(RequirementCount(RequirementSection(text, "Not evaluated"), "Requires active or completed quest: Quest name hidden"), 2)
+	assert(not PlainRequirements(text):find("(2)", 1, true))
+end)
+
+QT:RegisterTest("chain prerequisite tooltip presents alternatives as one evaluated OR gate", function()
+	for _, case in ipairs({
+		{ first = true, second = false, state = "met", section = "Satisfied" },
+		{ first = false, state = "unknown", section = "Not evaluated" },
+		{ first = false, second = false, state = "blocked", section = "Not met" },
+	}) do
+		local a = Fixture()
+		local snapshot = UseProviderSnapshot(a, "questiedb")
+		snapshot.nodes[10], snapshot.metadata[10] = { questID = 10 }, {}
+		snapshot.relations[10] = {
+			{ kind = "prerequisite_any", relatedQuestID = 90 },
+			{ kind = "prerequisite_any", relatedQuestID = 91 },
+		}
+		local result = QT.EvaluateQuestChainRequirements(a, 10, {
+			[90] = { completed = case.first }, [91] = { completed = case.second },
+		})
+		Equal(result.state, case.state); Equal(result.groups.any, case.state)
+		local text = a:DescribePartyQuestChainRequirements(result, snapshot.relations[10])
+		local label = "One of these quests must be completed:"
+		Equal(RequirementCount(PlainRequirements(text), label), 1)
+		assert(RequirementSection(text, case.section):find(label, 1, true))
+		for _, section in ipairs({ "Not met", "Not evaluated", "Satisfied" }) do
+			if section ~= case.section then Equal(RequirementSection(text, section), "") end
+		end
+		Equal(RequirementSection(text, "Related quests"), "")
+	end
+end)
+
+QT:RegisterTest("chain prerequisite tooltip never colors unknown or signed gates as satisfied", function()
+	local a = Fixture()
+	local met = a:DescribePartyQuestChainRequirements({ state = "met", requirements = {
+		{ kind = "level", value = 20, state = "met" },
+	} })
+	local satisfiedColor = assert(met:match("|c(%x%x%x%x%x%x%x%x)Known prerequisites met"))
+	local unknown = a:DescribePartyQuestChainRequirements({ state = "unknown", requirements = {
+		{ kind = "prerequisite_all", questID = 90, negative = true, state = "unknown" },
+		{ kind = "requiredSpell", value = 1, state = "unknown" },
+	} }, { { kind = "prerequisite_all", relatedQuestID = 90, negative = true } })
+	assert(not unknown:find("|c" .. satisfiedColor, 1, true))
+	local pending = RequirementSection(unknown, "Not evaluated")
+	assert(pending:find("Signed prerequisite semantics unknown", 1, true))
+	assert(pending:find("Spell requirement", 1, true))
+	Equal(RequirementSection(unknown, "Satisfied"), "")
+	Equal(RequirementCount(unknown, "Signed prerequisite semantics unknown"), 1)
+	Equal(RequirementSection(unknown, "Related quests"), "")
+	-- A signed alternative remains unknown even when its history says complete.
+	local snapshot = UseProviderSnapshot(a, "questiedb")
+	snapshot.nodes[10], snapshot.metadata[10] = { questID = 10 }, {}
+	snapshot.relations[10] = {
+		{ kind = "prerequisite_any", relatedQuestID = 90, negative = true },
+		{ kind = "prerequisite_any", relatedQuestID = 91 },
+	}
+	local result = QT.EvaluateQuestChainRequirements(a, 10, {
+		[90] = { completed = true }, [91] = { completed = false },
+	})
+	Equal(result.state, "unknown"); Equal(result.groups.any, "unknown")
+	local alternative = a:DescribePartyQuestChainRequirements(result, snapshot.relations[10])
+	assert(RequirementSection(alternative, "Not evaluated"):find("Signed prerequisite semantics unknown", 1, true))
+	assert(not alternative:find("|c" .. satisfiedColor, 1, true))
+	Equal(RequirementSection(alternative, "Not met"), "")
+	Equal(RequirementSection(alternative, "Satisfied"), "")
+end)
+
+QT:RegisterTest("chain prerequisite tooltip supports blockers-only and context-only provider data", function()
+	local a = Fixture()
+	local blocked = a:DescribePartyQuestChainRequirements({ state = "blocked", blockers = {
+		{ kind = "active_parent", questID = 90 },
+		{ kind = "active_parent", questID = 90 },
+	} }, { { kind = "active_parent", relatedQuestID = 90 } })
+	Equal(RequirementCount(RequirementSection(blocked, "Not met"), "Requires active quest: Quest name hidden"), 1)
+	Equal(RequirementSection(blocked, "Related quests"), "")
+	local context = a:DescribePartyQuestChainRequirements(nil, {
+		{ kind = "breadcrumb", relatedQuestID = 90 },
+		{ kind = "breadcrumb", relatedQuestID = 90 },
+		{ kind = "active_parent", relatedQuestID = 90 },
+	}, true)
+	local related = RequirementSection(context, "Related quests")
+	Equal(RequirementCount(related, "Breadcrumb quest: Quest name hidden"), 1)
+	Equal(RequirementCount(related, "Active parent quest: Quest name hidden"), 1)
+	assert(not PlainRequirements(context):find("Prerequisites", 1, true))
+	Equal(RequirementSection(context, "Not met"), "")
+	Equal(RequirementSection(context, "Satisfied"), "")
+end)
+
+QT:RegisterTest("chain prerequisite tooltip keeps signed quest identities and fallback OR uncertainty", function()
+	local a, session = Fixture()
+	a.options.compareHideFutureQuestNames = false
+	session.chains.metadata[90] = { title = "Signed alternative" }
+	session.chains.metadata[91] = { title = "Incomplete alternative" }
+	local alternatives = {
+		{ kind = "prerequisite_any", questID = 90, negative = true, state = "unknown" },
+		{ kind = "prerequisite_any", questID = 91, state = "blocked" },
+	}
+	-- Older provider shapes can omit groups.any; the signed alternative still
+	-- makes the OR gate unknown rather than proving the positive branch blocks it.
+	local text = a:DescribePartyQuestChainRequirements({ state = "unknown", requirements = alternatives })
+	local pending = RequirementSection(text, "Not evaluated")
+	Equal(RequirementCount(pending, "One of these conditions must be met:"), 1)
+	assert(pending:find("Signed prerequisite semantics unknown: Signed alternative", 1, true))
+	assert(pending:find("Requires completed quest: Incomplete alternative", 1, true))
+	Equal(RequirementSection(text, "Not met"), "")
+	Equal(RequirementSection(text, "Satisfied"), "")
+	local signed = a:DescribePartyQuestChainRequirements({ state = "unknown", requirements = {
+		{ kind = "prerequisite_all", questID = 90, negative = true, state = "unknown" },
+		{ kind = "prerequisite_all", questID = 91, negative = true, state = "unknown" },
+	} })
+	pending = RequirementSection(signed, "Not evaluated")
+	Equal(RequirementCount(pending, "Signed prerequisite semantics unknown:"), 2)
+	assert(pending:find("Signed alternative", 1, true))
+	assert(pending:find("Incomplete alternative", 1, true))
+	a.options.compareHideFutureQuestNames = true
+	local hidden = a:DescribePartyQuestChainRequirements({ state = "unknown", requirements = alternatives })
+	assert(not hidden:find("Signed alternative", 1, true) and not hidden:find("Incomplete alternative", 1, true))
+	assert(hidden:find("Signed prerequisite semantics unknown: Quest name hidden", 1, true))
 end)
 
 QT:RegisterTest("chain member eligibility reads only stable matching grouped unit identities", function()
@@ -1009,7 +1493,7 @@ QT:RegisterTest("quest levels use deferred native snapshot and provider facts wi
 	Equal(Find(rows, nil, 2).questLevel, 21); Equal(Find(rows, nil, 4).questLevel, 19)
 	Equal(Find(rows, "chainStep", 1).questLevel, 18); Equal(Find(rows, "chainStep", 3).questLevel, 18)
 	Equal(Find(rows, "chainStep", 5).questLevel, nil)
-	Equal(Find(rows, "chainStep", 3).title, "Future quest")
+	Equal(Find(rows, "chainStep", 3).title, "Quest name hidden")
 	Equal(Find(rows, nil, 2).title, "Current")
 	Equal(session.members[1].entries[2].questTitle, "Active 2")
 	Equal(colorReads, 3, "one native color read for each distinct known level")
@@ -1084,7 +1568,7 @@ QT:RegisterTest("quest group recommendations preserve authoritative false and ca
 	a.API.GetQuestGroupRecommended = function() error("render queried native group recommendation") end
 	rows = Rows(a)
 	Equal(Find(rows, nil, 2).questGroupRecommended, false)
-	Equal(Find(rows, "chainStep", 3).title, "Future quest")
+	Equal(Find(rows, "chainStep", 3).title, "Quest name hidden")
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_quest_compare_chains.lua")

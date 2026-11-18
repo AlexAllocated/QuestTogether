@@ -388,6 +388,10 @@ function QT:CreateTestUIRegion(owner, parent, kind)
 			self:RunScript(v and "OnEnable" or "OnDisable")
 		end
 	end
+	function frame:IsEnabled()
+		self:CheckRead()
+		return self.enabled
+	end
 	function frame:SetMotionScriptsWhileDisabled(value)
 		self:Check()
 		self.motionScriptsWhileDisabled = value == true

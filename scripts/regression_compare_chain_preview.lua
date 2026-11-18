@@ -163,7 +163,7 @@ QT:RegisterTest("chain preview quest tooltips retain their own IDs and spoiler-s
 	local future = assert(Step(Rows(p), 40))
 	local row = Find(future.rowId)
 	row:RunScript("OnEnter")
-	Equal(a.tooltip[1], "[?] Future quest")
+	Equal(a.tooltip[1], "[?] Quest name hidden")
 	assert(a.tooltip[2]:find("Quest ID: 40|r", 1, true))
 	Equal(#a.wire, 0); Equal(a.pushes, 0)
 end)

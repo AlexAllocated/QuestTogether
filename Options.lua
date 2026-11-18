@@ -2571,7 +2571,7 @@ function QuestTogether:InitializeAccessibilityWindow(parentCategory)
 		value = math.floor(value / 5 + 0.5) * 5
 		QuestTogether:SetOption("windowScale", value)
 	end)
-	local motion = CreateCheckbox(content, "reduceMotion", L("Reduce motion"), L("Expand objectives and scroll immediately, without animated transitions."), 16, -215)
+	local motion = CreateCheckbox(content, "reduceMotion", L("Reduce motion"), L("Expand objectives and quest chains, and scroll immediately, without animated transitions."), 16, -215)
 	local reset = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 	reset:SetPoint("TOPLEFT", 16, -285); reset:SetSize(240, 24); reset:SetText(L("Reset window layout"))
 	reset:SetScript("OnClick", function() QuestTogether:ResetWindowLayouts() end)

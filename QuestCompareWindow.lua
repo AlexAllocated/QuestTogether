@@ -66,6 +66,7 @@ local COLORS = {
 	Absent = { 0.38, 0.32, 0.24 },
 	Ready = { 0.12, 0.38, 0.18 },
 	Missing = { 0.55, 0.25, 0.06 },
+	Unavailable = { 0.54, 0.18, 0.18 },
 	Loading = { 0.38, 0.32, 0.24 },
 	Unknown = { 0.38, 0.32, 0.24 },
 }
@@ -76,6 +77,7 @@ local DARK_COLORS = {
 	Absent = { 0.68, 0.70, 0.73 },
 	Ready = { 0.40, 0.90, 0.48 },
 	Missing = { 1, 0.68, 0.30 },
+	Unavailable = { 0.91, 0.49, 0.49 },
 	Loading = { 0.68, 0.70, 0.73 },
 	Unknown = { 0.68, 0.70, 0.73 },
 }
@@ -87,6 +89,7 @@ local COMPACT_STATUS = {
 	Ready = "|TInterface\\GossipFrame\\ActiveQuestIcon:16:16|t",
 	Completed = "|TInterface\\Buttons\\UI-CheckBox-Check:16:16|t",
 	Missing = "-",
+	Unavailable = "x",
 	Absent = "?",
 	Loading = "...",
 	Unknown = "?",
@@ -104,6 +107,7 @@ local function RecipientReadinessLabel(recipient)
 	elseif state == "checking" then return L("Checking eligibility")
 	elseif state == "blocked" then
 		local result = recipient.requirements or {}
+		if result.permanentlyBlocked then return L("Unavailable") end
 		local requirements = result.requirements
 		local blockersOnly = not requirements or #requirements == 0
 		if blockersOnly then requirements = result.blockers or {} end
@@ -148,11 +152,13 @@ local function ShareReadinessSummary(readiness, full)
 	return #parts > 0 and table.concat(parts, " · ") or L("Eligibility unknown")
 end
 
-local function RecipientReadinessText(addon, recipient)
+local function RecipientReadinessText(addon, recipient, statusText)
 	local text = RecipientReadinessLabel(recipient)
 	if recipient and recipient.state ~= "have" and recipient.state ~= "ready" and recipient.state ~= "completed"
 		and recipient.requirements and addon.DescribePartyQuestChainRequirements then
-		text = text .. "\n" .. addon:DescribePartyQuestChainRequirements(recipient.requirements)
+		local requirements = addon:DescribePartyQuestChainRequirements(recipient.requirements, nil, true)
+		if text == statusText then return requirements end
+		text = text .. "\n\n" .. requirements
 	end
 	return text
 end
@@ -352,6 +358,56 @@ local function PaintFocusButton(button, selected, complete, muted)
 	end
 end
 
+local function StopChainLoading(row)
+	row.chain:SetScript("OnUpdate", nil)
+	row.chain.loading, row.chain.loadingElapsed, row.chain.loadingStep = nil, nil, nil
+	row.chain.loadingSession, row.chain.loadingChains, row.chain.loadingProfile = nil, nil, nil
+	row.chain.loadingGeneration = nil
+	for _, dot in ipairs(row.chainDots) do dot:Hide() end
+end
+
+local function PaintChainLoading(row)
+	for index, dot in ipairs(row.chainDots) do
+		local distance = (index - 1 - (row.chain.loadingStep or 0)) % #row.chainDots
+		dot:SetAlpha(0.2 + (7 - distance) / 7 * 0.8)
+	end
+end
+
+local function SetChainLoading(addon, row, loading, dark)
+	if not loading then StopChainLoading(row); row.chainIcon:Show(); return end
+	local button = row.chain
+	local session, profile = row.session, addon.db and addon.db.profile
+	local chains = session and session.chains
+	if button.loadingSession ~= session or button.loadingChains ~= chains or button.loadingProfile ~= profile then StopChainLoading(row) end
+	button.loadingSession, button.loadingChains, button.loadingProfile = session, chains, profile
+	button.loading = true
+	button.loadingElapsed, button.loadingStep = button.loadingElapsed or 0, button.loadingStep or 0
+	row.chainIcon:Hide()
+	for _, dot in ipairs(row.chainDots) do
+		dot:SetColorTexture(dark and 1 or 0.55, dark and 0.82 or 0.38, dark and 0.24 or 0.16)
+		dot:Show()
+	end
+	PaintChainLoading(row)
+	if addon:GetOption("reduceMotion") then button:SetScript("OnUpdate", nil); return end
+	if button:GetScript("OnUpdate") then return end
+	local generation = {}
+	button.loadingGeneration = generation
+	button:SetScript("OnUpdate", function(_, elapsed)
+		if button.loadingGeneration ~= generation then return end
+		if not addon.isEnabled or addon.isLoggingOut or addon.partyQuestCompareSession ~= session or row.session ~= session
+			or session.chains ~= chains or chains and chains.retired or (addon.db and addon.db.profile) ~= profile
+			or not row.data or not row.data.chainLoading
+			or row.data.chainExpanded or not button:IsVisible() then StopChainLoading(row); return end
+		if addon:IsWorkBlocked("foreign_frame_mutation") then return end
+		if addon:GetOption("reduceMotion") then button:SetScript("OnUpdate", nil); return end
+		button.loadingElapsed = (button.loadingElapsed or 0) + math.min(elapsed, 0.25)
+		if button.loadingElapsed < 0.08 then return end
+		button.loadingStep = ((button.loadingStep or 0) + math.floor(button.loadingElapsed / 0.08)) % #row.chainDots
+		button.loadingElapsed = button.loadingElapsed % 0.08
+		PaintChainLoading(row)
+	end)
+end
+
 local function DrawCompareRows(self, frame, session, rows, width, actionX)
 	local dark = self:GetOption("lightMode") ~= true
 	local colors = dark and DARK_COLORS or COLORS
@@ -421,7 +477,8 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			if data.chainAnchor then row.expander:ClearAllPoints(); row.expander:SetPoint("TOPLEFT", indent - 22, -8) end
 			local chainRow = data.kind and data.kind:sub(1, 5) == "chain"
 			local questRow = not data.kind or data.kind == "chainStep"
-			local chainVisible = not data.kind and data.chainAvailable == true and self.TogglePartyQuestChain ~= nil
+			local chainLoading = not data.kind and data.chainLoading == true and not data.chainExpanded and not data.chainAvailable
+			local chainVisible = not data.kind and (data.chainAvailable == true or chainLoading) and self.TogglePartyQuestChain ~= nil
 			row.branch:Hide(); row.branchStem:Hide()
 			if data.kind == "chainStep" then
 				row.branch:ClearAllPoints(); row.branch:SetPoint("TOPLEFT", indent - 15, -18)
@@ -440,6 +497,8 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 			row.chain:SetPoint("TOPLEFT", QUEST_WIDTH - (journalVisible and 58 or 32), -4)
 			if data.chainExpanded then row.chainIcon:SetVertexColor(1, 0.82, 0.24)
 			else row.chainIcon:SetVertexColor(0.80, 0.80, 0.76) end
+			SetChainLoading(self, row, chainVisible and chainLoading, dark)
+			row.chain:SetEnabled(chainVisible and not chainLoading and not self:IsWorkBlocked("foreign_frame_mutation"))
 			if chainVisible then row.chain:Show() else row.chain:Hide() end
 			if journalVisible then
 				row.journal:SetEnabled(not self:IsWorkBlocked("foreign_frame_mutation"))
@@ -506,8 +565,12 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 							and not self:IsWorkBlocked("foreign_frame_mutation")
 							and QuestTogether.LibChev.CanMutateOwnedRegion(control) and control:IsVisible() then
 							local text = control.chainStep and control.questStatus == "Have" and L("In progress") or StatusLabel(control.questStatus)
-							self:ShowSettingsTooltip(control, control.memberName,
-								self:AppendQuestIDToTooltipText(row.data.questId, text .. (control.prerequisiteText or "")))
+							local title = control.memberName
+							if control.prerequisiteText then
+								title = QuestTitle(row.data)
+								text = "|cffffd100" .. control.memberName .. "|r\n" .. text .. control.prerequisiteText
+							end
+							self:ShowSettingsTooltip(control, title, self:AppendQuestIDToTooltipText(row.data.questId, text))
 						end
 					end)
 					local function Leave() self:HideSettingsTooltip(control) end
@@ -537,7 +600,7 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 					local readiness = data.shareReadiness and data.shareReadiness.byName
 					local recipient = readiness and readiness[session.members[j].name]
 						or self.GetPartyQuestMemberShareReadiness and self:GetPartyQuestMemberShareReadiness(session.members[j], data.questId)
-					prerequisite = RecipientReadinessText(self, recipient)
+					prerequisite = RecipientReadinessText(self, recipient, statusText)
 				end
 				statusControl.prerequisiteText = type(prerequisite) == "string" and prerequisite ~= "" and "\n\n" .. prerequisite or nil
 				statusControl:ClearAllPoints()
@@ -636,6 +699,15 @@ local function DrawCompareRows(self, frame, session, rows, width, actionX)
 				row.hint:SetText(L(status or data.hint or ""))
 				row.hint:Show()
 			end
+			-- Closing rows are visual remnants only. Retire their receiver session
+			-- before a recycled slot can accept mouse or native navigation input.
+			row:EnableMouse(not data.chainClosing)
+			if data.chainClosing then
+				row.session = nil
+				row.chain:Hide(); row.journal:Hide(); row.action:Hide()
+				for _, control in ipairs(row.focusCells or {}) do control:Hide() end
+				for _, control in ipairs(row.cellTooltips or {}) do control:Hide() end
+			end
 		end
 	end
 end
@@ -650,17 +722,40 @@ local function DetailHeights(rows)
 	return heights
 end
 
-local function CompareHeight(frame)
-	local height = 0
-	for index in ipairs(frame.displayRows) do
-		height = height + CompareRowHeight(frame.displayRows, index)
+-- Scroll range, anchors, clipping and navigation share the animated geometry.
+-- A chain opens outwards from its retained log row; text is clipped, never scaled.
+local function RowHeights(frame, rows)
+	local heights, offsets, seen, totals = {}, {}, {}, { before = 0, after = 0 }
+	local details, chain = DetailHeights(rows), frame.chainExpansion
+	for index, data in ipairs(rows) do
+		local height = CompareRowHeight(rows, index)
+		if ObjectiveDetail(data) then
+			local id, transition = data.questId, frame.expansions and frame.expansions[data.questId]
+			local reveal = transition and transition.reveal or details[id]
+			heights[index] = math.max(0, math.min(height, reveal - (seen[id] or 0)))
+			seen[id] = (seen[id] or 0) + height
+		else heights[index] = height end
+		local side = chain and chain.sides[data]
+		if side then totals[side] = totals[side] + heights[index] end
 	end
-	for id, full in pairs(DetailHeights(frame.displayRows)) do
-		local transition = frame.expansions and frame.expansions[id]
-		if transition then
-			height = height - full + math.min(full, transition.reveal)
+	seen = { before = 0, after = 0 }
+	for index, data in ipairs(rows) do
+		local side = chain and chain.sides[data]
+		if side then
+			local full = heights[index]
+			if side == "before" then
+				heights[index] = math.max(0, math.min(full, seen[side] + full - totals[side] * (1 - chain.reveal)))
+				offsets[index] = full - heights[index]
+			else heights[index] = math.max(0, math.min(full, totals[side] * chain.reveal - seen[side])) end
+			seen[side] = seen[side] + full
 		end
 	end
+	return heights, offsets
+end
+
+local function CompareHeight(frame)
+	local height = 0
+	for _, value in ipairs(RowHeights(frame, frame.displayRows)) do height = height + value end
 	return height
 end
 
@@ -668,9 +763,10 @@ function QuestTogether:CapturePartyQuestScrollAnchor(rowID, visibleOnly)
 	local frame, session = rawget(self, "partyQuestCompareWindow"), rawget(self, "partyQuestCompareSession")
 	if not frame or not session or frame.displaySession ~= session then return end
 	local pixels, y, anchor = session.scrollPixels or 0, 0
+	local heights = RowHeights(frame, frame.displayRows or {})
 	for i, row in ipairs(frame.displayRows or {}) do
-		local height = CompareRowHeight(frame.displayRows, i)
-		if Selectable(row) then
+		local height = heights[i]
+		if height > 0 and Selectable(row) then
 			if rowID and RowID(row) == rowID then
 				if not visibleOnly or y + height > pixels and y < pixels + frame.rowsViewport:GetHeight() then
 					return { rowId = rowID, questId = row.questId, offset = pixels - y }
@@ -685,14 +781,14 @@ function QuestTogether:CapturePartyQuestScrollAnchor(rowID, visibleOnly)
 	return anchor
 end
 
-local function RestoreScrollAnchor(addon, session, rows)
+local function RestoreScrollAnchor(addon, session, rows, frame)
 	local anchor = session.restoreAnchor
 	if not anchor then return end
 	local anchorRowId = addon.ResolvePartyQuestChainRowID and addon:ResolvePartyQuestChainRowID(anchor.rowId) or anchor.rowId
-	local y = 0
+	local y, heights = 0, frame and RowHeights(frame, rows)
 	for i, row in ipairs(rows) do
 		if Selectable(row) and (anchorRowId and RowID(row) == anchorRowId or not anchor.rowId and row.questId == anchor.questId) then session.scrollPixels = y + anchor.offset; break end
-		y = y + CompareRowHeight(rows, i)
+		y = y + (heights and heights[i] or CompareRowHeight(rows, i))
 	end
 	for _, member in ipairs(session.members) do
 		if member.state == "loading" or addon:HasPendingPartyQuestProgress(member) then return end
@@ -710,26 +806,18 @@ local function ScrollCompare(self, frame, session, pixels, force)
 	end
 	if self.ParkPartyQuestGamepadSelection and not self:ParkPartyQuestGamepadSelection(frame) then return end
 	local rows = frame.displayRows
-	local heights, seen = DetailHeights(rows), {}
+	local heights, offsets = RowHeights(frame, rows)
 	local maximum = math.max(0, CompareHeight(frame) - frame.rowsViewport:GetHeight())
 	pixels = math.max(0, math.min(pixels, maximum))
 	local visible, keys, y = {}, {}, 0
 	frame.navigationRows = {}
 	for index, data in ipairs(rows) do
-		local fullHeight = CompareRowHeight(rows, index)
-		if Selectable(data) then
-			frame.navigationRows[#frame.navigationRows + 1] = { rowId = RowID(data), questId = data.questId, top = y, height = fullHeight, data = data }
-		end
-		local height = fullHeight
-		if ObjectiveDetail(data) then
-			local id = data.questId
-			local transition = frame.expansions and frame.expansions[id]
-			local reveal = transition and transition.reveal or heights[id]
-			height = math.max(0, math.min(fullHeight, reveal - (seen[id] or 0)))
-			seen[id] = (seen[id] or 0) + fullHeight
+		local height = heights[index]
+		if height > 0 and Selectable(data) then
+			frame.navigationRows[#frame.navigationRows + 1] = { rowId = RowID(data), questId = data.questId, top = y, height = height, data = data }
 		end
 		if height > 0 and y + height > pixels and y < pixels + frame.rowsViewport:GetHeight() then
-			visible[#visible + 1] = { index = index, top = y, height = height }
+			visible[#visible + 1] = { index = index, top = y, height = height, clipOffset = offsets[index] }
 			keys[#keys + 1] = index
 		end
 			y = y + height
@@ -747,7 +835,7 @@ local function ScrollCompare(self, frame, session, pixels, force)
 		local interested, included = {}, {}
 		for _, slot in ipairs(visible) do
 			local id = rows[slot.index].questId
-			if id and not included[id] then interested[#interested + 1], included[id] = id, true end
+			if id and not rows[slot.index].chainClosing and not included[id] then interested[#interested + 1], included[id] = id, true end
 		end
 		self:SetPartyQuestCompletionInterest(interested)
 	end
@@ -757,6 +845,7 @@ local function ScrollCompare(self, frame, session, pixels, force)
 			row.clip:ClearAllPoints()
 			row.clip:SetPoint("TOPLEFT", frame.rowsContent, "TOPLEFT", 0, -(slot.top - origin))
 			row.clip:SetSize(frame.content:GetWidth(), math.max(0.01, slot.height))
+			row.clip:SetVerticalScroll(slot.clipOffset or 0)
 		end
 	end
 	local key = table.concat(keys, ",")
@@ -818,6 +907,134 @@ local function StopExpansion(frame)
 	if frame.expansionAnimator and QuestTogether.LibChev.CanMutateOwnedRegion(frame.expansionAnimator) then
 		frame.expansionAnimator:SetScript("OnUpdate", nil)
 	end
+end
+
+local function StopChainExpansion(frame)
+	frame.chainExpansion = nil
+	local rows = {}
+	for _, row in ipairs(frame.displayRows or {}) do if not row.chainClosing then rows[#rows + 1] = row end end
+	frame.displayRows = rows
+	if frame.chainAnimator and QuestTogether.LibChev.CanMutateOwnedRegion(frame.chainAnimator) then
+		frame.chainAnimator:SetScript("OnUpdate", nil)
+	end
+end
+
+local function ChainPresentation(rows, questID)
+	local root, index, instance
+	for i, row in ipairs(rows or {}) do
+		if not row.kind and (questID and row.questId == questID or not questID and row.chainExpanded) then
+			root, index, instance = row, i, row.chainInstanceId
+			break
+		end
+	end
+	if not root then return end
+	local result = { questId = root.questId, before = {}, after = {}, sides = {} }
+	for i, row in ipairs(rows) do
+		if row.kind and row.kind:sub(1, 5) == "chain" and row.chainInstanceId
+			and (not instance or row.chainInstanceId == instance) then
+			local side = i < index and "before" or "after"
+			result[side][#result[side] + 1], result.sides[row] = row, side
+		end
+	end
+	return result
+end
+
+local function PrepareChainExpansion(self, frame, session, oldRows)
+	local rows = frame.displayRows
+	local current = ChainPresentation(rows)
+	local rootID, previousID = current and current.questId, frame.chainExpandedQuestID
+	frame.chainExpandedQuestID = rootID
+	if self:GetOption("reduceMotion") or frame.chainDisplaySession ~= session then
+		StopChainExpansion(frame); frame.chainDisplaySession = session; return
+	end
+	local transition, restarting = frame.chainExpansion, false
+	local opening = rootID ~= nil
+	local id = rootID or transition and transition.questId or previousID
+	local old = id and ChainPresentation(oldRows, id)
+	if not id or not ChainPresentation(rows, id) or opening and not next(current.sides) then
+		StopChainExpansion(frame); return
+	end
+	if not transition or transition.questId ~= id then
+		if opening and previousID == id and old and next(old.sides) then return end
+		if not opening and (not old or not next(old.sides)) then StopChainExpansion(frame); return end
+		transition = { questId = id, from = opening and 0 or 1, reveal = opening and 0 or 1,
+			target = opening and 1 or 0, elapsed = 0 }
+		restarting = true
+	elseif transition.target ~= (opening and 1 or 0) then
+		transition.from, transition.elapsed, transition.target = transition.reveal, 0, opening and 1 or 0
+		restarting = true
+	end
+	if restarting then
+		-- Momentum targets belong to the geometry before the toggle. Preserve
+		-- wheel input received later during a normal presentation refresh.
+		frame.wheelTarget, frame.wheelSession = nil, nil
+		frame:SetScript("OnUpdate", nil)
+	end
+	transition.sides = {}
+	if opening then
+		transition.sides, transition.closing = current.sides, nil
+	else
+		if not transition.closing then
+			transition.closing = { before = {}, after = {} }
+			for _, side in ipairs({ "before", "after" }) do
+				for _, row in ipairs(old and old[side] or {}) do
+					local copy = {}
+					for key, value in pairs(row) do copy[key] = value end
+					copy.chainClosing, copy.selectable = true, false
+					transition.closing[side][#transition.closing[side] + 1] = copy
+				end
+			end
+		end
+		local closingIDs = {}
+		for _, side in ipairs({ "before", "after" }) do
+			for _, row in ipairs(transition.closing[side]) do closingIDs[RowID(row)] = true end
+		end
+		if closingIDs[session.keyboardRowId] then
+			session.keyboardRowId, session.keyboardQuestId, session.keyboardRole, session.keyboardPlayer = "quest:" .. id, id, "quest", nil
+		end
+		local navigation = frame.gamepadNavigation
+		if navigation and navigation.selected and closingIDs[navigation.selected.rowId] then
+			navigation.selected, navigation.armed = { session = session, rowId = "quest:" .. id, role = "quest" }, nil
+		end
+		local display, pending = {}, false
+		local function Append(side)
+			for _, row in ipairs(transition.closing[side]) do
+				display[#display + 1], transition.sides[row] = row, side
+			end
+		end
+		for _, row in ipairs(rows) do
+			if pending and not (ObjectiveDetail(row) and row.questId == id) then Append("after"); pending = false end
+			if not row.kind and row.questId == id then Append("before"); pending = true end
+			display[#display + 1] = row
+		end
+		if pending then Append("after") end
+		frame.displayRows = display
+	end
+	frame.chainExpansion = transition
+	local generation = {}
+	local chains, profile = session.chains, self.db and self.db.profile
+	transition.generation = generation
+	frame.chainAnimator:SetScript("OnUpdate", function(_, elapsed)
+		if frame.chainExpansion ~= transition or transition.generation ~= generation then return end
+		if self.partyQuestCompareSession ~= session or frame.displaySession ~= session or not self.isEnabled or self.isLoggingOut
+			or session.chains ~= chains or chains and chains.retired or (self.db and self.db.profile) ~= profile then
+			StopChainExpansion(frame); return
+		end
+		if self:IsWorkBlocked("foreign_frame_mutation") then return end
+		local anchor = self:CapturePartyQuestScrollAnchor("quest:" .. id, true) or self:CapturePartyQuestScrollAnchor()
+		transition.elapsed = math.min(0.18, transition.elapsed + math.min(elapsed, 0.1))
+		local t = self:GetOption("reduceMotion") and 1 or transition.elapsed / 0.18
+		transition.reveal = transition.from + (transition.target - transition.from) * t * t * (3 - 2 * t)
+		if t >= 1 then
+			local display = {}
+			for _, row in ipairs(frame.displayRows) do if not row.chainClosing then display[#display + 1] = row end end
+			frame.displayRows = display
+			StopChainExpansion(frame)
+		end
+		session.restoreAnchor = anchor
+		RestoreScrollAnchor(self, session, frame.displayRows, frame)
+		ScrollCompare(self, frame, session, session.scrollPixels or 0, true)
+	end)
 end
 
 local function AnimateExpansions(self, frame, session)
@@ -1263,6 +1480,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	frame:SetScale(scale)
 	self.partyQuestCompareWindow = frame
 	frame.expansionAnimator = self:CreateOwnedWindowFrame("Frame", nil, frame)
+	frame.chainAnimator = self:CreateOwnedWindowFrame("Frame", nil, frame)
 	frame.summary = Label(frame, 20, -47, width - 40, "", "GameFontHighlight")
 	frame.searchLabel = Label(frame, 20, -80, 65, L("Search:"), "GameFontHighlight")
 	frame.search = self:CreateOwnedWindowFrame("EditBox", nil, frame, "SearchBoxTemplate")
@@ -1304,7 +1522,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 		dismiss = function() self:CancelPartyQuestCompare() end,
 		suspend = function()
 			self:SetPartyQuestKeyboardNavigation(frame, false)
-			StopCompareScroll(frame); StopExpansion(frame)
+			StopCompareScroll(frame); StopExpansion(frame); StopChainExpansion(frame)
 			self:StopOwnedScrollBar(frame.vertical); self:StopOwnedScrollBar(frame.horizontal)
 		end,
 		theme = function()
@@ -1414,6 +1632,7 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.journal:SetScript("OnLeave", HideJournalTooltip)
 			row.journal:SetScript("OnHide", HideJournalTooltip)
 			row.journal:SetScript("OnClick", function()
+				if row.session ~= self.partyQuestCompareSession or not row.data or row.data.chainClosing then return end
 				self:SetPartyQuestKeyboardNavigation(frame, false)
 				HideJournalTooltip()
 				if row.data and (not row.data.kind or row.data.kind == "chainStep") and row.session == self.partyQuestCompareSession then
@@ -1423,19 +1642,29 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			row.chain = self:CreateOwnedWindowFrame("Button", nil, row)
 			row.chain:SetSize(22, 22)
 			row.chain:SetPoint("TOPLEFT", QUEST_WIDTH - 58, -4)
+			if row.chain.SetMotionScriptsWhileDisabled then row.chain:SetMotionScriptsWhileDisabled(true) end
 			row.chain:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
 			local chainIcon = row.chain:CreateTexture(nil, "ARTWORK")
 			chainIcon:SetTexture("Interface\\AddOns\\QuestTogether\\Media\\QuestChain.tga")
 			chainIcon:SetSize(18, 18); chainIcon:SetPoint("CENTER")
 			row.chainIcon = chainIcon
+			row.chainDots = {}
+			for index = 1, 8 do
+				local angle = (index - 1) * math.pi / 4
+				local dot = row.chain:CreateTexture(nil, "ARTWORK")
+				dot:SetSize(3, 3); dot:SetPoint("CENTER", math.sin(angle) * 6, math.cos(angle) * 6)
+				dot:Hide(); row.chainDots[index] = dot
+			end
 			row.chain:SetScript("OnEnter", function()
 				if row.data and row.session == self.partyQuestCompareSession then
-					self:ShowSettingsTooltip(row.chain, row.data.chainExpanded and L("Close chain") or L("View chain"),
+					self:ShowSettingsTooltip(row.chain, row.chain.loading and L("Loading quest chain information")
+						or row.data.chainExpanded and L("Close chain") or L("View chain"),
 						self:AppendQuestIDToTooltipText(row.data.questId, QuestTitle(row.data)))
 				end
 			end)
 			local function HideChainTooltip() self:HideSettingsTooltip(row.chain) end
-			row.chain:SetScript("OnLeave", HideChainTooltip); row.chain:SetScript("OnHide", HideChainTooltip)
+			row.chain:SetScript("OnLeave", HideChainTooltip)
+			row.chain:SetScript("OnHide", function() HideChainTooltip(); StopChainLoading(row) end)
 			row.chain:SetScript("OnClick", function()
 				HideChainTooltip()
 				if row.session == self.partyQuestCompareSession and row.data and not row.data.kind and row.data.chainAvailable == true
@@ -1761,11 +1990,14 @@ function QuestTogether:RenderPartyQuestCompare()
 		if frame.keyboardSession then self:SetPartyQuestKeyboardNavigation(frame, false) end
 		StopCompareScroll(frame)
 		StopExpansion(frame)
+		StopChainExpansion(frame)
 	end
 	frame.displaySession = session
 	if self:GetOption("reduceMotion") then StopCompareScroll(frame) end
-	RestoreScrollAnchor(self, session, rows)
+	local oldRows = frame.displayRows
 	PrepareExpansions(self, frame, session, rows)
+	PrepareChainExpansion(self, frame, session, oldRows)
+	RestoreScrollAnchor(self, session, frame.displayRows, frame)
 	local ready = 0
 	local leaderName = session.mode ~= "target" and self:GetPartyQuestLeaderName() or nil
 	for i, member in ipairs(session.members) do

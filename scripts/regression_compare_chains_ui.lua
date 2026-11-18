@@ -40,7 +40,7 @@ local function Open(expanded)
 			rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":notice", kind = "chainNotice", title = "Partial quest chain information", cells = {}, chainInstanceId = self.chainFixtureInstance }
 			for id = 1, 30 do
 				rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":quest:" .. id, kind = "chainStep", questId = id,
-					title = id == 1 and "Known quest" or "Future quest", cells = { id == 1 and "Have" or "Unknown", "Absent" },
+					title = id == 1 and "Known quest" or "Quest name hidden", cells = { id == 1 and "Have" or "Unknown", "Absent" },
 					selectable = true, chainInstanceId = self.chainFixtureInstance, depth = id % 3,
 					spoilerHidden = id ~= 1,
 					memberPrerequisiteText = { "Known prerequisites met", "Prerequisites unknown" } }
@@ -88,6 +88,7 @@ local function CenteredChain()
 	a.chainFixtureGrouped = false
 	function a:BuildPartyQuestCompareDisplayRows(roots)
 		local rows, instance = {}, self.chainFixtureInstance
+		if not roots[1] then return rows end
 		for id = 10, 16 do
 			rows[#rows + 1] = { rowId = "quest:" .. id, questId = id, title = "Unrelated quest", cells = {} }
 		end
@@ -118,6 +119,145 @@ local function CenteredChain()
 	a:RenderPartyQuestCompare()
 	return a, frame, session
 end
+
+local function TickChain(frame, elapsed)
+	local update = frame.chainAnimator:GetScript("OnUpdate")
+	if update then update(frame.chainAnimator, elapsed or 0.1) end
+end
+local function FinishChain(frame)
+	for _ = 1, 3 do TickChain(frame) end
+	Equal(frame.chainExpansion, nil)
+end
+local function Near(actual, expected)
+	assert(math.abs(actual - expected) < 0.001, tostring(actual) .. " differs from " .. tostring(expected))
+end
+
+QT:RegisterTest("chain animation clips both sides outward while retaining the origin and objective geometry", function()
+	local a, frame, session = CenteredChain()
+	a.options.reduceMotion = false
+	a.chainFixtureObjectives, session.expandedQuestIds[1] = true, true
+	a:RenderPartyQuestCompare()
+	local offset = a:CapturePartyQuestScrollAnchor("quest:1").offset
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(frame.chainExpansion.reveal, 0)
+	assert(Row(frame, "quest:1") and Row(frame, "quest:1:objective"))
+	for _, row in ipairs(frame.navigationRows) do assert(row.data.kind ~= "chainStep") end
+	local build = a.BuildPartyQuestDiffRows
+	function a:BuildPartyQuestDiffRows() error("animation rebuilt quest snapshots") end
+	TickChain(frame, 0.05)
+	assert(frame.chainExpansion.reveal > 0 and frame.chainExpansion.reveal < 1)
+	Near(a:CapturePartyQuestScrollAnchor("quest:1").offset, offset)
+	local before, after = false, false
+	for _, row in ipairs(frame.navigationRows) do
+		before = before or row.questId == 130
+		after = after or row.questId == 201
+	end
+	assert(before and after, "context should open on both sides of the retained quest")
+	a.blocked = true
+	local paused = frame.chainExpansion.reveal
+	TickChain(frame, 0.05); Equal(frame.chainExpansion.reveal, paused)
+	a.blocked = false
+	FinishChain(frame)
+	Near(a:CapturePartyQuestScrollAnchor("quest:1").offset, offset)
+	a.BuildPartyQuestDiffRows = build
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain animation reverses smoothly and closing remnants cannot receive input", function()
+	local a, frame, session = CenteredChain()
+	a.options.reduceMotion = false
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton"); FinishChain(frame)
+	local offset = a:CapturePartyQuestScrollAnchor("quest:1").offset
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(frame.chainExpansion.target, 0)
+	local ghost
+	for _, row in ipairs(frame.rows) do
+		if row.data and row.data.chainClosing then
+			ghost = row
+			Equal(row.session, nil); Equal(a:IsPartyQuestSelectableRow(row.data), false)
+			assert(not row.journal:IsShown() and not row.action:IsShown())
+			for _, control in ipairs(row.cellTooltips or {}) do assert(not control:IsShown()) end
+		end
+	end
+	assert(ghost)
+	local selected = session.keyboardRowId
+	ghost:RunScript("OnMouseUp", "LeftButton"); ghost.journal:RunScript("OnClick")
+	Equal(session.keyboardRowId, selected)
+	for _, row in ipairs(frame.navigationRows) do assert(not row.data.chainClosing) end
+	TickChain(frame, 0.05)
+	Near(a:CapturePartyQuestScrollAnchor("quest:1").offset, offset)
+	local from, retired = frame.chainExpansion.reveal, frame.chainAnimator:GetScript("OnUpdate")
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(frame.chainExpansion.from, from); Equal(frame.chainExpansion.target, 1)
+	retired(frame.chainAnimator, 0.1); Equal(frame.chainExpansion.reveal, from)
+	FinishChain(frame)
+	for _, row in ipairs(frame.displayRows) do assert(not row.chainClosing) end
+	a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:101")
+	assert(Row(frame, "chain:fixture:quest:101"))
+	a:ScrollPartyQuestCompareToRow(frame, "quest:1")
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton"); FinishChain(frame)
+	assert(Row(frame, "quest:1")); Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain animation retires for filters session changes hide and reduced motion", function()
+	for _, change in ipairs({ "filter", "session", "hide", "motion", "retire", "profile" }) do
+		local a, frame, session = CenteredChain()
+		a.options.reduceMotion = false
+		Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+		TickChain(frame, 0.05)
+		local retired = frame.chainAnimator:GetScript("OnUpdate")
+		if change == "filter" then a:SetPartyQuestCompareFilter("search", "does not match"); a:RenderPartyQuestCompare()
+		elseif change == "session" then a:RefreshPartyQuestCompare(); a:RenderPartyQuestCompare()
+		elseif change == "hide" then frame.close:RunScript("OnClick")
+		elseif change == "retire" then session.chains.retired = true; TickChain(frame, 0.05)
+		elseif change == "profile" then a.db.profile = {}; TickChain(frame, 0.05)
+		else a.options.reduceMotion = true; a:RenderPartyQuestCompare() end
+		Equal(frame.chainExpansion, nil)
+		retired(frame.chainAnimator, 0.1); Equal(frame.chainExpansion, nil)
+		Equal(frame.chainAnimator:GetScript("OnUpdate"), nil)
+		Equal(a.invalidCalls, nil)
+	end
+	local a, frame = CenteredChain()
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(frame.chainExpansion, nil)
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(frame.chainExpansion, nil)
+	for _, row in ipairs(frame.displayRows) do assert(not row.chainClosing) end
+end)
+
+QT:RegisterTest("chain animation cancels old wheel momentum only when toggled", function()
+	local a, frame = CenteredChain()
+	a.options.reduceMotion = false
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton"); FinishChain(frame)
+	frame.viewport:RunScript("OnMouseWheel", -1); frame:RunScript("OnUpdate", 0.016)
+	assert(frame.wheelTarget and frame:GetScript("OnUpdate"))
+	local offset = a:CapturePartyQuestScrollAnchor("quest:1").offset
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(frame.wheelTarget, nil); Equal(frame:GetScript("OnUpdate"), nil)
+	TickChain(frame, 0.05)
+	Near(a:CapturePartyQuestScrollAnchor("quest:1").offset, offset)
+	frame.viewport:RunScript("OnMouseWheel", -1)
+	local target = frame.wheelTarget
+	a:RenderPartyQuestCompare(); Equal(frame.wheelTarget, target)
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton")
+	Equal(frame.wheelTarget, nil); Equal(frame:GetScript("OnUpdate"), nil)
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain animation suspension discards closing remnants before resumed scrolling", function()
+	local a, frame = CenteredChain()
+	a.options.reduceMotion = false
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton"); FinishChain(frame)
+	Row(frame, "quest:1").chain:RunScript("OnClick", "LeftButton"); TickChain(frame, 0.05)
+	assert(frame.chainExpansion and frame.chainExpansion.closing)
+	a:GetWindowController(frame).hooks.suspend()
+	Equal(frame.chainExpansion, nil)
+	for _, row in ipairs(frame.displayRows) do assert(not row.chainClosing) end
+	a:ScrollPartyQuestCompareToRow(frame, "quest:1")
+	for _, row in ipairs(frame.rows) do assert(not row.data or not row.data.chainClosing) end
+	Equal(frame.chainAnimator:GetScript("OnUpdate"), nil)
+	Equal(a.invalidCalls, nil)
+end)
 
 QT:RegisterTest("chain UI keeps the retained origin onscreen through ancestors arriving and collapse", function()
 	local a, frame, session = CenteredChain()
@@ -266,6 +406,8 @@ QT:RegisterTest("chain UI step actions use spoiler-safe cached text and per-memb
 	Equal(row.branch:IsShown(), true)
 	Equal(row.cells[1]:GetText(), QT.Translate("In progress"))
 	row.cellTooltips[2]:RunScript("OnEnter")
+	Equal(a.tooltip[1], "[?] Known quest")
+	assert(a.tooltip[2]:find("|cffffd100" .. session.members[2].name .. "|r\nNot in log\n\n", 1, true))
 	assert(a.tooltip[2]:find("Prerequisites unknown", 1, true))
 	assert(not a.tooltip[2]:find("Known prerequisites met", 1, true))
 	local labels, callbacks = {}, {}
@@ -293,7 +435,7 @@ QT:RegisterTest("chain UI preserves independent objective geometry and uses no p
 	assert(selected and selected.data.kind == "chainStep")
 	a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:30")
 	Row(frame, "chain:fixture:quest:30"):RunScript("OnEnter")
-	Equal(a.tooltip[1], "[?] Future quest")
+	Equal(a.tooltip[1], "[?] Quest name hidden")
 	Equal(#frame.navigationRows, 34) -- Notices remain readable but do not trap direction navigation.
 	a:SelectPartyQuestKeyboardRow(frame, { rowId = "quest:1", questId = 1 }, "chain")
 	a:ScrollPartyQuestCompareToRow(frame, "quest:1")
@@ -323,16 +465,16 @@ QT:RegisterTest("quest hover tooltips distinguish same names and recycled chain 
 	Check(root.focusCells[1], 1)
 	local first = assert(Row(frame, "chain:fixture:quest:1"))
 	Check(first, 1, "[?] Known quest")
-	Check(first.cellTooltips[2], 1)
+	Check(first.cellTooltips[2], 1, "[?] Known quest")
 	Check(first.focusCells[1], 1)
 	local second = assert(Row(frame, "chain:fixture:quest:2"))
 	second.data.title = "Known quest"
 	Check(second, 2, "[?] Known quest")
-	Check(second.cellTooltips[2], 2)
+	Check(second.cellTooltips[2], 2, "[?] Known quest")
 	a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:30")
 	local last = assert(Row(frame, "chain:fixture:quest:30"))
-	Check(last, 30, "[?] Future quest")
-	Check(last.cellTooltips[1], 30)
+	Check(last, 30, "[?] Quest name hidden")
+	Check(last.cellTooltips[1], 30, "[?] Quest name hidden")
 	a:ScrollPartyQuestCompareToRow(frame, "quest:1")
 	Check(assert(Row(frame, "quest:1")), 1, "[?] Known quest")
 	Equal(a.invalidCalls, nil)
@@ -377,11 +519,14 @@ QT:RegisterTest("chain UI shows cached quest levels and difficulty colors while 
 		Equal(root.title:GetText(), "[21+] Known quest")
 		root:RunScript("OnEnter"); Equal(a.tooltip[1], "[21+] Known quest")
 		Equal(root.title.textColor[1], light and 0.5 or 1); Equal(root.title.textColor[2], light and 0.25 or 0.5)
-		Equal(future.title:GetText(), "[22] Future quest")
+		Equal(future.title:GetText(), "[22] Quest name hidden")
 		Equal(future.title.textColor[1], light and 0.42 or 0.64)
 		Equal(future.title.textColor[1], future.title.textColor[2])
 		future:RunScript("OnEnter")
-		Equal(a.tooltip[1], "[22] Future quest")
+		Equal(a.tooltip[1], "[22] Quest name hidden")
+		future.cellTooltips[2]:RunScript("OnEnter")
+		Equal(a.tooltip[1], "[22] Quest name hidden")
+		assert(a.tooltip[2]:find(future.cellTooltips[2].memberName, 1, true))
 		a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:30")
 		a:ScrollPartyQuestCompareToRow(frame, "quest:1")
 		root = assert(Row(frame, "quest:1"))
@@ -408,12 +553,127 @@ QT:RegisterTest("chain UI owned and completed member tooltips do not inherit ano
 		a.testOwnedStatus = status; a:RenderPartyQuestCompare()
 		local row = assert(Row(frame, "chain:fixture:quest:1"))
 		row.cellTooltips[2]:RunScript("OnEnter")
+		Equal(a.tooltip[1], row.cellTooltips[2].memberName)
+		Equal(row.cellTooltips[2].prerequisiteText, nil)
 		assert(a.tooltip[2]:find(status == "Have" and "In progress" or status, 1, true))
 		assert(a.tooltip[2]:find("Quest ID: 1", 1, true)); assert(not a.tooltip[2]:find("Prerequisites", 1, true))
 		row.cellTooltips[1]:RunScript("OnEnter")
+		Equal(a.tooltip[1], "[?] Known quest")
 		assert(a.tooltip[2]:find("Prerequisites not met", 1, true))
 		row:RunScript("OnEnter"); assert(not a.tooltip[2]:find("Prerequisites", 1, true))
 	end
+end)
+
+QT:RegisterTest("chain UI share readiness keeps one summary before prerequisite sections", function()
+	local a, frame, session = Open(false)
+	local friend = session.members[2]
+	local recipient = { name = friend.name }
+	local readiness = { action = "share", recipients = { recipient }, byName = { [friend.name] = recipient } }
+	function a:GetPartyQuestShareReadiness() return readiness end
+	for _, example in ipairs({
+		{ state = "blocked", result = "blocked", label = "Prerequisites not met" },
+		{ state = "unknown", result = "unknown", label = "Eligibility unknown", omitted = "Prerequisites unknown" },
+		{ state = "missing", result = "met", label = "No known blockers", omitted = "Known prerequisites met" },
+		{ state = "checking", result = "unknown", label = "Checking eligibility", omitted = "Prerequisites unknown" },
+	}) do
+		recipient.state, recipient.requirementState = example.state, example.result
+		recipient.requirements = { state = example.result, requirements = {} }
+		a:RenderPartyQuestCompare()
+		local control = assert(Row(frame, "quest:1")).cellTooltips[2]
+		control:RunScript("OnEnter")
+		Equal(a.tooltip[1], "[?] Known quest")
+		local text = a.tooltip[2]
+		local start = assert(text:find(example.label, 1, true))
+		assert(not text:find(example.label, start + #example.label, true))
+		if example.omitted then assert(not text:find(example.omitted, 1, true)) end
+		assert(text:find(example.label .. "\n\n", 1, true))
+		assert(text:find("Other availability conditions may apply.", 1, true))
+	end
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain UI unavailable cells retain reasons in compact columns and clear recycled state", function()
+	local a, frame, session = Open()
+	local build = a.BuildPartyQuestCompareDisplayRows
+	a.testUnavailable = true
+	function a:BuildPartyQuestCompareDisplayRows(roots)
+		local rows = build(self, roots)
+		for _, data in ipairs(rows) do
+			if data.kind == "chainStep" and data.questId == 1 then
+				data.cells[2] = self.testUnavailable and "Unavailable" or "Absent"
+				data.memberPrerequisiteText[2] = self.testUnavailable
+					and "No longer obtainable\n\nCannot be met\n  Level exceeds the maximum of 19." or "Prerequisites unknown"
+			end
+		end
+		return rows
+	end
+	local target, member = "chain:fixture:quest:1", session.members[2].name
+	local pooledCount, control = #frame.rows, Row(frame, target).cellTooltips[2]
+	for _, light in ipairs({ false, true }) do
+		a.options.lightMode = light
+		for _, collapsed in ipairs({ false, true }) do
+			a:SetPartyQuestColumnCollapsed(member, collapsed, session)
+			a:RenderPartyQuestCompare()
+			local row = assert(Row(frame, target))
+			Equal(row.cellTooltips[2], control)
+			Equal(row.cells[2]:GetText(), collapsed and "x" or QT.Translate("Unavailable"))
+			Equal(row.cells[2].textColor[1], light and 0.54 or 0.91)
+			Equal(row.cells[2].textColor[2], light and 0.18 or 0.49)
+			Equal(row.focusCells[2]:IsShown(), false)
+			control:RunScript("OnEnter")
+			Equal(a.tooltip[1], "[?] Known quest")
+			assert(a.tooltip[2]:find("Unavailable\n\nNo longer obtainable", 1, true))
+			assert(a.tooltip[2]:find("Level exceeds the maximum of 19.", 1, true))
+		end
+	end
+	a.testUnavailable = false
+	a:RenderPartyQuestCompare()
+	local row = assert(Row(frame, target))
+	Equal(row.cellTooltips[2], control); Equal(row.cells[2]:GetText(), "?")
+	control:RunScript("OnEnter")
+	assert(a.tooltip[2]:find("Not in log\n\nPrerequisites unknown", 1, true))
+	assert(not a.tooltip[2]:find("Unavailable", 1, true)); assert(not a.tooltip[2]:find("maximum", 1, true))
+	a:ScrollPartyQuestCompareToRow(frame, "chain:fixture:quest:30")
+	Equal(a.tooltip, nil)
+	a:ScrollPartyQuestCompareToRow(frame, target)
+	row = assert(Row(frame, target))
+	row.cellTooltips[2]:RunScript("OnEnter")
+	assert(a.tooltip[2]:find("Not in log\n\nPrerequisites unknown", 1, true))
+	assert(not a.tooltip[2]:find("Unavailable", 1, true))
+	Equal(#frame.rows, pooledCount); Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain UI permanent share blockers show one unavailable label and the exact reason", function()
+	local a, frame, session = Open(false)
+	local friend = session.members[2]
+	local requirement = { kind = "max_level", state = "blocked", value = 19, permanent = true }
+	local result = { state = "blocked", permanentlyBlocked = true, requirements = { requirement } }
+	local recipient = { name = friend.name, state = "blocked", requirementState = "blocked", requirements = result }
+	local readiness = { action = "share", disabled = true, state = "blocked", recipients = { recipient }, byName = { [friend.name] = recipient } }
+	function a:GetPartyQuestShareReadiness() return readiness end
+	local build = a.BuildPartyQuestCompareDisplayRows
+	function a:BuildPartyQuestCompareDisplayRows(roots)
+		local rows = build(self, roots)
+		for _, data in ipairs(rows) do
+			if data.rowId == "quest:1" then data.cells[2] = result.permanentlyBlocked and "Unavailable" or "Missing" end
+		end
+		return rows
+	end
+	a:RenderPartyQuestCompare()
+	local row = assert(Row(frame, "quest:1"))
+	Equal(row.hint:GetText(), QT.Translate("Unavailable"))
+	row.cellTooltips[2]:RunScript("OnEnter")
+	local text = a.tooltip[2]
+	local first = assert(text:find("Unavailable", 1, true))
+	assert(not text:find("Unavailable", first + #"Unavailable", true))
+	assert(text:find("Cannot be met", 1, true)); assert(text:find("Level exceeds the maximum of 19.", 1, true))
+	result.permanentlyBlocked, requirement.permanent = nil, nil
+	a:RenderPartyQuestCompare()
+	row = assert(Row(frame, "quest:1"))
+	Equal(row.hint:GetText(), "Maximum level: 19")
+	row.cellTooltips[2]:RunScript("OnEnter")
+	assert(a.tooltip[2]:find("Maximum level: 19", 1, true)); assert(not a.tooltip[2]:find("Unavailable", 1, true))
+	Equal(a.invalidCalls, nil)
 end)
 
 QT:RegisterTest("chain UI toggle labels follow expansion and stale menu actions cannot reverse later choices", function()
@@ -475,7 +735,6 @@ end)
 
 QT:RegisterTest("chain UI objective closing animation retains the duplicate chain step", function()
 	local a, frame, session = Open()
-	a.options.reduceMotion = false
 	function a:BuildPartyQuestCompareDisplayRows(roots)
 		local rows = { roots[1] }
 		if session.expandedQuestIds[1] then
@@ -488,6 +747,7 @@ QT:RegisterTest("chain UI objective closing animation retains the duplicate chai
 		return rows
 	end
 	a:RenderPartyQuestCompare()
+	a.options.reduceMotion = false
 	local function Finish()
 		for _ = 1, 3 do frame.expansionAnimator:RunScript("OnUpdate", 0.1) end
 	end
@@ -514,6 +774,103 @@ QT:RegisterTest("chain UI Escape after a menu returns to the chain origin before
 	frame:RunScript("OnKeyDown", "ESCAPE")
 	Equal(frame:IsShown(), false)
 	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain loading rings explain discovery without becoming keyboard or mouse actions", function()
+	local a, frame, session = Open()
+	local build = a.BuildPartyQuestCompareDisplayRows
+	a.fixtureChainLoading = true
+	a.options.reduceMotion = false
+	function a:BuildPartyQuestCompareDisplayRows(roots)
+		local rows = build(self, roots)
+		for _, data in ipairs(rows) do
+			if data.rowId == "quest:2" then
+				data.chainLoading = self.fixtureChainLoading
+				data.chainAvailable = self.fixtureChainAvailable == true
+				data.chainExpanded = self.fixtureChainExpanded == true
+			end
+		end
+		return rows
+	end
+	a:RenderPartyQuestCompare(); a:ScrollPartyQuestCompareToRow(frame, "quest:2")
+	local row = assert(Row(frame, "quest:2"))
+	local button, dots = row.chain, row.chainDots
+	Equal(button:IsShown(), true); Equal(button:IsEnabled(), false); Equal(button.motionScriptsWhileDisabled, true)
+	Equal(row.chainIcon:IsShown(), false); Equal(#dots, 8)
+	for _, dot in ipairs(dots) do assert(dot:IsShown()) end
+	button:RunScript("OnEnter"); Equal(a.tooltip[1], QT.Translate("Loading quest chain information"))
+	button:RunScript("OnClick", "LeftButton"); Equal(a.chainToggles, nil)
+	for _, control in ipairs(a:GetPartyQuestRowControls(frame, row.data)) do assert(control.button ~= button) end
+	assert(button:GetScript("OnUpdate"))
+	button:RunScript("OnUpdate", 0.09); Equal(button.loadingStep, 1)
+	a.options.reduceMotion = true; a:RenderPartyQuestCompare()
+	Equal(button:GetScript("OnUpdate"), nil); assert(dots[1]:IsShown())
+	a.options.reduceMotion = false; a:RenderPartyQuestCompare()
+	assert(button:GetScript("OnUpdate"))
+	-- A known open section keeps its close action even while discovery continues.
+	a.fixtureChainAvailable, a.fixtureChainExpanded = true, true
+	a:RenderPartyQuestCompare()
+	Equal(button.loading, nil); Equal(button:GetScript("OnUpdate"), nil)
+	Equal(row.chainIcon:IsShown(), true); Equal(button:IsEnabled(), true)
+	for _, dot in ipairs(dots) do Equal(dot:IsShown(), false) end
+	button:RunScript("OnEnter"); Equal(a.tooltip[1], QT.Translate("Close chain"))
+	a.fixtureChainAvailable, a.fixtureChainExpanded = false, false
+	a:RenderPartyQuestCompare(); assert(button:GetScript("OnUpdate"))
+	-- Scrolling reuses this pool; a retired spinner must not keep running there.
+	a:ScrollPartyQuestCompareToRow(frame, "quest:1")
+	Equal(button:GetScript("OnUpdate"), nil); Equal(button.loading, nil)
+	for _, dot in ipairs(dots) do Equal(dot:IsShown(), false) end
+	a:ScrollPartyQuestCompareToRow(frame, "quest:2")
+	row = assert(Row(frame, "quest:2")); button = row.chain
+	assert(button:GetScript("OnUpdate"))
+	a.fixtureChainLoading = false; a:RenderPartyQuestCompare()
+	Equal(button:IsShown(), false); Equal(button:GetScript("OnUpdate"), nil)
+	a.fixtureChainLoading = true; a:RenderPartyQuestCompare()
+	assert(button:GetScript("OnUpdate"))
+	frame:Hide()
+	Equal(button:GetScript("OnUpdate"), nil); Equal(button.loading, nil)
+	for _, dot in ipairs(row.chainDots) do Equal(dot:IsShown(), false) end
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain loading rings stop on retirement and rebind when their session state changes", function()
+	for _, change in ipairs({ "retired", "profile", "disabled", "logout", "session", "replacement" }) do
+		local a, frame, session = Open(false)
+		a.options.reduceMotion = false
+		local build = a.BuildPartyQuestCompareDisplayRows
+		function a:BuildPartyQuestCompareDisplayRows(roots)
+			local rows = build(self, roots)
+			for _, data in ipairs(rows) do
+				if data.rowId == "quest:1" then data.chainAvailable, data.chainLoading = false, true end
+			end
+			return rows
+		end
+		a:RenderPartyQuestCompare()
+		local row = assert(Row(frame, "quest:1"))
+		local button = row.chain
+		local stale = assert(button:GetScript("OnUpdate"))
+		button:RunScript("OnUpdate", 0.09); Equal(button.loadingStep, 1)
+		if change == "retired" then a:RetirePartyQuestChains()
+		elseif change == "profile" then a.db = { profile = {} }
+		elseif change == "disabled" then a.isEnabled = false
+		elseif change == "logout" then a.isLoggingOut = true
+		elseif change == "session" then a.partyQuestCompareSession = {}
+		else
+			local replacement = {}; for key, value in pairs(session.chains) do replacement[key] = value end
+			session.chains = replacement
+			a:RenderPartyQuestCompare()
+			local current = assert(button:GetScript("OnUpdate"))
+			assert(current ~= stale)
+			stale(button, 0.09)
+			Equal(button:GetScript("OnUpdate"), current); Equal(button.loadingStep, 0)
+			button:RunScript("OnUpdate", 0.09); Equal(button.loadingStep, 1)
+			a:RetirePartyQuestChains()
+		end
+		button:RunScript("OnUpdate", 0.09)
+		Equal(button:GetScript("OnUpdate"), nil); Equal(button.loading, nil); Equal(button.loadingStep, nil)
+		for _, dot in ipairs(row.chainDots) do Equal(dot:IsShown(), false) end
+		Equal(a.invalidCalls, nil)
+	end
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_compare_chains_ui.lua")

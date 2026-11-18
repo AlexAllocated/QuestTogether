@@ -87,6 +87,7 @@ function QT:CancelPartyQuestChains(session)
 	local state = session and session.chains
 	if not state then return end
 	state.retired = true
+	state.earlierNames = nil
 	if self.HideQuestChainGiver then self:HideQuestChainGiver() end
 	if self.CancelQuestChainProvider then self:CancelQuestChainProvider(state.owner) end
 	if self.partyQuestCompareSession == session then
@@ -135,6 +136,7 @@ local function RetireMetadataContext(addon, session)
 end
 
 local function RetireVisibleContext(addon, session)
+	session.chains.earlierNames = nil
 	if addon.HideQuestChainGiver then addon:HideQuestChainGiver() end
 	RetireMetadataContext(addon, session)
 	local union, retained = ActiveUnion(session), {}
@@ -435,7 +437,7 @@ function QT:PreparePartyQuestChains(session, state)
 					if questID then
 						local bucket = state.relationshipsByQuest[questID] or {}
 						state.relationshipsByQuest[questID] = bucket
-						bucket[#bucket + 1] = { kind = edge.kind, relatedQuestID = edge.relatedQuestID }
+							bucket[#bucket + 1] = { kind = edge.kind, relatedQuestID = edge.relatedQuestID, negative = edge.negative }
 					end
 				end
 			end
@@ -631,9 +633,14 @@ function QT:GetPartyQuestChainDisplayTitle(id)
 	if not state then return L("Quest ") .. id, false end
 	local own = session.byName[session.playerName]
 	local history = own and Fresh(self, own, id)
+	local earlier = state.earlierNames
+	local shownEarlier = earlier and Current(self, session, state)
+		and earlier.rootQuestID == state.rootQuestID and earlier.instance == state.instance
+		and earlier.graph == state.graphs[state.rootQuestID] and earlier.ids[id] == true
 	local visible = self:GetOption("compareHideFutureQuestNames") ~= true or state.union[id] ~= nil
 		or (history and history.status == "completed") or (state.revealBlockers and state.revealBlockers[id] == true)
-	if not visible then return L("Future quest"), true end
+		or shownEarlier
+	if not visible then return L("Quest name hidden"), true end
 	local entry, info = state.union[id], state.metadata[id]
 	local title = Text(self, entry and entry.questTitle or info and (info.title or info.name))
 	return title ~= "" and title or (L("Quest ") .. id), false
@@ -642,14 +649,14 @@ end
 function QT:GetPartyQuestChainStatus(member, id)
 	local active = member.entries[id]
 	if active then return active.isComplete and "Ready" or "Have" end
-	local status = self:GetPartyQuestAbsenceState(member, id)
+	local status = self:GetPartyQuestEligibilityStatus(member, id, self:GetPartyQuestAbsenceState(member, id))
 	if status == "Missing" then return "Absent" end
 	return status
 end
 
 local function RequirementLabel(addon, requirement)
 	local kind, title = requirement.kind, requirement.questID and addon:GetPartyQuestChainDisplayTitle(requirement.questID)
-	if requirement.negative then return L("Signed prerequisite semantics unknown") end
+	if requirement.negative then return L("Signed prerequisite semantics unknown") .. (title and (": " .. title) or "") end
 	if kind == "prerequisite_all" then return string.format(L("Requires completed quest: %s"), title)
 	elseif kind == "prerequisite_any" then return string.format(L("One of these quests must be completed: %s"), title)
 	elseif kind == "active_parent" then return string.format(L("Requires active quest: %s"), title)
@@ -659,7 +666,8 @@ local function RequirementLabel(addon, requirement)
 	elseif kind == "exclusive" then return string.format(L("Exclusive quest: %s"), title)
 	elseif kind == "replacement" then return string.format(L("Replacement quest: %s"), title)
 	elseif kind == "level" then return string.format(L("Requires level %d"), requirement.value)
-	elseif kind == "max_level" then return string.format(L("Maximum level: %d"), requirement.value)
+	elseif kind == "max_level" then return string.format(requirement.permanent and L("Level exceeds the maximum of %d.")
+		or L("Maximum level: %d"), requirement.value)
 	elseif kind == "class" then return requirement.state == "blocked" and L("Different class") or L("Class requirement")
 	elseif kind == "race" then return requirement.state == "blocked" and L("Different race") or L("Race requirement")
 	elseif kind == "requiredSkill" then return L("Skill requirement")
@@ -672,30 +680,6 @@ local function RequirementLabel(addon, requirement)
 	return L("Additional requirement")
 end
 
-function QT:DescribePartyQuestChainRequirements(result)
-	if not result then return L("Prerequisites unknown") end
-	local summary = result.state == "met" and L("Known prerequisites met")
-		or result.state == "blocked" and L("Prerequisites not met") or L("Prerequisites unknown")
-	local parts = { summary }
-	for _, requirement in ipairs(result.requirements or {}) do
-		local label = RequirementLabel(self, requirement)
-		if requirement.allowedNames and #requirement.allowedNames > 0 then
-			local names = {}; for _, name in ipairs(requirement.allowedNames) do names[#names + 1] = Text(self, name) end
-			label = label .. ": " .. table.concat(names, ", ")
-		end
-		local status = requirement.state == "met" and L("Satisfied")
-			or requirement.state == "blocked" and L("Not met") or L("Not evaluated")
-		parts[#parts + 1] = label .. " — " .. status
-	end
-	-- Some clients expose only blockers. Keep their necessary explanation while
-	-- never making absence from the database a proof of complete availability.
-	if #(result.requirements or {}) == 0 and result.state == "blocked" then
-		for _, blocker in ipairs(result.blockers or {}) do parts[#parts + 1] = RequirementLabel(self, blocker) end
-	end
-	parts[#parts + 1] = L("Other availability conditions may apply.")
-	return table.concat(parts, "\n")
-end
-
 local function RelationshipLabel(kind)
 	if kind == "breadcrumb" then return L("Breadcrumb quest")
 	elseif kind == "breadcrumb_for" then return L("Breadcrumb quest")
@@ -706,6 +690,121 @@ local function RelationshipLabel(kind)
 	elseif kind == "until_completed" then return L("Available until quest completed")
 	elseif kind == "disabled_by" then return L("Disabled by active quest")
 	elseif kind == "unlock" then return L("Unlock connection") end
+end
+
+local function RequirementIdentity(kind, id, negative)
+	if not id then return nil end
+	return (kind or "") .. ":" .. id .. ":" .. tostring(negative == true)
+end
+
+local function PrepareRelationshipContext(addon, relationships)
+	local entries, seen = {}, {}
+	for _, edge in ipairs(relationships or {}) do
+		local kind, id, negative = edge.kind, edge.relatedQuestID, edge.negative
+		local label, identity = RelationshipLabel(kind), RequirementIdentity(kind, id, negative)
+		if label and identity and not seen[identity] then
+			seen[identity] = true
+			entries[#entries + 1] = { identity = identity, text = label .. ": " .. addon:GetPartyQuestChainDisplayTitle(id) }
+		end
+	end
+	return { entries = entries }
+end
+
+local function RequirementColor(state, text, muted)
+	local color = muted and "ff9ca7ad" or (state == "blocked" or state == "permanent") and "ffff8080"
+		or state == "met" and "ff95c9a4" or "ffffd27f"
+	return "|c" .. color .. text .. "|r"
+end
+
+function QT:DescribePartyQuestChainRequirements(result, relationships, omitSummary)
+	result = result or { state = "unknown" }
+	local summary = result.permanentlyBlocked and L("No longer obtainable") or result.state == "met" and L("Known prerequisites met")
+		or result.state == "blocked" and L("Prerequisites not met") or L("Prerequisites unknown")
+	local parts = omitSummary and {} or { RequirementColor(result.state, summary) }
+	local sections, represented, seen = { permanent = {}, blocked = {}, unknown = {}, met = {} }, {}, {}
+	local satisfied = {}
+	local function Add(kind, state, label, identity, negative, permanent)
+		state = not negative and (state == "met" or state == "blocked") and state or "unknown"
+		if permanent and state == "blocked" then state = "permanent" end
+		local key = identity and identity .. ":" .. state
+		if key and seen[key] then return end
+		if key then seen[key] = true end
+		if identity then represented[identity] = true end
+		local aggregate = (kind or "") .. ":" .. tostring(negative == true) .. ":" .. label
+		if state == "met" and satisfied[aggregate] then
+			satisfied[aggregate].count = satisfied[aggregate].count + 1
+			return
+		end
+		local item = { label = label, count = 1 }
+		sections[state][#sections[state] + 1] = item
+		if state == "met" then satisfied[aggregate] = item end
+	end
+	local requirements = result.requirements or {}
+	local blockersOnly = #requirements == 0 and result.state == "blocked"
+	if blockersOnly then requirements = result.blockers or {} end
+	local alternatives, alternativeSeen, anyState, signedAlternatives = {}, {}, "blocked", false
+	for _, requirement in ipairs(requirements) do
+		local identity = RequirementIdentity(requirement.kind, requirement.questID, requirement.negative)
+		local state = blockersOnly and "blocked" or requirement.state
+		if requirement.kind == "prerequisite_any" and requirement.questID then
+			represented[identity] = true
+			if requirement.negative then state, signedAlternatives = "unknown", true end
+			if not alternativeSeen[identity] then
+				alternativeSeen[identity] = true
+				local title = self:GetPartyQuestChainDisplayTitle(requirement.questID)
+				alternatives[#alternatives + 1] = { title = title, label = requirement.negative and RequirementLabel(self, requirement)
+					or string.format(L("Requires completed quest: %s"), title) }
+			end
+			if state == "met" then anyState = "met"
+			elseif anyState ~= "met" and state ~= "blocked" then anyState = "unknown" end
+		else
+			local label = RequirementLabel(self, requirement)
+			if requirement.allowedNames and #requirement.allowedNames > 0 then
+				local names = {}; for _, name in ipairs(requirement.allowedNames) do names[#names + 1] = Text(self, name) end
+				label = label .. ": " .. table.concat(names, ", ")
+			end
+			Add(requirement.kind, state, label, identity, requirement.negative, requirement.permanent)
+		end
+	end
+	if #alternatives > 0 then
+		-- Alternatives are one requirement. An unchosen branch is not a blocker
+		-- when another alternative is complete or its evidence is still unknown.
+		local evaluated = result.groups and result.groups.any
+		if evaluated == "met" or evaluated == "blocked" or evaluated == "unknown" then anyState = evaluated end
+		local labels = {}
+		for _, alternative in ipairs(alternatives) do
+			labels[#labels + 1] = signedAlternatives and ("    • " .. alternative.label) or alternative.title
+		end
+		local label = signedAlternatives and (L("One of these conditions must be met:") .. "\n" .. table.concat(labels, "\n"))
+			or string.format(L("One of these quests must be completed: %s"), table.concat(labels, ", "))
+		Add("prerequisite_any", anyState, label)
+	end
+	for _, section in ipairs({ { "permanent", L("Cannot be met") }, { "blocked", L("Not met") },
+		{ "unknown", L("Not evaluated") }, { "met", L("Satisfied") } }) do
+		local state, lines = section[1], {}
+		for _, item in ipairs(sections[state]) do
+			local label = item.label .. (item.count > 1 and (" (" .. item.count .. ")") or "")
+			lines[#lines + 1] = RequirementColor(state, "  • " .. label, state == "met")
+		end
+		if #lines > 0 then
+			parts[#parts + 1] = RequirementColor(state, section[2]) .. "\n" .. table.concat(lines, "\n")
+		end
+	end
+	local context = {}
+	local prepared = relationships and relationships.entries and relationships or PrepareRelationshipContext(self, relationships)
+	for _, entry in ipairs(prepared.entries) do
+		if not represented[entry.identity] then
+			represented[entry.identity] = true
+			context[#context + 1] = RequirementColor("unknown", "  • " .. entry.text, true)
+		end
+	end
+	if #context > 0 then
+		parts[#parts + 1] = RequirementColor("unknown", L("Related quests")) .. "\n" .. table.concat(context, "\n")
+	end
+	if not result.permanentlyBlocked then
+		parts[#parts + 1] = RequirementColor("unknown", L("Other availability conditions may apply."), true)
+	end
+	return table.concat(parts, "\n\n")
 end
 
 local function NeedsQuestRequirements(status)
@@ -742,8 +841,17 @@ function QT:AppendPartyQuestChainSection(rows, rootRows, anchor, append)
 		return
 	end
 	local order = graph.order or IDs(graph.nodes)
-	local hasAnchor = false
-	for _, id in ipairs(order) do if anchor and id == anchor.questId then hasAnchor = true; break end end
+	local hasAnchor, hasOrigin, earlierNames = false, false, {}
+	for _, id in ipairs(order) do
+		if anchor and id == anchor.questId then hasAnchor = true end
+		if id == state.rootQuestID then hasOrigin = true
+		elseif not hasOrigin then earlierNames[id] = true end
+	end
+	-- Names above the opened quest are visible even for uncompleted alternatives.
+	-- This is a display preference, not completion or prerequisite evidence.
+	state.earlierNames = hasOrigin and {
+		rootQuestID = state.rootQuestID, instance = state.instance, graph = graph, ids = earlierNames,
+	} or nil
 	-- A partial provider snapshot can omit the origin. Keep its ordinary row
 	-- first in that case rather than inventing a position among known steps.
 	if not hasAnchor then AppendAnchor() end
@@ -776,29 +884,26 @@ function QT:AppendPartyQuestChainSection(rows, rootRows, anchor, append)
 		row.questDifficultyColor = presentation and presentation.questDifficultyColor
 		row.chainInstanceId, row.chainId, row.selectable, row.spoilerHidden = instance, instance, true, hidden
 		row.depth, row.cells, row.missing = math.min(12, state.depths[id] or 0), {}, 0
-		row.requirements = state.requirements[id]
-		for i, member in ipairs(session.members) do row.cells[i] = self:GetPartyQuestChainStatus(member, id) end
+		row.requirements = {}
+		for i, member in ipairs(session.members) do
+			row.cells[i] = self:GetPartyQuestChainStatus(member, id)
+			row.requirements[i] = self:GetPartyQuestCachedShareRequirements(member, id)
+		end
+		-- Resolve each contextual name once per row; member tooltips only filter
+		-- the prepared lines against that member's evaluated conditions.
+		local context = PrepareRelationshipContext(self, state.relationshipsByQuest and state.relationshipsByQuest[id])
 		row.memberPrerequisiteText = {}
 		for i, status in ipairs(row.cells) do
-			row.memberPrerequisiteText[i] = NeedsQuestRequirements(status)
-				and self:DescribePartyQuestChainRequirements(row.requirements and row.requirements[i]) or ""
+			local member = session.members[i]
+			local history = member.state == "ready" and Fresh(self, member, id)
+			local alreadyActive = history and history.status == "active"
+			row.memberPrerequisiteText[i] = NeedsQuestRequirements(status) and not alreadyActive
+				and self:DescribePartyQuestChainRequirements(row.requirements and row.requirements[i], context) or ""
 		end
-		local relationships, seen = {}, {}
-		for _, edge in ipairs(state.relationshipsByQuest and state.relationshipsByQuest[id] or {}) do
-			local label = RelationshipLabel(edge.kind)
-			local otherID = edge.relatedQuestID
-			if label and otherID and not seen[edge.kind .. ":" .. otherID] then
-				seen[edge.kind .. ":" .. otherID] = true
-				relationships[#relationships + 1] = label .. ": " .. self:GetPartyQuestChainDisplayTitle(otherID)
-			end
-		end
+		local relationships = {}
+		for _, entry in ipairs(context.entries) do relationships[#relationships + 1] = entry.text end
 		row.relationshipText = table.concat(relationships, "\n")
 		row.prerequisiteText = nil
-		if row.relationshipText ~= "" then
-			for i, text in ipairs(row.memberPrerequisiteText) do
-				if NeedsQuestRequirements(row.cells[i]) then row.memberPrerequisiteText[i] = text .. "\n" .. row.relationshipText end
-			end
-		end
 		row.hint = graph.nodes[id] and graph.nodes[id].missing and L("Quest information unavailable") or nil
 		local history = Fresh(self, own, id)
 		if history and history.status == "completed" then completed = completed + 1
@@ -825,10 +930,11 @@ function QT:DecoratePartyQuestChainRows(quests, append)
 		end
 	end
 	if not state then
-		for _, row in ipairs(quests) do append(rows, row) end
+		for _, row in ipairs(quests) do row.chainLoading = false; append(rows, row) end
 		ScopeRows(1)
 		return rows
 	end
+	state.earlierNames = nil
 	local groupByChain = self:GetOption("compareGroupByChain") == true
 	local openGroup = state.rootQuestID and Resolve(state, state.questGroups[state.rootQuestID])
 	local rootRows, groups, ordered = {}, {}, {}
@@ -846,6 +952,14 @@ function QT:DecoratePartyQuestChainRows(quests, append)
 		row.chainAvailable = row.chainExpanded or ((state.capability.kind == "questiedb" or state.capability.kind == "retail")
 			and (state.capability.state == "ready" or state.capability.state == "loading")
 			and HasRelatedQuests(state.graphs[row.questId], row.questId))
+		local graph = state.graphs[row.questId]
+		local supported = state.capability.kind == "questiedb" or state.capability.kind == "retail"
+		-- Partial data alone may be final (missing nodes, cycles, or native lines
+		-- with no membership). Only explicit discovery work warrants a spinner.
+		row.chainLoading = not state.retired and not row.chainAvailable and
+			((supported and (state.capability.state == "loading"
+				or state.capability.state == "ready" and graph and graph.loading == true))
+				or state.capability.kind == nil and state.capability.state == "loading" and state.pending == true) or false
 		row.chainCapability = state.capability
 		local groupID = groupByChain and Resolve(state, state.questGroups[row.questId])
 		if groupID then

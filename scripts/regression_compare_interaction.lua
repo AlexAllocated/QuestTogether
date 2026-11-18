@@ -215,8 +215,8 @@ QT:RegisterTest("collapsed party columns retain roster comparison data and resto
 	Equal(frame.rows[1].cellShades[2]:GetWidth(), frame.columns[2].width)
 	Equal(frame.rows[1].cellTooltips[2]:IsShown(), true)
 	frame.rows[1].cellTooltips[2]:RunScript("OnEnter")
-	Equal(a.tooltip[1], member.name)
-	assert(a.tooltip[2] ~= "")
+	Equal(a.tooltip[1], "[?] Quest 01")
+	assert(a.tooltip[2]:find("|cffffd100" .. member.name .. "|r\n", 1, true))
 	Equal(#session.members, count)
 	Equal(member.entries, entries)
 	Equal(a:BuildPartyQuestDiffRows()[1].partySummary, before[1].partySummary)
@@ -260,13 +260,18 @@ QT:RegisterTest("compact quest states use font-independent markers and retain fu
 			if pass == 1 then markers[state] = marker else Equal(marker, markers[state]) end
 			Equal(row.focusCells[2]:IsShown(), state == "Have" or state == "Ready")
 			row.cellTooltips[2]:RunScript("OnEnter")
-			Equal(a.tooltip[1], member.name)
 			local label = QT.Translate(state == "Absent" and "Not in log" or state)
-			Equal(a.tooltip[2]:sub(1, #label), label)
 			assert(a.tooltip[2]:find("|cff909090" .. QT.Translate("Quest ID") .. ": " .. row.data.questId .. "|r", 1, true))
 			if state == "Have" or state == "Ready" or state == "Completed" then
+				Equal(a.tooltip[1], member.name)
+				Equal(a.tooltip[2]:sub(1, #label), label)
 				assert(not a.tooltip[2]:find("Prerequisites", 1, true))
-			else assert(a.tooltip[2]:find("eligibility", 1, true)) end
+			else
+				Equal(a.tooltip[1], row.title:GetText())
+				local prefix = "|cffffd100" .. member.name .. "|r\n" .. label
+				Equal(a.tooltip[2]:sub(1, #prefix), prefix)
+				assert(a.tooltip[2]:find("eligibility", 1, true))
+			end
 		end
 		assert(markers.Ready ~= markers.Completed and markers.Completed ~= markers.Missing)
 		a:SetPartyQuestColumnCollapsed(member.name, false, session)

@@ -263,12 +263,17 @@ function QT:EvaluateQuestChainRequirements(questID, evidence, character)
 	local info, provider = snapshot.metadata[questID], self.questChainProviderState and self.questChainProviderState.provider
 	if not info or info.invalid then result.state = And(result.state, "unknown"); return result end
 	character = character or {}
-	local function Add(kind, state, value)
-		result.requirements[#result.requirements + 1] = { kind = kind, state = state, value = value }
+	local level = PositiveID(character.level) or nil
+	local function Add(kind, state, value, permanent)
+		local blockedPermanently = permanent == true and state == "blocked" or nil
+		result.requirements[#result.requirements + 1] = { kind = kind, state = state, value = value, permanent = blockedPermanently }
+		if blockedPermanently then result.permanentlyBlocked = true end
 		result.state = And(result.state, state)
 	end
-	if (info.requiredLevel or 0) > 0 then Add("level", Truth(character.level and character.level >= info.requiredLevel), info.requiredLevel) end
-	if (info.requiredMaxLevel or 0) > 0 then Add("max_level", Truth(character.level and character.level <= info.requiredMaxLevel), info.requiredMaxLevel) end
+	if (info.requiredLevel or 0) > 0 then Add("level", Truth(level and level >= info.requiredLevel), info.requiredLevel) end
+	-- The character cannot regain an outgrown level bracket. Other conditions
+	-- remain ordinary blockers unless the provider establishes irreversibility.
+	if (info.requiredMaxLevel or 0) > 0 then Add("max_level", Truth(level and level <= info.requiredMaxLevel), info.requiredMaxLevel, true) end
 	if (info.requiredRaces or 0) ~= 0 then
 		local mask = provider and provider.Enum.raceMaskById[character.raceID]
 		Add("race", Truth(Intersects(info.requiredRaces, mask)), info.requiredRaces)

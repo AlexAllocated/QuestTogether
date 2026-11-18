@@ -336,7 +336,7 @@ local function ChainFixture()
 			rows[#rows + 1] = { rowId = "chainGroup:1", kind = "chainGroup", groupId = 1, title = "Related quests", cells = {}, selectable = true, expanded = true }
 			for id = 1, 35 do
 				rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":quest:" .. id, kind = "chainStep", questId = id,
-					title = id == 1 and "Quest 01" or "Future quest", cells = { "Unknown", "Absent" },
+					title = id == 1 and "Quest 01" or "Quest name hidden", cells = { "Unknown", "Absent" },
 					selectable = true, chainInstanceId = self.chainFixtureInstance, depth = id % 3 }
 			end
 			rows[#rows + 1] = { rowId = self.chainFixtureInstance .. ":more:later", kind = "chainMore", title = "Show later quests", cells = {}, selectable = true, direction = "later", chainInstanceId = self.chainFixtureInstance }
@@ -403,6 +403,39 @@ QT:RegisterTest("chain native recycled step identities disarm Select and retire 
 	callback(); Equal(a.actedOn, nil)
 	Equal(a:ActivatePartyQuestGamepadControl(frame, oldButton), false)
 	Equal(Selected(a, frame).rowId, "quest:1")
+	Equal(a.invalidCalls, nil)
+end)
+
+QT:RegisterTest("chain native animation retains origin controls and Back retires disappearing receivers", function()
+	local a, frame, session = ChainFixture()
+	a.chainFixtureOpen = false; a:RenderPartyQuestCompare()
+	a.options.reduceMotion = false
+	Move(a, frame, "RIGHT"); Equal(Selected(a, frame).role, "chain")
+	local toggle = a.nativeButton
+	toggle.OnSmartNavClick(toggle)
+	Equal(frame.chainExpansion.target, 1); Equal(frame.chainExpansion.reveal, 0)
+	Equal(Selected(a, frame).rowId, "quest:1"); Equal(Selected(a, frame).role, "chain")
+	Equal(a.nativeButton, toggle)
+	local function Tick()
+		local update = frame.chainAnimator:GetScript("OnUpdate")
+		if update then update(frame.chainAnimator, 0.1) end
+	end
+	Tick(); Tick()
+	Equal(frame.chainExpansion, nil)
+	Move(a, frame, "LEFT"); Move(a, frame, "DOWN"); Move(a, frame, "DOWN")
+	Equal(Selected(a, frame).rowId, "chain:native:quest:1")
+	local retiredControl = a.nativeButton
+	a.nativePolicies[frame].close()
+	Equal(frame.chainExpansion.target, 0)
+	Equal(Selected(a, frame).rowId, "quest:1")
+	Equal(a:ActivatePartyQuestGamepadControl(frame, retiredControl), false)
+	for button, identity in pairs(frame.gamepadNavigation.byButton) do
+		assert(not identity.row or not identity.row.data.chainClosing)
+	end
+	Equal(frame.keyboardSession, nil); assert(frame:IsShown())
+	Tick(); Tick()
+	Equal(frame.chainExpansion, nil)
+	Equal(Selected(a, frame).rowId, "quest:1"); Equal(frame.keyboardSession, nil)
 	Equal(a.invalidCalls, nil)
 end)
 
@@ -499,7 +532,13 @@ QT:RegisterTest("share readiness native navigation inspects blocked cells and ow
 	local status = Find(frame, 1, "status", friend.name)
 	a:SelectNative(frame, status); a:Advance(0)
 	Equal(a.tooltip.owner, status); assert(a.tooltip.text:find("Different class", 1, true))
+	Equal(a.tooltip.title, "[?] Quest 01")
+	assert(a.tooltip.text:find("|cffffd100" .. friend.name .. "|r\n", 1, true))
 	assert(a.tooltip.text:find("Warrior", 1, true))
+	local controllerTitle, controllerText = a.tooltip.title, a.tooltip.text
+	status:RunScript("OnLeave"); Equal(a.tooltip, nil)
+	status:RunScript("OnEnter")
+	Equal(a.tooltip.title, controllerTitle); Equal(a.tooltip.text, controllerText)
 	local shares = 0
 	function a:SharePartyDiffQuest() shares = shares + 1 end
 	Equal(a:ActivatePartyQuestGamepadControl(frame, row.action), false); Equal(shares, 0)

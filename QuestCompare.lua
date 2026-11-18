@@ -617,6 +617,13 @@ function QuestTogether:GetPartyQuestCachedShareRequirements(member, questId)
 	return result
 end
 
+function QuestTogether:GetPartyQuestEligibilityStatus(member, questId, status)
+	if status ~= "Missing" and status ~= "Absent" then return status end
+	local requirements = self:GetPartyQuestCachedShareRequirements(member, questId)
+	if requirements and requirements.state == "blocked" and requirements.permanentlyBlocked then return "Unavailable" end
+	return status
+end
+
 function QuestTogether:GetPartyQuestMemberShareReadiness(member, questId)
 	local result = { name = member.name, isLocal = member.isLocal == true, state = "unknown", requirementState = "unknown" }
 	local entry = member.entries and member.entries[questId]
@@ -751,8 +758,8 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		for i, member in ipairs(session.members) do
 			local quest = member.entries[id]
 			row.cells[i] = quest and (quest.isComplete and "Ready" or "Have")
-				or self:GetPartyQuestAbsenceState(member, id)
-			if row.cells[i] == "Missing" or row.cells[i] == "Absent" then
+				or self:GetPartyQuestEligibilityStatus(member, id, self:GetPartyQuestAbsenceState(member, id))
+			if row.cells[i] == "Missing" or row.cells[i] == "Absent" or row.cells[i] == "Unavailable" then
 				row.missing = row.missing + 1
 			end
 		end

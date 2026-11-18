@@ -248,6 +248,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		"ConfigurePartyQuestKeyboardNavigation",
 		"ShowPartyQuestKeyboardMenu",
 		"GetPartyQuestAbsenceState",
+		"GetPartyQuestEligibilityStatus",
 		"GetPartyQuestCachedShareRequirements",
 		"GetPartyQuestMemberShareReadiness",
 		"GetPartyQuestShareReadiness",

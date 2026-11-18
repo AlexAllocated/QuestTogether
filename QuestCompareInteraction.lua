@@ -50,7 +50,7 @@ function QT:GetPartyQuestRowIdentity(row)
 end
 
 function QT:IsPartyQuestSelectableRow(row)
-	return row and (row.selectable == true or not row.kind) or false
+	return row and not row.chainClosing and (row.selectable == true or not row.kind) or false
 end
 
 function QT:GetPartyQuestRowControlRole(row)

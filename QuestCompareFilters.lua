@@ -208,7 +208,7 @@ function QT:FilterPartyQuestCompareRows(rows)
 				have, ready = have + 1, ready + 1
 			elseif cell == "Have" then
 				have, active = have + 1, active + 1
-			elseif cell == "Missing" or cell == "Absent" then
+			elseif cell == "Missing" or cell == "Absent" or cell == "Unavailable" then
 				missing = missing + 1
 			elseif cell == "Completed" then
 				-- Completed history is known, but it is neither an active quest
