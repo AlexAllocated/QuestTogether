@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.2
+
+Sequências mais claras e requisitos mais fáceis de consultar no Registro de missões do grupo!
+
+### Sequências de missões mais claras
+
+- Ao abrir uma sequência, as etapas anteriores exibidas acima da missão aberta revelam seus nomes conhecidos, inclusive alternativas de nível mais baixo que você não concluiu. Os nomes das etapas posteriores ainda não alcançadas continuam ocultos por padrão, com o texto Nome da missão oculto.
+- Um anel de carregamento aparece no lugar do ícone de sequência enquanto as relações entre missões são verificadas. Depois, o ícone aparece se houver missões relacionadas; se a missão for independente ou as informações estiverem indisponíveis, o indicador desaparece.
+- Expandir ou recolher uma sequência agora tem uma animação que mantém a linha da missão original como referência. Reduzir movimento torna a mudança imediata e mantém o indicador de carregamento estático. Recolher pelo cabeçalho de um grupo continua sendo imediato.
+
+### Requisitos para aceitar missões
+
+- As dicas organizam os requisitos pendentes, atendidos e desconhecidos com títulos, cores e espaçamento. Explicações duplicadas das relações são removidas, e condições atendidas que se repetem são resumidas.
+- O status Indisponível aparece quando dados recentes confirmam que o personagem ultrapassou o nível máximo de uma missão. A dica explica o limite e por que ela não pode mais ser obtida. Outras condições não são tratadas como permanentes sem comprovação.
+- Missões ativas, prontas para entregar ou concluídas deixam de exibir avisos sobre aceitação. Dados ausentes ou desatualizados continuam sendo desconhecidos; os requisitos exibidos não garantem que você possa aceitar a missão.
+
 ## 10.0.1
 
 Chat mais organizado, sequências de missões mais fáceis de acompanhar e uma correção ao seguir o foco de outro jogador, além de agradecimentos automáticos por benefícios.

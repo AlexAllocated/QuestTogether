@@ -4,6 +4,22 @@
 
 [Other languages](changelogs/README.md)
 
+## 10.0.2
+
+Quest chains are easier to read, smoother to explore, and clearer about which quests you can still pick up.
+
+### Follow the chain more easily
+
+- Earlier steps shown above your current quest now reveal their known names, including lower-level alternatives you never completed. Later unreached names stay hidden by default, with the clearer label "Quest name hidden".
+- A loading ring now appears where the chain button belongs while QT checks for related quests. It becomes a chain button when a chain is found and disappears when there is nothing to expand.
+- Opening and closing an inline chain now animates around your original quest row. Enable Reduce Motion in QT settings to skip the transition and use a still loading indicator.
+
+### Understand quest requirements at a glance
+
+- Prerequisite tooltips now separate unmet, satisfied and unknown conditions with clearer headings, spacing and colors. Repeated explanations are trimmed, and alternative prerequisites are explained together.
+- Quests with a confirmed maximum-level limit you have already exceeded now show "Unavailable". Hover the status to see why that quest is no longer obtainable for your character.
+- Quests already in a player's log or confirmed completed no longer show acceptance warnings. When QT lacks fresh information, it keeps the result unknown rather than claiming a requirement is met or blocked.
+
 ## 10.0.1
 
 A tidier quest log, steadier chat channels, and a little extra gratitude on your adventures! This patch improves everyday party questing and adds an optional way to thank helpful players.

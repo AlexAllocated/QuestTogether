@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.2
+
+Questreihen und Annahmevoraussetzungen im Gruppenquestlog werden übersichtlicher.
+
+### Questreihen im Überblick
+
+- Frühere Schritte, die oberhalb der aufgeklappten Quest erscheinen, zeigen jetzt ihre bekannten Namen – auch nicht abgeschlossene Alternativen für niedrigere Stufen. Namen späterer, noch nicht erreichter Schritte bleiben standardmäßig hinter „Questname ausgeblendet“ verborgen.
+- Während Questverknüpfungen geladen werden, erscheint anstelle des Kettensymbols ein Ladering. Danach erscheint das Kettensymbol bei verknüpften Quests; bei eigenständigen Quests oder nicht verfügbaren Ergebnissen verschwindet der Ring.
+- Questreihen klappen mit einer Animation direkt an der ursprünglichen Questzeile auf und zu. „Bewegung reduzieren“ überspringt die Animation und hält die Ladeanzeige unbewegt. Gruppenüberschriften werden weiterhin sofort eingeklappt.
+
+### Annahmevoraussetzungen klarer erklärt
+
+- Tooltips gliedern nicht erfüllte, erfüllte und unbekannte Voraussetzungen mit Überschriften, Farben und mehr Abstand. Doppelte Erklärungen zu Questverknüpfungen entfallen, wiederkehrende erfüllte Bedingungen werden zusammengefasst.
+- Belegen aktuelle Daten, dass ein Charakter die Höchststufe einer Quest überschritten hat, erscheint „Nicht verfügbar“. Der Tooltip erklärt, dass die Quest wegen dieser Stufengrenze nicht mehr angenommen werden kann. Andere nicht eindeutig belegte dauerhafte Hindernisse erhalten diesen Status nicht.
+- Aktive, abgabebereite und abgeschlossene Quests zeigen keine Annahmewarnungen. Fehlende oder veraltete Daten bleiben als unbekannt eingestuft; die angezeigten Voraussetzungen garantieren nicht, dass eine Quest angenommen werden kann.
+
 ## 10.0.1
 
 Aufgeräumte Chatkanäle, übersichtlichere Questreihen und zuverlässigeres Folgen des Questfokus – dazu ein automatisches Dankeschön für Stärkungszauber.

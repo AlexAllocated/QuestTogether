@@ -1,35 +1,23 @@
 {
-  "source_sha256": "5ba0ee8ad5af50e31dbb67e9bfe08eb82af48a7ae26744658d92b14620f8b576",
+  "source_sha256": "894e7a4eb936006941f6608fb0f6b396044df1c1e634a0a1567f89ea0043c86f",
   "notes": {
-    "version": "10.0.1",
-    "welcome": "Aufgeräumte Chatkanäle, übersichtlichere Questreihen und zuverlässigeres Folgen des Questfokus – dazu ein automatisches Dankeschön für Stärkungszauber.",
+    "version": "10.0.2",
+    "welcome": "Questreihen und Annahmevoraussetzungen im Gruppenquestlog werden übersichtlicher.",
     "sections": [
       {
-        "title": "Chatkanäle in der richtigen Reihenfolge",
+        "title": "Questreihen im Überblick",
         "items": [
-          "QT tritt fehlenden Verzeichniskanälen erst zehn Sekunden nach dem Betreten der Welt bei. Bereits verbundene QT-Kanäle bleiben nutzbar; später hinzukommende WoW-Kanäle lösen eine erneute Prüfung der Reihenfolge aus.",
-          "Weitere Fehler mit Kanalaliasen, veralteten Chateingabefeldern, Kanaldaten und unvollständigen Umsortierungen wurden behoben. Gesprächskanäle bleiben vor den QT-Verzeichnissen und behalten ihre Reihenfolge untereinander. Nicht zugängliche Kanalzustände lassen sich weiterhin nicht immer korrigieren."
+          "Frühere Schritte, die oberhalb der aufgeklappten Quest erscheinen, zeigen jetzt ihre bekannten Namen – auch nicht abgeschlossene Alternativen für niedrigere Stufen. Namen späterer, noch nicht erreichter Schritte bleiben standardmäßig hinter „Questname ausgeblendet“ verborgen.",
+          "Während Questverknüpfungen geladen werden, erscheint anstelle des Kettensymbols ein Ladering. Danach erscheint das Kettensymbol bei verknüpften Quests; bei eigenständigen Quests oder nicht verfügbaren Ergebnissen verschwindet der Ring.",
+          "Questreihen klappen mit einer Animation direkt an der ursprünglichen Questzeile auf und zu. „Bewegung reduzieren“ überspringt die Animation und hält die Ladeanzeige unbewegt. Gruppenüberschriften werden weiterhin sofort eingeklappt."
         ]
       },
       {
-        "title": "Questreihen direkt im Gruppenquestlog",
+        "title": "Annahmevoraussetzungen klarer erklärt",
         "items": [
-          "Beim Öffnen einer Questreihe stehen frühere Schritte über und spätere Schritte unter der ursprünglichen Quest. Diese erscheint nur einmal an ihrer Stelle in der Reihe und behält ihre gewohnten Bedienelemente.",
-          "Ein durchgehender Rahmen, ein hinterlegter Bereich und eine deutlichere Hervorhebung der Ausgangsquest machen die Reihe leichter erkennbar. Mit derselben Kettenschaltfläche klappst du sie wieder zu."
-        ]
-      },
-      {
-        "title": "Dem Questfokus weiter folgen",
-        "items": [
-          "Die Annahme einer neuen Quest unterbricht das Folgen des Questfokus eines anderen Spielers nicht mehr durch eine irrtümliche Rückfrage. Wechselst du selbst bewusst zu einer anderen Quest, wird weiterhin nachgefragt."
-        ]
-      },
-      {
-        "title": "Automatischer Dank für Stärkungszauber",
-        "items": [
-          "Pro Profil standardmäßig aktiv: Erhältst du außerhalb des Kampfes einen neuen Stärkungszauber mit mindestens 60 Sekunden Dauer von einem erkennbaren anderen Spieler in der Nähe, kann nach einer zufälligen Pause von 2–4 Sekunden /thank, /bow oder /applaud folgen. Dein ausgewähltes Ziel bleibt erhalten.",
-          "Mehrere kurz aufeinanderfolgende Stärkungszauber werden zusammengefasst; zwischen wiederholten Danksagungen liegt eine Wartezeit. Eigene, bereits vorhandene oder nicht sicher zuordenbare Stärkungszauber werden übersprungen. Nicht jeder Zauber löst einen Dank aus.",
-          "Abschalten unter /qt → Wo ankündigen → Spielern automatisch für Stärkungszauber danken."
+          "Tooltips gliedern nicht erfüllte, erfüllte und unbekannte Voraussetzungen mit Überschriften, Farben und mehr Abstand. Doppelte Erklärungen zu Questverknüpfungen entfallen, wiederkehrende erfüllte Bedingungen werden zusammengefasst.",
+          "Belegen aktuelle Daten, dass ein Charakter die Höchststufe einer Quest überschritten hat, erscheint „Nicht verfügbar“. Der Tooltip erklärt, dass die Quest wegen dieser Stufengrenze nicht mehr angenommen werden kann. Andere nicht eindeutig belegte dauerhafte Hindernisse erhalten diesen Status nicht.",
+          "Aktive, abgabebereite und abgeschlossene Quests zeigen keine Annahmewarnungen. Fehlende oder veraltete Daten bleiben als unbekannt eingestuft; die angezeigten Voraussetzungen garantieren nicht, dass eine Quest angenommen werden kann."
         ]
       }
     ]

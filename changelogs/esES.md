@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.2
+
+¡Cadenas más claras y requisitos más fáciles de consultar en el Registro de misiones del grupo!
+
+### Cadenas de misiones más claras
+
+- Al abrir una cadena, los pasos anteriores que aparecen encima de la misión abierta muestran sus nombres conocidos, incluidas las alternativas de nivel inferior que no hayas completado. Los nombres de pasos posteriores aún no alcanzados siguen ocultos por defecto, con el texto Nombre de misión oculto.
+- Un anillo de carga ocupa el lugar del icono de cadena mientras se buscan relaciones. Después aparece el icono si hay misiones relacionadas, o desaparece si la misión es independiente o no hay información disponible.
+- Las cadenas se despliegan y contraen con una animación que conserva la fila de la misión original como referencia. Reducir movimiento omite la animación y deja estático el indicador de carga; contraer desde una cabecera de grupo sigue siendo inmediato.
+
+### Requisitos para aceptar misiones
+
+- Las descripciones emergentes separan los requisitos pendientes, cumplidos y desconocidos con encabezados, colores y espacio. También evitan explicaciones repetidas de las relaciones y resumen las condiciones cumplidas que se repiten.
+- El estado No disponible indica que los datos recientes confirman que el personaje ha superado el nivel máximo de la misión. La descripción explica el límite y que ya no puede obtenerla; otras condiciones no se consideran permanentes sin pruebas.
+- Las misiones activas, listas para entregar o completadas ya no muestran avisos sobre su aceptación. La información ausente o desactualizada sigue siendo desconocida: los requisitos mostrados no garantizan que puedas aceptar la misión.
+
 ## 10.0.1
 
 Canales mejor ordenados, cadenas de misiones más claras y una corrección al seguir la misión de otro jugador. También puedes agradecer automáticamente los beneficios recibidos.

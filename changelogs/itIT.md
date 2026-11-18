@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.2
+
+Catene di missioni più leggibili e requisiti di accettazione più chiari nel Registro missioni del gruppo.
+
+### Catene di missioni più chiare
+
+- I passaggi precedenti mostrati sopra la missione espansa rivelano ora i nomi conosciuti, comprese le alternative di livello inferiore che non hai completato. I nomi dei passaggi successivi non ancora raggiunti restano nascosti per impostazione predefinita, con la dicitura «Nome della missione nascosto».
+- Un anello di caricamento prende il posto dell’icona della catena mentre vengono cercati i collegamenti tra missioni. Al termine compare l’icona per le missioni collegate; per quelle indipendenti o con informazioni non disponibili, l’anello scompare.
+- Le catene si aprono e si chiudono con un’animazione attorno alla riga della missione originale. «Riduci movimento» rende immediata la transizione e mantiene fermo l’indicatore di caricamento. La chiusura tramite le intestazioni dei gruppi resta immediata.
+
+### Requisiti di accettazione più leggibili
+
+- Le descrizioni distinguono i requisiti non soddisfatti, soddisfatti e sconosciuti con titoli, colori e maggiore spaziatura. Le spiegazioni duplicate sui collegamenti tra missioni vengono eliminate e le condizioni soddisfatte ripetute vengono riassunte.
+- Quando dati aggiornati confermano che un personaggio ha superato il livello massimo di una missione, compare «Non disponibile». La descrizione spiega che quel limite di livello impedisce ormai di ottenerla. Gli altri impedimenti permanenti non accertati non ricevono questo stato.
+- Le missioni attive, pronte da consegnare o completate non mostrano avvisi sull’accettazione. I dati mancanti o non aggiornati restano sconosciuti: i requisiti visualizzati non garantiscono che una missione possa essere accettata.
+
 ## 10.0.1
 
 Canali di chat più ordinati, catene di missioni più leggibili e una correzione al sistema per seguire la missione attiva di un altro giocatore, con ringraziamenti automatici per i benefici ricevuti.

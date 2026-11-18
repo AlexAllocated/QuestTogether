@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.2
+
+Les suites de quêtes et leurs conditions d’acceptation gagnent en clarté dans le Journal de quêtes du groupe.
+
+### Des suites de quêtes plus lisibles
+
+- Les étapes antérieures affichées au-dessus de la quête déployée révèlent désormais leur nom connu, y compris les variantes de niveau inférieur que vous n’avez pas terminées. Les noms des étapes suivantes non encore atteintes restent masqués par défaut, sous « Nom de quête masqué ».
+- Un anneau de chargement occupe la place de l’icône de chaîne pendant la recherche des liens entre quêtes. Il laisse ensuite place à l’icône pour les quêtes liées, ou disparaît si la quête est indépendante ou si les informations ne sont pas disponibles.
+- Les suites se déploient et se replient avec une animation autour de la ligne de quête d’origine. « Réduire les animations » rend ces transitions immédiates et fige l’indicateur de chargement. Le repli depuis un en-tête de groupe reste immédiat.
+
+### Des conditions d’acceptation mieux expliquées
+
+- Les infobulles distinguent les conditions non remplies, remplies et inconnues avec des titres, des couleurs et davantage d’espace. Les explications redondantes sur les liens entre quêtes sont supprimées et les conditions remplies répétitives sont regroupées.
+- Lorsque des données récentes confirment qu’un personnage dépasse le niveau maximal d’une quête, celle-ci affiche « Indisponible ». L’infobulle précise que cette limite de niveau empêche désormais de l’obtenir. Ce statut n’est pas appliqué aux autres obstacles permanents qui ne sont pas établis avec certitude.
+- Les quêtes en cours, prêtes à être rendues ou terminées n’affichent plus d’avertissements sur leur acceptation. Les informations absentes ou périmées restent inconnues ; les conditions affichées ne garantissent pas qu’une quête puisse être acceptée.
+
 ## 10.0.1
 
 Des canaux de discussion mieux rangés, des suites de quêtes plus lisibles et un suivi de quête corrigé, avec des remerciements automatiques pour les effets bénéfiques.

@@ -3,35 +3,23 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "10.0.1",
-	welcome = "A tidier quest log, steadier chat channels, and a little extra gratitude on your adventures! This patch improves everyday party questing and adds an optional way to thank helpful players.",
+	version = "10.0.2",
+	welcome = "Quest chains are easier to read, smoother to explore, and clearer about which quests you can still pick up.",
 	sections = {
 		{
-			title = "Keep your chat channels in order",
+			title = "Follow the chain more easily",
 			items = {
-				"QT now waits ten seconds after entering the world before joining missing chat directories, giving the game’s ordinary channels time to settle. Existing QT connections stay usable, and channels that arrive later are checked too.",
-				"Fixed more cases involving channel aliases, inactive chat boxes and interrupted channel moves that could leave QT ahead of your ordinary channels. Reordering preserves the relative order of your non-QT channels.",
+				"Earlier steps shown above your current quest now reveal their known names, including lower-level alternatives you never completed. Later unreached names stay hidden by default, with the clearer label \"Quest name hidden\".",
+				"A loading ring now appears where the chain button belongs while QT checks for related quests. It becomes a chain button when a chain is found and disappears when there is nothing to expand.",
+				"Opening and closing an inline chain now animates around your original quest row. Enable Reduce Motion in QT settings to skip the transition and use a still loading indicator.",
 			},
 		},
 		{
-			title = "See your quest in its chain",
+			title = "Understand quest requirements at a glance",
 			items = {
-				"Expanded chains now surround the quest you opened: earlier steps appear above it and later steps below. Your original quest appears once, in the right place, with its usual controls.",
-				"A continuous border, shaded background and stronger highlight on the original quest make the chain easier to distinguish from the rest of PQL. Select the chain-link button again to close it.",
-			},
-		},
-		{
-			title = "Keep following through new quest pickups",
-			items = {
-				"Fixed additional timing cases where accepting a quest could unexpectedly ask you to stop following a party member’s quest focus. QT keeps following their focus; deliberately choosing another quest still asks for confirmation.",
-			},
-		},
-		{
-			title = "A little thanks for a helpful buff",
-			items = {
-				"Outside combat, QT can now thank an identifiable nearby player who gives you a new buff lasting at least a minute. After a random 2–4 second pause, it chooses /thank, /bow or /applaud without changing your selected target.",
-				"Buff bursts are combined and repeat thanks are limited. Self-buffs, existing buffs and effects or casters that cannot be identified safely are skipped.",
-				"Automatic thanks starts enabled for each profile. To turn it off, open /qt → Where to Announce and uncheck Automatically thank players for buffs.",
+				"Prerequisite tooltips now separate unmet, satisfied and unknown conditions with clearer headings, spacing and colors. Repeated explanations are trimmed, and alternative prerequisites are explained together.",
+				"Quests with a confirmed maximum-level limit you have already exceeded now show \"Unavailable\". Hover the status to see why that quest is no longer obtainable for your character.",
+				"Quests already in a player's log or confirmed completed no longer show acceptance warnings. When QT lacks fresh information, it keeps the result unknown rather than claiming a requirement is met or blocked.",
 			},
 		},
 	},

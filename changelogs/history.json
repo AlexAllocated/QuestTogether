@@ -3,6 +3,382 @@
   "releases": [
     {
       "enUS": {
+        "version": "10.0.1",
+        "welcome": "A tidier quest log, steadier chat channels, and a little extra gratitude on your adventures! This patch improves everyday party questing and adds an optional way to thank helpful players.",
+        "sections": [
+          {
+            "title": "Keep your chat channels in order",
+            "items": [
+              "QT now waits ten seconds after entering the world before joining missing chat directories, giving the game’s ordinary channels time to settle. Existing QT connections stay usable, and channels that arrive later are checked too.",
+              "Fixed more cases involving channel aliases, inactive chat boxes and interrupted channel moves that could leave QT ahead of your ordinary channels. Reordering preserves the relative order of your non-QT channels."
+            ]
+          },
+          {
+            "title": "See your quest in its chain",
+            "items": [
+              "Expanded chains now surround the quest you opened: earlier steps appear above it and later steps below. Your original quest appears once, in the right place, with its usual controls.",
+              "A continuous border, shaded background and stronger highlight on the original quest make the chain easier to distinguish from the rest of PQL. Select the chain-link button again to close it."
+            ]
+          },
+          {
+            "title": "Keep following through new quest pickups",
+            "items": [
+              "Fixed additional timing cases where accepting a quest could unexpectedly ask you to stop following a party member’s quest focus. QT keeps following their focus; deliberately choosing another quest still asks for confirmation."
+            ]
+          },
+          {
+            "title": "A little thanks for a helpful buff",
+            "items": [
+              "Outside combat, QT can now thank an identifiable nearby player who gives you a new buff lasting at least a minute. After a random 2–4 second pause, it chooses /thank, /bow or /applaud without changing your selected target.",
+              "Buff bursts are combined and repeat thanks are limited. Self-buffs, existing buffs and effects or casters that cannot be identified safely are skipped.",
+              "Automatic thanks starts enabled for each profile. To turn it off, open /qt → Where to Announce and uncheck Automatically thank players for buffs."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "10.0.1",
+        "welcome": "Aufgeräumte Chatkanäle, übersichtlichere Questreihen und zuverlässigeres Folgen des Questfokus – dazu ein automatisches Dankeschön für Stärkungszauber.",
+        "sections": [
+          {
+            "title": "Chatkanäle in der richtigen Reihenfolge",
+            "items": [
+              "QT tritt fehlenden Verzeichniskanälen erst zehn Sekunden nach dem Betreten der Welt bei. Bereits verbundene QT-Kanäle bleiben nutzbar; später hinzukommende WoW-Kanäle lösen eine erneute Prüfung der Reihenfolge aus.",
+              "Weitere Fehler mit Kanalaliasen, veralteten Chateingabefeldern, Kanaldaten und unvollständigen Umsortierungen wurden behoben. Gesprächskanäle bleiben vor den QT-Verzeichnissen und behalten ihre Reihenfolge untereinander. Nicht zugängliche Kanalzustände lassen sich weiterhin nicht immer korrigieren."
+            ]
+          },
+          {
+            "title": "Questreihen direkt im Gruppenquestlog",
+            "items": [
+              "Beim Öffnen einer Questreihe stehen frühere Schritte über und spätere Schritte unter der ursprünglichen Quest. Diese erscheint nur einmal an ihrer Stelle in der Reihe und behält ihre gewohnten Bedienelemente.",
+              "Ein durchgehender Rahmen, ein hinterlegter Bereich und eine deutlichere Hervorhebung der Ausgangsquest machen die Reihe leichter erkennbar. Mit derselben Kettenschaltfläche klappst du sie wieder zu."
+            ]
+          },
+          {
+            "title": "Dem Questfokus weiter folgen",
+            "items": [
+              "Die Annahme einer neuen Quest unterbricht das Folgen des Questfokus eines anderen Spielers nicht mehr durch eine irrtümliche Rückfrage. Wechselst du selbst bewusst zu einer anderen Quest, wird weiterhin nachgefragt."
+            ]
+          },
+          {
+            "title": "Automatischer Dank für Stärkungszauber",
+            "items": [
+              "Pro Profil standardmäßig aktiv: Erhältst du außerhalb des Kampfes einen neuen Stärkungszauber mit mindestens 60 Sekunden Dauer von einem erkennbaren anderen Spieler in der Nähe, kann nach einer zufälligen Pause von 2–4 Sekunden /thank, /bow oder /applaud folgen. Dein ausgewähltes Ziel bleibt erhalten.",
+              "Mehrere kurz aufeinanderfolgende Stärkungszauber werden zusammengefasst; zwischen wiederholten Danksagungen liegt eine Wartezeit. Eigene, bereits vorhandene oder nicht sicher zuordenbare Stärkungszauber werden übersprungen. Nicht jeder Zauber löst einen Dank aus.",
+              "Abschalten unter /qt → Wo ankündigen → Spielern automatisch für Stärkungszauber danken."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "10.0.1",
+        "welcome": "Des canaux de discussion mieux rangés, des suites de quêtes plus lisibles et un suivi de quête corrigé, avec des remerciements automatiques pour les effets bénéfiques.",
+        "sections": [
+          {
+            "title": "Ordre des canaux de discussion",
+            "items": [
+              "QT attend dix secondes après l’entrée dans le monde avant de rejoindre ses canaux de répertoire manquants. Ceux déjà rejoints restent utilisables. L’arrivée tardive de canaux de WoW déclenche aussi une nouvelle vérification de l’ordre.",
+              "Plusieurs problèmes liés aux alias, aux champs de saisie périmés, aux données des canaux et aux réorganisations incomplètes sont corrigés. Les canaux de conversation passent avant les répertoires QT sans changer d’ordre entre eux, dans la limite des états de canaux accessibles."
+            ]
+          },
+          {
+            "title": "Suites de quêtes dans le journal du groupe",
+            "items": [
+              "Déployer une suite dans le Journal de quêtes du groupe place les étapes précédentes au-dessus de la quête d’origine et les suivantes en dessous. La quête d’origine apparaît une seule fois, à sa place dans la suite, avec ses commandes habituelles.",
+              "Une bordure continue, un fond distinct et une mise en évidence renforcée de la quête d’origine délimitent mieux la suite. Le même bouton en forme de maillon permet de la replier."
+            ]
+          },
+          {
+            "title": "Suivi de la quête d’un autre joueur",
+            "items": [
+              "Accepter une nouvelle quête ne provoque plus de demande erronée d’arrêt du suivi : vous continuez à suivre la quête choisie par l’autre joueur. Un changement volontaire vers une autre quête demande toujours confirmation."
+            ]
+          },
+          {
+            "title": "Remerciements pour les effets bénéfiques",
+            "items": [
+              "Activée par défaut pour chaque profil, cette option peut lancer /thank, /bow ou /applaud après une pause aléatoire de 2–4 secondes lorsqu’un autre joueur identifiable à proximité vous accorde, hors combat, un nouvel effet bénéfique d’au moins 60 secondes. Votre cible reste inchangée.",
+              "Les effets reçus à la suite sont regroupés et les remerciements répétés sont espacés. Les effets que vous appliquez vous-même, ceux déjà présents et ceux dont la nature ou le lanceur ne peuvent pas être identifiés avec certitude sont ignorés. Tous les effets ne déclenchent donc pas de remerciement.",
+              "Pour désactiver cette option : /qt → Où annoncer → Remercier automatiquement les joueurs pour leurs effets bénéfiques."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "10.0.1",
+        "welcome": "Canales mejor ordenados, cadenas de misiones más claras y una corrección al seguir la misión de otro jugador. También puedes agradecer automáticamente los beneficios recibidos.",
+        "sections": [
+          {
+            "title": "Orden de los canales",
+            "items": [
+              "QT espera diez segundos después de entrar en el mundo para unirse a los canales de directorio que falten; los ya conectados siguen disponibles. Si los canales de WoW llegan más tarde, se vuelve a comprobar su orden.",
+              "Se corrigen más casos de alias, campos de escritura obsoletos, datos de canales y reordenaciones incompletas. Los canales de conversación quedan delante de los directorios de QT sin alterar su orden relativo, siempre que su estado permita reorganizarlos."
+            ]
+          },
+          {
+            "title": "Cadenas dentro del registro de misiones",
+            "items": [
+              "Al desplegar una cadena en el Registro de misiones del grupo, los pasos anteriores aparecen sobre la misión original y los posteriores debajo. La misión original se muestra una sola vez, en su lugar dentro de la cadena y con sus controles habituales.",
+              "Un borde continuo, un fondo sombreado y una marca más visible de la misión original distinguen la cadena del resto del registro. Pulsa de nuevo el mismo botón de eslabón para cerrarla."
+            ]
+          },
+          {
+            "title": "Seguir la misión de otro jugador",
+            "items": [
+              "Aceptar una misión nueva mientras sigues la de otro jugador ya no provoca una confirmación errónea para dejar de seguirla. El seguimiento continúa; si cambias a otra misión de forma deliberada, se sigue pidiendo confirmación."
+            ]
+          },
+          {
+            "title": "Agradecimientos automáticos por los beneficios",
+            "items": [
+              "Esta opción está activada por defecto en cada perfil. Un beneficio nuevo de al menos 60 segundos, recibido fuera de combate de otro jugador identificable cercano, puede provocar /thank, /bow o /applaud tras una pausa aleatoria de 2–4 segundos, sin cambiar tu objetivo.",
+              "Los beneficios recibidos seguidos se agrupan y se limita la frecuencia de los agradecimientos. Se omiten los beneficios propios, los que ya tenías y aquellos cuyo efecto o lanzador no se pueda identificar con seguridad. No todos generan un agradecimiento.",
+              "Puedes desactivarlo en /qt → Dónde anunciar → Dar las gracias automáticamente a quienes te den beneficios."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "10.0.1",
+        "welcome": "Este parche mejora el orden del chat, la lectura de cadenas y el seguimiento de misiones. Además, puedes agradecer de forma automática los beneficios que te den otros jugadores.",
+        "sections": [
+          {
+            "title": "Canales de chat más ordenados",
+            "items": [
+              "QT espera diez segundos después de entrar al mundo para unirse a los canales de directorio que falten. Los canales ya conectados siguen funcionando; si los canales de WoW aparecen después, también se revisa el orden.",
+              "Se arreglaron más problemas con alias, cuadros de escritura desactualizados, datos de canales y cambios de orden parciales. Los canales de conversación se colocan antes de los directorios de QT y conservan su orden entre sí, cuando el estado de los canales permite ajustarlos."
+            ]
+          },
+          {
+            "title": "Cadenas en el registro del grupo",
+            "items": [
+              "Al abrir una cadena en el Registro de misiones del grupo, verás los pasos anteriores arriba de la misión original y los siguientes abajo. La misión original aparece una sola vez en el lugar que le corresponde, con sus controles de siempre.",
+              "El borde continuo, el fondo sombreado y el resaltado más claro de la misión original ayudan a distinguir la cadena. Para cerrarla, usa el mismo botón con forma de eslabón."
+            ]
+          },
+          {
+            "title": "Seguimiento de la misión de un compañero",
+            "items": [
+              "Si estás siguiendo la misión de otro jugador y aceptas una nueva, ya no aparece por error la pregunta para dejar de seguirlo. El seguimiento se mantiene. Elegir otra misión intencionalmente todavía requiere confirmación."
+            ]
+          },
+          {
+            "title": "Agradecimientos por beneficios",
+            "items": [
+              "La opción viene activada en cada perfil. Si, fuera de combate, otro jugador identificable cercano te da un beneficio nuevo que dura al menos 60 segundos, puede activarse /thank, /bow o /applaud tras una pausa aleatoria de 2–4 segundos. Tu objetivo seleccionado no cambia.",
+              "Los beneficios que llegan juntos se agrupan y se limita la frecuencia de los agradecimientos. Se ignoran tus propios beneficios, los que ya tenías y los efectos o lanzadores que no se puedan identificar con seguridad. No se agradece cada beneficio.",
+              "Para desactivarla, ve a /qt → Dónde anunciar → Agradecer automáticamente a quienes te den beneficios."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "10.0.1",
+        "welcome": "Chat mais organizado, sequências de missões mais fáceis de acompanhar e uma correção ao seguir o foco de outro jogador, além de agradecimentos automáticos por benefícios.",
+        "sections": [
+          {
+            "title": "Ordem dos canais de chat",
+            "items": [
+              "O QT espera dez segundos após a entrada no mundo para entrar nos canais de diretório que estiverem faltando. Os já conectados continuam disponíveis. Canais do WoW que aparecem depois também acionam uma nova verificação da ordem.",
+              "Foram corrigidos mais casos envolvendo aliases, campos de mensagem desatualizados, dados de canais e reordenações parciais. Canais de conversa ficam antes dos diretórios do QT, mantendo a ordem entre si, quando o estado dos canais permite o ajuste."
+            ]
+          },
+          {
+            "title": "Sequências no registro de missões",
+            "items": [
+              "Ao abrir uma sequência no Registro de missões do grupo, as etapas anteriores ficam acima da missão original e as seguintes, abaixo. A missão original aparece uma única vez, na posição certa da sequência, com os controles habituais.",
+              "Uma borda contínua, o fundo sombreado e um destaque maior na missão original separam melhor a sequência das outras linhas. Use o mesmo botão de elo para fechá-la."
+            ]
+          },
+          {
+            "title": "Continuar seguindo o foco",
+            "items": [
+              "Aceitar uma nova missão enquanto você segue o foco de outro jogador não abre mais, por engano, a confirmação para parar de segui-lo. O acompanhamento continua. Escolher outra missão de propósito ainda pede confirmação."
+            ]
+          },
+          {
+            "title": "Agradecimentos automáticos por benefícios",
+            "items": [
+              "Ativada por padrão em cada perfil, a opção pode usar /thank, /bow ou /applaud após uma pausa aleatória de 2–4 segundos ao receber, fora de combate, um benefício novo de pelo menos 60 segundos de outro jogador identificável por perto. Seu alvo não muda.",
+              "Benefícios recebidos em sequência são agrupados, e há um intervalo entre agradecimentos repetidos. Benefícios próprios, já existentes ou cujo efeito ou autor não possa ser identificado com segurança são ignorados. Nem todo benefício gera um agradecimento.",
+              "Para desativar: /qt → Onde Anunciar → Agradecer automaticamente aos jogadores pelos benefícios."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "10.0.1",
+        "welcome": "В этом обновлении исправлен порядок каналов чата и следование выбранному заданию, улучшен вид цепочек и добавлена автоматическая благодарность за усиления.",
+        "sections": [
+          {
+            "title": "Порядок каналов чата",
+            "items": [
+              "При входе в мир QT ждёт 10 секунд, прежде чем подключать недостающие служебные каналы. Уже подключённые каналы продолжают работать; появление обычных каналов позже также запускает проверку порядка.",
+              "Исправлены дополнительные случаи с псевдонимами каналов, устаревшими полями ввода, метаданными и частичной перестановкой. Обычные каналы размещаются перед служебными каналами QT с сохранением их взаимного порядка, когда игра позволяет это сделать."
+            ]
+          },
+          {
+            "title": "Цепочки прямо в списке заданий",
+            "items": [
+              "В Журнале заданий группы предыдущие этапы раскрытой цепочки теперь находятся над исходным заданием, а последующие — под ним. Исходное задание показано один раз на своём месте в цепочке и сохраняет обычные кнопки управления.",
+              "Общая рамка, затенённый фон и более заметное выделение исходного задания отделяют цепочку от соседних строк. Нажмите ту же кнопку со звеньями цепи, чтобы свернуть её."
+            ]
+          },
+          {
+            "title": "Следование выбранному заданию",
+            "items": [
+              "Исправлены случаи, когда при принятии нового задания появлялся лишний запрос о прекращении следования выбранному заданию другого игрока. Теперь следование продолжается. Если вы намеренно выбираете другое задание, подтверждение по-прежнему требуется."
+            ]
+          },
+          {
+            "title": "Благодарность за усиления",
+            "items": [
+              "Автоматическая благодарность включена по умолчанию в каждом профиле. Вне боя новое усиление длительностью не менее 60 секунд от другого игрока поблизости может вызвать /thank, /bow или /applaud через случайную паузу в 2–4 секунды. Текущая цель не меняется.",
+              "Несколько усилений подряд объединяются, а повторные благодарности ограничены по частоте. Собственные и уже действующие усиления пропускаются, как и эффекты или их источники, которые нельзя надёжно определить. Благодарность отправляется не за каждое усиление.",
+              "Отключить функцию можно в /qt → «Куда объявлять» → «Автоматически благодарить игроков за усиления»."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "10.0.1",
+        "welcome": "Canali di chat più ordinati, catene di missioni più leggibili e una correzione al sistema per seguire la missione attiva di un altro giocatore, con ringraziamenti automatici per i benefici ricevuti.",
+        "sections": [
+          {
+            "title": "Ordine dei canali di chat",
+            "items": [
+              "QT attende dieci secondi dopo l’ingresso nel mondo prima di collegarsi ai canali di directory mancanti. Quelli già collegati restano utilizzabili; anche l’arrivo successivo dei canali di WoW avvia un nuovo controllo dell’ordine.",
+              "Corretti altri problemi con alias, campi di scrittura non aggiornati, dati dei canali e riordinamenti parziali. I canali di conversazione precedono le directory QT senza cambiare ordine fra loro, quando lo stato dei canali consente di riordinarli."
+            ]
+          },
+          {
+            "title": "Catene nel registro del gruppo",
+            "items": [
+              "Aprendo una catena nel Registro missioni del gruppo, i passaggi precedenti compaiono sopra la missione originale e quelli successivi sotto. La missione originale appare una sola volta, al suo posto nella catena, con i consueti comandi.",
+              "Un bordo continuo, uno sfondo ombreggiato e un’evidenziazione più marcata della missione originale distinguono la catena dalle altre righe. Lo stesso pulsante a forma di maglia di catena permette di richiuderla."
+            ]
+          },
+          {
+            "title": "Seguire la missione di un compagno",
+            "items": [
+              "Accettare una nuova missione mentre segui quella di un altro giocatore non apre più per errore la richiesta di smettere di seguirla. Continui a seguirne la missione; passare volontariamente a un’altra richiede ancora conferma."
+            ]
+          },
+          {
+            "title": "Ringraziamenti automatici per i benefici",
+            "items": [
+              "L’opzione è attiva per impostazione predefinita in ogni profilo. Ricevere fuori dal combattimento un nuovo beneficio di almeno 60 secondi da un altro giocatore identificabile nelle vicinanze può attivare /thank, /bow o /applaud dopo una pausa casuale di 2–4 secondi. Il bersaglio selezionato non cambia.",
+              "I benefici ricevuti a breve distanza vengono raggruppati e i ringraziamenti ripetuti sono intervallati. Vengono ignorati i benefici propri, quelli già presenti e gli effetti o gli autori che non si possono identificare con sicurezza. Non tutti i benefici ricevono un ringraziamento.",
+              "Puoi disattivarla in /qt → Dove annunciare → Ringrazia automaticamente i giocatori per i benefici."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "10.0.1",
+        "welcome": "채팅 채널 순서와 퀘스트 따라가기를 수정하고, 퀘스트 연계를 더 보기 쉽게 다듬었습니다. 강화 효과를 준 플레이어에게 자동으로 감사하는 기능도 추가했습니다.",
+        "sections": [
+          {
+            "title": "채팅 채널 순서 수정",
+            "items": [
+              "월드에 진입한 뒤 아직 참가하지 않은 QT 전용 채널에는 10초 후 참가합니다. 이미 참가한 채널은 계속 사용할 수 있으며, 일반 채널이 나중에 들어와도 순서를 다시 확인합니다.",
+              "채널 별칭, 오래된 채팅 입력창 정보, 메타데이터, 일부만 적용된 채널 순서 변경을 처리하는 방식을 보완했습니다. 게임에서 변경할 수 있는 경우 일반 채널의 상대적인 순서를 유지하면서 QT 전용 채널보다 앞에 배치합니다."
+            ]
+          },
+          {
+            "title": "목록 안에서 이어지는 퀘스트 연계",
+            "items": [
+              "파티 퀘스트 목록에서 연계를 펼치면 이전 단계는 원래 퀘스트 위에, 다음 단계는 아래에 표시됩니다. 원래 퀘스트는 연계 안의 해당 위치에 한 번만 표시되며 기존 조작 버튼도 그대로 사용할 수 있습니다.",
+              "테두리와 음영 배경으로 연계 전체를 구분하고 원래 퀘스트를 더 뚜렷하게 강조해, 펼친 연계를 주변 퀘스트와 쉽게 구별할 수 있습니다. 같은 사슬 모양 버튼을 누르면 접힙니다."
+            ]
+          },
+          {
+            "title": "퀘스트 따라가기 유지",
+            "items": [
+              "다른 플레이어의 퀘스트를 따라가는 중 새 퀘스트를 수락할 때, 이벤트 순서 때문에 따라가기 중지 확인창이 뜨던 문제를 수정했습니다. 따라가기는 계속 유지되며, 직접 다른 퀘스트를 선택하면 이전처럼 확인을 요청합니다."
+            ]
+          },
+          {
+            "title": "강화 효과에 자동으로 감사하기",
+            "items": [
+              "프로필마다 기본으로 켜져 있습니다. 비전투 중 근처의 다른 플레이어에게 지속 시간이 60초 이상인 새 강화 효과를 받으면, 대상을 확실히 식별할 수 있을 때 무작위로 정한 2–4초의 대기 시간 후 /thank, /bow 또는 /applaud 감정표현을 보낼 수 있습니다. 선택한 대상은 바뀌지 않습니다.",
+              "연달아 받은 강화 효과는 묶어서 처리하고 반복 감사에는 대기 시간을 둡니다. 자신이 건 효과, 이미 있던 효과, 효과나 시전자를 안전하게 확인할 수 없는 경우는 건너뛰므로 모든 강화 효과에 감사하지는 않습니다.",
+              "/qt → 알릴 위치 → 강화 효과를 준 플레이어에게 자동으로 감사하기에서 끌 수 있습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "10.0.1",
+        "welcome": "本次更新修复了聊天频道排序和任务跟随问题，优化了列表中的任务链展示，并加入了自动感谢增益施法者的功能。",
+        "sections": [
+          {
+            "title": "聊天频道排序修复",
+            "items": [
+              "进入世界后，QT 会等待 10 秒再加入尚未加入的专用频道；已加入的频道仍可正常使用。普通频道稍后加入时，也会重新检查排序。",
+              "完善了频道别名、过时的聊天输入框信息、元数据以及只完成部分排序等情况的处理。在游戏允许调整的情况下，将普通频道排在 QT 专用频道前，同时保留普通频道之间的相对顺序。"
+            ]
+          },
+          {
+            "title": "任务链就地展开",
+            "items": [
+              "在队伍任务日志中展开任务链时，之前的步骤显示在原任务上方，后续步骤显示在下方。原任务只在任务链中的对应位置显示一次，并保留常用操作。",
+              "连续边框、底色和更醒目的原任务高亮，让展开的任务链更容易与周围行区分。再次点击同一个链环按钮即可收起。"
+            ]
+          },
+          {
+            "title": "接取任务时保持跟随",
+            "items": [
+              "修复了跟随其他玩家的任务焦点时，因接取新任务的事件顺序而误弹停止跟随确认框的问题。现在会继续跟随；主动切换到其他任务时，仍会要求确认。"
+            ]
+          },
+          {
+            "title": "自动感谢增益",
+            "items": [
+              "每个配置文件默认开启。非战斗状态下，附近其他玩家施加的新增益若持续至少 60 秒，且能可靠识别施法者，就可能在随机等待 2–4 秒后发送 /thank、/bow 或 /applaud 表情，不会改变当前选中的目标。",
+              "短时间内获得的多个增益会合并处理，并限制重复感谢的频率。自身施加、已经存在，以及无法安全识别效果或施法者的增益会被跳过，因此不会对每个增益都致谢。",
+              "可通过 /qt → 通告位置 → 自动感谢给予增益的玩家关闭。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "10.0.1",
+        "welcome": "這次更新改善聊天頻道排序與任務跟隨，讓任務鏈在列表中更清楚易讀，並加入收到增益時自動致謝的功能。",
+        "sections": [
+          {
+            "title": "聊天頻道順序修正",
+            "items": [
+              "進入世界後，QT 會等候 10 秒再加入尚未加入的專用頻道，已加入的頻道則可繼續使用。一般頻道稍後加入時，也會重新檢查排列順序。",
+              "補強了頻道別名、過時的聊天輸入框資料、中繼資料及僅完成部分排序等情況的處理。在遊戲允許調整時，一般頻道會排在 QT 專用頻道之前，彼此的相對順序則會保留。"
+            ]
+          },
+          {
+            "title": "直接在列表展開任務鏈",
+            "items": [
+              "在隊伍任務日誌展開任務鏈後，先前步驟會出現在原任務上方，後續步驟則在下方。原任務只會在任務鏈的對應位置出現一次，並保留原有操作。",
+              "連續外框、底色與更明顯的原任務標示，讓展開區域與其他任務行更容易區分。再按一次相同的鏈環按鈕即可收合。"
+            ]
+          },
+          {
+            "title": "接任務時繼續跟隨",
+            "items": [
+              "修正跟隨其他玩家的任務焦點時，因接取新任務的事件順序而誤跳停止跟隨確認視窗的問題。現在會繼續跟隨對方；自行改選其他任務時，仍會要求確認。"
+            ]
+          },
+          {
+            "title": "自動感謝增益施法者",
+            "items": [
+              "每個設定檔預設啟用。非戰鬥中收到附近其他玩家施放、持續至少 60 秒的新增益時，若能可靠辨識施法者，就可能隨機等候 2–4 秒後使用 /thank、/bow 或 /applaud 表情致謝，不會改變目前選取的目標。",
+              "接連收到的增益會合併處理，並限制重複致謝的頻率。自己施放、原本就有，或無法安全辨識效果與施法者的增益都會略過，因此不會對每個增益都致謝。",
+              "可在 /qt → 公告位置 → 自動感謝施加增益的玩家關閉。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "10.0.0",
         "welcome": "A new chapter for questing together! Your Party Quest Log now brings connected quests, party progress and catch-up guidance into one place, with a clearer sharing experience to help you plan the next adventure together.",
         "sections": [

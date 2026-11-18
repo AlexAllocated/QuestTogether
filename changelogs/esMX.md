@@ -2,6 +2,22 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.0.2
+
+¡Consulta las cadenas y los requisitos con más claridad en el Registro de misiones del grupo!
+
+### Cadenas de misiones más claras
+
+- Los pasos anteriores que se muestran arriba de la misión cuya cadena abriste ahora revelan sus nombres conocidos, incluso las alternativas de menor nivel que no hayas completado. Los nombres de pasos posteriores que aún no alcanzas siguen ocultos de forma predeterminada, con el texto Nombre de misión oculto.
+- Mientras se buscan misiones relacionadas, un anillo de carga aparece en el lugar del icono de cadena. Al terminar, se muestra el icono si hay relaciones; si la misión es independiente o la información no está disponible, el indicador desaparece.
+- Al expandir o contraer una cadena, la animación mantiene como referencia la fila de la misión original. Con Reducir movimiento, los cambios son inmediatos y el indicador de carga permanece estático. Contraer desde el encabezado de un grupo sigue siendo inmediato.
+
+### Requisitos para aceptar misiones
+
+- Las descripciones emergentes organizan los requisitos pendientes, cumplidos y desconocidos con encabezados, colores y separación. Se eliminan explicaciones duplicadas de las relaciones y se resumen las condiciones cumplidas que se repiten.
+- No disponible aparece cuando hay datos recientes que confirman que el personaje superó el nivel máximo de una misión. La descripción explica el límite y por qué ya no puede obtenerla. Las demás condiciones no se tratan como permanentes sin pruebas.
+- Las misiones activas, listas para entregar y completadas dejan de mostrar advertencias sobre su aceptación. Si los datos faltan o están desactualizados, el resultado sigue siendo desconocido; los requisitos mostrados no garantizan que puedas aceptar la misión.
+
 ## 10.0.1
 
 Este parche mejora el orden del chat, la lectura de cadenas y el seguimiento de misiones. Además, puedes agradecer de forma automática los beneficios que te den otros jugadores.

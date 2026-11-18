@@ -1,35 +1,23 @@
 {
-  "source_sha256": "5ba0ee8ad5af50e31dbb67e9bfe08eb82af48a7ae26744658d92b14620f8b576",
+  "source_sha256": "894e7a4eb936006941f6608fb0f6b396044df1c1e634a0a1567f89ea0043c86f",
   "notes": {
-    "version": "10.0.1",
-    "welcome": "Este parche mejora el orden del chat, la lectura de cadenas y el seguimiento de misiones. Además, puedes agradecer de forma automática los beneficios que te den otros jugadores.",
+    "version": "10.0.2",
+    "welcome": "¡Consulta las cadenas y los requisitos con más claridad en el Registro de misiones del grupo!",
     "sections": [
       {
-        "title": "Canales de chat más ordenados",
+        "title": "Cadenas de misiones más claras",
         "items": [
-          "QT espera diez segundos después de entrar al mundo para unirse a los canales de directorio que falten. Los canales ya conectados siguen funcionando; si los canales de WoW aparecen después, también se revisa el orden.",
-          "Se arreglaron más problemas con alias, cuadros de escritura desactualizados, datos de canales y cambios de orden parciales. Los canales de conversación se colocan antes de los directorios de QT y conservan su orden entre sí, cuando el estado de los canales permite ajustarlos."
+          "Los pasos anteriores que se muestran arriba de la misión cuya cadena abriste ahora revelan sus nombres conocidos, incluso las alternativas de menor nivel que no hayas completado. Los nombres de pasos posteriores que aún no alcanzas siguen ocultos de forma predeterminada, con el texto Nombre de misión oculto.",
+          "Mientras se buscan misiones relacionadas, un anillo de carga aparece en el lugar del icono de cadena. Al terminar, se muestra el icono si hay relaciones; si la misión es independiente o la información no está disponible, el indicador desaparece.",
+          "Al expandir o contraer una cadena, la animación mantiene como referencia la fila de la misión original. Con Reducir movimiento, los cambios son inmediatos y el indicador de carga permanece estático. Contraer desde el encabezado de un grupo sigue siendo inmediato."
         ]
       },
       {
-        "title": "Cadenas en el registro del grupo",
+        "title": "Requisitos para aceptar misiones",
         "items": [
-          "Al abrir una cadena en el Registro de misiones del grupo, verás los pasos anteriores arriba de la misión original y los siguientes abajo. La misión original aparece una sola vez en el lugar que le corresponde, con sus controles de siempre.",
-          "El borde continuo, el fondo sombreado y el resaltado más claro de la misión original ayudan a distinguir la cadena. Para cerrarla, usa el mismo botón con forma de eslabón."
-        ]
-      },
-      {
-        "title": "Seguimiento de la misión de un compañero",
-        "items": [
-          "Si estás siguiendo la misión de otro jugador y aceptas una nueva, ya no aparece por error la pregunta para dejar de seguirlo. El seguimiento se mantiene. Elegir otra misión intencionalmente todavía requiere confirmación."
-        ]
-      },
-      {
-        "title": "Agradecimientos por beneficios",
-        "items": [
-          "La opción viene activada en cada perfil. Si, fuera de combate, otro jugador identificable cercano te da un beneficio nuevo que dura al menos 60 segundos, puede activarse /thank, /bow o /applaud tras una pausa aleatoria de 2–4 segundos. Tu objetivo seleccionado no cambia.",
-          "Los beneficios que llegan juntos se agrupan y se limita la frecuencia de los agradecimientos. Se ignoran tus propios beneficios, los que ya tenías y los efectos o lanzadores que no se puedan identificar con seguridad. No se agradece cada beneficio.",
-          "Para desactivarla, ve a /qt → Dónde anunciar → Agradecer automáticamente a quienes te den beneficios."
+          "Las descripciones emergentes organizan los requisitos pendientes, cumplidos y desconocidos con encabezados, colores y separación. Se eliminan explicaciones duplicadas de las relaciones y se resumen las condiciones cumplidas que se repiten.",
+          "No disponible aparece cuando hay datos recientes que confirman que el personaje superó el nivel máximo de una misión. La descripción explica el límite y por qué ya no puede obtenerla. Las demás condiciones no se tratan como permanentes sin pruebas.",
+          "Las misiones activas, listas para entregar y completadas dejan de mostrar advertencias sobre su aceptación. Si los datos faltan o están desactualizados, el resultado sigue siendo desconocido; los requisitos mostrados no garantizan que puedas aceptar la misión."
         ]
       }
     ]
