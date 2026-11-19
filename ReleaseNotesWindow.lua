@@ -463,7 +463,7 @@ local function Create(addon, parent)
 			addon:RenderReleaseNotesWindow(frame.notes, frame.version, frame.isFirstUse, true, true)
 		end
 	end
-	addon:RegisterManagedWindow(frame, "releaseNotes", 520, 320)
+	addon:RegisterManagedWindow(frame, "releaseNotes", frame.minimumWidth, 320)
 	addon:ConfigureWindowController(frame, { theme = frame.LayoutManagedWindow })
 	return frame
 end

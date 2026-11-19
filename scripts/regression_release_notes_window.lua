@@ -452,7 +452,7 @@ end)
 Register("release notes tip cards wrap resize and retire across pages and history", function()
 	local a = Fixture()
 	a.hasLoggedIn = true
-	local notes, older = Notes(1), Notes(1)
+	local notes, older = Notes(40), Notes(1)
 	older.version = "5.9.1"
 	notes.sections[1].tip = { label = "Tip:", text = string.rep("A long translated example. ", 20) }
 	a.releaseNotesBrowser = {
@@ -462,6 +462,10 @@ Register("release notes tip cards wrap resize and retire across pages and histor
 	assert(a:ShowReleaseNotesPage(1))
 	local frame = a.releaseNotesWindow
 	local card, count = frame.tipExamples[1], #a.regions
+	-- Translated footer labels can require more than the old 520-pixel minimum.
+	-- Compare a genuinely wider layout with the narrowest supported layout.
+	frame.userWidth = 1100
+	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
 	local wideHeight = card.height
 	a.parent.width, a.parent.height = 480, 340
 	frame.userWidth = 520
@@ -570,6 +574,13 @@ Register("client locale renders current notes and window navigation", function()
 	Equal(a.releaseNotesWindow.labels[1].text, QuestTogether.TranslateForLocale("What's new", locale))
 	Equal(a.releaseNotesWindow.labels[2].text, notes.welcome)
 	Equal(a.releaseNotesWindow.discord.label.text, QuestTogether.TranslateForLocale("Join our Discord", locale))
+	Equal(a.releaseNotesWindow.presets.label.text, QuestTogether.TranslateForLocale("Presets", locale))
+	local frame = a.releaseNotesWindow
+	assert(frame.width >= frame.discord.width + frame.presets.width + frame.settings.width + 86)
+	a.parent.width, a.parent.height = 480, 340
+	frame.userWidth = 520
+	assert(a:RenderReleaseNotesWindow(notes, notes.version, false))
+	assert(frame.width * frame.scale <= a.parent.width and frame.height * frame.scale <= a.parent.height)
 	local count = 0
 	for _, section in ipairs(notes.sections) do
 		if section.tip then
