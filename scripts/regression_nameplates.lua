@@ -770,12 +770,13 @@ QT:RegisterTest("disable stops mutable nearby playback during combat without pen
 	end)
 end)
 
-QT:RegisterTest("own bubble solo group transitions discard only current personal playback", function()
-	local grouped = false
+QT:RegisterTest("own bubble conditional group transitions discard only current personal playback", function()
+	for _, mode in ipairs({ "solo", "party" }) do
+	local grouped = mode == "party"
 	local own, remote = {}, {}
 	local a = setmetatable({
 		isEnabled = true,
-		db = { profile = { showChatBubbles = true, ownChatBubbleMode = "solo" } },
+		db = { profile = { showChatBubbles = true, ownChatBubbleMode = mode } },
 		API = { IsInAnyGroup = function() return grouped end },
 		nameplateBubbleStateByFrame = {
 			[own] = { unitToken = "player", text = "Old own progress" },
@@ -796,17 +797,18 @@ QT:RegisterTest("own bubble solo group transitions discard only current personal
 	function a:ShowAnnouncementBubbleOnNameplate() error("group transitions cannot replay a bubble") end
 	a:HandleGroupRosterChanged("GROUP_ROSTER_UPDATE")
 	Equal(a.stops, 0)
-	grouped = true
+	grouped = mode ~= "party"
 	a:HandleGroupRosterChanged("GROUP_JOINED")
 	Equal(a.stops, 1)
 	Equal(own.hidden, true)
 	Equal(a.nameplateBubbleStateByFrame[own], nil)
 	Equal(a.nameplateBubbleStateByFrame[remote].text, "Other player progress")
-	grouped = false
+	grouped = mode == "party"
 	a:HandleGroupRosterChanged("GROUP_ROSTER_UPDATE")
 	Equal(a.stops, 1)
-	Equal(a:ShouldShowOwnChatBubble(), true, "leaving allows only future messages")
+	Equal(a:ShouldShowOwnChatBubble(), true, "returning to the allowed group state permits only future messages")
 	Equal(a.nameplateBubbleStateByFrame[own], nil)
+	end
 end)
 
 QT:RegisterTest("own bubble renderer and capability report share the current visibility policy", function()

@@ -267,7 +267,7 @@ A reminder lets you keep this fallback enabled or turn it off. **Don't remind me
 ## Progress bubbles
 
 - Enable **Where to Announce → Show Chat Bubbles**. Nearby players’ updates appear above their available nameplates; your own updates use a personal on-screen anchor.
-- Set **My chat bubble** to **Show always**, **Show only when solo**, or **Hide always**. Solo means outside a party or raid. This affects your own display; your progress continues to be shared.
+- Set **My chat bubble** to **Show always**, **Show only when solo**, **Show only when in a party**, or **Hide always**. Solo means outside a party or raid; party mode includes raids. This affects your own display; your progress continues to be shared.
 
 To adjust your personal bubble:
 
@@ -323,13 +323,13 @@ Nameplate features depend on available game information and can be limited in in
 
 ### Choose a theme
 
-Under **General → Theme**, choose **Dark** or **Light** parchment. Dark is the default.
+Under **Appearance & Accessibility → Theme**, choose **Dark** or **Light** parchment. Dark is the default.
 
 [![Light theme](https://media.forgecdn.net/attachments/2055/230/party-quest-log-light-objectives-png.png)](https://media.forgecdn.net/attachments/2055/230/party-quest-log-light-objectives-png.png)
 
 ### Adjust scale and motion
 
-- Under **Accessibility → Window scale**, resize text and controls together. The setting ranges from **80% to 150%** and starts at **100%**; QT caps the effective scale when needed to fit the display.
+- Under **Appearance & Accessibility → Window scale**, resize text and controls together. The setting ranges from **80% to 150%** and starts at **100%**; QT caps the effective scale when needed to fit the display.
 - Enable **Reduce motion** for immediate scrolling and objective expansion instead of animated transitions. It starts off.
 - Use **Reset window layout** or **`/qt resetlayout`** to restore saved window placement.
 
@@ -360,7 +360,7 @@ Private player notes are separate from profile settings and remain shared across
 - **Shift-click:** toggle Looking for Questing Partners.
 - **Drag:** move the icon around the minimap.
 
-The menu opens **Party Quest Log**, WoW’s **Open Quest Log**, **Settings**, and **Patch Notes**. It also toggles partner status, switches the QT log between main and separate windows, and offers **Hide Minimap Icon**. Restore a hidden icon through **General → Show minimap icon**.
+The menu opens **Party Quest Log**, WoW’s **Open Quest Log**, **Settings**, and **Patch Notes**. It also toggles partner status, switches the QT log between main and separate windows, and offers **Hide Minimap Icon**. Restore a hidden icon through **Controls & Launchers → Show minimap icon**.
 
 Hover the icon for your QT version, partner status, chat scope, nearby range, and location-sharing status.
 
@@ -385,13 +385,13 @@ Tips explain QT features and provide clickable actions for opening the relevant 
 
 Read the tip in the QT log on login or reload, or type **`/qt tip`** or **`/qt hint`** to show one whenever you want. Tips come from a shuffled pool.
 
-Click a tip’s bracketed action, such as **[Party Quest Log]**, **[Player Locations]**, or **[Key Bindings]**, to open that feature directly. Available actions match the tip and your client’s capabilities.
+Click a tip’s bracketed action, such as **[Party Quest Log]**, **[Maps & Minimap]**, or **[Key Bindings]**, to open that feature directly. Available actions match the tip and your client’s capabilities.
 
 Disable **General → Show tips on login** to stop automatic tips. The manual tip commands remain available.
 
 ## Celebration emotes
 
-Under **Where to Announce → Celebration Emotes**, four independent options control your character’s emotes:
+Under **Emotes → Celebration Emotes**, four independent options control your character’s emotes:
 
 - **Emote On Quest Completion**
 - **Emote On Nearby Player Quest Completion**
@@ -434,7 +434,7 @@ QT works alongside your existing quest tracker. Both players need compatible QT 
 
 If a player’s dot or quest information is missing:
 
-- Check **Player Locations → Players shown on maps** and whether the other player shares their location.
+- Check **Maps & Minimap → Players shown on maps** and whether the other player shares their location.
 - Confirm the other player is online with QT enabled.
 - Use **Refresh** or **Refresh this player** for a comparison. Location and quest data update independently.
 - For missing nameplate features, check WoW’s friendly/enemy nameplate settings and any nameplate replacement addon.

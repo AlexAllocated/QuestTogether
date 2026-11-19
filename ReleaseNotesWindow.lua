@@ -343,6 +343,12 @@ local function Create(addon, parent)
 	end)
 	Call(addon, frame.settings, "SetSize", 130, 24)
 	Call(addon, frame.settings, "SetPoint", "BOTTOMRIGHT", -40, 8)
+	frame.presets = Button(addon, frame, frame, L("Presets"), function()
+		if addon:OpenPresetWindow() == true then
+			Call(addon, frame, "Hide")
+		end
+	end)
+	Call(addon, frame.presets, "SetPoint", "RIGHT", frame.settings, "LEFT", -8, 0)
 	frame.discord = Button(addon, frame, frame, L("Join our Discord"), function()
 		if addon:OpenDiscordSupport() then
 			Call(addon, frame, "Hide")
@@ -351,6 +357,14 @@ local function Create(addon, parent)
 	local discordTextWidth = addon:SafeToNumber(Call(addon, frame.discord.label, "GetStringWidth")) or 128
 	Call(addon, frame.discord, "SetSize", math.ceil(discordTextWidth) + 32, 24)
 	Call(addon, frame.discord, "SetPoint", "BOTTOMLEFT", 30, 8)
+	local footerWidth = 30 + 40 + 16
+	for _, control in ipairs({ frame.discord, frame.presets, frame.settings }) do
+		local textWidth = addon:SafeToNumber(Call(addon, control.label, "GetStringWidth")) or 128
+		local buttonWidth = math.max(130, math.ceil(textWidth) + 32)
+		Call(addon, control, "SetSize", buttonWidth, 24)
+		footerWidth = footerWidth + buttonWidth
+	end
+	frame.minimumWidth = math.max(520, footerWidth)
 	frame.navigation = {}
 	for index, text in ipairs({ L("Oldest"), L("Older"), L("History"), L("Newer"), L("Latest") }) do
 		local action = index
@@ -521,11 +535,12 @@ local function Render(addon, notes, version, isFirstUse, preserveScroll, layoutO
 	frame.rendering = true
 	frame.notes, frame.version, frame.isFirstUse = notes, version, isFirstUse
 	local oldScroll = preserveScroll and frame.scrollOffset or 0
-	local scale = math.min(addon:GetWindowScale(), parentWidth * 0.92 / 520, parentHeight * 0.92 / 320)
-	local maximumWidth = math.max(520, math.min(1100, parentWidth * 0.92 / scale))
+	local minimumWidth = frame.minimumWidth
+	local scale = math.min(addon:GetWindowScale(), parentWidth * 0.92 / minimumWidth, parentHeight * 0.92 / 320)
+	local maximumWidth = math.max(minimumWidth, math.min(1100, parentWidth * 0.92 / scale))
 	local maximumHeight = math.max(320, math.min(1000, parentHeight * 0.92 / scale))
-	local width = math.max(520, math.min(frame.userWidth or 700, maximumWidth))
-	Call(addon, frame, "SetResizeBounds", 520, 320, maximumWidth, maximumHeight)
+	local width = math.max(minimumWidth, math.min(frame.userWidth or 700, maximumWidth))
+	Call(addon, frame, "SetResizeBounds", minimumWidth, 320, maximumWidth, maximumHeight)
 	local contentWidth, offset, count, tipCount = width - 76, 0, 0, 0
 	local browser = rawget(addon, "releaseNotesBrowser")
 	local history = browser and browser.history

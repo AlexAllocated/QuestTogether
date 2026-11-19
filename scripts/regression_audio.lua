@@ -53,7 +53,7 @@ QT:RegisterTest("audio settings validate false zero sound choices and preserve n
 	for _, cue in ipairs(a:GetAudioCueCatalog()) do
 		if a:GetOption(cue.enabledKey) then enabled = enabled + 1 end
 	end
-	Equal(enabled, 2, "only attention and focus sounds start enabled")
+	Equal(enabled, #a:GetAudioCueCatalog(), "every sound cue starts enabled")
 end)
 
 QT:RegisterTest("audio playback uses owned gain files and never emits sound at zero volume", function()
@@ -139,7 +139,7 @@ end)
 
 QT:RegisterTest("audio preview honors master volume and combat mute but can audition disabled events", function()
 	local a = Fixture()
-	Equal(a:GetOption("audioQuestReadyEnabled"), false)
+	a.db.profile.audioQuestReadyEnabled = false
 	assert(a:PreviewAudioCue("questReady"))
 	Ends(a.plays[1], "\\completion\\025.ogg")
 	Equal(a:PreviewAudioCue("questReady"), false, "rapid preview clicks are bounded")
@@ -164,6 +164,7 @@ end)
 QT:RegisterTest("party audio accepts fresh remote milestones and rejects stale unknown future and unrelated events", function()
 	local a = Fixture()
 	a.db.profile.audioQuestReadyEnabled = true
+	a.db.profile.audioObjectiveProgressEnabled = false
 	local function Ready(age)
 		return { eventType = "QUEST_READY_TO_TURN_IN", occurredAt = a.API.GetServerTime() - (age or 0) }
 	end
@@ -178,7 +179,7 @@ QT:RegisterTest("party audio accepts fresh remote milestones and rejects stale u
 	a.now = 20
 	a:ObservePartyAnnouncementAudio({ eventType = "QUEST_ACCEPTED", occurredAt = a.API.GetServerTime() }, "Friend")
 	a:ObservePartyAnnouncementAudio({ eventType = "QUEST_PROGRESS", occurredAt = a.API.GetServerTime() }, "Friend")
-	Equal(#a.plays, 1, "frequent progress stays silent by default")
+	Equal(#a.plays, 1, "disabled progress stays silent")
 	for _, age in ipairs({ 31, 600, -2, math.huge }) do
 		a:ObservePartyAnnouncementAudio(Ready(age), "Friend")
 	end
@@ -194,6 +195,24 @@ QT:RegisterTest("party audio accepts fresh remote milestones and rejects stale u
 	a.now = 30
 	a:ObservePartyAnnouncementAudio(event, "Friend")
 	Equal(#a.plays, 3, "an unavailable local server clock fails quiet")
+end)
+
+
+QT:RegisterTest("audio defaults fill missing cues without replacing saved opt outs", function()
+	local a = Fixture()
+	a.db.profile.audioEnabled = false
+	a.db.profile.audioChatEnabled = false
+	a.db.profile.audioQuestReadyEnabled = nil
+	a:NormalizeSettingsProfile()
+	Equal(a:GetOption("audioEnabled"), false)
+	Equal(a:GetOption("audioChatEnabled"), false)
+	Equal(a:GetOption("audioQuestReadyEnabled"), true)
+	for _, cue in ipairs(a:GetAudioCueCatalog()) do
+		Equal(QT.DEFAULTS.profile[cue.enabledKey], true)
+	end
+	for _, id in ipairs({ "quiet", "log", "kid" }) do
+		Equal(a:GetPresetValues(id).audioEnabled, false)
+	end
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_audio.lua")

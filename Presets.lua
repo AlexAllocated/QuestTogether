@@ -4,10 +4,10 @@
 local QT = _G.QuestTogether
 local L = QT.Translate
 local definitions = {
-	{ id = "full", title = L("Full experience"), description = L("All the usual QuestTogether features. Customize any option later.") },
-	{ id = "quiet", title = L("Quiet companion"), description = L("Keep maps, nameplates and party tools, without automatic messages, sounds or emotes.") },
-	{ id = "log", title = L("Party log only"), description = L("Open the Party Quest Log when you need it. Keep the minimap and controller shortcuts; hide other additions.") },
-	{ id = "kid", title = L("Kid mode"), description = L("Share with your party quietly and follow the leader's quests automatically. Keep friendly thanks and celebration emotes.") },
+	{ id = "full", scenario = L("For players who want QT's full set of shared questing tools, whether adventuring with friends or meeting nearby questers. Keep player maps, nameplate markers, the party tracker, chat updates, bubbles, sounds and celebration emotes. Open the Party Quest Log whenever you want to compare quests or help someone catch up. You choose your own quest focus; automatic leader-follow is off."), title = L("Full Adventure"), description = L("All the usual QuestTogether features. Customize any option later.") },
+	{ id = "quiet", scenario = L("For players who enjoy seeing what their companions are doing but prefer a quieter adventure. Keep player maps, nameplate markers, the party tracker and the Party Quest Log. Automatic chat output, bubbles, sounds, emotes, login tips and update interruptions are turned off. Quest-sharing requests can still ask for your approval, and you can open patch notes yourself whenever you like."), title = L("Quiet Questing"), description = L("Keep maps, nameplates and party tools, without automatic messages, sounds or emotes.") },
+	{ id = "log", scenario = L("For players who mainly want to compare their party's quests without extra information around the game world. Open the Party Quest Log from the minimap button, controller shortcut or a command when you need it. Map overlays, nameplate additions, QT tooltip identifiers, the party tracker and automatic output are hidden or disabled. QT still shares your progress, but incoming QT requests to share a quest do not interrupt you."), title = L("Quest Log Only"), description = L("Open the Party Quest Log when you need it. Keep the minimap and controller shortcuts; hide other additions.") },
+	{ id = "kid", scenario = L("For a younger player adventuring with a parent who handles the party's quest planning. QT stays out of sight: no automatic windows, map additions, nameplate markers or launch buttons. Progress is shared only with the party, and the child's quest focus follows the party leader when both have that quest. Friendly thanks and celebration emotes stay on. If the leader's focus is unavailable, manual focus works until following can resume. Change these choices later through WoW Options."), title = L("Little Sidekick"), description = L("Share with your party quietly and follow the leader's quests automatically. Keep friendly thanks and celebration emotes.") },
 }
 local quiet = {
 	showChatBubbles = false, ownChatBubbleMode = "hidden", showChatLogs = false, showQTChat = false,
@@ -37,7 +37,7 @@ for _, bundle in ipairs({ quiet, log, kid }) do for key in pairs(bundle) do mana
 function QT:GetPresetDefinitions()
 	local result = {}
 	for i, entry in ipairs(definitions) do
-		result[i] = { id = entry.id, title = entry.title, description = entry.description }
+		result[i] = { id = entry.id, title = entry.title, description = entry.description, scenario = entry.scenario }
 	end
 	return result
 end
@@ -55,6 +55,83 @@ function QT:GetPresetValues(id)
 		end
 	end
 	return values
+end
+-- Labels mirror the ordinary settings; values always come from the bundle.
+local settingGroups = {
+	{ title = L("Groups & Sharing"), entries = {
+		{ "questTrackerMode", L("Party Objective Tracker") },
+		{ "showTrackerFocusIndicators", L("Show party focus indicators on the quest tracker") },
+		{ "automaticLeaderFocus", L("Automatically follow the party leader's quest focus") },
+		{ "allowIncomingShareRequests", L("Allow incoming QT quest-share requests") },
+		{ "autoAcceptPartyShareRequests", L("Always allow party share requests") },
+		{ "lookingForQuestPartners", L("Looking for Questing Partners") },
+		{ "autoInviteWhileLFG", L("Automatically invite others while looking for partners") },
+		{ "autoInviteFriends", L("Automatically invite friends who request to join") },
+	} },
+	{ title = L("Maps & nameplates"), entries = {
+		{ "showPlayerLocations", L("Show player markers") },
+		{ "showWorldMapData", L("Show QT world-map overlays") },
+		{ "showPartyWaypoints", L("Show party waypoints") },
+		{ "nameplatePlayerIconEnabled", L("QuestTogether Player Icon") },
+		{ "nameplateQuestIconEnabled", L("Quest Objective Icon") },
+		{ "nameplateQuestHealthColorEnabled", L("Quest Objective Health Color") },
+		{ "playerTooltipIdentifierMode", L("QuestTogether tooltip") },
+	} },
+	{ title = L("Launchers"), entries = {
+		{ "showMinimapButton", L("Show minimap icon") },
+		{ "showWorldMapButton", L("Show the QT world-map button") },
+		{ "showDataBrokerLauncher", L("Show the Data Broker launcher") },
+		{ "automaticGamepadLauncher", L("Automatically add the PQL controller shortcut") },
+	} },
+	{ title = L("Chat & notifications"), entries = {
+		{ "showChatLogs", L("Show Chat Logs") },
+		{ "showQTChat", L("Show QuestTogether Chat") },
+		{ "showChatBubbles", L("Show Chat Bubbles") },
+		{ "ownChatBubbleMode", L("My chat bubble") },
+		{ "announceToNonQTParty", L("Also send announcements to party chat if any party members are not running QuestTogether") },
+		{ "hidePartyChatReminder", L("Hide party-chat reminders") },
+		{ "showStartupTips", L("Show tips on login") },
+		{ "showAutomaticReleaseNotes", L("Show patch notes automatically") },
+		{ "showUpdateNotifications", L("Show update notifications") },
+	} },
+	{ title = L("Sounds & emotes"), entries = {
+		{ "audioEnabled", L("Enable QT sounds") },
+		{ "autoThankBuffs", L("Automatically thank players for buffs") },
+		{ "emoteOnQuestCompletion", L("Emote On Quest Completion") },
+		{ "emoteOnNearbyPlayerQuestCompletion", L("Emote On Nearby Player Quest Completion") },
+		{ "emoteOnLevelUp", L("Emote On Level Up") },
+		{ "emoteOnNearbyPlayerLevelUp", L("Emote On Nearby Player Level Up") },
+	} },
+	{ title = L("Sharing & privacy"), entries = {
+		{ "sharingAudience", L("Sharing audience") },
+		{ "sharePartyFocus", L("Share my focused quest") },
+		{ "sharePartyWaypoint", L("Share my waypoint") },
+		{ "sharePlayerLocation", L("Share my location on the map and minimap") },
+		{ "shareDeveloperDiagnostics", L("Share diagnostic data with the developer") },
+	} },
+}
+function QT:GetPresetSettingDetails(id)
+	local values = self:GetPresetValues(id)
+	if not values then return nil end
+	local groups = {}
+	for _, group in ipairs(settingGroups) do
+		local result = { title = group.title, entries = {} }
+		for _, entry in ipairs(group.entries) do
+			local key, value = entry[1], values[entry[1]]
+			local text
+			if type(value) == "boolean" then text = value and L("Enabled") or L("Disabled")
+			elseif key == "sharingAudience" then text = value == "party" and L("Party only") or L("Normal sharing")
+			elseif key == "ownChatBubbleMode" then
+				text = value == "always" and L("Show always") or value == "solo" and L("Show only when solo") or value == "party" and L("Show only when in a party") or L("Hide always")
+			elseif key == "playerTooltipIdentifierMode" then text = self:GetPlayerTooltipIdentifierModeLabel(value)
+			elseif key == "questTrackerMode" then
+				for _, option in ipairs(self:GetQuestTrackerModeOptions()) do if option.value == value then text = option.text; break end end
+			end
+			result.entries[#result.entries + 1] = { key = key, label = entry[2], value = value, text = text or L("Unknown") }
+		end
+		groups[#groups + 1] = result
+	end
+	return groups
 end
 function QT:GetMatchingPreset()
 	for _, entry in ipairs(definitions) do

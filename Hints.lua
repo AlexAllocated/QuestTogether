@@ -29,13 +29,26 @@ local hintActions = {
 		return L("Player Plates")
 	end, "playerPlates"),
 	player_locations = SettingsAction(function()
-		return L("Player Locations")
+		return L("Maps & Minimap")
 	end, "playerLocations"),
+	emotes = SettingsAction(function() return L("Emotes") end, "emotes"),
+	tracker = SettingsAction(function() return L("Party Tracker & Focus") end, "tracker"),
+	launchers = SettingsAction(function() return L("Controls & Launchers") end, "launchers"),
+	audio = SettingsAction(function() return L("Audio") end, "audio"),
+	data_broker = SettingsAction(function() return L("Data Broker") end, "data_broker"),
+	presets = {
+		label = function() return L("Presets") end,
+		run = function(addon) return addon:OpenPresetWindow() end,
+	},
+	companions = {
+		label = function() return L("Recent Companions") end,
+		run = function(addon) return addon:OpenRecentCompanions() end,
+	},
 	groups = SettingsAction(function()
 		return L("Groups & Sharing")
 	end, "groups"),
 	accessibility = SettingsAction(function()
-		return L("Accessibility")
+		return L("Appearance & Accessibility")
 	end, "accessibility"),
 	profiles = SettingsAction(function()
 		return L("Profiles")
@@ -189,7 +202,7 @@ function QT:GetHintCatalog()
 		},
 		{
 			id = "hint007",
-			actions = { "settings" },
+			actions = { "launchers" },
 			text = L("Hidden your QT minimap button? Open /qt options and enable Show Minimap Icon to bring it back."),
 		},
 		{
@@ -219,7 +232,7 @@ function QT:GetHintCatalog()
 			id = "hint012",
 			actions = { "settings" },
 			text = L(
-				"QT's settings home page summarizes your current preferences and links to the relevant settings pages."
+				"QT's settings home page offers presets, startup tips and update preferences. The category pages hold the detailed feature controls."
 			),
 		},
 		{ id = "hint013", actions = { "settings" }, text = L("Hover over QT settings to see what each option does.") },
@@ -757,14 +770,14 @@ function QT:GetHintCatalog()
 		},
 		{
 			id = "hint101",
-			actions = { "where_to_announce" },
+			actions = { "emotes" },
 			text = L(
-				"Quest-completion celebrations and level-up celebrations have separate settings in Where to Announce."
+				"Quest-completion celebrations and level-up celebrations have separate settings in Emotes."
 			),
 		},
 		{
 			id = "hint102",
-			actions = { "where_to_announce" },
+			actions = { "emotes" },
 			text = L(
 				"You can turn off reactions to nearby players' celebrations without turning off your own celebration emotes."
 			),
@@ -843,7 +856,7 @@ function QT:GetHintCatalog()
 		{
 			id = "hint113",
 			actions = { "accessibility" },
-			text = L("Increase Window scale in Accessibility to make QT's window text and controls larger together."),
+			text = L("Increase Window scale in Appearance & Accessibility to make QT's window text and controls larger together."),
 		},
 		{
 			id = "hint114",
@@ -855,7 +868,7 @@ function QT:GetHintCatalog()
 		{
 			id = "hint115",
 			actions = { "accessibility" },
-			text = L("Enable Reduce motion in Accessibility to make scrolling and objective expansion immediate."),
+			text = L("Enable Reduce motion in Appearance & Accessibility to make scrolling and objective expansion immediate."),
 		},
 		{
 			id = "hint116",
@@ -864,9 +877,9 @@ function QT:GetHintCatalog()
 		{ id = "hint117", text = L("Press Escape to close QT windows.") },
 		{
 			id = "hint118",
-			actions = { "settings" },
+			actions = { "accessibility" },
 			text = L(
-				"Choose the Light theme under General for light parchment and dark text in QT's parchment windows."
+				"Choose the Light theme in Appearance & Accessibility for light parchment and dark text in QT's parchment windows."
 			),
 		},
 		{
@@ -1008,14 +1021,14 @@ function QT:GetHintCatalog()
 		{
 			id = "hint142",
 			actions = { "party_log" },
-			text = L("Choosing a different quest while following someone asks you to confirm ending the follow."),
+			text = L("During manual focus-follow, deliberately choosing another quest asks whether to stop following. Automatic leader-follow instead keeps the leader's usable quest selected."),
 			feature = "focus",
 		},
 		{
 			id = "hint143",
 			actions = { "keybindings" },
 			text = L(
-				"Use Stop following in Party Quest Log, or assign Stop following quest focus in WoW's QT keybindings."
+				"Use Stop following in PQL or its key binding to end manual following. If automatic leader-follow is governing your focus, turn off that setting first."
 			),
 			feature = "focus",
 		},
@@ -1029,7 +1042,7 @@ function QT:GetHintCatalog()
 		},
 		{
 			id = "hint145",
-			actions = { "groups" },
+			actions = { "tracker" },
 			text = L(
 				"Share my focused quest works independently of public location sharing. Your party can see your active quest even with your public dot hidden."
 			),
@@ -1051,7 +1064,7 @@ function QT:GetHintCatalog()
 		},
 		{
 			id = "hint148",
-			actions = { "groups" },
+			actions = { "player_locations" },
 			text = L(
 				"With Share my waypoint enabled, placing, moving, or clearing your normal WoW map pin updates your party's shared destination."
 			),
@@ -1074,7 +1087,7 @@ function QT:GetHintCatalog()
 		{ id = "hint151", text = L("Shared party waypoints appear on the world map and, when nearby, the minimap.") },
 		{
 			id = "hint152",
-			actions = { "groups" },
+			actions = { "player_locations" },
 			text = L(
 				"Share my waypoint and Show party waypoints are separate settings, so you can choose what to share and what to display."
 			),
@@ -1096,7 +1109,7 @@ function QT:GetHintCatalog()
 		},
 		{
 			id = "hint155",
-			text = L("Navigating to a waypoint ends quest-focus following."),
+			text = L("Waypoint navigation that replaces manually followed quest focus asks for confirmation. Automatic leader-follow blocks that replacement while the leader's focus is usable."),
 			feature = "navigationFocus",
 		},
 		{
@@ -1177,6 +1190,442 @@ function QT:GetHintCatalog()
 			feature = "warMode",
 		},
 		{ id = "hint167", text = L("Type /qt tip or /qt hint to see another QuestTogether tip whenever you like.") },
+		{
+			id = "hint168",
+			actions = { "presets" },
+			text = L(
+				"Open Presets in QT settings to compare play styles and expand their setting lists. Nothing changes until you apply a preset."
+			),
+		},
+		{
+			id = "hint169",
+			actions = { "presets" },
+			text = L(
+				"Full Adventure uses QT's standard feature defaults. You can customize individual settings afterward without resetting your layout or bindings."
+			),
+		},
+		{
+			id = "hint170",
+			actions = { "presets" },
+			text = L(
+				"Quiet Questing keeps maps, location sharing, nameplates and party tools, while silencing automatic chat, bubbles, sounds, emotes and update interruptions."
+			),
+		},
+		{
+			id = "hint171",
+			actions = { "presets" },
+			text = L(
+				"Quest Log Only keeps PQL available on demand, with minimap and controller launchers, while hiding automatic overlays, tracker additions and announcements."
+			),
+		},
+		{
+			id = "hint172",
+			actions = { "presets" },
+			text = L(
+				"Little Sidekick hides automatic QT windows and launchers, keeps party-only reporting and follows the party leader's quest focus. Friendly emotes stay enabled; settings remain accessible through WoW Options."
+			),
+		},
+		{
+			id = "hint173",
+			actions = { "presets" },
+			text = L(
+				"You can choose a preset for future characters. Existing and copied profiles keep their settings; applying a preset does not reset your whole profile."
+			),
+		},
+		{
+			id = "hint174",
+			actions = { "presets" },
+			text = L(
+				"Presets: Custom means your current settings do not exactly match a preset. It is a description, not an error; your individual choices still apply."
+			),
+		},
+		{
+			id = "hint175",
+			actions = { "groups" },
+			text = L(
+				"Party-only sharing disables public discovery and nearby publication while keeping supported party quest, focus, waypoint and location synchronization."
+			),
+		},
+		{
+			id = "hint176",
+			actions = { "groups" },
+			text = L(
+				"Turn off incoming QT quest-share requests to decline those requests without a QT prompt. Blizzard's ordinary quest-share dialogs are separate."
+			),
+			feature = "sharing",
+		},
+		{
+			id = "hint177",
+			actions = { "party_log" },
+			text = L(
+				"Share and Request Share explain known blockers before you try. Checking waits for evidence; Unknown allows an attempt, and No known blockers is not a guarantee."
+			),
+			feature = "sharing",
+		},
+		{
+			id = "hint178",
+			actions = { "party_log" },
+			text = L(
+				"WoW shares quests with the whole party. One member may report already completed while another can still accept the same offer."
+			),
+			feature = "sharing",
+		},
+		{
+			id = "hint179",
+			actions = { "party_log" },
+			text = L(
+				"On Forever, optional QuestieDB with compatible Forever data enables quest-chain information. Without it, ordinary PQL comparison and objectives still work."
+			),
+			feature = "layers",
+		},
+		{
+			id = "hint180",
+			actions = { "party_log" },
+			text = L(
+				"On Retail, QT uses Blizzard's native quest lines. Coverage varies by quest, and a line's order does not prove its prerequisites."
+			),
+			feature = "retail",
+		},
+		{
+			id = "hint181",
+			actions = { "party_log" },
+			text = L(
+				"Click a chain-link button to show earlier and later steps around your quest. Click it again to close the chain; objective expansions stay independent."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint182",
+			actions = { "party_log" },
+			text = L(
+				"A spinning chain indicator means QT is resolving relationships. Quests with no other known steps have no chain button once loading finishes."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint183",
+			actions = { "party_log" },
+			text = L(
+				"Use PQL Filters to Group by chain. Filters still apply to party quests; extra chain-context rows do not inflate quest or Missing counts."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint184",
+			actions = { "party_log" },
+			text = L(
+				"Unreached quest names are hidden by default in chains. Turn off Hide future quest names in PQL Filters if you prefer to see all known titles."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint185",
+			actions = { "party_log" },
+			text = L(
+				"Earlier chain rows show their names, but may be alternative versions or branches. Their position does not mean your character completed them."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint186",
+			actions = { "party_log" },
+			text = L(
+				"PQL shows quest levels and difficulty colors; a + marks group quests. Hover for quest IDs to distinguish steps that share a title."
+			),
+		},
+		{
+			id = "hint187",
+			actions = { "party_log" },
+			text = L(
+				"Hover a missing player's chain cell for their prerequisites and blockers. Active and completed quests do not need those acceptance warnings."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint188",
+			actions = { "party_log" },
+			text = L(
+				"Unavailable marks a confirmed lasting blocker, such as exceeding a quest's maximum level. It differs from requirements you can still work toward."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint189",
+			actions = { "party_log" },
+			text = L(
+				"Find quest giver can show reliable starter locations and alternatives. Opening a location only shows it; Set waypoint is a separate choice."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint190",
+			actions = { "party_log" },
+			text = L(
+				"Long chains offer Show earlier quests and Show later quests. Expand more steps as needed without opening another window."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint191",
+			actions = { "party_log" },
+			text = L(
+				"Try /qt pqlpreview chains to explore your quests with simulated party members. Preview actions do not send requests, share quests or change your focus."
+			),
+			feature = "chains",
+		},
+		{
+			id = "hint192",
+			actions = { "tracker" },
+			text = L(
+				"The Party Objective Tracker can show the focused quest, the hovered quest, both, or neither. Hovering another quest does not change your focus."
+			),
+			feature = "focus",
+		},
+		{
+			id = "hint193",
+			actions = { "tracker" },
+			text = L(
+				"Use HUD Edit Mode to position and resize the Party Objective Tracker. Its settings also control opacity, snapping and whether it appears while solo."
+			),
+			feature = "hud",
+		},
+		{
+			id = "hint194",
+			actions = { "tracker" },
+			text = L(
+				"Quest-tracker focus rings use class colors. A filled ring marks someone you follow; double chevrons mark someone following your focus."
+			),
+			feature = "focus",
+		},
+		{
+			id = "hint195",
+			actions = { "tracker" },
+			text = L(
+				"Target a party member and type /qt focus to follow their quest focus, or use /qt focus Full Name. For manual following, /qt unfollow stops it."
+			),
+			feature = "focus",
+		},
+		{
+			id = "hint196",
+			actions = { "tracker" },
+			text = L(
+				"Automatic party-leader follow uses the actual leader's shared quest focus when you have that quest. It adjusts when leadership changes."
+			),
+			feature = "focus",
+		},
+		{
+			id = "hint197",
+			actions = { "tracker" },
+			text = L(
+				"If the leader has no usable QT focus, automatic leader-follow allows temporary manual focus. It resumes when their shared quest becomes available in your log."
+			),
+			feature = "focus",
+		},
+		{
+			id = "hint198",
+			actions = { "tracker" },
+			text = L(
+				"While automatic leader-follow has a usable quest, other focus choices are blocked without a warning. Turn that setting off before choosing your own quest or stopping follow."
+			),
+			feature = "focus",
+		},
+		{
+			id = "hint199",
+			actions = { "launchers" },
+			text = L(
+				"On supported Forever clients, enable WoW's Gamepad UI and QT's native gamepad navigation to use controller navigation in QT windows."
+			),
+			feature = "layers",
+		},
+		{
+			id = "hint200",
+			actions = { "launchers" },
+			text = L(
+				"QT can place a PQL macro at LT + RT + D-pad Up on normal gamepad action page 1, if the slot is empty. Existing actions are left alone."
+			),
+			feature = "layers",
+		},
+		{
+			id = "hint201",
+			actions = { "launchers" },
+			text = L(
+				"Move or unbind the QT PQL macro to customize its controller shortcut. QT leaves it there; deleting the macro lets automatic setup recreate it in an empty default slot."
+			),
+			feature = "layers",
+		},
+		{
+			id = "hint202",
+			actions = { "keybindings" },
+			text = L(
+				"Assign Open QuestTogether Menu to use a controller shortcut for hovered map dots and clusters. Native map Select keeps Blizzard's action; the QT menu binding starts unassigned."
+			),
+			feature = "layers",
+		},
+		{
+			id = "hint203",
+			actions = { "party_log" },
+			text = L(
+				"In controller PQL navigation, the D-pad moves between quests and controls and scrolls selection into view. Back closes a menu, then chain details, then PQL."
+			),
+			feature = "layers",
+		},
+		{
+			id = "hint204",
+			actions = { "patch_notes" },
+			text = L(
+				"In Patch Notes, use the controller's right stick to scroll text and the D-pad to select buttons or history entries. Back closes the window."
+			),
+			feature = "layers",
+		},
+		{
+			id = "hint205",
+			actions = { "audio" },
+			text = L(
+				"Audio settings let you enable each cue, choose its sound, adjust its volume and preview it. Keep useful waypoint or focus cues without hearing every objective update."
+			),
+		},
+		{
+			id = "hint206",
+			actions = { "audio" },
+			text = L(
+				"All QT sound cues start enabled for new settings. Your saved sound choices and opt-outs are preserved across updates."
+			),
+		},
+		{
+			id = "hint207",
+			actions = { "emotes" },
+			text = L(
+				"Automatic buff thanks waits briefly, then uses /thank, /bow or /applaud for an identifiable nearby helper outside combat. Repeated thanks are limited; disable it in Emotes."
+			),
+		},
+		{
+			id = "hint208",
+			actions = { "where_to_announce" },
+			text = L(
+				"Set My chat bubble to Show only when in a party to see your own bubble only while grouped, including raids. This does not change outgoing quest reporting."
+			),
+		},
+		{
+			id = "hint209",
+			actions = { "data_broker" },
+			text = L(
+				"The Data Broker launcher supplies QT to compatible toolbar addons. It does not create a toolbar itself and is separate from the minimap button."
+			),
+		},
+		{
+			id = "hint210",
+			actions = { "data_broker" },
+			text = L(
+				"Choose the Data Broker launcher's left- and right-click actions separately. You can open PQL, settings or another supported QT destination from your toolbar."
+			),
+		},
+		{
+			id = "hint211",
+			actions = { "data_broker" },
+			text = L(
+				"If a toolbar cannot remove an already registered Data Broker launcher, disable it in QT and use Reload UI. The next load will not register it."
+			),
+		},
+		{
+			id = "hint212",
+			actions = { "companions" },
+			text = L(
+				"Recent Companions helps you find former party members to whisper, invite or annotate. A history entry does not mean the player is currently online."
+			),
+		},
+		{
+			id = "hint213",
+			actions = { "companions" },
+			text = L(
+				"Add private player notes from QT player menus or Recent Companions. Notes are shared across your characters, but are not sent to other players."
+			),
+		},
+		{
+			id = "hint214",
+			actions = { "player_locations" },
+			text = L(
+				"World-map clustering groups overlapping player dots. Click a cluster to expand its players; minimap dots are unchanged. You can disable clustering in Maps & Minimap."
+			),
+		},
+		{
+			id = "hint215",
+			actions = { "player_locations" },
+			text = L(
+				"The world-map QT button toggles QT overlays. Hiding that button is a separate setting, so you can keep overlays without the button."
+			),
+		},
+		{
+			id = "hint216",
+			actions = { "player_plates" },
+			text = L(
+				"Friendly player plates in names-only mode position QT icons around the name. The preview follows that mode and links to the Blizzard setting that controls it."
+			),
+			feature = "nameplates",
+		},
+		{
+			id = "hint217",
+			actions = { "player_plates" },
+			text = L(
+				"Player tooltip identifiers can be limited to friends, party members, both, or hidden entirely. This filter is separate from nameplate icons and map dots."
+			),
+		},
+		{
+			id = "hint218",
+			actions = { "settings" },
+			text = L(
+				"Automatic patch notes and update notifications have separate switches. Turning them off keeps manual Patch Notes and release history available."
+			),
+		},
+		{
+			id = "hint219",
+			actions = { "debug" },
+			text = L(
+				"Use /qt diagnostics to copy a support report before reloading when something goes wrong. It includes recent events that a reload may clear."
+			),
+		},
+		{
+			id = "hint220",
+			actions = { "player_locations" },
+			text = L(
+				"A star on a QT map marker identifies a verified VIP. Class color still identifies their class; the questing-partner glow is a separate signal."
+			),
+		},
+		{
+			id = "hint221",
+			actions = { "party_log" },
+			text = L(
+				"In PQL, press Enter from the search box to navigate rows with the arrow keys. Enter activates the selected control; Space opens its actions."
+			),
+		},
+		{
+			id = "hint222",
+			actions = { "party_log" },
+			text = L(
+				"Collapse a player column from its PQL heading menu to make more room. Expand it again when you want the full status and action controls."
+			),
+		},
+		{
+			id = "hint223",
+			actions = { "tracker" },
+			text = L(
+				"Party tracker visibility and focus indicators on Blizzard's quest tracker are separate settings. You can keep focus badges while hiding the extra tracker panel."
+			),
+			feature = "focus",
+		},
+		{
+			id = "hint224",
+			actions = { "audio" },
+			text = L(
+				"QT sounds use WoW's sound-effects channel. If previews are silent, check WoW sound effects as well as the cue's enable switch and volume."
+			),
+		},
+		{
+			id = "hint225",
+			actions = { "settings" },
+			text = L(
+				"Disable startup tips if you prefer a quiet login. You can still request a local tip at any time with /qt tip or /qt hint."
+			),
+		},
 	}
 end
 

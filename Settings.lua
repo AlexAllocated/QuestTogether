@@ -88,7 +88,7 @@ function QuestTogether:MigratePlayerLocationOptions(profile)
 end
 
 function QuestTogether:IsOwnChatBubbleMode(value)
-	return self:CanAccessValue(value) and (value == "always" or value == "solo" or value == "hidden")
+	return self:CanAccessValue(value) and (value == "always" or value == "solo" or value == "party" or value == "hidden")
 end
 
 function QuestTogether:MigrateOwnChatBubbleMode(profile)
@@ -114,7 +114,7 @@ function QuestTogether:ShouldShowOwnChatBubble()
 	local query = self.API and self.API.IsInAnyGroup
 	if not self:CanAccessValue(query) or type(query) ~= "function" then return false end
 	local ok, grouped = pcall(query)
-	return ok and self:CanAccessValue(grouped) and grouped == false
+	return ok and self:CanAccessValue(grouped) and grouped == (mode == "party")
 end
 
 function QuestTogether:EnsureProfileStorage()

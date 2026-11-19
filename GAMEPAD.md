@@ -2,7 +2,7 @@
 
 QuestTogether uses Forever's native Gamepad UI navigation and the player's
 existing controller mappings. Enable Gamepad UI in WoW, then leave **Enable native
-gamepad navigation** checked in QT's General settings. Existing controller
+gamepad navigation** checked in QT's Controls & Launchers settings. Existing controller
 keybindings stay unchanged.
 
 With the default controller layout, QT adds a **PQL macro with a built-in
@@ -142,33 +142,48 @@ clear native state before further testing. QT never reloads the game itself.
 ## Welcome and configuration
 
 New installations open the welcome chooser instead of patch notes. Select one
-of the four cards, then **Start questing**. Full experience is initially selected;
-Back or Escape on first setup uses Full experience. On a manually reopened
-chooser, Back cancels. Keyboard arrows select a card and Enter applies. First setup remembers the
-choice for future characters; on a reopened chooser, Space toggles that checkbox. Controller Select chooses a card;
-navigate to Start questing to apply it. Existing installations are not reset.
+of the four cards, then **Start questing**. Full Adventure is initially selected;
+Back or Escape on first setup uses Full Adventure. On a manually reopened
+chooser, Back cancels. Keyboard Up/Down selects a card and Enter applies.
+Right/Left expands or collapses its settings; Page Up/Down scrolls the list.
+First setup remembers the choice for future characters; on a reopened chooser,
+Space toggles that checkbox. Controller Select chooses a card; navigate to
+Start questing to apply it. Each card also has a separate Show settings button.
+Expanding a card does not select or apply it. Use the mouse wheel or controller
+right stick to read all its settings; the Apply button stays available below
+the list. Existing installations are not reset.
 
 Open **WoW Options > AddOns > QuestTogether > Presets** to revisit the chooser.
-Each choice changes only the listed feature options, not layouts, bindings,
+Each card describes a common use case. Expanded details show every option the
+preset applies, grouped by feature with its exact enabled/disabled state or
+selected value. These details use the preset values directly. Each choice
+changes only the listed feature options, not layouts, bindings,
 notes or the addon's enabled state. Individual edits produce **Custom**. The
 future-character checkbox sets the account default; copied and existing
 profiles keep their settings.
 
-- **Full experience:** the usual QT defaults, with automatic leader-follow off.
-- **Quiet companion:** maps, plates, PQL and tracker remain. Automatic messages,
+- **Full Adventure:** the usual QT defaults, with automatic leader-follow off.
+- **Quiet Questing:** maps, plates, PQL and tracker remain. Automatic messages,
   bubbles, sounds, emotes, startup tips and update interruptions are off.
-- **Party log only:** PQL on demand with minimap and controller shortcuts.
+- **Quest Log Only:** PQL on demand with minimap and controller shortcuts.
   Map overlays/buttons, plate additions, identifiers, tracker/focus indicators,
   automatic output and incoming QT share-request prompts are off.
-- **Kid mode:** no automatic QT windows, launchers or visual additions. Reports
+- **Little Sidekick:** no automatic QT windows, launchers or visual additions. Reports
   stay within the current party, diagnostic sharing and public discovery are
   off, and automatic leader-follow is on. **Thanks and celebration emotes stay
   on** and can be changed individually. Deliberate shortcuts and WoW Options
   still work. Blizzard's own UI and native quest-sharing dialogs are unchanged.
 
-The main QT options page exposes automatic notes/update notices, map and Data
-Broker buttons, tracker focus indicators, controller shortcut installation,
-incoming QT share requests, sharing audience and automatic leader-follow.
+QT's main page contains presets, startup tips and update notices. **Controls &
+Launchers** contains controller navigation, shortcut installation and minimap access. **Data Broker** has its own page for compatible toolbar
+launchers and their click actions. **Party Tracker & Focus** contains leader-follow and
+tracker indicators; **Groups & Sharing** contains incoming share requests and the
+sharing audience. **Maps & Minimap** contains map overlays, buttons and waypoints.
+**Appearance & Accessibility** contains theme, scale and motion settings.
+**Emotes** contains automatic thanks and celebrations; sound cues stay in Audio.
+New profiles enable every sound cue; saved opt-outs are preserved. **Where to
+Announce → My chat bubble** supports always, solo, party (including raids), and
+hidden. This controls only the local personal bubble, not outgoing progress.
 Controller navigation and shortcut installation are independent. Disabling the
 shortcut removes only an unchanged action whose placement QT recorded; custom
 macros/bindings are retained. Turning it on can restore that same removed action
@@ -193,7 +208,7 @@ actual delivery between clients. Before release, check:
 
 1. A fresh test account sees welcome once; an existing account keeps its settings.
    Try mouse, keyboard and controller, including Back and a combat transition.
-2. Choose Kid mode before startup completes. Check for no QT launcher, automatic
+2. Choose Little Sidekick before startup completes. Check for no QT launcher, automatic
    chat/window/map/plate/tracker output while another grouped client receives
    quest, focus, history, waypoint and location updates. Emotes should remain.
 3. Follow a leader with QT and a shared quest. Change leadership and quest focus;

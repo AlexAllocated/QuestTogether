@@ -89,6 +89,51 @@ QT:RegisterTest("welcome cards apply once keyboard chooses presets and closing m
 	assert((a.invalidCalls or 0) == 0)
 end)
 
+QT:RegisterTest("welcome preset details browse without applying and scroll through every setting", function()
+	local a = Fixture()
+	a.hasLoggedIn = true
+	a.db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {welcomeSetupComplete = true} }
+	a.GetOption = QT.GetOption
+	a.API.IsPartyQuestKeyboardInputBlocked = function() return false end
+	function a:RefreshOptionsWindow() end
+	function a:ApplySettingsTransaction() error("browsing must not apply a preset") end
+	assert(a:OpenPresetWindow())
+	local frame = a.presetWindow
+	local height, scale = frame:GetHeight(), frame:GetScale()
+	local key = frame:GetScript("OnKeyDown")
+	local initial = frame.scrollMaximum
+	for _, card in ipairs(frame.cards) do
+		card.expand:Click()
+		assert(frame.selected == "full" and frame.expandedPreset == card.id and card.details:IsShown())
+		assert(frame:GetHeight() == height and frame:GetScale() == scale, "details must scroll, not shrink the dialog")
+		assert(frame.scrollMaximum > initial and #card.detailRows > 39)
+		local count = 0
+		for _, row in ipairs(card.detailRows) do if row.key then count = count + 1 end end
+		assert(count == 39)
+		local top = frame.scrollOffset
+		key(frame, "PAGEDOWN"); assert(frame.scrollOffset > top)
+		frame.scroll:SetVerticalScroll(frame.scrollMaximum)
+		frame.scroll:GetScript("OnVerticalScroll")(frame.scroll, frame.scrollMaximum)
+		assert(frame.scrollOffset == frame.scrollMaximum and frame.scrollBar.qtScrollMaximum == frame.scrollMaximum)
+		card.expand:Click()
+		assert(not frame.expandedPreset and not card.details:IsShown() and frame.scrollOffset <= frame.scrollMaximum)
+	end
+	frame.cards[2].expand:Click(); frame.cards[4].expand:Click()
+	assert(not frame.cards[2].details:IsShown() and frame.cards[4].details:IsShown() and frame.selected == "full")
+	a.blocked = true
+	frame.cards[1].expand:Click(); assert(frame.expandedPreset == "kid")
+	a.blocked = false
+	key(frame, "DOWN"); key(frame, "RIGHT")
+	assert(frame.selected == "quiet" and frame.expandedPreset == "quiet")
+	key(frame, "LEFT"); assert(not frame.expandedPreset)
+	frame.close:Click()
+	assert(a:GetMatchingPreset() == "full" and not frame:IsShown())
+	assert(a:OpenPresetWindow() and frame.scrollOffset == 0 and not frame.expandedPreset)
+	a.db.profile = QT:DeepCopy(a.db.profile)
+	frame.cards[4].expand:Click(); assert(not frame.expandedPreset)
+	assert((a.invalidCalls or 0) == 0)
+end, { locale = "client" })
+
 QT:RegisterTest("welcome ignores stale profile actions and keyboard input owned by another surface", function()
 	local a = Fixture()
 	a.hasLoggedIn = true

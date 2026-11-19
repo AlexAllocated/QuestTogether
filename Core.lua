@@ -3355,6 +3355,8 @@ QuestTogether.API = QuestTogether.API
 				worldQuests = retail and Has(C_QuestLog, "IsWorldQuest"),
 				bonusObjectives = retail and Has(C_TaskQuest, "GetQuestInfoByQuestID"),
 				layers = QuestTogether:UsesRegionalPlayerNames(),
+				chains = retail or QuestTogether:UsesRegionalPlayerNames(),
+				retail = retail == true,
 				warMode = QuestTogether:SupportsWarMode() == true,
 			}
 		end,

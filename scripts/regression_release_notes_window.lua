@@ -66,6 +66,11 @@ local function Fixture()
 		self.discordOpened = (self.discordOpened or 0) + 1
 		return self.discordResult ~= false
 	end
+	function addon:OpenPresetWindow()
+		self.presetsOpened = (self.presetsOpened or 0) + 1
+		if self.presetsThrows then error("fixture chooser unavailable") end
+		return self.presetsResult ~= false
+	end
 	activeFixtures[#activeFixtures + 1] = addon
 	return addon
 end
@@ -280,6 +285,29 @@ Register("release notes Discord button opens support and dismisses only after su
 	Equal(frame:IsVisible(), false)
 end)
 
+Register("release notes preset button opens the chooser without applying settings", function()
+	local a = Fixture()
+	function a:SetOption() error("opening the chooser must not change settings") end
+	function a:ApplyPreset() error("opening the chooser must not apply a preset") end
+	assert(a:RenderReleaseNotesWindow(Notes(), "5.10.0", false))
+	local frame = a.releaseNotesWindow
+	Equal(frame.presets.label.text, "Presets")
+	assert(frame.minimumWidth >= frame.discord.width + frame.presets.width + frame.settings.width + 86)
+	a.presetsResult = false
+	frame.presets.scripts.OnClick({})
+	assert(frame:IsShown())
+	a.presetsThrows = true
+	frame.presets.scripts.OnClick({})
+	assert(frame:IsShown())
+	a.blocked = true
+	frame.presets.scripts.OnClick({})
+	Equal(a.presetsOpened, 2)
+	a.blocked, a.presetsThrows, a.presetsResult = false, false, true
+	frame.presets.scripts.OnClick({})
+	Equal(a.presetsOpened, 3)
+	assert(not frame:IsShown())
+end)
+
 Register("release notes only confirms actual visibility and retries unavailable layout", function()
 	local a = Fixture()
 	a.parent.shown = false
@@ -320,10 +348,12 @@ Register("release notes stale callbacks and rendering respect restrictions and q
 		end
 		frame.close.scripts.OnClick({})
 		frame.settings.scripts.OnClick({})
+		frame.presets.scripts.OnClick({})
 		frame.scroll.scripts.OnMouseWheel({}, -1)
 		frame.scrollBar:TriggerEvent("OnScroll", 0.5)
 		Equal(a:RenderReleaseNotesWindow(Notes(), "5.9.2", false), false)
 		Equal(a.settingsOpened, 0)
+		Equal(a.presetsOpened, nil)
 		local after = 0
 		for _, region in ipairs(a.regions) do
 			after = after + region.writes
@@ -833,9 +863,11 @@ Register("release notes controller history parks disappearing selections and ref
 	frame.settings.scripts.OnClick({})
 	frame.discord.scripts.OnClick({})
 	frame.close.scripts.OnClick({})
+	frame.presets.scripts.OnClick({})
 	Equal(a.releaseNotesBrowser.index, 1)
 	Equal(a.settingsOpened, 0)
 	Equal(a.discordOpened, nil)
+	Equal(a.presetsOpened, nil)
 	assert(frame:IsShown())
 	Equal(a.navigationRefreshes, 4)
 	a.controllerActive = true

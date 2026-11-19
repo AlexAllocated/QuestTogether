@@ -234,6 +234,7 @@ end
 CreateFrame = function(kind, _, parent, template)
 	local frame = Region(kind, parent)
 	frame.template = template
+	if template == "MinimalCheckboxTemplate" then frame:SetSize(24, 24) end
 	if template == "SettingsDropdownWithButtonsTemplate" then
 		frame.Dropdown, frame.Label = Region("DropdownButton"), Region("FontString")
 		frame.Dropdown.owner = frame
@@ -280,6 +281,14 @@ Settings = {
 	end,
 	RegisterAddOnCategory = function() end,
 }
+local tooltipRecords = {}
+local attachTooltip = QuestTogether.AttachSettingsTooltip
+QuestTogether.AttachSettingsTooltip = function(self, control, title, text)
+	assert(type(text) == "string" and text ~= title and #text > #title,
+		"settings help must explain the control: " .. tostring(title))
+	tooltipRecords[control] = { title = title, text = text }
+	return attachTooltip(self, control, title, text)
+end
 QuestTogether:InitializeDatabase()
 local nativeSetOption, settingWrites = QuestTogether.SetOption, {}
 QuestTogether.SetOption = function(self, key, value)
@@ -477,7 +486,8 @@ scope.DecrementButton.scripts.OnClick()
 assert(QuestTogether:GetOption("qtChatScope") == "zone_only")
 print("Native settings dropdowns, profile changes, and disabled controls passed")
 
-local autoThankBuffs = assert(QuestTogether.whereToAnnounceControls.autoThankBuffs)
+QuestTogether:InitializeEmotesWindow({})
+local autoThankBuffs = assert(QuestTogether.emotesControls.autoThankBuffs)
 assert(autoThankBuffs.template == "MinimalCheckboxTemplate")
 assert(autoThankBuffs.Label.text == "Automatically thank players for buffs")
 assert(autoThankBuffs:GetChecked() == true, "buff thanks starts enabled")
@@ -489,7 +499,7 @@ assert(autoThankBuffs:GetChecked() == true, "buff thanks follows the newly selec
 assert(QuestTogether:SetActiveProfile(firstProfile))
 assert(autoThankBuffs:GetChecked() == false, "returning to a profile preserves its buff-thanks choice")
 local autoThanksPoint = autoThankBuffs.points[#autoThankBuffs.points]
-assert(autoThankBuffs.parent == QuestTogether.whereToAnnounceControls.emoteOnNearbyPlayerLevelUp.parent,
+assert(autoThankBuffs.parent == QuestTogether.emotesControls.emoteOnNearbyPlayerLevelUp.parent,
 	"buff thanks belongs to the same native settings navigation container as the other emotes")
 assert(autoThankBuffs.parent:GetHeight() >= -autoThanksPoint[5] + 48,
 	"the emote settings content must leave space below the buff-thanks checkbox")
@@ -517,6 +527,8 @@ assert(QuestTogether:SetActiveProfile("Dropdown test profile"))
 assert(ownBubble.Dropdown.text == "Show always")
 assert(QuestTogether:SetActiveProfile(firstProfile))
 assert(ownBubble.Dropdown.text == "Show only when solo")
+ownBubble.IncrementButton.scripts.OnClick()
+assert(QuestTogether:GetOwnChatBubbleMode() == "party" and ownBubble.Dropdown.text == "Show only when in a party")
 ownBubble.IncrementButton.scripts.OnClick()
 assert(QuestTogether:GetOwnChatBubbleMode() == "hidden" and ownBubble.Dropdown.text == "Hide always")
 ownBubble.Dropdown.menu[1].func()
@@ -558,6 +570,7 @@ for _, region in ipairs(regions) do
 		local bar = region.ScrollBar
 		assert(bar and bar.template == "MinimalScrollBar" and not bar.interpolate)
 		scrollbarCount = scrollbarCount + 1
+		region.scripts.OnScrollRangeChanged(region) -- Native range event after measured page layout.
 		local maximum = region:GetVerticalScrollRange()
 		local halfway = maximum / 2
 		bar:SetScrollPercentage(0.5)
@@ -634,7 +647,71 @@ assert(startupTips:GetChecked() == true, "the home checkbox must refresh from th
 print("Startup tip opt-out and profile refresh passed")
 
 local home = QuestTogether.homeControls
-local theme = assert(home.themeDropdown)
+local launchers = QuestTogether.launcherSettingsControls
+local broker = QuestTogether.dataBrokerControls
+local appearance = QuestTogether.accessibilityControls
+local maps = QuestTogether.playerLocationsControls
+local trackerSettings = QuestTogether.trackerSettingsControls
+local groups = QuestTogether.groupsControls
+local featureControls = {
+	showAutomaticReleaseNotes = home.showAutomaticReleaseNotes,
+	showUpdateNotifications = home.showUpdateNotifications,
+	showWorldMapButton = maps.showWorldMapButton,
+	showTrackerFocusIndicators = trackerSettings.showTrackerFocusIndicators,
+	showDataBrokerLauncher = broker.showDataBrokerLauncher,
+	automaticGamepadLauncher = launchers.automaticGamepadLauncher,
+	allowIncomingShareRequests = groups.allowIncomingShareRequests,
+	automaticLeaderFocus = trackerSettings.automaticLeaderFocus,
+}
+assert(home.featureControls == nil and home.themeDropdown == nil and home.audience == nil)
+assert(QuestTogether.groupsControls.questTrackerHideSolo == nil)
+assert(QuestTogether.whereToAnnounceControls.autoThankBuffs == nil)
+assert(maps.sharePartyWaypoint and maps.showPartyWaypoints and maps.showWorldMapData)
+assert(trackerSettings.sharePartyFocus and trackerSettings.skipPartyFocusFollowConfirmation)
+assert(launchers.showMinimapButton and launchers.nativeGamepadNavigation)
+assert(appearance.themeDropdown and appearance.reduceMotion)
+assert(QuestTogether.whereToAnnounceControls.hidePartyChatReminder)
+assert(QuestTogether.launcherSettingsCategory.name == "Controls & Launchers")
+assert(QuestTogether.trackerSettingsCategory.name == "Party Tracker & Focus")
+assert(QuestTogether.playerLocationsCategory.name == "Maps & Minimap")
+local featureCount = 0
+local featureDefaults = QuestTogether.db.profile
+local featureWrites, featureSetOption = 0, QuestTogether.SetOption
+QuestTogether.SetOption = function(self, key, value)
+	featureWrites = featureWrites + 1
+	return featureSetOption(self, key, value)
+end
+QuestTogether:RefreshOptionsWindow()
+for key, control in pairs(featureControls) do
+	featureCount = featureCount + 1
+	assert(type(QuestTogether:GetOption(key)) == "boolean")
+	assert(control:GetChecked() == QuestTogether:GetOption(key), key .. " must display its saved value on first show")
+end
+assert(featureCount == 8)
+QuestTogether.db.profile = QuestTogether:DeepCopy(featureDefaults)
+for key in pairs(featureControls) do QuestTogether.db.profile[key] = not featureDefaults[key] end
+QuestTogether:RefreshOptionsWindow()
+for key, control in pairs(featureControls) do
+	assert(control:GetChecked() == QuestTogether:GetOption(key), key .. " must refresh both true and false values")
+end
+QuestTogether.db.profile = featureDefaults
+QuestTogether:RefreshOptionsWindow()
+for key, control in pairs(featureControls) do
+	assert(control:GetChecked() == QuestTogether:GetOption(key), key .. " must follow profile replacement")
+end
+assert(featureWrites == 0, "displaying feature settings must never write options or apply a preset")
+QuestTogether.SetOption = featureSetOption
+local reloadRequired = QuestTogether.dataBrokerReloadRequired
+QuestTogether.dataBrokerReloadRequired = false
+QuestTogether:RefreshDataBrokerWindow()
+assert(not broker.reload:IsShown(), "reload action must stay hidden unless a registered broker needs it")
+QuestTogether.dataBrokerReloadRequired = true
+QuestTogether:RefreshDataBrokerWindow()
+assert(broker.reload:IsShown())
+QuestTogether.dataBrokerReloadRequired = reloadRequired
+QuestTogether:RefreshDataBrokerWindow()
+print("Organized feature settings reflect defaults and custom profiles without changing settings")
+local theme = assert(appearance.themeDropdown)
 assert(home.lightMode == nil, "the old Light mode checkbox must not remain beside the dropdown")
 assert(theme.template == "SettingsDropdownWithButtonsTemplate" and theme.title.text == "Theme")
 assert(theme.Dropdown.menuAnchor[1] == "TOPRIGHT" and theme.Dropdown.menuAnchor[3] == "BOTTOMRIGHT")
@@ -662,7 +739,7 @@ QuestTogether.RefreshWindowThemes = refreshThemes
 QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
 QuestTogether.db.profile.lightMode = true
 local writesBeforeRefresh = themeWrites
-QuestTogether.optionsFrame.scripts.OnShow()
+QuestTogether.accessibilityFrame.scripts.OnShow()
 assert(theme.Dropdown.text == "Light" and theme.Dropdown.menu[2].selected())
 assert(themeWrites == writesBeforeRefresh, "profile refresh must not write the theme selection back")
 QuestTogether.SetOption = setOption
@@ -677,17 +754,17 @@ local brokerChoices = {
 	{ "pql", "Party Quest Log" }, { "menu", "Menu" },
 	{ "partners", "Looking for Questing Partners" }, { "settings", "Settings" }, { "none", "None" },
 }
-assert(home.dataBrokerHeader.text == "Data Broker")
-assert(home.dataBrokerHint.text:find("LibDataBroker", 1, true))
-assert(home.brokerLeftClickDropdown.Dropdown.text == "Party Quest Log")
-assert(home.brokerRightClickDropdown.Dropdown.text == "Menu")
+assert(QuestTogether.dataBrokerCategory.name == "Data Broker" and not launchers.showDataBrokerLauncher)
+assert(broker.description.text:find("LibDataBroker", 1, true))
+assert(broker.brokerLeftClickDropdown.Dropdown.text == "Party Quest Log")
+assert(broker.brokerRightClickDropdown.Dropdown.text == "Menu")
 local brokerWrites, brokerSetOption = { brokerLeftClick = 0, brokerRightClick = 0 }, QuestTogether.SetOption
 QuestTogether.SetOption = function(self, key, value)
 	if brokerWrites[key] then brokerWrites[key] = brokerWrites[key] + 1 end
 	return brokerSetOption(self, key, value)
 end
 for _, key in ipairs({ "brokerLeftClick", "brokerRightClick" }) do
-	local control = assert(home[key .. "Dropdown"])
+	local control = assert(broker[key .. "Dropdown"])
 	assert(control.template == "SettingsDropdownWithButtonsTemplate")
 	assert(control.Dropdown:IsEnabled(), "broker clicks can be configured without an installed broker display")
 	assert(control.Dropdown.menuAnchor[1] == "TOPRIGHT" and control.Dropdown.menuAnchor[3] == "BOTTOMRIGHT")
@@ -708,28 +785,28 @@ local leftWrites, rightWrites = brokerWrites.brokerLeftClick, brokerWrites.broke
 QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
 QuestTogether.db.profile.brokerLeftClick = "settings"
 QuestTogether.db.profile.brokerRightClick = "partners"
-QuestTogether.optionsFrame.scripts.OnShow()
-assert(home.brokerLeftClickDropdown.Dropdown.text == "Settings"
-	and home.brokerRightClickDropdown.Dropdown.text == "Looking for Questing Partners")
-assert(home.brokerLeftClickDropdown.Dropdown.menu[4].selected()
-	and home.brokerRightClickDropdown.Dropdown.menu[3].selected())
+QuestTogether.dataBrokerFrame.scripts.OnShow()
+assert(broker.brokerLeftClickDropdown.Dropdown.text == "Settings"
+	and broker.brokerRightClickDropdown.Dropdown.text == "Looking for Questing Partners")
+assert(broker.brokerLeftClickDropdown.Dropdown.menu[4].selected()
+	and broker.brokerRightClickDropdown.Dropdown.menu[3].selected())
 assert(brokerWrites.brokerLeftClick == leftWrites and brokerWrites.brokerRightClick == rightWrites,
 	"profile refresh must not persist broker click selections")
 QuestTogether.SetOption = brokerSetOption
 QuestTogether.db.profile = brokerProfile
-QuestTogether:RefreshHomeWindow()
-assert(home.brokerLeftClickDropdown.Dropdown.text == "None" and home.brokerRightClickDropdown.Dropdown.text == "None")
+QuestTogether:RefreshDataBrokerWindow()
+assert(broker.brokerLeftClickDropdown.Dropdown.text == "None" and broker.brokerRightClickDropdown.Dropdown.text == "None")
 print("Optional Data Broker native click settings and profile refresh passed")
 
 local tracker = QuestTogether.questTrackerModeDropdown
 assert(tracker)
 assert(QuestTogether:GetQuestTrackerMode() == "hover")
-QuestTogether:RefreshGroupsWindow()
+QuestTogether:RefreshTrackerSettingsWindow()
 assert(tracker.Dropdown.text == "Hovered Quest")
 assert(#tracker.Dropdown.menu == 4)
 tracker.Dropdown.menu[1].func()
 assert(QuestTogether:GetQuestTrackerMode() == "hidden")
-QuestTogether:RefreshGroupsWindow()
+QuestTogether:RefreshTrackerSettingsWindow()
 assert(tracker.Dropdown.text == "Hidden")
 assert(QuestTogether:ValidateSetting("questTrackerMode", "invalid") == nil)
 for _, mode in ipairs({ "hidden", "focus", "hover", "both" }) do
@@ -754,33 +831,33 @@ assert(QuestTogether:GetQuestTrackerMode() == "hover")
 QuestTogether:SetOption("questTrackerMode", "both")
 print("Party Objective Tracker display choices, invalid values and checkbox migration passed")
 
-local hideSolo = assert(QuestTogether.groupsControls.questTrackerHideSolo)
-QuestTogether:RefreshGroupsWindow()
+local hideSolo = assert(QuestTogether.trackerSettingsControls.questTrackerHideSolo)
+QuestTogether:RefreshTrackerSettingsWindow()
 assert(hideSolo:GetChecked() == true, "new profiles hide POT while solo")
 hideSolo:SetChecked(false)
 hideSolo.scripts.OnClick(hideSolo)
 assert(QuestTogether:GetOption("questTrackerHideSolo") == false)
 QuestTogether:SetOption("questTrackerHideSolo", true)
-QuestTogether:RefreshGroupsWindow()
+QuestTogether:RefreshTrackerSettingsWindow()
 assert(hideSolo:GetChecked() == true, "settings reflects changes from Edit Mode")
 QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
 QuestTogether.db.profile.questTrackerHideSolo = false
-QuestTogether.groupsFrame.scripts.OnShow()
+QuestTogether.trackerSettingsFrame.scripts.OnShow()
 assert(hideSolo:GetChecked() == false, "checkbox follows the active profile")
 print("Party Objective Tracker solo visibility uses the shared setting and refreshes across profiles")
 
-local hideTooltip = assert(QuestTogether.groupsControls.questTrackerHideBlizzardTooltip)
-QuestTogether:RefreshGroupsWindow()
+local hideTooltip = assert(QuestTogether.trackerSettingsControls.questTrackerHideBlizzardTooltip)
+QuestTogether:RefreshTrackerSettingsWindow()
 assert(hideTooltip:GetChecked() == true, "new profiles hide the matching Blizzard quest tooltip while POT is visible")
 hideTooltip:SetChecked(false)
 hideTooltip.scripts.OnClick(hideTooltip)
 assert(QuestTogether:GetOption("questTrackerHideBlizzardTooltip") == false)
 QuestTogether:SetOption("questTrackerHideBlizzardTooltip", true)
-QuestTogether:RefreshGroupsWindow()
+QuestTogether:RefreshTrackerSettingsWindow()
 assert(hideTooltip:GetChecked() == true, "settings reflects the tooltip option changed in Edit Mode")
 QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
 QuestTogether.db.profile.questTrackerHideBlizzardTooltip = false
-QuestTogether.groupsFrame.scripts.OnShow()
+QuestTogether.trackerSettingsFrame.scripts.OnShow()
 assert(hideTooltip:GetChecked() == false, "tooltip checkbox follows the active profile")
 QuestTogether:ApplyDefaults(QuestTogether.db.profile, QuestTogether.DEFAULTS.profile)
 QuestTogether:NormalizeSettingsProfile()
@@ -791,7 +868,7 @@ assert(QuestTogether:GetOption("questTrackerHideBlizzardTooltip") == true, "unse
 print("Party Objective Tracker tooltip visibility uses the shared setting and refreshes across profiles")
 
 local placement = assert(QuestTogether.questTrackerTooltipPlacementDropdown)
-QuestTogether:RefreshGroupsWindow()
+QuestTogether:RefreshTrackerSettingsWindow()
 assert(placement.Dropdown.text == "Top", "POT tooltip placement defaults to top")
 assert(#placement.Dropdown.menu == 3)
 for index, value in ipairs({ "top", "bottom", "side" }) do
@@ -808,11 +885,11 @@ for _, value in ipairs({ false, "invalid" }) do
 	assert(QuestTogether:GetOption("questTrackerTooltipPlacement") == "top")
 end
 QuestTogether:SetOption("questTrackerTooltipPlacement", "bottom")
-QuestTogether:RefreshGroupsWindow()
+QuestTogether:RefreshTrackerSettingsWindow()
 assert(placement.Dropdown.text == "Bottom", "settings reflects Edit Mode placement changes")
 QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
 QuestTogether.db.profile.questTrackerTooltipPlacement = "side"
-QuestTogether.groupsFrame.scripts.OnShow()
+QuestTogether.trackerSettingsFrame.scripts.OnShow()
 assert(placement.Dropdown.text == "Side", "placement dropdown follows the active profile")
 print("Party Objective Tracker tooltip placement validates choices and refreshes across profiles")
 
@@ -830,7 +907,7 @@ assert(audio.master:GetChecked() and not audio.muteCombat:GetChecked())
 assert(audio.volume.Slider.value == 50 and audio.volume.RightText.text == "50%")
 assert(audio.interval.Slider.value == 0.75 and audio.interval.RightText.text == "0.75 sec")
 for _, row in ipairs(audio.rows) do
-	assert(row.enabled:GetChecked() == (row.cue.key == "attention" or row.cue.key == "focus"))
+	assert(row.enabled:GetChecked() == true)
 	assert(row.preview:IsEnabled() and row.volume.Slider:IsEnabled() and row.sound.Dropdown:IsEnabled(),
 		"disabled events remain configurable and can be previewed")
 	assert(#row.sound.Dropdown.menu == #QuestTogether:GetAudioSoundOptions())
@@ -1275,3 +1352,101 @@ QuestTogether.API.GetCVar, QuestTogether.API.RegionalUniqueNamesEnabled, QuestTo
 QuestTogether.db.profile = previewProfile
 RefreshPlatePreviews()
 print("Forever and Retail player/quest previews match native style, size, fonts, level artwork, health text, names-only positions and CVar lifecycle")
+
+-- All visible settings actions need help, including utility buttons and disabled
+-- controls. Native dropdown arrows and slider controls are covered separately.
+local helpCount = 0
+for control in pairs(tooltipRecords) do
+	helpCount = helpCount + 1
+	assert(control.scripts.OnEnter and control.scripts.OnLeave and control.scripts.OnHide)
+end
+for _, control in ipairs(regions) do
+	if control.template == "MinimalCheckboxTemplate" or control.template == "UIPanelButtonTemplate"
+		or control.template == "InputBoxTemplate" or control.template == "ColorSwatchTemplate" then
+		assert(tooltipRecords[control], "missing settings help: " .. tostring(control.text or control.Label and control.Label.text))
+	end
+end
+assert(helpCount > 100)
+QuestTogether.AttachSettingsTooltip = attachTooltip
+print("Every settings action has explanatory hover help, including profile and utility controls")
+
+-- Exhaustive real-control binding audit. Game services are replaced only in this
+-- offline harness; all constructors, refreshers and validators remain real.
+local auditProfile = QuestTogether.db.profile
+local auditSetter, auditSetters = QuestTogether.SetOption, QuestTogether.SetOptions
+local auditWrites = {}
+local auditVolume = QuestTogether.SupportsAudioVolume
+QuestTogether.SupportsAudioVolume = function() return true end
+local auditDestination = QuestTogether.GetResolvedChatLogDestination
+-- Native chat-window adoption has its own regression coverage; model the
+-- successful destination here so this pass can check every dropdown choice.
+QuestTogether.GetResolvedChatLogDestination = function(self) return self.db.profile.chatLogDestination end
+QuestTogether.SetOption = function(self, key, value)
+	local validated = self:ValidateSetting(key, value)
+	assert(validated ~= nil, "invalid UI write: " .. tostring(key))
+	auditWrites[#auditWrites + 1] = { key, validated }
+	self.db.profile[key] = self:DeepCopy(validated)
+	return true
+end
+QuestTogether.SetOptions = function(self, values)
+	for key, value in pairs(values) do self:SetOption(key, value) end
+	return true
+end
+local checkboxes, menus, sliders = {}, {}, {}
+for _, control in ipairs(regions) do
+	if control.qtOptionKey then checkboxes[#checkboxes + 1] = control end
+	if control.template == "SettingsDropdownWithButtonsTemplate"
+		and control ~= QuestTogether.profileControls.currentProfileDropdown
+		and control ~= QuestTogether.profileControls.copyFromProfileDropdown
+		and control ~= QuestTogether.profileControls.deleteProfileDropdown then menus[#menus + 1] = control end
+	if control.RefreshValue then sliders[#sliders + 1] = control end
+end
+for _, invert in ipairs({ false, true }) do
+	QuestTogether.db.profile = QuestTogether:DeepCopy(QuestTogether.DEFAULTS.profile)
+	for key, value in pairs(QuestTogether.db.profile) do
+		if type(value) == "boolean" and invert then QuestTogether.db.profile[key] = not value end
+	end
+	local before = #auditWrites
+	QuestTogether:RefreshOptionsWindow()
+	for _, control in ipairs(checkboxes) do
+		local key = control.qtOptionKey
+		assert(control:GetChecked() == QuestTogether:GetOption(key), "checkbox value mismatch: " .. key)
+		control:SetChecked(not QuestTogether:GetOption(key))
+		control.scripts.OnShow(control)
+		assert(control:GetChecked() == QuestTogether:GetOption(key), "checkbox reopen mismatch: " .. key)
+	end
+	assert(#auditWrites == before, "rendering saved values must not write options")
+end
+for _, control in ipairs(checkboxes) do
+	for _, value in ipairs({ false, true }) do
+		local before = #auditWrites
+		control:SetChecked(value); control.scripts.OnClick(control)
+		assert(#auditWrites == before + 1 and auditWrites[#auditWrites][1] == control.qtOptionKey)
+		assert(QuestTogether:GetOption(control.qtOptionKey) == value and control:GetChecked() == value)
+	end
+end
+for _, control in ipairs(menus) do
+	for index = 1, #control.Dropdown.menu do
+		local entry = control.Dropdown.menu[index]
+		entry.func(); QuestTogether:RefreshOptionsWindow()
+		assert(control.Dropdown.text == entry.text and control.Dropdown.menu[index].selected(),
+			"dropdown value mismatch: " .. control.title.text .. " / " .. entry.text .. " actual=" .. tostring(control.Dropdown.text) .. " restricted=" .. tostring(QuestTogether:IsRuntimeRestricted()))
+	end
+end
+for _, control in ipairs(sliders) do
+	local inner = control.Slider
+	for _, value in ipairs({ inner.minimum, inner.maximum }) do
+		control:SetValue(value)
+		local before = #auditWrites
+		control:RefreshValue()
+		assert(control.Slider:GetValue() == value and #auditWrites == before,
+			"slider refresh must preserve zero/bounds without a write: " .. control.title.text)
+	end
+end
+QuestTogether.db.profile = auditProfile
+QuestTogether.SetOption, QuestTogether.SetOptions = auditSetter, auditSetters
+QuestTogether.GetResolvedChatLogDestination = auditDestination
+QuestTogether.SupportsAudioVolume = auditVolume
+QuestTogether:RefreshOptionsWindow()
+assert(#checkboxes > 45 and #menus > 15 and #sliders > 10)
+print(string.format("All settings bindings audited: %d checkboxes, %d dropdowns, %d sliders, plus color/profile controls", #checkboxes, #menus, #sliders))

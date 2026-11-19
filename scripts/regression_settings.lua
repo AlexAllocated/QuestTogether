@@ -27,6 +27,26 @@ QT:RegisterTest("preset bundles preserve unrelated preferences and kid emotes", 
 	assert(a:GetPresetValues("unknown") == nil and not a:ApplyPreset("unknown"))
 end)
 
+QT:RegisterTest("preset detail lists cover every applied option with actual values and usage scenarios", function()
+	local seenNames = {}
+	for _, preset in ipairs(QT:GetPresetDefinitions()) do
+		assert(preset.scenario and #preset.scenario > 40 and preset.description ~= preset.scenario)
+		assert(not seenNames[preset.title]); seenNames[preset.title] = true
+		local expected, seen = QT:GetPresetValues(preset.id), {}
+		for _, group in ipairs(QT:GetPresetSettingDetails(preset.id)) do
+			assert(group.title ~= "" and #group.entries > 0)
+			for _, entry in ipairs(group.entries) do
+				assert(not seen[entry.key], "duplicate detail: " .. entry.key)
+				seen[entry.key] = true
+				assert(expected[entry.key] ~= nil and expected[entry.key] == entry.value, entry.key)
+				assert(entry.label ~= "" and entry.text ~= "" and entry.text ~= QT:Translate("Unknown"), entry.key)
+			end
+		end
+		for key in pairs(expected) do assert(seen[key], "missing detail: " .. key) end
+	end
+	assert(QT:GetPresetSettingDetails("unknown") == nil)
+end, { locale = "client" })
+
 QT:RegisterTest("welcome detects genuinely fresh storage and acknowledges only successful setup", function()
 	local function Model(db)
 		local a = setmetatable({}, { __index = QT })
@@ -286,12 +306,13 @@ QT:RegisterTest("own bubble modes migrate active inactive and copied profiles be
 			Visible = { hideMyOwnChatBubbles = false },
 			Missing = {},
 			Solo = { ownChatBubbleMode = "solo", hideMyOwnChatBubbles = true },
+			Party = { ownChatBubbleMode = "party", hideMyOwnChatBubbles = true },
 			Always = { ownChatBubbleMode = "always", hideMyOwnChatBubbles = true },
 			Hidden = { ownChatBubbleMode = "hidden", hideMyOwnChatBubbles = false },
 			Invalid = { ownChatBubbleMode = "unsupported", hideMyOwnChatBubbles = true },
 		},
 	})
-	for key, expected in pairs({ Active = "hidden", Visible = "always", Missing = "always", Solo = "solo",
+	for key, expected in pairs({ Active = "hidden", Visible = "always", Missing = "always", Solo = "solo", Party = "party",
 		Always = "always", Hidden = "hidden", Invalid = "hidden" }) do
 		assert(a.db.profiles[key].ownChatBubbleMode == expected, key)
 		assert(a.db.profiles[key].hideMyOwnChatBubbles == nil, key .. " retained legacy key")
@@ -310,7 +331,7 @@ end)
 QT:RegisterTest("own bubble settings validate modes and refresh presentation without publication", function()
 	local a = Fixture()
 	assert(QT.DEFAULTS.profile.ownChatBubbleMode == "always" and QT.DEFAULTS.profile.hideMyOwnChatBubbles == nil)
-	for _, value in ipairs({ "always", "solo", "hidden" }) do
+	for _, value in ipairs({ "always", "solo", "party", "hidden" }) do
 		assert(a:SetOption("ownChatBubbleMode", value))
 		assert(a:GetOwnChatBubbleMode() == value)
 	end
@@ -318,8 +339,8 @@ QT:RegisterTest("own bubble settings validate modes and refresh presentation wit
 		assert(not a:SetOption("ownChatBubbleMode", value))
 	end
 	assert(not a:SetOption("hideMyOwnChatBubbles", true))
-	assert(a.effects.RefreshActiveAnnouncementBubbles == 3)
-	assert(a.effects.RefreshPersonalBubbleAnchorVisualState == 3 and a.effects.RefreshPersonalBubbleEditModeDialog == 3)
+	assert(a.effects.RefreshActiveAnnouncementBubbles == 4)
+	assert(a.effects.RefreshPersonalBubbleAnchorVisualState == 4 and a.effects.RefreshPersonalBubbleEditModeDialog == 4)
 	assert(not a.effects.OnPlayerLocationOptionsChanged and not a.effects.BroadcastQuestPartnerStatus)
 	assert(not a.effects.QueuePartyNavigationUpdate)
 	a.db.profile.ownChatBubbleMode = "invalid"
@@ -328,21 +349,23 @@ QT:RegisterTest("own bubble settings validate modes and refresh presentation wit
 	assert(a.db.profile.ownChatBubbleMode == "always")
 end)
 
-QT:RegisterTest("own bubble solo policy reads current native membership and fails closed on unknown state", function()
+QT:RegisterTest("own bubble conditional policy reads current native membership and fails closed on unknown state", function()
 	local a = Fixture()
 	local grouped = false
 	a.API = { IsInAnyGroup = function() return grouped end }
-	for _, mode in ipairs({ "always", "solo", "hidden" }) do
+	for _, mode in ipairs({ "always", "solo", "party", "hidden" }) do
 		a.db.profile.ownChatBubbleMode = mode
 		for _, membership in ipairs({ false, true }) do
 			grouped = membership
-			assert(a:ShouldShowOwnChatBubble() == (mode == "always" or (mode == "solo" and not membership)))
+			assert(a:ShouldShowOwnChatBubble() == (mode == "always" or (mode == "solo" and not membership) or (mode == "party" and membership)))
 		end
 		a.db.profile.showChatBubbles = false
 		assert(a:ShouldShowOwnChatBubble() == false)
 		a.db.profile.showChatBubbles = true
 	end
-	a.db.profile.ownChatBubbleMode = "solo"
+	for _, mode in ipairs({ "solo", "party" }) do
+	a.db.profile.ownChatBubbleMode = mode
+	a.API.IsInAnyGroup = function() return grouped end
 	for _, invalid in ipairs({ "false", 0, {} }) do
 		grouped = invalid
 		assert(a:ShouldShowOwnChatBubble() == false)
@@ -357,6 +380,7 @@ QT:RegisterTest("own bubble solo policy reads current native membership and fail
 	assert(a:ShouldShowOwnChatBubble() == false)
 	a.API.IsInAnyGroup = nil
 	assert(a:ShouldShowOwnChatBubble() == false)
+	end
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_settings.lua")

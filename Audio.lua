@@ -5,12 +5,12 @@ local L = QT.Translate
 local definitions = {
 	{ key = "attention", sound = "chime", enabled = true, volume = 60, cooldown = 1, priority = 2 },
 	{ key = "focus", sound = "selection", enabled = true, volume = 40, cooldown = 0.75 },
-	{ key = "waypoint", sound = "spellbook", volume = 50, cooldown = 2 },
-	{ key = "questReady", sound = "completion", volume = 50, cooldown = 3 },
-	{ key = "questTurnIn", sound = "scroll", volume = 50, cooldown = 3 },
-	{ key = "objectiveProgress", sound = "progress", volume = 30, cooldown = 5 },
-	{ key = "chat", sound = "chime", volume = 40, cooldown = 2 },
-	{ key = "shareResult", sound = "scroll", volume = 40, cooldown = 2 },
+	{ key = "waypoint", enabled = true, sound = "spellbook", volume = 50, cooldown = 2 },
+	{ key = "questReady", enabled = true, sound = "completion", volume = 50, cooldown = 3 },
+	{ key = "questTurnIn", enabled = true, sound = "scroll", volume = 50, cooldown = 3 },
+	{ key = "objectiveProgress", enabled = true, sound = "progress", volume = 30, cooldown = 5 },
+	{ key = "chat", enabled = true, sound = "chime", volume = 40, cooldown = 2 },
+	{ key = "shareResult", enabled = true, sound = "scroll", volume = 40, cooldown = 2 },
 }
 local sounds = { scroll = true, spellbook = true, selection = true, chime = true, progress = true, completion = true }
 local byKey, settings = {}, { audioEnabled = true, audioVolume = 50, audioMuteInCombat = false, audioInterval = 0.75 }

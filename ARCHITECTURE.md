@@ -446,13 +446,16 @@ private `.local` notes are historical context, not the source of truth.
   related changes and dispatches each affected service once. Profile activation
   uses the same effects, including themes, scale, privacy and navigation; it
   revokes old diagnostic request ownership even when both profiles allow it.
-- Personal bubbles use the profile's `ownChatBubbleMode` (`always`, `solo`, or
+- Settings checkboxes derive their display bindings from the same boolean schema
+  as edits, with initial and OnShow refreshes. There is no separate option-key
+  allowlist to keep in sync. Refreshing controls never persists their values.
+- Personal bubbles use the profile's `ownChatBubbleMode` (`always`, `solo`, `party`, or
   `hidden`) beneath the master `showChatBubbles` switch. The old hide-own boolean
   migrates before defaults are applied, including inactive and copied profiles.
   One visibility query covers local announcements, QT chat, playback and
-  capability reporting. Solo mode reads native party/raid membership rather than
-  waiting for QT peer discovery; group changes retire a visible personal bubble
-  without replaying it on leaving. Other players' bubbles, chat logs, publication
+  capability reporting. Conditional modes read native party/raid membership rather
+  than waiting for QT peer discovery. Group changes retire a personal bubble when
+  its mode becomes inapplicable, without replaying old progress when it is allowed again. Other players' bubbles, chat logs, publication
   and the Edit Mode placement preview keep their independent behavior.
 
 Tips are local chat-log output. `OnLogin` schedules one through the shared UI work
@@ -464,6 +467,10 @@ Stable IDs survive wording, language and profile changes. Only successfully prin
 tips consume a draw; unsupported client features are excluded. Display adds the
 QT tip logo with its gold bulb, gold localized label, and cream tip text centrally,
 leaving catalog text reusable.
+`HINTS.md` maps the 225-tip catalog to player-facing features. New catalog IDs
+enter the existing unseen pool; settings/window links use a fixed navigation
+whitelist and never apply settings. Retail and Forever chain guidance is gated
+by client capability without querying providers during a tip draw.
 Release-note tip examples carry a localized label and body in canonical notes;
 the viewer calls the same hint formatter inside a separate chat-style card.
 Web notes render that example as an illustrated blockquote; Discord uses the same
@@ -476,14 +483,16 @@ tips and illustrations. History navigation selects series rather than individual
 patches. Successfully opening the combined page acknowledges the latest notes
 version; automatic presentation remains gated on a new major/minor series.
 Canonical notes, web changelogs and Discord posts remain individual releases.
+The in-game viewer's Presets footer button opens the normal chooser without
+applying a bundle. It uses the same guarded owned-button/controller path as
+Settings; footer labels determine the minimum width before fitting to the screen.
 
 ## Audio
 
 `Audio.lua` owns the only native QT audio adapters. Feature modules submit cue
-keys at accepted transitions, never during repainting. Quiet defaults enable
-requests/confirmations and successfully applied automatic focus changes. Party
-waypoints, quest readiness/turn-ins/progress, QT chat and quest-share results are
-individually available but off by default. A preview bypasses the event's enable
+keys at accepted transitions, never during repainting. All eight event cues are
+enabled in new profiles. Existing per-event and master opt-outs are preserved;
+quiet presets still disable the ordinary master option. A preview bypasses the event's enable
 switch while respecting the addon lifetime, master switch, volumes and combat
 mute preference.
 

@@ -386,7 +386,7 @@ return pushable end or nil,
 			Case(function()
 				local capabilities = addon.API.GetHintCapabilities()
 				for _, name in ipairs({ "menu", "sharing", "details", "journal", "focus", "waypoint", "navigation",
-					"navigationFocus", "hud", "nameplates", "worldQuests", "bonusObjectives", "layers", "warMode" }) do
+					"navigationFocus", "hud", "nameplates", "worldQuests", "bonusObjectives", "layers", "warMode", "chains", "retail" }) do
 					assert(capabilities[name] == false, "missing APIs must exclude hint capability: " .. name)
 				end
 			end)
@@ -411,6 +411,7 @@ return pushable end or nil,
 					assert(capabilities.worldQuests == not regional and capabilities.bonusObjectives == not regional,
 						"Forever must exclude Retail activities even when it exports their API functions")
 					assert(capabilities.layers == regional and capabilities.warMode == not regional)
+					assert(capabilities.chains == true and capabilities.retail == not regional)
 				end)
 			end
 			Case(function()
@@ -419,6 +420,8 @@ return pushable end or nil,
 				local capabilities = addon.API.GetHintCapabilities()
 				assert(not capabilities.worldQuests and not capabilities.bonusObjectives,
 					"non-Retail client profiles must not advertise Retail activities from shared exports")
+				assert(not capabilities.chains and not capabilities.retail,
+					"ordinary Classic clients must not advertise supported-client chain tips")
 			end)
 			for _, result in ipairs({ secret, inaccessible, false, {}, "Other_AddOn" }) do
 				Case(function()

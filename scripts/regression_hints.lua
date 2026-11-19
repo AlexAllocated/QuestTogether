@@ -79,6 +79,8 @@ local function NavigationFixture()
 		OpenDiscordSupport = "support",
 		ShowDebugWindow = "debug",
 		OpenHudEditMode = "hud_edit",
+		OpenPresetWindow = "presets",
+		OpenRecentCompanions = "companions",
 	}) do
 		a[method] = function(self, ...)
 			assert(select("#", ...) == 0, "links must not supply arbitrary navigation arguments")
@@ -112,6 +114,9 @@ QT:RegisterTest("hint links open only whitelisted windows and settings without e
 		player_plates = "settings:playerPlates",
 		player_locations = "settings:playerLocations",
 		groups = "settings:groups",
+		tracker = "settings:tracker", emotes = "settings:emotes", launchers = "settings:launchers",
+		audio = "settings:audio", data_broker = "settings:data_broker",
+		presets = "presets", companions = "companions",
 		accessibility = "settings:accessibility",
 		profiles = "settings:profiles",
 		developer = "settings:developer",
@@ -398,5 +403,53 @@ QT:RegisterTest("client locale renders hint prefix body command help and meta ti
 	end
 	assert(found)
 end, { locale = "client" })
+
+QT:RegisterTest("hint catalog preserves unique identities and safe navigation for every feature", function()
+	local a, ids, features, links = NavigationFixture(), {}, {}, {}
+	for _, hint in ipairs(a:GetHintCatalog()) do
+		assert(type(hint.id) == "string" and hint.id:match("^hint%d%d%d$") and not ids[hint.id])
+		ids[hint.id] = true
+		assert(type(hint.text) == "string" and #hint.text > 0 and not hint.text:find("|H", 1, true))
+		if hint.feature then features[hint.feature] = true end
+		for _, actionID in ipairs(hint.actions or {}) do
+			assert(a:GetHintActionInfo(actionID), "tip points to an unavailable navigation action: " .. actionID)
+			links[actionID] = true
+		end
+	end
+	for index = 1, 225 do assert(ids[string.format("hint%03d", index)], "stable tip identity was removed") end
+	for _, key in ipairs({ "chains", "retail", "layers", "focus", "sharing", "hud", "nameplates" }) do
+		assert(features[key], "feature tips are missing: " .. key)
+	end
+	for _, key in ipairs({ "presets", "companions", "data_broker", "audio", "tracker", "emotes", "launchers" }) do
+		assert(links[key], "feature has no actionable tip: " .. key)
+	end
+end)
+
+QT:RegisterTest("new feature hints join the saved unseen pool without resetting old draws", function()
+	local global = { hintPool = { seen = {}, last = "hint167" } }
+	for index = 1, 167 do global.hintPool.seen[string.format("hint%03d", index)] = true end
+	local a = Fixture(global)
+	assert(a:ShowHint() and global.hintPool.last == "hint168")
+	assert(global.hintPool.seen.hint001 and global.hintPool.seen.hint167 and global.hintPool.seen.hint168)
+	assert(not global.hintPool.seen.hint169)
+end)
+
+QT:RegisterTest("chain and client-specific hints require the matching capability", function()
+	local a = Fixture()
+	local catalog = a:GetHintCatalog()
+	function a:GetHintCatalog()
+		local rows = {}
+		for _, hint in ipairs(catalog) do
+			if hint.id == "hint179" or hint.id == "hint180" or hint.id == "hint181" then rows[#rows + 1] = hint end
+		end
+		return rows
+	end
+	assert(not a:ShowHint() and #a.messages == 0)
+	a.capabilities.retail, a.capabilities.chains = true, true
+	assert(a:ShowHint() and a.db.global.hintPool.last == "hint180")
+	assert(a:ShowHint() and a.db.global.hintPool.last == "hint181")
+	a.capabilities.retail, a.capabilities.layers = false, true
+	assert(a:ShowHint() and a.db.global.hintPool.last == "hint179")
+end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_hints.lua")
