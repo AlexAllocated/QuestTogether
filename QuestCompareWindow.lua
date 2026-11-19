@@ -1510,6 +1510,18 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	end)
 	frame.activeFilters = Label(frame, 20, -111, width - 62, "", "GameFontHighlight")
 	frame.activeFilters:SetMaxLines(1)
+	frame.chainProviderNotice = self:CreateOwnedWindowFrame("Frame", nil, frame)
+	frame.chainProviderNotice:SetPoint("TOPLEFT", 20, -132)
+	frame.chainProviderNotice:SetHeight(70)
+	frame.chainProviderNotice.background = frame.chainProviderNotice:CreateTexture(nil, "BACKGROUND")
+	frame.chainProviderNotice.background:SetAllPoints()
+	frame.chainProviderNotice.title = Label(frame.chainProviderNotice, 10, -7, width - 82,
+		L("Quest chains need QuestieDB"), "GameFontNormal")
+	frame.chainProviderNotice.body = Label(frame.chainProviderNotice, 10, -26, width - 82,
+		L("Install and enable QuestieDB for WoW Forever in your addon manager, then restart WoW. QuestTogether's other features work without it."), "GameFontHighlightSmall")
+	frame.chainProviderNotice.body:SetHeight(40)
+	frame.chainProviderNotice.body:SetJustifyV("TOP")
+	frame.chainProviderNotice:Hide()
 	frame.refresh = Button(self, frame, width - 140, -72, 112, L("Refresh"), function()
 		self:RefreshPartyRoster()
 		self:RefreshPartyQuestCompare()
@@ -1776,7 +1788,8 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 	-- quest reads or starts communication. Grow the reusable row pool only as needed.
 	function frame:Layout()
 		local w, h = self:GetWidth(), self:GetHeight()
-		local rowsHeight = math.max(42, h - 234)
+		local noticeHeight = self.chainProviderNotice:IsShown() and 78 or 0
+		local rowsHeight = math.max(42, h - 234 - noticeHeight)
 		self.title:SetWidth(w - 100)
 		self.summary:SetWidth(w - 40)
 		self.search:SetWidth(math.max(100, math.min(300, w - 500)))
@@ -1785,6 +1798,13 @@ function QuestTogether:CreatePartyQuestCompareWindow()
 			control[1]:SetPoint("TOPLEFT", w - control[2], -74)
 		end
 		self.activeFilters:SetWidth(w - 62)
+		self.chainProviderNotice:SetWidth(w - 62)
+		self.chainProviderNotice.title:SetWidth(w - 82)
+		self.chainProviderNotice.body:SetWidth(w - 82)
+		self.viewport:ClearAllPoints()
+		self.viewport:SetPoint("TOPLEFT", 20, -140 - noticeHeight)
+		self.vertical:ClearAllPoints()
+		self.vertical:SetPoint("TOPRIGHT", -18, -194 - noticeHeight)
 		self.viewport:SetSize(w - 62, rowsHeight + 54)
 		self.content:SetHeight(rowsHeight + 54)
 		self.rowsViewport:SetHeight(rowsHeight)
@@ -1975,6 +1995,17 @@ function QuestTogether:RenderPartyQuestCompare()
 	end
 	local quests = self:BuildPartyQuestDiffRows()
 	local rows = self:BuildPartyQuestCompareDisplayRows(quests)
+	local capability = session.chains and session.chains.capability
+	local missingProvider = capability and capability.kind == "questiedb"
+		and capability.state == "unavailable" and capability.reason == "provider_missing" or false
+	local notice = frame.chainProviderNotice
+	if notice:IsShown() ~= missingProvider then
+		if missingProvider then notice:Show() else notice:Hide() end
+		frame:Layout()
+	end
+	notice.title:SetTextColor(unpack(theme.heading))
+	notice.body:SetTextColor(unpack(theme.body))
+	notice.background:SetColorTexture(0.65, 0.48, 0.18, dark and 0.16 or 0.12)
 	-- The isolated debug preview supplies its own title and has no mode.
 	if session.mode then
 		frame.title:SetText(session.mode == "target" and L("Compare Quests") or L("Party Quest Log"))

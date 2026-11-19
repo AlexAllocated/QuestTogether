@@ -1221,5 +1221,7 @@
   "QT's settings home page offers presets, startup tips and update preferences. The category pages hold the detailed feature controls.": "QT 설정 첫 화면에서 프리셋, 접속 시 팁, 업데이트 옵션을 찾을 수 있습니다. 세부 기능 설정은 각 분류에 있습니다.",
   "During manual focus-follow, deliberately choosing another quest asks whether to stop following. Automatic leader-follow instead keeps the leader's usable quest selected.": "수동으로 집중 퀘스트를 따라가는 중에 다른 퀘스트를 직접 선택하면 중단 여부를 묻습니다. 파티장 자동 따라가기는 파티장의 사용 가능한 퀘스트를 유지합니다.",
   "Use Stop following in PQL or its key binding to end manual following. If automatic leader-follow is governing your focus, turn off that setting first.": "수동 따라가기는 파티 퀘스트 목록의 중단 기능이나 지정 단축키로 끝낼 수 있습니다. 파티장 자동 따라가기가 집중 퀘스트를 관리 중이면 먼저 해당 설정을 끄세요.",
-  "Waypoint navigation that replaces manually followed quest focus asks for confirmation. Automatic leader-follow blocks that replacement while the leader's focus is usable.": "수동으로 따라가는 집중 퀘스트를 경유지 탐색으로 바꾸려면 확인이 필요합니다. 파티장 자동 따라가기에서는 파티장의 집중 퀘스트가 유효한 동안 이 변경을 막습니다."
+  "Waypoint navigation that replaces manually followed quest focus asks for confirmation. Automatic leader-follow blocks that replacement while the leader's focus is usable.": "수동으로 따라가는 집중 퀘스트를 경유지 탐색으로 바꾸려면 확인이 필요합니다. 파티장 자동 따라가기에서는 파티장의 집중 퀘스트가 유효한 동안 이 변경을 막습니다.",
+  "Install and enable QuestieDB for WoW Forever in your addon manager, then restart WoW. QuestTogether's other features work without it.": "애드온 관리 프로그램에서 WoW Forever용 QuestieDB를 설치하고 활성화한 다음 WoW를 다시 시작하세요. QuestieDB 없이도 QuestTogether의 다른 기능은 사용할 수 있습니다.",
+  "Quest chains need QuestieDB": "퀘스트 연계에는 QuestieDB가 필요합니다"
 }

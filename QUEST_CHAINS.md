@@ -77,6 +77,11 @@ QuestTogether does not bundle the database. A missing, incompatible, incorrectly
 configured or failing provider leaves the ordinary comparison usable and gives
 a capability explanation. QT uses the provider's public composed reads,
 including its applicable corrections.
+When QuestieDB is missing on Forever, a notice above the PQL quest list explains
+how to install it. Install and enable the Forever version of
+[QuestieDB](https://www.curseforge.com/wow/addons/questiedb) in your addon manager,
+then restart WoW. The notice disappears when QT detects the provider; it does
+not replace quest rows or require installation to use the rest of QT.
 See the [QuestieDB API contract](https://github.com/Questie/QuestieDB/blob/v1.1.1/docs/api.md).
 
 Open Party Quest Log again or choose **Refresh** after a provider change. The

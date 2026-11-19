@@ -873,4 +873,40 @@ QT:RegisterTest("chain loading rings stop on retirement and rebind when their se
 	end
 end)
 
+QT:RegisterTest("PQL explains missing Forever QuestieDB without replacing quests or other status", function()
+	local a, frame, session = Open(false)
+	local normalHeight = frame.rowsViewport:GetHeight()
+	local summary = frame.summary:GetText()
+	a:SelectPartyQuestKeyboardRow(frame, { rowId = "quest:2", questId = 2 })
+	local function Render(kind, state, reason)
+		session.chains.capability = { kind = kind, state = state, reason = reason }
+		a:RenderPartyQuestCompare()
+	end
+	Render("questiedb", "unavailable", "provider_missing")
+	assert(frame.chainProviderNotice:IsShown())
+	Equal(frame.chainProviderNotice.title:GetText(), QT.Translate("Quest chains need QuestieDB"))
+	Equal(frame.rowsViewport:GetHeight(), normalHeight - 78)
+	Equal(select(3, frame.viewport:GetPoint()), -218)
+	Equal(select(3, frame.vertical:GetPoint()), -272)
+	Equal(frame.summary:GetText(), summary)
+	Equal(session.keyboardRowId, "quest:2")
+	assert(Row(frame, "quest:1")); assert(Row(frame, "quest:2"))
+	frame:SetSize(780, 500); frame:Layout()
+	Equal(frame.chainProviderNotice.body:GetWidth(), frame:GetWidth() - 82)
+	assert(frame.rowsViewport:GetHeight() > 0)
+	for _, capability in ipairs({
+		{ "questiedb", "loading", "index_loading" },
+		{ "questiedb", "ready" },
+		{ "questiedb", "unavailable", "provider_contract" },
+		{ "retail", "unavailable", "provider_missing" },
+		{ "unsupported", "unavailable", "client_unsupported" },
+	}) do
+		Render(unpack(capability))
+		Equal(frame.chainProviderNotice:IsShown(), false)
+		Equal(select(3, frame.viewport:GetPoint()), -140)
+		Equal(frame.rowsViewport:GetHeight(), frame:GetHeight() - 234)
+	end
+	Equal(a.invalidCalls, nil)
+end)
+
 _G.QuestTogether:RecordTestModule("scripts/regression_compare_chains_ui.lua")

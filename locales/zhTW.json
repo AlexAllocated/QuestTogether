@@ -1221,5 +1221,7 @@
   "QT's settings home page offers presets, startup tips and update preferences. The category pages hold the detailed feature controls.": "QT 設定首頁提供預設、登入提示和更新選項；各分類可調整詳細功能。",
   "During manual focus-follow, deliberately choosing another quest asks whether to stop following. Automatic leader-follow instead keeps the leader's usable quest selected.": "手動跟隨焦點時，主動選擇其他任務會詢問是否停止跟隨。自動跟隨隊長則保留隊長目前可用的任務。",
   "Use Stop following in PQL or its key binding to end manual following. If automatic leader-follow is governing your focus, turn off that setting first.": "透過隊伍任務日誌的停止跟隨或對應快捷鍵可結束手動跟隨。若自動跟隨隊長正在管理焦點，請先關閉該設定。",
-  "Waypoint navigation that replaces manually followed quest focus asks for confirmation. Automatic leader-follow blocks that replacement while the leader's focus is usable.": "前往路標若要取代手動跟隨的任務焦點，需要確認。隊長焦點可用時，自動跟隨隊長會阻止這項替換。"
+  "Waypoint navigation that replaces manually followed quest focus asks for confirmation. Automatic leader-follow blocks that replacement while the leader's focus is usable.": "前往路標若要取代手動跟隨的任務焦點，需要確認。隊長焦點可用時，自動跟隨隊長會阻止這項替換。",
+  "Install and enable QuestieDB for WoW Forever in your addon manager, then restart WoW. QuestTogether's other features work without it.": "請在插件管理工具中安裝並啟用 WoW Forever 版 QuestieDB，然後重新啟動 WoW。沒有 QuestieDB 也能使用 QuestTogether 的其他功能。",
+  "Quest chains need QuestieDB": "任務鏈需要 QuestieDB"
 }
