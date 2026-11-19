@@ -220,6 +220,9 @@ class DeployTests(unittest.TestCase):
         object_path = Path(".git/objects") / self.sha[:2] / self.sha[2:]
         self.assertNotEqual((self.root / object_path).stat().st_ino, (snapshot / object_path).stat().st_ino)
         self.assertEqual((job / "worker.py").read_bytes(), Path(deploy.__file__).read_bytes())
+        standalone = REAL_SUBPROCESS_RUN([sys.executable, "-I", str(job / "worker.py"), "--help"],
+                                         cwd=job, text=True, capture_output=True)
+        self.assertEqual(standalone.returncode, 0, standalone.stderr)
         self.assertFalse((snapshot / ".local/fixture-events.json").exists())
         (self.root / "release-payload.txt").write_text("later development must not ship\n")
         self.git("add", "release-payload.txt")

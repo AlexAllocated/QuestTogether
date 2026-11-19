@@ -22,7 +22,6 @@ import signal
 import subprocess
 import sys
 import tempfile
-import curseforge_upload as curseforge
 
 sys.dont_write_bytecode = True
 
@@ -167,6 +166,8 @@ def find_job(root, identifier):
 
 
 def credentials(root):
+    # The copied background worker is standalone; only the launcher needs this module.
+    import curseforge_upload as curseforge
     if not os.environ.get("DISCORD_BOT_TOKEN"):
         raise DeployError("load DISCORD_BOT_TOKEN into the local environment before deploying")
     token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
