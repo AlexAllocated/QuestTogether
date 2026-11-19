@@ -346,7 +346,7 @@ def main(argv=None):
     parser.add_argument("--repository", default=discord.DEFAULT_REPOSITORY)
     parser.add_argument("--branch", help="source branch to publish from an isolated detached checkout")
     parser.add_argument("--lua51")
-    parser.add_argument("--lua52")
+    parser.add_argument("--lua52", help=argparse.SUPPRESS)
     parser.add_argument("--python", default=sys.executable)
     args = parser.parse_args(argv)
     try:

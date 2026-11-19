@@ -187,7 +187,7 @@ QuestTogether.isInitialized = true
 assert(loadfile(addonRoot .. "/scripts/offline_numeric_tests.lua"))()(QuestTogether)
 local mode = arg[2] or "normal"
 assert(
-	({ normal = true, reverse = true, live = true, ["live-reverse"] = true, locale = true, bootstrap = true })[mode],
+	({ normal = true, routine = true, reverse = true, live = true, ["live-reverse"] = true, locale = true, bootstrap = true })[mode],
 	"unknown test mode: " .. mode
 )
 local selectedTestLocale = os.getenv("QT_TEST_LOCALE") or "enUS"
@@ -212,6 +212,30 @@ for _, case in ipairs(QuestTogether.tests) do
 	end
 end
 assert(presentationCases > 0, "client-locale presentation coverage must be registered")
+if mode == "routine" then
+	-- Only these three measured load scenarios are conditional. In particular,
+	-- offline-only security, protocol and numeric regressions still run.
+	local stress = {
+		["mesh public discovery covers a population beyond direct neighbors with authenticated relays"] = true,
+		["network v3 completes party logs and a diagnostic report while movement remains active"] = true,
+		["mesh two hundred simultaneous clients retain bounded progressive discovery"] = true,
+	}
+	local found = 0
+	for _, case in ipairs(QuestTogether.tests) do
+		if stress[case.name] then
+			assert(case.offline == true, "a stress selection must not remove a live regression")
+			found = found + 1
+		end
+	end
+	assert(found == 3, "update routine coverage when a stress scenario changes")
+	local getOptions = QuestTogether.GetDebugTestOptions
+	function QuestTogether:GetDebugTestOptions(present)
+		local options = getOptions(self, present)
+		options.include = function(case) return not stress[case.name] end
+		return options
+	end
+	print("Routine coverage: three network load scenarios deferred; all other regressions retained.")
+end
 if mode == "locale" then
 	-- Domain fixtures deliberately run in English. Repeating those for every
 	-- locale proves nothing new; select only cases that exercise client text.

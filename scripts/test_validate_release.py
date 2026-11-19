@@ -24,107 +24,116 @@ SHA = "a" * 40
 
 class PlanTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
         (self.root / "sample.lua").write_text("return true\n")
-        self.tools = {name: "/tools/" + name for name in ("git", "bash", "openssl", "python", "lua5.1", "lua5.2")}
+        self.tools = {name: "/tools/" + name for name in ("git", "bash", "openssl", "python", "lua5.1")}
 
-    def test_all_ci_modes_clients_locales_and_publication_contracts_are_retained(self):
-        with patch.object(validation, "run") as run, patch.object(validation, "regression_matrix") as matrix:
-            validation.validate(self.root, self.tools, {"PATH": "/tools"})
-        matrix.assert_called_once_with(self.root, self.tools, {"PATH": "/tools"})
-        calls = run.call_args_list
-        commands = [call.args[0] for call in calls]
-        for script in ("test_release.py", "test_validate_release.py", "test_package.py", "test_discord_changelog.py",
-                       "check_release_notes.py", "test_release_history.py", "test_author_release_notes.py"):
-            self.assertTrue(any("scripts/" + script in command for command in commands), script)
-        for version in ("5.1", "5.2"):
-            lua = self.tools["lua" + version]
-            for script in validation.LUA_CHECKS:
-                if script != "test.lua":
-                    self.assertIn([lua, "scripts/" + script], commands)
-            locale_calls = [call for call in calls if call.args[0] == [lua, "scripts/test.lua", ".", "locale"]]
-            self.assertEqual({call.kwargs["env"]["QT_TEST_LOCALE"] for call in locale_calls}, set(validation.LOCALES))
-            for client in validation.CLIENTS:
-                self.assertIn([lua, "scripts/test.lua", ".", "normal", client], commands)
-            for client in ("retail", "forever"):
-                self.assertIn([lua, "scripts/location_client_profiles.lua", ".", client], commands)
-            vip = [call for call in calls if "services/vip" in call.args[0] and call.kwargs["env"]["QT_TEST_LUA"] == lua]
-            self.assertEqual(len(vip), 1)
-            syntax = [call for call in calls if call.args[0] == [lua, "-"]]
-            self.assertEqual(len(syntax), 1)
-            self.assertIn("loadfile", syntax[0].kwargs["input"])
-            self.assertNotIn("dofile", syntax[0].kwargs["input"])
-        self.assertIn([self.tools["python"], "scripts/package.py", "--ref", "HEAD", "--output", "dist/QuestTogether.zip"], commands)
-        self.assertFalse(any(word in {"pip", "apt-get", "curl", "gh", "push"} for command in commands for word in command))
+    def test_full_plan_retains_all_checks_on_lua51(self):
+        jobs = validation.validation_jobs(self.root, self.tools, {}, validation.FULL_SCOPE)
+        commands = [job[1] for job in jobs]
+        lua = self.tools["lua5.1"]
+        for mode in ("normal", "reverse", "live", "live-reverse"):
+            self.assertIn([lua, "scripts/test.lua", ".", mode], commands)
+        for arguments in validation.PYTHON_CHECKS:
+            self.assertIn([self.tools["python"], "scripts/" + arguments[0], *arguments[1:]], commands)
+        for client in validation.CLIENTS:
+            self.assertIn([lua, "scripts/test.lua", ".", "normal", client], commands)
+        self.assertEqual({job[2]["QT_TEST_LOCALE"] for job in jobs if "QT_TEST_LOCALE" in job[2]}, set(validation.LOCALES))
+        self.assertFalse(any("lua5.2" in part for command in commands for part in command))
+        self.assertEqual(len([j for j in jobs if j[1] == [lua, "-"]]), 1)
 
-    def test_first_failure_stops_the_plan(self):
-        with patch.object(validation, "run", side_effect=validation.ValidationError("failed")) as run:
-            with self.assertRaises(validation.ValidationError):
-                validation.validate(self.root, self.tools, {})
-        self.assertEqual(run.call_count, 1)
+    def test_routine_keeps_runtime_security_clients_and_actual_package(self):
+        scope = {"stress": False, "tools": False, "base": "v1.0.0", "reason": "UI only"}
+        with patch.object(validation, "run_jobs") as execute, patch.object(validation, "run") as run:
+            validation.validate(self.root, self.tools, {}, scope)
+        commands = [job[1] for job in execute.call_args.args[1]]
+        self.assertIn([self.tools["lua5.1"], "scripts/test.lua", ".", "routine"], commands)
+        self.assertIn([self.tools["lua5.1"], "scripts/test.lua", ".", "live"], commands)
+        for script in ("test_developer_crypto.py", "bindings_smoke.py", "check_release_notes.py", "localization.py", "changelogs.py"):
+            self.assertTrue(any("scripts/" + script in command for command in commands))
+        self.assertFalse(any("scripts/test_package.py" in command for command in commands))
+        self.assertTrue(any("services/vip" in command for command in commands))
+        self.assertIn("scripts/package.py", run.call_args.args[0])
+        self.assertIn("--ref", run.call_args.args[0])
 
-    def test_preflight_checks_both_interpreters_and_missing_dependencies_fail_clearly(self):
-        def ready(command, **kwargs):
-            if "io.write(_VERSION)" in command:
-                return "Lua " + command[0][-3:]
-            if command[0] == self.tools["python"]:
-                raise validation.ValidationError("missing dependencies")
-            return "OpenSSL"
-        with patch.object(validation, "run", side_effect=ready):
-            with self.assertRaisesRegex(validation.ValidationError, "requirements.txt.*--python"):
-                validation.preflight(self.root, self.tools, {})
-        with patch.object(validation, "run", return_value="Lua 5.4"):
-            with self.assertRaisesRegex(validation.ValidationError, "Lua 5.1 executable reports Lua 5.4"):
-                validation.preflight(self.root, self.tools, {})
-
-    def test_run_propagates_failed_exit_without_starting_more_commands(self):
-        with patch.object(validation.subprocess, "run", return_value=subprocess.CompletedProcess([], 9)) as execute:
-            with self.assertRaisesRegex(validation.ValidationError, "fixture failed.*9"):
-                validation.run(["/fake/lua"], cwd=self.root, env={}, label="fixture", capture=True)
-        self.assertEqual(execute.call_count, 1)
-        self.assertNotIn("shell", execute.call_args.kwargs)
-
-    def test_matrix_runs_all_complete_orders_with_native_bits_and_readable_logs(self):
-        def execute(command, **kwargs):
-            kwargs["stdout"].write("complete fixture suite\n")
-            return subprocess.CompletedProcess(command, 0)
-        output = io.StringIO()
-        with patch.object(validation.subprocess, "run", side_effect=execute) as run, \
-                contextlib.redirect_stdout(output):
-            validation.regression_matrix(self.root, self.tools, {"PATH": "/tools"})
-        expected = {(self.tools["lua" + version], mode) for version in ("5.1", "5.2")
-                    for mode in ("normal", "reverse", "live", "live-reverse")}
-        self.assertEqual({(call.args[0][0], call.args[0][-1]) for call in run.call_args_list}, expected)
-        self.assertEqual(run.call_count, 8)
-        for call in run.call_args_list:
-            self.assertEqual(call.args[0][1:3], ["scripts/test.lua", "."])
-            self.assertEqual(call.kwargs["cwd"], self.root)
-            self.assertEqual(call.kwargs["env"]["QT_TEST_REQUIRE_NATIVE_BIT"], "1")
-            self.assertEqual(call.kwargs["env"]["QT_TEST_TIMINGS"], "1")
-        self.assertEqual(output.getvalue().count("complete fixture suite\n"), 8)
-
-    def test_failed_matrix_prints_failure_and_prevents_success(self):
-        def execute(command, **kwargs):
+    def test_failed_job_prevents_package_and_preserves_error_log(self):
+        def fail(command, **kwargs):
             kwargs["stdout"].write("fixture assertion failed\n")
             return subprocess.CompletedProcess(command, 9)
         output = io.StringIO()
-        with patch.object(validation.subprocess, "run", side_effect=execute), \
-                patch.object(validation.os, "cpu_count", return_value=1), \
-                contextlib.redirect_stdout(output), \
-                self.assertRaisesRegex(validation.ValidationError, "failed.*9"):
-            validation.regression_matrix(self.root, self.tools, {})
+        with patch.object(validation.subprocess, "run", side_effect=fail) as execute, \
+                contextlib.redirect_stdout(output), self.assertRaisesRegex(validation.ValidationError, "failed.*9"):
+            validation.run_jobs(self.root, [("fixture", ["lua"], {}, None)])
+        self.assertEqual(execute.call_count, 1)
         self.assertIn("fixture assertion failed", output.getvalue())
+        with patch.object(validation, "run_jobs", side_effect=validation.ValidationError("failed")), \
+                patch.object(validation, "run") as package, self.assertRaises(validation.ValidationError):
+            validation.validate(self.root, self.tools, {})
+        package.assert_not_called()
 
-    def test_missing_native_bit_support_fails_preflight(self):
+    def test_jobs_preserve_commands_environments_and_separate_output(self):
         def execute(command, **kwargs):
-            if "require('bit')" in command[-1]:
-                raise validation.ValidationError("missing bit")
-            return "Lua 5.1"
-        with patch.object(validation, "run", side_effect=execute), \
-                self.assertRaisesRegex(validation.ValidationError, "LuaBitOp"):
+            kwargs["stdout"].write(command[0] + " passed\n")
+            self.assertEqual(kwargs["env"]["JOB"], command[0])
+            self.assertEqual(kwargs["input"], command[0])
+            return subprocess.CompletedProcess(command, 0)
+        output = io.StringIO()
+        jobs = [(str(i), [str(i)], {"JOB": str(i)}, str(i)) for i in range(8)]
+        with patch.object(validation.subprocess, "run", side_effect=execute) as run, contextlib.redirect_stdout(output):
+            validation.run_jobs(self.root, jobs)
+        self.assertEqual(run.call_count, 8)
+        for i in range(8): self.assertEqual(output.getvalue().count(str(i) + " passed\n"), 1)
+
+    def test_native_bits_and_python_dependencies_are_required(self):
+        def ready(command, **kwargs):
+            if "io.write(_VERSION)" in command: return "Lua 5.1"
+            if command[0] == self.tools["python"]: raise validation.ValidationError("missing dependency")
+            return ""
+        with patch.object(validation, "run", side_effect=ready), self.assertRaisesRegex(validation.ValidationError, "requirements.txt"):
             validation.preflight(self.root, self.tools, {})
+        def missing_bit(command, **kwargs):
+            if "require('bit')" in command[-1]: raise validation.ValidationError("missing bit")
+            return "Lua 5.1"
+        with patch.object(validation, "run", side_effect=missing_bit), self.assertRaisesRegex(validation.ValidationError, "LuaBitOp"):
+            validation.preflight(self.root, self.tools, {})
+
+
+class SelectionTests(unittest.TestCase):
+    def test_presentation_and_auth_changes_are_distinct(self):
+        for path in ("QuestCompareWindow.lua", "PresetWindow.lua", "locales/frFR.json", "Media/QuestChain.svg", "release_notes.json"):
+            self.assertEqual(validation.changed_scope([path]), {"stress": False, "tools": False})
+        for path in ("Core.lua", "Settings.lua", "Transport.lua", "VIPIdentity.lua", "Libs/Ed25519/Ed25519.lua", "scripts/network_fixture.lua", "scripts/test.lua", "unknown.dat"):
+            self.assertEqual(validation.changed_scope([path]), {"stress": True, "tools": True})
+        self.assertEqual(validation.changed_scope(["scripts/release.py"]), {"stress": False, "tools": True})
+        self.assertEqual(validation.changed_scope(["scripts/validate_release.py"]), {"stress": True, "tools": True})
+
+    def test_real_git_baseline_skips_current_tag_and_checks_manifest_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            def git(*args):
+                return subprocess.check_output(["git", "-c", "user.name=Offline", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", *args], cwd=root, text=True).strip()
+            git("init", "-q")
+            (root / "QuestTogether.toc").write_text("## Version: 1.0.0\nCore.lua\n")
+            git("add", "."); git("commit", "-qm", "baseline"); git("tag", "v1.0.0")
+            (root / "QuestTogether.toc").write_text("## Version: 1.1.0\nCore.lua\n")
+            (root / "PresetWindow.lua").write_text("-- fixture\n")
+            git("add", "."); git("commit", "-qm", "presentation"); git("tag", "v1.1.0")
+            tools = {"git": "git"}
+            scope = validation.select_scope(root, tools, os.environ)
+            self.assertEqual(scope["base"], "v1.0.0")
+            self.assertFalse(scope["stress"]); self.assertFalse(scope["tools"])
+            (root / "QuestTogether.toc").write_text("## Version: 1.1.1\nCore.lua\nNewCore.lua\n")
+            git("add", "."); git("commit", "-qm", "manifest change")
+            self.assertTrue(validation.select_scope(root, tools, os.environ)["stress"])
+            self.assertEqual(validation.select_scope(root, tools, os.environ, True), validation.FULL_SCOPE)
+
+    def test_missing_history_and_baseline_fail_closed(self):
+        with patch.object(validation, "run", return_value=""):
+            self.assertTrue(validation.select_scope(Path("/source"), {"git": "git"}, {})["stress"])
+        with patch.object(validation, "run", side_effect=validation.ValidationError("read failure")):
+            self.assertTrue(validation.select_scope(Path("/source"), {"git": "git"}, {})["tools"])
 
 
 class OrchestrationTests(unittest.TestCase):
@@ -152,6 +161,7 @@ class OrchestrationTests(unittest.TestCase):
         with patch.object(validation, "run", side_effect=self.fake_run), \
                 patch.object(validation, "executable", side_effect=lambda value, label: "/tools/" + Path(value).name), \
                 patch.object(validation, "preflight", side_effect=preflight), \
+                patch.object(validation, "select_scope", return_value=validation.FULL_SCOPE), \
                 patch.object(validation, "validate", side_effect=validate) as checked, \
                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             result = validation.main(["--root", str(self.root), "--receipt", str(self.receipt), *extra])
@@ -159,13 +169,13 @@ class OrchestrationTests(unittest.TestCase):
 
     def test_exact_detached_local_snapshot_success_receipt_and_cleanup(self):
         captured = []
-        def check(snapshot, tools, env):
+        def check(snapshot, tools, env, scope):
             captured.append(snapshot)
             self.assertNotEqual(snapshot, self.root)
             self.assertTrue(snapshot.is_dir())
             aliases = Path(env["PATH"].split(os.pathsep)[0])
             self.assertEqual((aliases / "lua5.1").readlink(), Path("/tools/custom-lua51"))
-            self.assertEqual((aliases / "lua5.2").readlink(), Path("/tools/custom-lua52"))
+            self.assertFalse((aliases / "lua5.2").exists())
         result, checked = self.invoke(validate=check, extra=("--ref", "v1.2.3", "--lua51", "/fake/custom-lua51", "--lua52", "/fake/custom-lua52"))
         self.assertEqual(result, 0)
         self.assertEqual(checked.call_count, 1)
@@ -181,7 +191,7 @@ class OrchestrationTests(unittest.TestCase):
     def test_failed_validation_removes_stale_receipt_and_cleans_snapshot(self):
         self.receipt.write_text('{"passed":true}')
         snapshots = []
-        def fail(snapshot, tools, env):
+        def fail(snapshot, tools, env, scope):
             snapshots.append(snapshot)
             raise validation.ValidationError("fixture failed")
         result, _ = self.invoke(validate=fail)
@@ -252,7 +262,7 @@ class OrchestrationTests(unittest.TestCase):
             self.assertEqual(validation.executable(str(python), "Python"), str(python))
 
     def test_ambient_git_and_locale_settings_do_not_override_the_plan(self):
-        def check(snapshot, tools, env):
+        def check(snapshot, tools, env, scope):
             self.assertNotIn("GIT_DIR", env)
             self.assertNotIn("QT_TEST_LOCALE", env)
             self.assertNotIn("QT_TEST_LUA", env)
@@ -262,7 +272,7 @@ class OrchestrationTests(unittest.TestCase):
 
     def test_publication_credentials_never_reach_snapshot_commands(self):
         names = ("DISCORD_BOT_TOKEN", "GH_TOKEN", "GITHUB_TOKEN")
-        def check(snapshot, tools, env):
+        def check(snapshot, tools, env, scope):
             for name in names:
                 self.assertNotIn(name, env)
         with patch.dict(os.environ, {name: "private-fixture" for name in names}):

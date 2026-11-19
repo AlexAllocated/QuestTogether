@@ -345,9 +345,9 @@ interrupted local job is resumed explicitly; no remote workflow continues it.
 
 ### Local validation environment
 
-The validator needs Git, Bash, OpenSSL, Lua 5.1 with LuaBitOp, Lua 5.2 and Python with
-`services/vip/requirements.txt` installed. Set `LUA51` and `LUA52`, or pass
-`--lua51` and `--lua52`, if the interpreters are not named `lua5.1` and `lua5.2`.
+The validator needs Git, Bash, OpenSSL, Lua 5.1 with LuaBitOp and Python with
+`services/vip/requirements.txt` installed. Set `LUA51`, or pass `--lua51`, if the
+interpreter is not named `lua5.1`. Lua 5.2 is not a release dependency.
 Use `--python` for a prepared Python environment; `deploy.py` passes these options
 through the publisher to the validator. Dependencies must already be installed: validation
 does not install packages or contact the network.
@@ -368,13 +368,43 @@ The validator creates a temporary local clone at the exact ref, runs the Python,
 Lua, locale, client-profile, package and pinned-library checks locally, and
 removes the temporary clone when finished. It streams logs to the terminal and
 writes the success receipt outside tracked sources only after all checks pass.
-The eight full Lua runs use at most four independent local processes. Each keeps
-its complete normal/reverse or simulated-live order; every previous case remains
-included. Other checks and publication steps run in sequence. Logs include step
-durations and the slowest cases in each full suite, with each suite's output kept
-together. No GitHub workflow or CurseForge wait is involved.
+Independent validation jobs share at most four local workers. Publication steps
+still run in sequence. Logs include each step's duration and the slowest Lua
+cases, with each job's output kept together. No GitHub workflow or CurseForge
+wait is involved.
 Failure removes a stale receipt at that path. This automated suite supplements
 the live-client checks appropriate to the change; it does not run a WoW client.
+
+### Routine and full validation
+
+The validator compares the exact candidate against the highest earlier reachable
+release tag, excluding tags at the candidate commit. Release tags must remain
+immutable and follow the validated publishing flow. Known presentation, media,
+localization and documentation changes use the routine path. It runs Lua 5.1
+regressions in normal order, simulated live execution, all locales and client
+profiles, native control checks, crypto interoperability and syntax checks.
+Only three named load scenarios are deferred: the 200-player discovery test,
+the 20-player relayed-discovery soak and the long mixed party/diagnostics load.
+Other offline-only regressions, including security and protocol tests, remain.
+
+Core, communications, authentication, manifest or Lua test-harness changes, and
+unrecognized paths, select the stress scenarios and reverse-order runs as well.
+A version-only TOC change does not select extra tests. Release-tool unit tests
+run when Python/shell tooling changes or conservative full coverage is selected.
+The actual release notes, translations, architecture, ZIP, manifest, licenses and
+pinned dependencies are checked on every release regardless of that selection.
+The log records the baseline and which additional checks were selected. Missing
+or unreadable baseline history selects full coverage.
+
+To request every check explicitly, without publishing:
+
+```sh
+python3 scripts/validate_release.py --full --ref vX.Y.Z --receipt /tmp/questtogether-full-validation.json
+```
+
+`--full` includes all stress scenarios, both execution orders and release-tool
+unit tests on Lua 5.1. Lua 5.2 remains usable for optional portability experiments
+by directly invoking a standalone test script; it does not certify WoW behavior.
 
 ## Baseline enforcement
 

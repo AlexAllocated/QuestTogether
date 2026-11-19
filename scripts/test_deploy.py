@@ -136,6 +136,7 @@ class DeployTests(unittest.TestCase):
     def invoke(self, *arguments):
         output, errors = io.StringIO(), io.StringIO()
         def executable(value, label):
+            self.assertNotEqual(label, "Lua 5.2", "new deployments must not require Lua 5.2")
             return str(Path(sys.executable).absolute()) if label == "Python" else "/offline/" + Path(value).name
         with patch.object(deploy, "run", side_effect=self.fake_run), \
                 patch.object(deploy.subprocess, "run", side_effect=self.fake_subprocess), \
@@ -208,6 +209,7 @@ class DeployTests(unittest.TestCase):
         self.assertEqual(state["status"], "queued")
         self.assertEqual(state["commit"], self.sha)
         self.assertEqual(state["attempt"], 1)
+        self.assertIsNone(state["lua52"])
         self.assertEqual(self.git("rev-parse", "HEAD", root=snapshot), self.sha)
         self.assertEqual(self.git("remote", "get-url", "origin", root=snapshot),
                          "https://github.com/" + REPOSITORY + ".git")
@@ -229,6 +231,7 @@ class DeployTests(unittest.TestCase):
         self.assertEqual(events[0]["commit"], self.sha)
         self.assertEqual(events[0]["content"], "exact tagged payload\n")
         self.assertIn("v1.2.3", events[0]["arguments"])
+        self.assertNotIn("--lua52", events[0]["arguments"])
         self.assertEqual(self.git("rev-parse", "HEAD"), later_commit)
         self.assertEqual(self.git("status", "--porcelain"), "")
 

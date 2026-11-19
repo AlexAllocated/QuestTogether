@@ -343,7 +343,7 @@ def start(args):
     interpreters = {
         "python": executable(args.python or sys.executable, "Python"),
         "lua51": executable(args.lua51 or os.environ.get("LUA51", "lua5.1"), "Lua 5.1"),
-        "lua52": executable(args.lua52 or os.environ.get("LUA52", "lua5.2"), "Lua 5.2"),
+        "lua52": args.lua52,  # Retained only for explicitly resuming older release tooling.
     }
     base = deployment_directory(root)
     with job_lock(base / ".prepare.lock"):
@@ -404,10 +404,12 @@ def resume(args):
         observed = service_state(job, state)
         if observed.get("ActiveState") in {"active", "activating", "deactivating", "reloading"}:
             raise DeployError("the deployment service is still active; inspect --status")
-        for name in ("python", "lua51", "lua52"):
+        for name in ("python", "lua51"):
             value = getattr(args, name)
             if value:
                 state[name] = executable(value, name)
+        if state.get("lua52") and args.lua52:
+            state["lua52"] = executable(args.lua52, "legacy Lua 5.2")
         env = credentials(root)
         if state["attempt"] == 0 and not state.get("unit"):
             prepare_snapshot(job, state, args.receipt)
@@ -483,7 +485,9 @@ def worker(job):
             command = [state["python"], "-u", str(snapshot / "scripts/release.py"),
                        "--root", str(snapshot), "--tag", state["tag"],
                        "--repository", state["repository"], "--python", state["python"],
-                       "--lua51", state["lua51"], "--lua52", state["lua52"]]
+                       "--lua51", state["lua51"]]
+            if state.get("lua52"):
+                command += ["--lua52", state["lua52"]]
             # Older prepared tags lack this option. The checked-out branch is
             # still original, so their existing publisher derives it correctly.
             if '"--branch"' in (snapshot / "scripts/release.py").read_text():
@@ -553,7 +557,7 @@ def main(argv=None):
     parser.add_argument("--receipt", type=Path, help="reuse only a matching successful validation receipt")
     parser.add_argument("--python")
     parser.add_argument("--lua51")
-    parser.add_argument("--lua52")
+    parser.add_argument("--lua52", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     try:
         if not args.bump and (args.reuse_notes or args.channel != "stable"):

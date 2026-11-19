@@ -24,6 +24,11 @@ REAL_GIT = shutil.which("git")
 LOCALES = ("deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW")
 
 
+def lua_interpreters():
+    selected = os.environ.get("QT_TEST_LUA") or shutil.which("lua5.1") or shutil.which("lua")
+    return [selected] if selected else []
+
+
 def sample_notes(version="1.2.3", item="Share eligible quests with your party."):
     return {"version": version, "welcome": "Welcome to QuestTogether. Open settings from the minimap.",
             "sections": [{"title": "Party quests", "items": [item]}]}
@@ -350,7 +355,7 @@ class NotesTests(unittest.TestCase):
             script += ('assert(namespace.releaseNotesByLocale.' + locale + '.version == "1.3.0-beta.1")\n')
             script += ('assert(namespace.releaseNotesByLocale.' + locale + '.welcome == ' +
                        CHECKER.lua_string(old[locale]["notes"]["welcome"]) + ')\n')
-        for interpreter in sorted({path for name in ("lua5.1", "lua5.2", "lua") if (path := shutil.which(name))}):
+        for interpreter in lua_interpreters():
             result = subprocess.run([interpreter, "-"], input=script, text=True, encoding="utf-8",
                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env, cwd=self.root)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -431,9 +436,9 @@ class NotesTests(unittest.TestCase):
         self.assert_bump_guard(["patch", "--check"], success=False, contains="non-release changes")
 
     def test_generator_escapes_utf8_and_code_as_literal_data(self):
-        interpreters = sorted({path for name in ("lua5.1", "lua5.2", "lua") if (path := shutil.which(name))})
+        interpreters = lua_interpreters()
         if not interpreters:
-            self.skipTest("Lua interpreter unavailable; CI installs Lua 5.1/5.2")
+            self.skipTest("Lua interpreter unavailable; release validation requires Lua 5.1")
         text = 'Quest "Étoile" \\ path\n第二行\t"}; _G.injected = true; -- 123'
         notes = sample_notes(item=text)
         self.write_notes(notes, generate=False)

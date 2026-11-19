@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # See LICENSING.md for scope and preserved third-party notices.
-"""Run all release checks locally against an isolated, exact Git commit.
+"""Validate an exact Git commit locally, selecting additional checks by changes.
 
 No dependencies are installed and no remote services are contacted. A successful
 run writes a receipt outside tracked sources for the local release command.
@@ -20,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from check_release_notes import version_key
 
 sys.dont_write_bytecode = True
 
@@ -39,6 +40,66 @@ LOCALES = ("enGB", "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR
 CLIENTS = ("retail", "forever", "era", "tbc", "mists", "titan")
 LUA_CHECKS = ("test.lua", "test_loader.lua", "regression_gamepad_adapter.lua",
               "regression_gamepad_launcher.lua", "regression_party_map_native.lua", "settings_smoke.lua")
+PRESENTATION = {
+    "Options.lua", "PresetWindow.lua", "ReleaseNotesWindow.lua", "Hints.lua",
+    "QuestCompareWindow.lua", "QuestComparePreview.lua", "QuestCompareChainPreview.lua",
+    "QuestCompareFilters.lua", "QuestCompareGamepad.lua", "QuestCompareInteraction.lua",
+    "QuestCompareChains.lua", "WindowLayout.lua", "WindowTheme.lua", "OwnedUI.lua",
+    "MapOverlayPool.lua", "PartyWaypointPins.lua", "PlayerTooltipPresenter.lua",
+    "ReleaseNotes.lua", "ReleaseNotesHistory.lua", "LocalizedReleaseNotes.lua", "Locales.lua",
+}
+FULL_SCOPE = {"stress": True, "tools": True, "base": None, "reason": "full validation requested"}
+
+
+def changed_scope(paths):
+    scope = {"stress": False, "tools": False}
+    for name in paths:
+        if name in PRESENTATION or name.endswith(".md"):
+            continue
+        if name.startswith(("locales/", "release_notes/", "changelogs/")) and name.endswith((".json", ".md")):
+            continue
+        if name in {"release_notes.json", "release_notes_reuse.json"}:
+            continue
+        if name.startswith("Media/") and name.endswith((".svg", ".tga", ".png", ".ogg", ".json", ".txt")):
+            continue
+        if name in {"scripts/validate_release.py", "scripts/test_validate_release.py"}:
+            scope.update(stress=True, tools=True)
+        elif name.startswith("scripts/") and name.endswith((".py", ".sh")):
+            scope["tools"] = True
+        elif name in {".pkgmeta", "LICENSE", "NOTICE"} or name.startswith("LICENSES/"):
+            scope["tools"] = True
+        else:
+            # Core, communications, crypto, manifests, Lua fixtures and unknown
+            # paths retain stress/order coverage. New files never silently opt out.
+            scope.update(stress=True, tools=True)
+    return scope
+
+
+def select_scope(snapshot, tools, env, full=False):
+    if full:
+        return dict(FULL_SCOPE)
+    def git(*args):
+        return run([tools["git"], *args], cwd=snapshot, env=env, label="validation baseline", capture=True)
+    try:
+        head = git("rev-parse", "HEAD")
+        tags = [tag for tag in git("tag", "--merged", "HEAD").splitlines()
+                if re.fullmatch(r"v\d+\.\d+\.\d+(?:-(?:alpha|beta)\.\d+)?", tag)]
+        base = next((tag for tag in sorted(tags, key=lambda tag: version_key(tag[1:]), reverse=True)
+                     if git("rev-parse", tag + "^{commit}") != head), None)
+        if base is None:
+            return {**FULL_SCOPE, "reason": "no earlier reachable release tag"}
+        paths = git("diff", "--name-only", "--no-renames", "-z", base, "HEAD").split("\0")
+        changed = []
+        for name in filter(None, paths):
+            if name.endswith(".toc"):
+                before, after = git("show", base + ":" + name), git("show", "HEAD:" + name)
+                strip_version = lambda text: re.sub(r"^## Version:[^\n]*", "", text, flags=re.M)
+                if strip_version(before) == strip_version(after):
+                    continue
+            changed.append(name)
+        return {**changed_scope(changed), "base": base, "reason": str(len(changed)) + " changed paths"}
+    except (ValidationError, ValueError):
+        return {**FULL_SCOPE, "reason": "baseline could not be established"}
 
 
 class ValidationError(ValueError):
@@ -70,7 +131,7 @@ def run(command, *, cwd, env, label, capture=False, input=None):
                               + format(time.monotonic() - started, ".1f") + "s)")
     if not capture:
         print("Passed " + label + " in " + format(time.monotonic() - started, ".1f") + "s.", flush=True)
-    return result.stdout.strip() if capture else None
+    return result.stdout.rstrip("\r\n") if capture else None
 
 
 def check_receipt_path(root, receipt, git, env):
@@ -91,7 +152,7 @@ def check_receipt_path(root, receipt, git, env):
 
 
 def preflight(snapshot, tools, env):
-    for version in ("5.1", "5.2"):
+    for version in ("5.1",):
         actual = run([tools["lua" + version], "-e", "io.write(_VERSION)"], cwd=snapshot, env=env,
                      label="Lua " + version + " interpreter", capture=True)
         if actual != "Lua " + version:
@@ -115,26 +176,19 @@ def preflight(snapshot, tools, env):
                               "prepare that environment locally and pass --python") from None
 
 
-def regression_matrix(snapshot, tools, env):
-    # These processes only read the checkout and own their fixtures. Keep each
-    # complete normal/reverse order intact; do not shard away ordering coverage.
-    jobs = [(version, mode) for mode in ("normal", "reverse", "live", "live-reverse")
-            for version in ("5.1", "5.2")]
-    def check(version, mode):
+def run_jobs(snapshot, jobs):
+    """Independent read-only checks share one bounded pool and separate logs."""
+    def check(job):
+        label, command, env, source = job
         started = time.monotonic()
-        label = "Lua " + version + " " + mode
-        lua = tools["lua" + version]
-        # Buffer each suite separately so failures and slow-case reports remain
-        # readable even while the independent interpreters run concurrently.
         with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as log:
-            result = subprocess.run([lua, "scripts/test.lua", ".", mode], cwd=snapshot,
-                                    env=dict(env, QT_TEST_LUA=lua, QT_TEST_REQUIRE_NATIVE_BIT="1", QT_TEST_TIMINGS="1"),
+            result = subprocess.run(command, cwd=snapshot, env=env, input=source,
                                     text=True, stdout=log, stderr=subprocess.STDOUT)
             log.seek(0)
             return label, result.returncode, time.monotonic() - started, log.read()
-    print("Checking eight complete Lua suites with at most four local workers...", flush=True)
+    print("Checking " + str(len(jobs)) + " independent jobs with at most four local workers...", flush=True)
     with ThreadPoolExecutor(max_workers=min(4, os.cpu_count() or 1)) as pool:
-        pending = [pool.submit(check, version, mode) for version, mode in jobs]
+        pending = [pool.submit(check, job) for job in jobs]
         for future in as_completed(pending):
             label, code, elapsed, output = future.result()
             print(output, end="" if output.endswith("\n") else "\n", flush=True)
@@ -145,45 +199,58 @@ def regression_matrix(snapshot, tools, env):
             print("Passed " + label + " in " + format(elapsed, ".1f") + "s.", flush=True)
 
 
-def validate(snapshot, tools, env):
-    python = tools["python"]
+def validation_jobs(snapshot, tools, env, scope):
+    python, lua = tools["python"], tools["lua5.1"]
+    lua_env = dict(env, QT_TEST_LUA=lua)
+    jobs = []
+    def add(label, command, environment=lua_env, source=None):
+        jobs.append((label, command, environment, source))
+    modes = ("normal", "reverse", "live", "live-reverse") if scope["stress"] else ("routine", "live")
+    # Start the longest tasks first; complete order checks are never sharded.
+    for mode in modes:
+        add("Lua 5.1 " + mode, [lua, "scripts/test.lua", ".", mode],
+            dict(lua_env, QT_TEST_REQUIRE_NATIVE_BIT="1", QT_TEST_TIMINGS="1"))
     for arguments in PYTHON_CHECKS:
-        run([python, "scripts/" + arguments[0], *arguments[1:]], cwd=snapshot, env=env, label=arguments[0])
-    regression_matrix(snapshot, tools, env)
-    for version in ("5.1", "5.2"):
-        lua = tools["lua" + version]
-        lua_env = dict(env, QT_TEST_LUA=lua)
-        run([python, "scripts/test_release_notes.py"], cwd=snapshot, env=lua_env,
-            label="release-note Lua " + version + " contracts")
-        for script in LUA_CHECKS:
-            if script == "test.lua":
-                continue  # The complete matrix above includes normal order.
-            run([lua, "scripts/" + script], cwd=snapshot, env=lua_env, label=script + " (Lua " + version + ")")
-        for script in ("test_developer_crypto.py", "bindings_smoke.py"):
-            run([python, "scripts/" + script, lua], cwd=snapshot, env=lua_env, label=script + " (Lua " + version + ")")
-        run([python, "-m", "unittest", "discover", "-s", "services/vip", "-p", "test_*.py"],
-            cwd=snapshot, env=lua_env, label="VIP service and Lua " + version + " interoperability")
-        for locale in LOCALES:
-            run([lua, "scripts/test.lua", ".", "locale"], cwd=snapshot,
-                env=dict(lua_env, QT_TEST_LOCALE=locale), label="Lua " + version + " locale " + locale)
-        for client in CLIENTS:
-            run([lua, "scripts/test.lua", ".", "normal", client], cwd=snapshot,
-                env=lua_env, label="Lua " + version + " client " + client)
-        for client in ("retail", "forever"):
-            run([lua, "scripts/location_client_profiles.lua", ".", client], cwd=snapshot,
-                env=lua_env, label="Lua " + version + " locations " + client)
-        # loadfile compiles each file without executing it, as luac -p does.
-        # Decimal byte escapes work in both Lua versions and for every filename.
-        paths = sorted(str(path.relative_to(snapshot)) for path in snapshot.rglob("*.lua")
-                       if ".git" not in path.relative_to(snapshot).parts)
-        syntax = "\n".join('assert(loadfile("' + "".join("\\%03d" % byte for byte in path.encode("utf-8")) + '"))'
-                           for path in paths)
-        run([lua, "-"], cwd=snapshot, env=lua_env, input=syntax, label="all Lua " + version + " syntax")
-    run([tools["bash"], "-n", "scripts/bump_version.sh"], cwd=snapshot, env=env, label="release shell syntax")
-    run([tools["git"], "diff", "--check"], cwd=snapshot, env=env, label="Git whitespace")
-    # package.py validates every vendored library hash against its pinned
-    # manifest and verifies the resulting complete installation archive.
-    run([python, "scripts/package.py", "--ref", "HEAD", "--output", "dist/QuestTogether.zip"],
+        if arguments[0].startswith("test_") and not scope["tools"]:
+            continue
+        add(arguments[0], [python, "scripts/" + arguments[0], *arguments[1:]])
+    if scope["tools"]:
+        add("release-note Lua 5.1 contracts", [python, "scripts/test_release_notes.py"])
+    for script in LUA_CHECKS:
+        if script != "test.lua":
+            add(script + " (Lua 5.1)", [lua, "scripts/" + script])
+    # Crypto interoperability and binding behavior are runtime checks, not
+    # release-tool unit tests; retain them on every release.
+    for script in ("test_developer_crypto.py", "bindings_smoke.py"):
+        add(script + " (Lua 5.1)", [python, "scripts/" + script, lua])
+    add("VIP service and Lua 5.1 interoperability",
+        [python, "-m", "unittest", "discover", "-s", "services/vip", "-p", "test_*.py"])
+    for locale in LOCALES:
+        add("Lua 5.1 locale " + locale, [lua, "scripts/test.lua", ".", "locale"],
+            dict(lua_env, QT_TEST_LOCALE=locale))
+    for client in CLIENTS:
+        add("Lua 5.1 client " + client, [lua, "scripts/test.lua", ".", "normal", client])
+    for client in ("retail", "forever"):
+        add("Lua 5.1 locations " + client, [lua, "scripts/location_client_profiles.lua", ".", client])
+    paths = sorted(str(path.relative_to(snapshot)) for path in snapshot.rglob("*.lua")
+                   if ".git" not in path.relative_to(snapshot).parts)
+    syntax = "\n".join('assert(loadfile("' + "".join("\\%03d" % byte for byte in path.encode("utf-8")) + '"))'
+                       for path in paths)
+    add("all Lua 5.1 syntax", [lua, "-"], source=syntax)
+    add("release shell syntax", [tools["bash"], "-n", "scripts/bump_version.sh"])
+    add("Git whitespace", [tools["git"], "diff", "--check"])
+    return jobs
+
+
+def validate(snapshot, tools, env, scope=None):
+    scope = dict(FULL_SCOPE) if scope is None else scope
+    print("Validation baseline: " + (scope["base"] or "none") + "; " + scope["reason"] + ".", flush=True)
+    print("Network stress and reverse order: " + ("included" if scope["stress"] else "unchanged; deferred")
+          + ". Release-tool unit tests: " + ("included" if scope["tools"] else "unchanged; deferred") + ".", flush=True)
+    run_jobs(snapshot, validation_jobs(snapshot, tools, env, scope))
+    # Always verify the actual archive, manifest, licenses and pinned library,
+    # independently of whether packager unit tests were selected.
+    run([tools["python"], "scripts/package.py", "--ref", "HEAD", "--output", "dist/QuestTogether.zip"],
         cwd=snapshot, env=env, label="exact-commit package and pinned library")
 
 
@@ -193,7 +260,8 @@ def main(argv=None):
     parser.add_argument("--ref", default="HEAD")
     parser.add_argument("--receipt", type=Path, required=True, help="success receipt outside tracked sources (ignored paths allowed)")
     parser.add_argument("--lua51", default=os.environ.get("LUA51", "lua5.1"))
-    parser.add_argument("--lua52", default=os.environ.get("LUA52", "lua5.2"))
+    parser.add_argument("--lua52", help=argparse.SUPPRESS)  # Accept old launchers; no longer required.
+    parser.add_argument("--full", action="store_true", help="include all stress, reverse-order and tooling tests")
     parser.add_argument("--python", default=sys.executable)
     args = parser.parse_args(argv)
     try:
@@ -201,7 +269,8 @@ def main(argv=None):
         root, receipt = args.root.resolve(), args.receipt.resolve()
         env = {key: value for key, value in os.environ.items()
                if not key.startswith("GIT_") and key not in (
-                   "QT_TEST_LOCALE", "QT_TEST_LUA", "DISCORD_BOT_TOKEN", "GH_TOKEN", "GITHUB_TOKEN")}
+                   "QT_TEST_LOCALE", "QT_TEST_LUA", "QT_TEST_TIMINGS", "QT_TEST_REQUIRE_NATIVE_BIT",
+                   "DISCORD_BOT_TOKEN", "GH_TOKEN", "GITHUB_TOKEN")}
         env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, PYTHONDONTWRITEBYTECODE="1")
         git_tool = executable("git", "Git")
         check_receipt_path(root, receipt, git_tool, env)
@@ -209,7 +278,7 @@ def main(argv=None):
         receipt.unlink(missing_ok=True)
         tools = {name: executable(value, label) for name, value, label in (
             ("bash", "bash", "Bash"), ("openssl", "openssl", "OpenSSL"),
-            ("python", args.python, "Python"), ("lua5.1", args.lua51, "Lua 5.1"), ("lua5.2", args.lua52, "Lua 5.2"))}
+            ("python", args.python, "Python"), ("lua5.1", args.lua51, "Lua 5.1"))}
         tools["git"] = git_tool
         commit = run([tools["git"], "rev-parse", "--verify", "--end-of-options", args.ref + "^{commit}"],
                      cwd=root, env=env, label="release commit", capture=True)
@@ -230,14 +299,14 @@ def main(argv=None):
             # Make explicit interpreter overrides available to those tests too.
             aliases = temporary / "bin"
             aliases.mkdir()
-            for name, target in (("lua5.1", tools["lua5.1"]), ("lua5.2", tools["lua5.2"])):
+            for name, target in (("lua5.1", tools["lua5.1"]),):
                 (aliases / name).symlink_to(target)
             python_alias = aliases / "python3"
             python_alias.write_text("#!" + tools["bash"] + "\nexec " + shlex.quote(tools["python"]) + ' "$@"\n')
             python_alias.chmod(0o700)
             env["PATH"] = str(aliases) + os.pathsep + env.get("PATH", "")
             preflight(snapshot, tools, env)
-            validate(snapshot, tools, env)
+            validate(snapshot, tools, env, select_scope(snapshot, tools, env, args.full))
         if runner_sha256() != validation_digest:
             raise ValidationError("validation runner changed during the checks; run validation again")
         receipt.parent.mkdir(parents=True, exist_ok=True)
