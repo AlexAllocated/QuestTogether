@@ -2,6 +2,38 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.0
+
+Deixe o QuestTogether com a sua cara! Escolha o estilo de ajuda ideal, acompanhe um pequeno aventureiro e conheça mais recursos com configurações claras e novas dicas.
+
+### Uma aventura do seu jeito
+
+- Instalações novas mostram uma tela de boas-vindas uma vez por conta, no lugar das notas, com Aventura completa selecionada. Atualizar uma instalação existente não aplica uma predefinição às suas escolhas atuais.
+- Experimente pelo botão de predefinições nas notas dentro do jogo. Você também pode voltar ao seletor quando quiser por /qt ou pelas opções do WoW. Abrir e explorar não muda nada.
+- Aventura completa mantém mapas, placas, rastreador do grupo, chat, balões, sons e emotes habituais. Você escolhe sua própria missão em foco.
+- Missões tranquilas mantém mapas, compartilhamento de localização e ferramentas do grupo, desligando chat automático, balões, sons, emotes e interrupções de início ou atualização.
+- Só o registro de missões deixa o registro disponível sob demanda, com acessos pelo minimapa e controle. Oculta acréscimos aos mapas, placas e rastreador, saídas automáticas e avisos QT de pedidos recebidos para compartilhar.
+- Pequeno companheiro deixa o planejamento com os pais: sem janelas automáticas ou acessos QT, informes apenas para o grupo e acompanhamento automático do líder. Agradecimentos e comemorações continuam ativos; as configurações ficam acessíveis pelas opções do WoW.
+- Cada predefinição explica um uso comum e permite expandir sua lista de opções. Confira Ver configurações, aplique quando estiver pronto e personalize o que quiser depois. Disposições, atalhos e notas pessoais são preservados.
+- Você pode guardar a escolha para futuros personagens sem alterar perfis existentes ou copiados. Personalizada apenas indica que suas opções não correspondem exatamente a uma predefinição.
+
+### Acompanhe a missão do líder
+
+- O acompanhamento automático do foco do líder é uma opção independente em Rastreador e foco do grupo, ativada por Pequeno companheiro. Usa o foco QT compatível do líder real quando você tem a missão e se adapta à troca de liderança.
+- Enquanto o foco for utilizável, o QT mantém a missão sem avisos de troca. Desative a opção para encerrar o acompanhamento automático. Se o foco estiver indisponível ou faltar a missão, você pode escolher outro temporariamente; o acompanhamento retoma quando puder.
+
+### Configurações mais claras
+
+- As categorias foram reorganizadas e as dicas de ajuda explicam efeitos e limites. Data Broker tem uma página própria para barras compatíveis. As caixas agora mostram corretamente os valores salvos ou padrão.
+- Todos os sinais sonoros começam ativos para configurações novas; suas desativações salvas são respeitadas. Em Áudio, escolha sinais, sons, volume e ouça uma prévia.
+- Meu balão de chat agora pode aparecer apenas em grupo, incluindo raides, além da opção só quando estiver sozinho. Isso não muda os informes de missão enviados.
+
+### Mais dicas para a jornada
+
+- Adicionamos 58 dicas, chegando a 225: sequências, compartilhamento, predefinições, acompanhamento do líder, controles, áudio, mapas e notas privadas. Todas as línguas compatíveis recebem orientações adequadas ao cliente e links para os controles úteis.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v10.1.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Dica: Digite /qt tip ou /qt hint para pedir uma dica local a qualquer momento, mesmo com as dicas ao entrar desativadas.
+
 ## 10.0.2
 
 Sequências mais claras e requisitos mais fáceis de consultar no Registro de missões do grupo!

@@ -1,24 +1,46 @@
 {
-  "source_sha256": "894e7a4eb936006941f6608fb0f6b396044df1c1e634a0a1567f89ea0043c86f",
+  "source_sha256": "95e11cb22dab5baecf30d950ae933893c03d5e4738ba30eec2ab8eb01e1e424a",
   "notes": {
-    "version": "10.0.2",
-    "welcome": "Catene di missioni più leggibili e requisiti di accettazione più chiari nel Registro missioni del gruppo.",
+    "version": "10.1.0",
+    "welcome": "QuestTogether si adatta alla tua avventura! Scegli quanto aiuto vuoi vedere, accompagna i giocatori più giovani e scopri nuovi strumenti con configurazioni chiare e tanti consigli in più.",
     "sections": [
       {
-        "title": "Catene di missioni più chiare",
+        "title": "Scegli come vivere l’avventura",
         "items": [
-          "I passaggi precedenti mostrati sopra la missione espansa rivelano ora i nomi conosciuti, comprese le alternative di livello inferiore che non hai completato. I nomi dei passaggi successivi non ancora raggiunti restano nascosti per impostazione predefinita, con la dicitura «Nome della missione nascosto».",
-          "Un anello di caricamento prende il posto dell’icona della catena mentre vengono cercati i collegamenti tra missioni. Al termine compare l’icona per le missioni collegate; per quelle indipendenti o con informazioni non disponibili, l’anello scompare.",
-          "Le catene si aprono e si chiudono con un’animazione attorno alla riga della missione originale. «Riduci movimento» rende immediata la transizione e mantiene fermo l’indicatore di caricamento. La chiusura tramite le intestazioni dei gruppi resta immediata."
+          "Una nuova installazione apre la schermata di benvenuto una volta per account al posto delle note, con Avventura completa preselezionata. Aggiornare un’installazione esistente non applica configurazioni alle tue opzioni.",
+          "Puoi provarle con il pulsante delle configurazioni nelle note in gioco, oppure riaprire la scelta quando vuoi da /qt o dalle opzioni WoW. Esplorare la schermata non cambia nulla.",
+          "Avventura completa mantiene mappe, barre dei nomi, tracciatore di gruppo, chat, fumetti, suoni ed emote. Scegli tu quale missione seguire.",
+          "Missioni in tranquillità conserva mappe, posizione condivisa e strumenti di gruppo, disattivando chat automatica, fumetti, suoni, emote e interruzioni all’accesso o per aggiornamenti.",
+          "Solo registro missioni lascia il registro disponibile su richiesta con accessi da minimappa e controller. Nasconde aggiunte a mappe, nomi e tracciatore, messaggi automatici e richieste QT in entrata per condividere missioni.",
+          "Piccolo compagno lascia ai genitori la pianificazione: nessuna finestra automatica o pulsante di avvio QT, dati solo al gruppo e seguito automatico del capogruppo. Ringraziamenti e festeggiamenti restano attivi; le impostazioni sono sempre nelle opzioni WoW.",
+          "Ogni configurazione descrive un uso tipico e permette di espandere l’elenco delle opzioni. Applica la scelta quando vuoi, poi modifica ogni opzione singolarmente. Disposizioni, tasti e note private rimangono invariati.",
+          "Puoi usare la scelta anche per futuri personaggi senza cambiare profili esistenti o copiati. Personalizzata indica solo che le tue opzioni non coincidono esattamente con una configurazione."
         ]
       },
       {
-        "title": "Requisiti di accettazione più leggibili",
+        "title": "Insieme sulla missione del capogruppo",
         "items": [
-          "Le descrizioni distinguono i requisiti non soddisfatti, soddisfatti e sconosciuti con titoli, colori e maggiore spaziatura. Le spiegazioni duplicate sui collegamenti tra missioni vengono eliminate e le condizioni soddisfatte ripetute vengono riassunte.",
-          "Quando dati aggiornati confermano che un personaggio ha superato il livello massimo di una missione, compare «Non disponibile». La descrizione spiega che quel limite di livello impedisce ormai di ottenerla. Gli altri impedimenti permanenti non accertati non ricevono questo stato.",
-          "Le missioni attive, pronte da consegnare o completate non mostrano avvisi sull’accettazione. I dati mancanti o non aggiornati restano sconosciuti: i requisiti visualizzati non garantiscono che una missione possa essere accettata."
+          "Il seguito automatico del capogruppo è un’opzione indipendente in Tracciatore e obiettivo del gruppo, attivata da Piccolo compagno. Usa l’obiettivo QT compatibile del vero capogruppo se possiedi la missione e si adatta ai cambi di guida.",
+          "Finché quell’obiettivo è utilizzabile, QT lo mantiene senza avvisi di cambio. Disattiva l’opzione per interrompere il seguito automatico. Se manca la missione o l’obiettivo del capogruppo non è disponibile, scegli liberamente un obiettivo temporaneo: il seguito riprenderà quando possibile."
         ]
+      },
+      {
+        "title": "Impostazioni più facili da capire",
+        "items": [
+          "Categorie riorganizzate e tooltip più completi aiutano a trovare e comprendere le opzioni. Data Broker ha una pagina propria per le barre compatibili. Le caselle mostrano correttamente i valori salvati o predefiniti.",
+          "Tutti i segnali sonori sono attivi nelle impostazioni nuove; quelli già disattivati restano tali. In Audio puoi scegliere segnali, suoni, volume e ascoltare un’anteprima.",
+          "Il tuo fumetto può ora apparire solo in gruppo, incursioni comprese, oltre alla scelta solo in solitaria. Le informazioni sulle missioni inviate agli altri non cambiano."
+        ]
+      },
+      {
+        "title": "Altri consigli da scoprire",
+        "items": [
+          "Con 58 aggiunte, il catalogo raggiunge 225 consigli: catene, condivisione, configurazioni, seguito del capogruppo, controller, audio, mappe e note private. Sono disponibili in tutte le lingue supportate, con indicazioni adatte al client e collegamenti utili."
+        ],
+        "tip": {
+          "label": "Consiglio:",
+          "text": "Digita /qt tip o /qt hint per un consiglio locale quando vuoi, anche con i consigli all’accesso disattivati."
+        }
       }
     ]
   }

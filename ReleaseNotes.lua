@@ -3,23 +3,45 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "10.0.2",
-	welcome = "Quest chains are easier to read, smoother to explore, and clearer about which quests you can still pick up.",
+	version = "10.1.0",
+	welcome = "Make QuestTogether your kind of adventure! Choose a preset that fits how you play, help a younger companion follow along, and discover more of QT through clearer settings and fresh tips.",
 	sections = {
 		{
-			title = "Follow the chain more easily",
+			title = "Choose your adventure",
 			items = {
-				"Earlier steps shown above your current quest now reveal their known names, including lower-level alternatives you never completed. Later unreached names stay hidden by default, with the clearer label \"Quest name hidden\".",
-				"A loading ring now appears where the chain button belongs while QT checks for related quests. It becomes a chain button when a chain is found and disappears when there is nothing to expand.",
-				"Opening and closing an inline chain now animates around your original quest row. Enable Reduce Motion in QT settings to skip the transition and use a still loading indicator.",
+				"New installations now start with a welcome screen instead of patch notes, once per account. Full Adventure is selected initially. Updating an existing installation does not apply a preset or replace your current choices.",
+				"Try the Presets button in the in-game Patch Notes window, or open /qt and choose Presets anytime. WoW Options also provides access. Opening the chooser lets you browse without changing anything.",
+				"Full Adventure keeps the usual maps, nameplates, party tracker, chat updates, bubbles, sounds and emotes. You choose your own quest focus.",
+				"Quiet Questing keeps maps, location sharing and party tools while switching off automatic chat, bubbles, sounds, emotes and startup or update interruptions.",
+				"Quest Log Only is for checking the party’s quests when you need to. Keep minimap and controller shortcuts while hiding map, nameplate and tracker additions, automatic output and incoming QT share-request prompts.",
+				"Little Sidekick lets a parent handle the planning: no automatic QT windows or launchers, party-only reporting and automatic leader-follow. Friendly thanks and celebration emotes stay on. Settings remain available through WoW Options.",
+				"Each preset explains a typical use and has a Show settings control for its full option list. Choose Apply preset when ready, then customize any individual option. Your layouts, bindings and personal notes are preserved.",
+				"You can also use the selection for future characters without changing existing or copied profiles. Custom simply means your current feature settings do not exactly match a preset.",
 			},
 		},
 		{
-			title = "Understand quest requirements at a glance",
+			title = "Stay with the party leader’s quest",
 			items = {
-				"Prerequisite tooltips now separate unmet, satisfied and unknown conditions with clearer headings, spacing and colors. Repeated explanations are trimmed, and alternative prerequisites are explained together.",
-				"Quests with a confirmed maximum-level limit you have already exceeded now show \"Unavailable\". Hover the status to see why that quest is no longer obtainable for your character.",
-				"Quests already in a player's log or confirmed completed no longer show acceptance warnings. When QT lacks fresh information, it keeps the result unknown rather than claiming a requirement is met or blocked.",
+				"Automatically follow the party leader’s quest focus is a separate option in Party Tracker & Focus, enabled by Little Sidekick. It follows the actual leader’s compatible QT focus when you have that quest, including after leadership changes.",
+				"While that quest is usable, QT keeps it selected without focus-switch warnings. Turn the option off to stop automatic following. If the leader’s focus is unavailable or you do not have the quest, choose a temporary focus freely; automatic following resumes when it becomes usable.",
+			},
+		},
+		{
+			title = "Settings that explain themselves",
+			items = {
+				"Settings have been reorganized into clearer categories, including a dedicated Data Broker page for compatible toolbar addons. Expanded tooltips explain effects and limits, and checkboxes now correctly show their saved or default values.",
+				"All sound cues start enabled for new settings, while saved opt-outs stay respected. In Audio, choose which cues you want, pick their sounds, adjust the volume and preview them.",
+				"My chat bubble now includes Show only when in a party, including raids, alongside the solo option. This changes your own bubble’s visibility without changing outgoing quest reporting.",
+			},
+		},
+		{
+			title = "More ways to discover QT",
+			items = {
+				"We added 58 tips for a total of 225, covering quest chains, sharing, presets, leader-follow, controllers, audio, maps and private notes. Tips are localized across all supported languages, with client-appropriate guidance and links to the relevant controls.",
+			},
+			tip = {
+				label = "Tip:",
+				text = "Want another idea? Type /qt tip or /qt hint for a local tip anytime, even with startup tips disabled.",
 			},
 		},
 	},

@@ -2,6 +2,38 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.0
+
+QuestTogether si adatta alla tua avventura! Scegli quanto aiuto vuoi vedere, accompagna i giocatori più giovani e scopri nuovi strumenti con configurazioni chiare e tanti consigli in più.
+
+### Scegli come vivere l’avventura
+
+- Una nuova installazione apre la schermata di benvenuto una volta per account al posto delle note, con Avventura completa preselezionata. Aggiornare un’installazione esistente non applica configurazioni alle tue opzioni.
+- Puoi provarle con il pulsante delle configurazioni nelle note in gioco, oppure riaprire la scelta quando vuoi da /qt o dalle opzioni WoW. Esplorare la schermata non cambia nulla.
+- Avventura completa mantiene mappe, barre dei nomi, tracciatore di gruppo, chat, fumetti, suoni ed emote. Scegli tu quale missione seguire.
+- Missioni in tranquillità conserva mappe, posizione condivisa e strumenti di gruppo, disattivando chat automatica, fumetti, suoni, emote e interruzioni all’accesso o per aggiornamenti.
+- Solo registro missioni lascia il registro disponibile su richiesta con accessi da minimappa e controller. Nasconde aggiunte a mappe, nomi e tracciatore, messaggi automatici e richieste QT in entrata per condividere missioni.
+- Piccolo compagno lascia ai genitori la pianificazione: nessuna finestra automatica o pulsante di avvio QT, dati solo al gruppo e seguito automatico del capogruppo. Ringraziamenti e festeggiamenti restano attivi; le impostazioni sono sempre nelle opzioni WoW.
+- Ogni configurazione descrive un uso tipico e permette di espandere l’elenco delle opzioni. Applica la scelta quando vuoi, poi modifica ogni opzione singolarmente. Disposizioni, tasti e note private rimangono invariati.
+- Puoi usare la scelta anche per futuri personaggi senza cambiare profili esistenti o copiati. Personalizzata indica solo che le tue opzioni non coincidono esattamente con una configurazione.
+
+### Insieme sulla missione del capogruppo
+
+- Il seguito automatico del capogruppo è un’opzione indipendente in Tracciatore e obiettivo del gruppo, attivata da Piccolo compagno. Usa l’obiettivo QT compatibile del vero capogruppo se possiedi la missione e si adatta ai cambi di guida.
+- Finché quell’obiettivo è utilizzabile, QT lo mantiene senza avvisi di cambio. Disattiva l’opzione per interrompere il seguito automatico. Se manca la missione o l’obiettivo del capogruppo non è disponibile, scegli liberamente un obiettivo temporaneo: il seguito riprenderà quando possibile.
+
+### Impostazioni più facili da capire
+
+- Categorie riorganizzate e tooltip più completi aiutano a trovare e comprendere le opzioni. Data Broker ha una pagina propria per le barre compatibili. Le caselle mostrano correttamente i valori salvati o predefiniti.
+- Tutti i segnali sonori sono attivi nelle impostazioni nuove; quelli già disattivati restano tali. In Audio puoi scegliere segnali, suoni, volume e ascoltare un’anteprima.
+- Il tuo fumetto può ora apparire solo in gruppo, incursioni comprese, oltre alla scelta solo in solitaria. Le informazioni sulle missioni inviate agli altri non cambiano.
+
+### Altri consigli da scoprire
+
+- Con 58 aggiunte, il catalogo raggiunge 225 consigli: catene, condivisione, configurazioni, seguito del capogruppo, controller, audio, mappe e note private. Sono disponibili in tutte le lingue supportate, con indicazioni adatte al client e collegamenti utili.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v10.1.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consiglio: Digita /qt tip o /qt hint per un consiglio locale quando vuoi, anche con i consigli all’accesso disattivati.
+
 ## 10.0.2
 
 Catene di missioni più leggibili e requisiti di accettazione più chiari nel Registro missioni del gruppo.

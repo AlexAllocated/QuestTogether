@@ -2,6 +2,38 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.0
+
+QuestTogether passend zu deinem Abenteuer: Wähle eine Voreinstellung, lass jüngere Mitspieler dem Gruppenanführer folgen und entdecke mehr Möglichkeiten mit verständlicheren Einstellungen und neuen Tipps.
+
+### So viel QT, wie du möchtest
+
+- Bei einer frischen Installation erscheint einmal pro Account die Begrüßung mit Voreinstellungen statt Patchnotes. Das volle Abenteuer ist vorausgewählt. Ein Update wendet keine Voreinstellung auf bestehende Einstellungen an.
+- Über Voreinstellungen im Patchnotes-Fenster kannst du die Auswahl ausprobieren. Du erreichst sie jederzeit auch über /qt oder die WoW-Optionen. Das bloße Öffnen und Durchsehen ändert nichts.
+- Das volle Abenteuer bietet Karten, Namensplaketten, Gruppentracker, Chatmeldungen, Sprechblasen, Töne und Emotes wie gewohnt. Deinen Questfokus wählst du selbst.
+- Entspannt questen behält Karten, Standortfreigabe und Gruppenwerkzeuge, schaltet aber automatische Chatmeldungen, Sprechblasen, Töne, Emotes und Unterbrechungen beim Start oder bei Updates aus.
+- Nur das Questlog hält den Gruppenvergleich bei Bedarf bereit, samt Minikarten- und Controller-Zugang. Karten-, Namensplaketten- und Tracker-Ergänzungen, automatische Ausgaben und eingehende QT-Teilungsdialoge bleiben aus.
+- Kleine Abenteurer lässt Eltern die Planung übernehmen: keine automatischen QT-Fenster oder Startknöpfe, Meldungen nur an die Gruppe und automatisches Anführerfolgen. Dankes- und Feier-Emotes bleiben aktiv; die WoW-Optionen öffnen weiterhin die Einstellungen.
+- Jede Voreinstellung beschreibt ihren Einsatzzweck. Mit Einstellungen anzeigen siehst du alle enthaltenen Optionen. Erst Anwenden übernimmt sie; anschließend kannst du jede Option einzeln ändern. Layouts, Tastenbelegung und private Notizen bleiben erhalten.
+- Du kannst die Auswahl für zukünftige Charaktere merken, ohne bestehende oder kopierte Profile zu verändern. Benutzerdefiniert bedeutet lediglich, dass deine Optionen keiner Voreinstellung genau entsprechen.
+
+### Gemeinsam dem Questfokus folgen
+
+- Das automatische Folgen des Gruppenanführers ist eine eigene Option unter Gruppentracker und Fokus. Kleine Abenteurer aktiviert sie. Voraussetzung ist ein kompatibler QT-Fokus des tatsächlichen Anführers und dieselbe Quest in deinem Log; Anführerwechsel werden berücksichtigt.
+- Solange dieser Fokus nutzbar ist, hält QT die Quest ohne Wechselwarnung ausgewählt. Zum Beenden schaltest du die Option aus. Fehlt die Quest oder ein nutzbarer Anführerfokus, kannst du vorübergehend selbst wählen; automatisches Folgen setzt später wieder ein.
+
+### Einstellungen mit mehr Klarheit
+
+- Die Optionen sind neu geordnet und ausführlicher erklärt. Data Broker hat eine eigene Seite für kompatible Leisten-Addons. Kontrollkästchen zeigen nun ihre gespeicherten Werte beziehungsweise Standardwerte korrekt an.
+- Bei neuen Einstellungen sind alle Klangsignale aktiv; gespeicherte Abschaltungen bleiben erhalten. Unter Audio kannst du Signale einzeln wählen, Klang und Lautstärke anpassen und probehören.
+- Für deine Sprechblase gibt es jetzt Nur in einer Gruppe anzeigen, einschließlich Schlachtzügen, als Gegenstück zur Solo-Option. Ausgehende Questmeldungen ändern sich dadurch nicht.
+
+### Noch mehr QT entdecken
+
+- 58 neue Tipps ergänzen den Katalog auf 225: Questreihen, Teilen, Voreinstellungen, Anführerfolgen, Controller, Audio, Karten und private Notizen. Alle unterstützten Sprachen erhalten passende Hinweise mit direkten Zugängen zu den Einstellungen.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v10.1.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Tipp: Mit /qt tip oder /qt hint erhältst du jederzeit einen lokalen Tipp, auch bei deaktivierten Anmeldetipps.
+
 ## 10.0.2
 
 Questreihen und Annahmevoraussetzungen im Gruppenquestlog werden übersichtlicher.

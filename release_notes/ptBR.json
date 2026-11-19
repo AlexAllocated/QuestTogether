@@ -1,24 +1,46 @@
 {
-  "source_sha256": "894e7a4eb936006941f6608fb0f6b396044df1c1e634a0a1567f89ea0043c86f",
+  "source_sha256": "95e11cb22dab5baecf30d950ae933893c03d5e4738ba30eec2ab8eb01e1e424a",
   "notes": {
-    "version": "10.0.2",
-    "welcome": "Sequências mais claras e requisitos mais fáceis de consultar no Registro de missões do grupo!",
+    "version": "10.1.0",
+    "welcome": "Deixe o QuestTogether com a sua cara! Escolha o estilo de ajuda ideal, acompanhe um pequeno aventureiro e conheça mais recursos com configurações claras e novas dicas.",
     "sections": [
       {
-        "title": "Sequências de missões mais claras",
+        "title": "Uma aventura do seu jeito",
         "items": [
-          "Ao abrir uma sequência, as etapas anteriores exibidas acima da missão aberta revelam seus nomes conhecidos, inclusive alternativas de nível mais baixo que você não concluiu. Os nomes das etapas posteriores ainda não alcançadas continuam ocultos por padrão, com o texto Nome da missão oculto.",
-          "Um anel de carregamento aparece no lugar do ícone de sequência enquanto as relações entre missões são verificadas. Depois, o ícone aparece se houver missões relacionadas; se a missão for independente ou as informações estiverem indisponíveis, o indicador desaparece.",
-          "Expandir ou recolher uma sequência agora tem uma animação que mantém a linha da missão original como referência. Reduzir movimento torna a mudança imediata e mantém o indicador de carregamento estático. Recolher pelo cabeçalho de um grupo continua sendo imediato."
+          "Instalações novas mostram uma tela de boas-vindas uma vez por conta, no lugar das notas, com Aventura completa selecionada. Atualizar uma instalação existente não aplica uma predefinição às suas escolhas atuais.",
+          "Experimente pelo botão de predefinições nas notas dentro do jogo. Você também pode voltar ao seletor quando quiser por /qt ou pelas opções do WoW. Abrir e explorar não muda nada.",
+          "Aventura completa mantém mapas, placas, rastreador do grupo, chat, balões, sons e emotes habituais. Você escolhe sua própria missão em foco.",
+          "Missões tranquilas mantém mapas, compartilhamento de localização e ferramentas do grupo, desligando chat automático, balões, sons, emotes e interrupções de início ou atualização.",
+          "Só o registro de missões deixa o registro disponível sob demanda, com acessos pelo minimapa e controle. Oculta acréscimos aos mapas, placas e rastreador, saídas automáticas e avisos QT de pedidos recebidos para compartilhar.",
+          "Pequeno companheiro deixa o planejamento com os pais: sem janelas automáticas ou acessos QT, informes apenas para o grupo e acompanhamento automático do líder. Agradecimentos e comemorações continuam ativos; as configurações ficam acessíveis pelas opções do WoW.",
+          "Cada predefinição explica um uso comum e permite expandir sua lista de opções. Confira Ver configurações, aplique quando estiver pronto e personalize o que quiser depois. Disposições, atalhos e notas pessoais são preservados.",
+          "Você pode guardar a escolha para futuros personagens sem alterar perfis existentes ou copiados. Personalizada apenas indica que suas opções não correspondem exatamente a uma predefinição."
         ]
       },
       {
-        "title": "Requisitos para aceitar missões",
+        "title": "Acompanhe a missão do líder",
         "items": [
-          "As dicas organizam os requisitos pendentes, atendidos e desconhecidos com títulos, cores e espaçamento. Explicações duplicadas das relações são removidas, e condições atendidas que se repetem são resumidas.",
-          "O status Indisponível aparece quando dados recentes confirmam que o personagem ultrapassou o nível máximo de uma missão. A dica explica o limite e por que ela não pode mais ser obtida. Outras condições não são tratadas como permanentes sem comprovação.",
-          "Missões ativas, prontas para entregar ou concluídas deixam de exibir avisos sobre aceitação. Dados ausentes ou desatualizados continuam sendo desconhecidos; os requisitos exibidos não garantem que você possa aceitar a missão."
+          "O acompanhamento automático do foco do líder é uma opção independente em Rastreador e foco do grupo, ativada por Pequeno companheiro. Usa o foco QT compatível do líder real quando você tem a missão e se adapta à troca de liderança.",
+          "Enquanto o foco for utilizável, o QT mantém a missão sem avisos de troca. Desative a opção para encerrar o acompanhamento automático. Se o foco estiver indisponível ou faltar a missão, você pode escolher outro temporariamente; o acompanhamento retoma quando puder."
         ]
+      },
+      {
+        "title": "Configurações mais claras",
+        "items": [
+          "As categorias foram reorganizadas e as dicas de ajuda explicam efeitos e limites. Data Broker tem uma página própria para barras compatíveis. As caixas agora mostram corretamente os valores salvos ou padrão.",
+          "Todos os sinais sonoros começam ativos para configurações novas; suas desativações salvas são respeitadas. Em Áudio, escolha sinais, sons, volume e ouça uma prévia.",
+          "Meu balão de chat agora pode aparecer apenas em grupo, incluindo raides, além da opção só quando estiver sozinho. Isso não muda os informes de missão enviados."
+        ]
+      },
+      {
+        "title": "Mais dicas para a jornada",
+        "items": [
+          "Adicionamos 58 dicas, chegando a 225: sequências, compartilhamento, predefinições, acompanhamento do líder, controles, áudio, mapas e notas privadas. Todas as línguas compatíveis recebem orientações adequadas ao cliente e links para os controles úteis."
+        ],
+        "tip": {
+          "label": "Dica:",
+          "text": "Digite /qt tip ou /qt hint para pedir uma dica local a qualquer momento, mesmo com as dicas ao entrar desativadas."
+        }
       }
     ]
   }

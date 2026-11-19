@@ -3,6 +3,250 @@
   "releases": [
     {
       "enUS": {
+        "version": "10.0.2",
+        "welcome": "Quest chains are easier to read, smoother to explore, and clearer about which quests you can still pick up.",
+        "sections": [
+          {
+            "title": "Follow the chain more easily",
+            "items": [
+              "Earlier steps shown above your current quest now reveal their known names, including lower-level alternatives you never completed. Later unreached names stay hidden by default, with the clearer label \"Quest name hidden\".",
+              "A loading ring now appears where the chain button belongs while QT checks for related quests. It becomes a chain button when a chain is found and disappears when there is nothing to expand.",
+              "Opening and closing an inline chain now animates around your original quest row. Enable Reduce Motion in QT settings to skip the transition and use a still loading indicator."
+            ]
+          },
+          {
+            "title": "Understand quest requirements at a glance",
+            "items": [
+              "Prerequisite tooltips now separate unmet, satisfied and unknown conditions with clearer headings, spacing and colors. Repeated explanations are trimmed, and alternative prerequisites are explained together.",
+              "Quests with a confirmed maximum-level limit you have already exceeded now show \"Unavailable\". Hover the status to see why that quest is no longer obtainable for your character.",
+              "Quests already in a player's log or confirmed completed no longer show acceptance warnings. When QT lacks fresh information, it keeps the result unknown rather than claiming a requirement is met or blocked."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "10.0.2",
+        "welcome": "Questreihen und Annahmevoraussetzungen im Gruppenquestlog werden übersichtlicher.",
+        "sections": [
+          {
+            "title": "Questreihen im Überblick",
+            "items": [
+              "Frühere Schritte, die oberhalb der aufgeklappten Quest erscheinen, zeigen jetzt ihre bekannten Namen – auch nicht abgeschlossene Alternativen für niedrigere Stufen. Namen späterer, noch nicht erreichter Schritte bleiben standardmäßig hinter „Questname ausgeblendet“ verborgen.",
+              "Während Questverknüpfungen geladen werden, erscheint anstelle des Kettensymbols ein Ladering. Danach erscheint das Kettensymbol bei verknüpften Quests; bei eigenständigen Quests oder nicht verfügbaren Ergebnissen verschwindet der Ring.",
+              "Questreihen klappen mit einer Animation direkt an der ursprünglichen Questzeile auf und zu. „Bewegung reduzieren“ überspringt die Animation und hält die Ladeanzeige unbewegt. Gruppenüberschriften werden weiterhin sofort eingeklappt."
+            ]
+          },
+          {
+            "title": "Annahmevoraussetzungen klarer erklärt",
+            "items": [
+              "Tooltips gliedern nicht erfüllte, erfüllte und unbekannte Voraussetzungen mit Überschriften, Farben und mehr Abstand. Doppelte Erklärungen zu Questverknüpfungen entfallen, wiederkehrende erfüllte Bedingungen werden zusammengefasst.",
+              "Belegen aktuelle Daten, dass ein Charakter die Höchststufe einer Quest überschritten hat, erscheint „Nicht verfügbar“. Der Tooltip erklärt, dass die Quest wegen dieser Stufengrenze nicht mehr angenommen werden kann. Andere nicht eindeutig belegte dauerhafte Hindernisse erhalten diesen Status nicht.",
+              "Aktive, abgabebereite und abgeschlossene Quests zeigen keine Annahmewarnungen. Fehlende oder veraltete Daten bleiben als unbekannt eingestuft; die angezeigten Voraussetzungen garantieren nicht, dass eine Quest angenommen werden kann."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "10.0.2",
+        "welcome": "Les suites de quêtes et leurs conditions d’acceptation gagnent en clarté dans le Journal de quêtes du groupe.",
+        "sections": [
+          {
+            "title": "Des suites de quêtes plus lisibles",
+            "items": [
+              "Les étapes antérieures affichées au-dessus de la quête déployée révèlent désormais leur nom connu, y compris les variantes de niveau inférieur que vous n’avez pas terminées. Les noms des étapes suivantes non encore atteintes restent masqués par défaut, sous « Nom de quête masqué ».",
+              "Un anneau de chargement occupe la place de l’icône de chaîne pendant la recherche des liens entre quêtes. Il laisse ensuite place à l’icône pour les quêtes liées, ou disparaît si la quête est indépendante ou si les informations ne sont pas disponibles.",
+              "Les suites se déploient et se replient avec une animation autour de la ligne de quête d’origine. « Réduire les animations » rend ces transitions immédiates et fige l’indicateur de chargement. Le repli depuis un en-tête de groupe reste immédiat."
+            ]
+          },
+          {
+            "title": "Des conditions d’acceptation mieux expliquées",
+            "items": [
+              "Les infobulles distinguent les conditions non remplies, remplies et inconnues avec des titres, des couleurs et davantage d’espace. Les explications redondantes sur les liens entre quêtes sont supprimées et les conditions remplies répétitives sont regroupées.",
+              "Lorsque des données récentes confirment qu’un personnage dépasse le niveau maximal d’une quête, celle-ci affiche « Indisponible ». L’infobulle précise que cette limite de niveau empêche désormais de l’obtenir. Ce statut n’est pas appliqué aux autres obstacles permanents qui ne sont pas établis avec certitude.",
+              "Les quêtes en cours, prêtes à être rendues ou terminées n’affichent plus d’avertissements sur leur acceptation. Les informations absentes ou périmées restent inconnues ; les conditions affichées ne garantissent pas qu’une quête puisse être acceptée."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "10.0.2",
+        "welcome": "¡Cadenas más claras y requisitos más fáciles de consultar en el Registro de misiones del grupo!",
+        "sections": [
+          {
+            "title": "Cadenas de misiones más claras",
+            "items": [
+              "Al abrir una cadena, los pasos anteriores que aparecen encima de la misión abierta muestran sus nombres conocidos, incluidas las alternativas de nivel inferior que no hayas completado. Los nombres de pasos posteriores aún no alcanzados siguen ocultos por defecto, con el texto Nombre de misión oculto.",
+              "Un anillo de carga ocupa el lugar del icono de cadena mientras se buscan relaciones. Después aparece el icono si hay misiones relacionadas, o desaparece si la misión es independiente o no hay información disponible.",
+              "Las cadenas se despliegan y contraen con una animación que conserva la fila de la misión original como referencia. Reducir movimiento omite la animación y deja estático el indicador de carga; contraer desde una cabecera de grupo sigue siendo inmediato."
+            ]
+          },
+          {
+            "title": "Requisitos para aceptar misiones",
+            "items": [
+              "Las descripciones emergentes separan los requisitos pendientes, cumplidos y desconocidos con encabezados, colores y espacio. También evitan explicaciones repetidas de las relaciones y resumen las condiciones cumplidas que se repiten.",
+              "El estado No disponible indica que los datos recientes confirman que el personaje ha superado el nivel máximo de la misión. La descripción explica el límite y que ya no puede obtenerla; otras condiciones no se consideran permanentes sin pruebas.",
+              "Las misiones activas, listas para entregar o completadas ya no muestran avisos sobre su aceptación. La información ausente o desactualizada sigue siendo desconocida: los requisitos mostrados no garantizan que puedas aceptar la misión."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "10.0.2",
+        "welcome": "¡Consulta las cadenas y los requisitos con más claridad en el Registro de misiones del grupo!",
+        "sections": [
+          {
+            "title": "Cadenas de misiones más claras",
+            "items": [
+              "Los pasos anteriores que se muestran arriba de la misión cuya cadena abriste ahora revelan sus nombres conocidos, incluso las alternativas de menor nivel que no hayas completado. Los nombres de pasos posteriores que aún no alcanzas siguen ocultos de forma predeterminada, con el texto Nombre de misión oculto.",
+              "Mientras se buscan misiones relacionadas, un anillo de carga aparece en el lugar del icono de cadena. Al terminar, se muestra el icono si hay relaciones; si la misión es independiente o la información no está disponible, el indicador desaparece.",
+              "Al expandir o contraer una cadena, la animación mantiene como referencia la fila de la misión original. Con Reducir movimiento, los cambios son inmediatos y el indicador de carga permanece estático. Contraer desde el encabezado de un grupo sigue siendo inmediato."
+            ]
+          },
+          {
+            "title": "Requisitos para aceptar misiones",
+            "items": [
+              "Las descripciones emergentes organizan los requisitos pendientes, cumplidos y desconocidos con encabezados, colores y separación. Se eliminan explicaciones duplicadas de las relaciones y se resumen las condiciones cumplidas que se repiten.",
+              "No disponible aparece cuando hay datos recientes que confirman que el personaje superó el nivel máximo de una misión. La descripción explica el límite y por qué ya no puede obtenerla. Las demás condiciones no se tratan como permanentes sin pruebas.",
+              "Las misiones activas, listas para entregar y completadas dejan de mostrar advertencias sobre su aceptación. Si los datos faltan o están desactualizados, el resultado sigue siendo desconocido; los requisitos mostrados no garantizan que puedas aceptar la misión."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "10.0.2",
+        "welcome": "Sequências mais claras e requisitos mais fáceis de consultar no Registro de missões do grupo!",
+        "sections": [
+          {
+            "title": "Sequências de missões mais claras",
+            "items": [
+              "Ao abrir uma sequência, as etapas anteriores exibidas acima da missão aberta revelam seus nomes conhecidos, inclusive alternativas de nível mais baixo que você não concluiu. Os nomes das etapas posteriores ainda não alcançadas continuam ocultos por padrão, com o texto Nome da missão oculto.",
+              "Um anel de carregamento aparece no lugar do ícone de sequência enquanto as relações entre missões são verificadas. Depois, o ícone aparece se houver missões relacionadas; se a missão for independente ou as informações estiverem indisponíveis, o indicador desaparece.",
+              "Expandir ou recolher uma sequência agora tem uma animação que mantém a linha da missão original como referência. Reduzir movimento torna a mudança imediata e mantém o indicador de carregamento estático. Recolher pelo cabeçalho de um grupo continua sendo imediato."
+            ]
+          },
+          {
+            "title": "Requisitos para aceitar missões",
+            "items": [
+              "As dicas organizam os requisitos pendentes, atendidos e desconhecidos com títulos, cores e espaçamento. Explicações duplicadas das relações são removidas, e condições atendidas que se repetem são resumidas.",
+              "O status Indisponível aparece quando dados recentes confirmam que o personagem ultrapassou o nível máximo de uma missão. A dica explica o limite e por que ela não pode mais ser obtida. Outras condições não são tratadas como permanentes sem comprovação.",
+              "Missões ativas, prontas para entregar ou concluídas deixam de exibir avisos sobre aceitação. Dados ausentes ou desatualizados continuam sendo desconhecidos; os requisitos exibidos não garantem que você possa aceitar a missão."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "10.0.2",
+        "welcome": "В Журнале заданий группы стало удобнее просматривать цепочки и разбираться в условиях получения заданий.",
+        "sections": [
+          {
+            "title": "Наглядные цепочки заданий",
+            "items": [
+              "У предыдущих этапов, показанных выше раскрытого задания, теперь видны известные названия — в том числе у непройденных вариантов для меньшего уровня. Названия ещё не достигнутых последующих этапов по умолчанию остаются скрытыми за надписью «Название задания скрыто».",
+              "Пока загружаются связи между заданиями, на месте значка цепочки отображается кольцо загрузки. Затем оно сменяется значком цепочки или исчезает, если связанных заданий нет либо сведения недоступны.",
+              "Раскрытие и сворачивание цепочки теперь анимируются вокруг исходной строки задания, которая остаётся на месте. Параметр «Уменьшить анимацию» отключает эти переходы и вращение индикатора загрузки. Сворачивание через заголовок группы по-прежнему происходит сразу."
+            ]
+          },
+          {
+            "title": "Понятные условия получения",
+            "items": [
+              "Подсказки разделяют выполненные, невыполненные и неизвестные условия с помощью заголовков, цветов и отступов. Повторяющиеся пояснения связей убраны, а выполненные условия сгруппированы.",
+              "Если актуальные данные подтверждают, что уровень персонажа превысил максимально допустимый для задания, появляется статус «Недоступно». Подсказка объясняет, что задание уже нельзя получить из-за уровня. Другие ограничения без подтверждённой необратимости не получают этот статус.",
+              "Для уже взятых, готовых к сдаче и выполненных заданий предупреждения об условиях получения не показываются. Если данных нет или они устарели, условия остаются неизвестными; отображаемые сведения не гарантируют, что задание можно взять."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "10.0.2",
+        "welcome": "Catene di missioni più leggibili e requisiti di accettazione più chiari nel Registro missioni del gruppo.",
+        "sections": [
+          {
+            "title": "Catene di missioni più chiare",
+            "items": [
+              "I passaggi precedenti mostrati sopra la missione espansa rivelano ora i nomi conosciuti, comprese le alternative di livello inferiore che non hai completato. I nomi dei passaggi successivi non ancora raggiunti restano nascosti per impostazione predefinita, con la dicitura «Nome della missione nascosto».",
+              "Un anello di caricamento prende il posto dell’icona della catena mentre vengono cercati i collegamenti tra missioni. Al termine compare l’icona per le missioni collegate; per quelle indipendenti o con informazioni non disponibili, l’anello scompare.",
+              "Le catene si aprono e si chiudono con un’animazione attorno alla riga della missione originale. «Riduci movimento» rende immediata la transizione e mantiene fermo l’indicatore di caricamento. La chiusura tramite le intestazioni dei gruppi resta immediata."
+            ]
+          },
+          {
+            "title": "Requisiti di accettazione più leggibili",
+            "items": [
+              "Le descrizioni distinguono i requisiti non soddisfatti, soddisfatti e sconosciuti con titoli, colori e maggiore spaziatura. Le spiegazioni duplicate sui collegamenti tra missioni vengono eliminate e le condizioni soddisfatte ripetute vengono riassunte.",
+              "Quando dati aggiornati confermano che un personaggio ha superato il livello massimo di una missione, compare «Non disponibile». La descrizione spiega che quel limite di livello impedisce ormai di ottenerla. Gli altri impedimenti permanenti non accertati non ricevono questo stato.",
+              "Le missioni attive, pronte da consegnare o completate non mostrano avvisi sull’accettazione. I dati mancanti o non aggiornati restano sconosciuti: i requisiti visualizzati non garantiscono che una missione possa essere accettata."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "10.0.2",
+        "welcome": "파티 퀘스트 목록에서 연속 퀘스트와 수락 조건을 더 알기 쉽게 확인하세요.",
+        "sections": [
+          {
+            "title": "더 보기 편한 연속 퀘스트",
+            "items": [
+              "펼친 퀘스트 위에 표시되는 이전 단계는 알려진 이름을 보여 줍니다. 아직 완료하지 않은 낮은 레벨용 대체 퀘스트도 포함됩니다. 아직 도달하지 않은 이후 단계의 이름은 기본적으로 계속 가려지며, 대신 “퀘스트 이름 숨김”으로 표시됩니다.",
+              "퀘스트 간 연결 정보를 불러오는 동안 연속 퀘스트 아이콘 자리에 로딩 표시가 나타납니다. 관련 퀘스트가 확인되면 아이콘으로 바뀌고, 독립된 퀘스트이거나 정보를 확인할 수 없으면 사라집니다.",
+              "연속 퀘스트를 펼치거나 접을 때 원래 퀘스트 행을 제자리에 두고 애니메이션을 표시합니다. “동작 줄이기”를 켜면 즉시 펼치고 접으며 로딩 표시도 움직이지 않습니다. 그룹 제목으로 접을 때는 이전처럼 즉시 접힙니다."
+            ]
+          },
+          {
+            "title": "더 명확한 수락 조건",
+            "items": [
+              "조건 툴팁이 제목, 색상, 간격으로 충족한 조건과 미충족 조건, 확인되지 않은 조건을 구분합니다. 연결 관계에 대한 중복 설명은 줄이고 반복되는 충족 조건은 묶어 보여 줍니다.",
+              "최신 정보로 캐릭터 레벨이 퀘스트의 최대 허용 레벨을 넘은 것이 확인되면 “수락 불가”로 표시합니다. 툴팁에서 레벨 제한 때문에 더 이상 받을 수 없음을 설명합니다. 그 밖의 조건은 영구적인 제한임이 입증되지 않았다면 이 상태로 표시하지 않습니다.",
+              "진행 중이거나 완료 보고가 가능하거나 이미 완료한 퀘스트에는 수락 조건 경고를 표시하지 않습니다. 정보가 없거나 오래되었다면 확인되지 않은 상태로 남으며, 표시된 조건만으로 실제 수락 가능 여부가 보장되지는 않습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "10.0.2",
+        "welcome": "队伍任务日志中的任务链更清晰，接取条件也更容易看懂了。",
+        "sections": [
+          {
+            "title": "更清晰的任务链展示",
+            "items": [
+              "展开任务链后，位于原任务上方的前序步骤会显示已知名称，包括你尚未完成的低等级替代任务。尚未推进到的后续任务名称默认仍会隐藏，并统一显示为“任务名称已隐藏”。",
+              "查询任务之间的关联时，任务链图标处会显示加载圆环。确认存在关联任务后，圆环会变为任务链图标；如果没有关联任务或信息不可用，则会消失。",
+              "展开和收起任务链时会播放动画，同时保留原任务行的位置。启用“减少动态效果”后，展开和收起立即完成，加载指示也保持静止。通过分组标题收起时仍会立即完成。"
+            ]
+          },
+          {
+            "title": "更易读的接取条件",
+            "items": [
+              "条件提示通过标题、颜色和间距区分未满足、已满足和未知的条件，减少重复的任务关联说明，并汇总重复的已满足条件。",
+              "当最新信息确认角色等级已超过任务允许的最高等级时，会显示“不可接取”，提示中也会说明因超出等级限制而无法再接取。其他未证实为永久限制的条件不会使用此状态。",
+              "已接取、可交付和已完成的任务不再显示接取条件警告。信息缺失或过期时，条件仍会标为未知；已显示的条件信息并不保证任务一定可以接取。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "10.0.2",
+        "welcome": "隊伍任務日誌的任務鏈更清楚，接取條件也更容易掌握了。",
+        "sections": [
+          {
+            "title": "更清楚的任務鏈顯示",
+            "items": [
+              "展開任務鏈後，顯示在原任務上方的前置步驟會顯示已知名稱，包括尚未完成的低等級替代任務。尚未推進到的後續任務名稱預設仍會隱藏，並統一顯示為「任務名稱已隱藏」。",
+              "查詢任務之間的關聯時，任務鏈圖示的位置會顯示載入圓環。確認有關聯任務後，圓環會換成任務鏈圖示；若沒有關聯任務或無法取得資訊，圓環就會消失。",
+              "展開與收合任務鏈時會播放動畫，同時保留原任務列的位置。啟用「減少動態效果」後，展開與收合會立即完成，載入指示也會保持靜止。透過群組標題收合時，仍會立即完成。"
+            ]
+          },
+          {
+            "title": "更易讀的接取條件",
+            "items": [
+              "條件提示以標題、顏色和間距區分未滿足、已滿足及未知的條件，減少重複的任務關聯說明，並彙整重複的已滿足條件。",
+              "當最新資訊確認角色等級已超過任務允許的最高等級時，會顯示「無法接取」，提示也會說明已因超過等級限制而無法再接取。其他尚未證實為永久限制的條件不會使用這個狀態。",
+              "已接取、可回報及已完成的任務不再顯示接取條件警告。資訊缺漏或過期時，條件仍會標為未知；畫面上的條件資訊並不保證一定能接取任務。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "10.0.1",
         "welcome": "A tidier quest log, steadier chat channels, and a little extra gratitude on your adventures! This patch improves everyday party questing and adds an optional way to thank helpful players.",
         "sections": [

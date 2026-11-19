@@ -2,6 +2,38 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.0
+
+¡QuestTogether a tu manera! Ahora puedes elegir cuánto acompañamiento quieres, ayudar a un pequeño aventurero a seguir al grupo y descubrir más funciones con opciones claras y nuevos consejos.
+
+### Elige tu estilo de aventura
+
+- Al instalar por primera vez verás una bienvenida, una sola vez por cuenta, en lugar de las notas. Aventura completa está seleccionada inicialmente. Una actualización no aplica preajustes ni reemplaza tus opciones actuales.
+- Abre el selector con el botón Configuraciones de las notas dentro del juego, o vuelve cuando quieras desde /qt o las opciones de WoW. Puedes explorar sin modificar nada.
+- Aventura completa ofrece las funciones habituales: mapas, placas, seguimiento del grupo, mensajes, burbujas, sonidos y emociones. La misión seleccionada la decides tú.
+- Misiones sin ruido conserva mapas, ubicación compartida y herramientas del grupo, pero desactiva mensajes automáticos, burbujas, sonidos, emociones y avisos de inicio o actualización.
+- Solo registro de misiones deja el registro disponible cuando lo necesites, con accesos de minimapa y control. Desactiva añadidos al mapa, placas y seguimiento, mensajes automáticos y avisos QT de solicitudes entrantes para compartir.
+- Pequeño aventurero deja la planeación a los padres: sin ventanas automáticas ni botones de acceso QT, datos solo para el grupo y seguimiento automático del líder. Los agradecimientos y las celebraciones siguen activos. Las opciones de WoW permiten cambiar la configuración.
+- Cada preajuste incluye un caso de uso y una lista desplegable de opciones. Revisa Ver ajustes, aplica tu elección y después cambia lo que quieras individualmente. Tu distribución, atajos y notas personales se conservan.
+- También puedes elegirlo para futuros personajes sin tocar perfiles existentes ni copiados. Personalizada significa que tus opciones no coinciden por completo con un preajuste; no es un problema.
+
+### Sigue la misión del líder
+
+- El seguimiento automático del líder es una opción independiente en Seguimiento y objetivo del grupo; Pequeño aventurero la activa. Usa el objetivo QT compatible del líder real cuando tienes esa misión y se ajusta a los cambios de liderazgo.
+- Si la misión es utilizable, QT la mantiene seleccionada sin pedir confirmación por cambios de objetivo. Desactiva la opción para detenerlo. Si el foco del líder no está disponible o te falta la misión, puedes elegir uno temporal; el seguimiento vuelve cuando sea posible.
+
+### Opciones más claras
+
+- Las categorías se reorganizaron y las ayudas explican mejor cada opción. Data Broker tiene una página dedicada para barras compatibles, y las casillas reflejan correctamente valores guardados y predeterminados.
+- Todos los avisos sonoros comienzan activos en configuraciones nuevas, sin cambiar los que ya habías apagado. Audio te permite elegir cada aviso, su sonido, volumen y escucharlo.
+- Ahora puedes mostrar Mi burbuja de chat solo en grupo, incluidas bandas, como alternativa a mostrarla solo cuando juegas sin grupo. Los informes de misión enviados no cambian.
+
+### Más consejos para tu viaje
+
+- El catálogo llega a 225 consejos con 58 nuevos: cadenas, compartir misiones, preajustes, seguimiento del líder, controles, audio, mapas y notas privadas. Están disponibles en todos los idiomas compatibles y enlazan a las opciones correspondientes.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v10.1.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Consejo: Usa /qt tip o /qt hint para pedir un consejo local en cualquier momento, aunque tengas apagados los consejos al iniciar.
+
 ## 10.0.2
 
 ¡Consulta las cadenas y los requisitos con más claridad en el Registro de misiones del grupo!

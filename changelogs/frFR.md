@@ -2,6 +2,38 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.0
+
+À chaque aventure son QuestTogether ! Choisissez le niveau d’aide qui vous convient, accompagnez les plus jeunes et découvrez les outils de QT grâce à des réglages plus clairs et de nouvelles astuces.
+
+### Choisissez votre façon de jouer
+
+- Une installation neuve affiche désormais un accueil de configuration, une fois par compte, à la place des notes. Aventure complète est présélectionné. Une mise à jour n’applique aucun préréglage à votre configuration existante.
+- Le bouton Configurations des notes en jeu ouvre le choix. Vous pouvez aussi y revenir à tout moment via /qt ou les options de WoW. Ouvrir et parcourir cette fenêtre ne modifie rien.
+- Aventure complète garde cartes, barres de nom, suivi de groupe, messages, bulles, sons et emotes. Vous choisissez votre objectif de quête vous-même.
+- Quêtes en toute tranquillité conserve cartes, partage de position et outils de groupe, mais coupe messages automatiques, bulles, sons, emotes et interruptions au démarrage ou lors des mises à jour.
+- Juste le journal propose le journal de groupe à la demande, accessible par minicarte et manette. Surcouches de carte, ajouts aux noms et au suivi, sorties automatiques et invites QT de partage entrantes sont désactivés.
+- Petit compagnon laisse la préparation aux parents : pas de fenêtres automatiques ni de lanceurs QT, partage limité au groupe et suivi automatique du chef. Remerciements et emotes de célébration restent actifs ; les options WoW donnent toujours accès aux réglages.
+- Chaque choix décrit une situation de jeu et permet d’afficher sa liste complète de réglages. Appliquez le préréglage quand vous êtes prêt, puis ajustez chaque option à votre goût. Disposition, raccourcis et notes privées sont conservés.
+- Vous pouvez mémoriser ce choix pour les futurs personnages sans modifier les profils existants ou copiés. Personnalisée indique simplement que vos options ne correspondent exactement à aucun préréglage.
+
+### Suivez l’objectif du chef
+
+- Le suivi automatique de l’objectif du chef se règle séparément dans Suivi et objectif du groupe ; Petit compagnon l’active. Il utilise le chef réel et son objectif QT compatible si vous avez cette quête, et tient compte des changements de chef.
+- Tant que cet objectif est utilisable, QT le conserve sans avertissement de changement. Désactivez l’option pour arrêter. Si le chef n’a pas d’objectif utilisable ou si la quête manque à votre journal, choisissez librement un objectif provisoire ; le suivi reprendra dès que possible.
+
+### Des réglages plus compréhensibles
+
+- Les options sont mieux regroupées, avec une page Data Broker dédiée aux barres compatibles. Les infobulles expliquent effets et limites ; les cases affichent correctement les valeurs enregistrées ou par défaut.
+- Les nouveaux réglages activent tous les signaux sonores sans réactiver ceux que vous aviez désactivés. Audio permet de choisir les signaux, leurs sons, leur volume et de les écouter.
+- Votre bulle peut maintenant n’apparaître qu’en groupe, raids compris, en complément du choix solo. Ce réglage ne change pas les informations de quête envoyées.
+
+### De nouvelles astuces à découvrir
+
+- 58 astuces s’ajoutent au catalogue, qui en compte maintenant 225 : suites, partage, préréglages, suivi du chef, manette, audio, cartes et notes privées. Toutes les langues prises en charge disposent de conseils adaptés au client et de liens vers les commandes utiles.
+
+> <img src="https://raw.githubusercontent.com/AlexAllocated/QuestTogether/v10.1.0/Media/QuestTogetherTipIcon.png" width="20" height="20" alt=""> Astuce : Tapez /qt tip ou /qt hint pour recevoir une astuce locale quand vous voulez, même si les astuces au démarrage sont désactivées.
+
 ## 10.0.2
 
 Les suites de quêtes et leurs conditions d’acceptation gagnent en clarté dans le Journal de quêtes du groupe.
