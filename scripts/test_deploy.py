@@ -77,7 +77,7 @@ class DeployTests(unittest.TestCase):
                            GIT_AUTHOR_NAME="Offline deployment test", GIT_AUTHOR_EMAIL="test@example.invalid",
                            GIT_COMMITTER_NAME="Offline deployment test", GIT_COMMITTER_EMAIL="test@example.invalid",
                            GH_TOKEN=GITHUB_SECRET, DISCORD_BOT_TOKEN=DISCORD_SECRET,
-                           CURSEFORGE_API_TOKEN=CURSEFORGE_SECRET)
+                           CURSEFORGE_API_TOKEN=CURSEFORGE_SECRET, LUA_CPATH="/offline/nativebit/?.so;;")
         patched = patch.dict(os.environ, environment, clear=True)
         patched.start()
         self.addCleanup(patched.stop)
@@ -392,9 +392,11 @@ class DeployTests(unittest.TestCase):
         self.assertIn("--setenv=GH_TOKEN", command)
         self.assertIn("--setenv=DISCORD_BOT_TOKEN", command)
         self.assertIn("--setenv=CURSEFORGE_API_TOKEN", command)
+        self.assertIn("--setenv=LUA_CPATH", command)
         self.assertEqual(environment["GH_TOKEN"], GITHUB_SECRET)
         self.assertEqual(environment["DISCORD_BOT_TOKEN"], DISCORD_SECRET)
         self.assertEqual(environment["CURSEFORGE_API_TOKEN"], CURSEFORGE_SECRET)
+        self.assertEqual(environment["LUA_CPATH"], "/offline/nativebit/?.so;;")
         self.assertNotIn("--scope", command)
         self.assertNotIn("--wait", command)
         self.assertEqual(self.finish_worker(), 0)
