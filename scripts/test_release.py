@@ -39,7 +39,8 @@ class ReleaseTests(unittest.TestCase):
                    GIT_ALLOW_PROTOCOL="file", GIT_TERMINAL_PROMPT="0",
                    GIT_AUTHOR_NAME="Offline release test", GIT_AUTHOR_EMAIL="test@example.invalid",
                    GIT_COMMITTER_NAME="Offline release test", GIT_COMMITTER_EMAIL="test@example.invalid",
-                   GH_TOKEN="offline-github-token", DISCORD_BOT_TOKEN="offline-discord-token")
+                   GH_TOKEN="offline-github-token", DISCORD_BOT_TOKEN="offline-discord-token",
+                   CURSEFORGE_API_TOKEN="offline-curseforge-token")
         environment = patch.dict(os.environ, env, clear=True)
         environment.start()
         self.addCleanup(environment.stop)
@@ -82,6 +83,7 @@ class ReleaseTests(unittest.TestCase):
         notes = {"version": version, "welcome": "QuestTogether release notes.",
                  "sections": [{"title": "Party quests", "items": [item]}]}
         (self.root / "QuestTogether.toc").write_text(
+            "## Interface: 16001, 120001\n## Interface-Camelot: 16001\n## Interface-Mainline: 120001\n"
             "## Version: " + version + "\n## X-License: GPL-3.0-only\nCore.lua\nReleaseNotes.lua\n")
         (self.root / "release_notes.json").write_text(json.dumps(notes))
         (self.root / "ReleaseNotes.lua").write_text(release.discord.render_lua(notes))
@@ -156,8 +158,10 @@ class ReleaseTests(unittest.TestCase):
         return result if capture else None
 
     def request(self, path, method="GET", payload=None):
-        self.api_calls.append(path)
         prefix = "/repos/" + REPOSITORY
+        if path == prefix + "/hooks?per_page=100":
+            return []
+        self.api_calls.append(path)
         tag = self.current_tag()
         if method == "POST":
             self.assertEqual(path, prefix + "/releases")
@@ -210,10 +214,21 @@ class ReleaseTests(unittest.TestCase):
         output, errors = io.StringIO(), io.StringIO()
         with patch.object(release, "run", side_effect=self.fake_process), \
                 patch.object(release.discord, "API", return_value=self), \
+                patch.object(release.curseforge, "Client", return_value=self), \
                 patch.object(release.discord.urllib.request.OpenerDirector, "open", self.public_download), \
                 contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
             result = release.main(["--root", str(self.root), *arguments])
         return result, output.getvalue() + errors.getvalue()
+
+    def versions(self):
+        return [{"apiVersion": "16001", "id": 101}, {"apiVersion": "120001", "id": 102}]
+
+    def upload(self, archive, metadata):
+        self.assertTrue(archive.is_file())
+        self.calls.append(["curseforge", "upload", archive.name])
+        if self.failure == "curseforge":
+            raise release.curseforge.UploadError("injected upload failure")
+        return {"id": 900 + len(self.calls)}
 
     def stages(self):
         stages = []
@@ -230,6 +245,8 @@ class ReleaseTests(unittest.TestCase):
                 stages.append(command[2])
             elif command == ["api", "create"]:
                 stages.append("create")
+            elif command[:2] == ["curseforge", "upload"]:
+                stages.append("curseforge")
             elif len(command) > 1 and command[1] == "scripts/discord_changelog.py":
                 stages.append("announce")
         return stages
@@ -251,7 +268,7 @@ class ReleaseTests(unittest.TestCase):
         self.write_notes("1.2.3", "Compare eligible quests with a selected player.")
         result, message = self.invoke("--bump", "patch")
         self.assertEqual(result, 0, message)
-        self.assertEqual(self.stages(), ["bump", "validate", "package", "push", "create", "upload", "edit", "announce"])
+        self.assertEqual(self.stages(), ["bump", "validate", "package", "push", "create", "upload", "edit", "curseforge", "curseforge", "announce"])
         self.assertEqual(self.git("status", "--porcelain"), "")
         self.assertEqual(self.git("cat-file", "-t", "v1.2.4"), "tag")
         manifest = release.package.verify_archive(self.archive().read_bytes())
@@ -259,6 +276,30 @@ class ReleaseTests(unittest.TestCase):
         self.assertTrue(self.creation_payload["draft"])
         self.assertTrue(any("--draft=false" in command for command in self.calls if command[:3] == ["gh", "release", "edit"]))
         self.assertFalse(any("actions/" in path or "curseforge" in path.casefold() for path in self.api_calls))
+
+    def test_curseforge_failure_stops_before_discord_and_resume_does_not_duplicate(self):
+        self.prepare(localized=True)
+        self.failure = "curseforge"
+        result, message = self.invoke("--tag", "v1.2.4")
+        self.assertEqual(result, 1, message)
+        self.assertNotIn("announce", self.stages())
+        self.assertEqual(self.stages().count("curseforge"), 1)
+        self.calls.clear()
+        self.failure = None
+        self.existing = "public"
+        result, message = self.invoke("--tag", "v1.2.4")
+        self.assertEqual(result, 1, message)
+        self.assertIn("outcome is unknown", message)
+        self.assertNotIn("curseforge", self.stages())
+        self.assertNotIn("announce", self.stages())
+
+    def test_enabled_packaging_webhook_stops_before_any_release_mutation(self):
+        self.prepare()
+        with patch.object(release.curseforge, "check_webhook_disabled",
+                          side_effect=release.curseforge.UploadError("disable old webhook")):
+            result, message = self.invoke("--tag", "v1.2.4")
+        self.assertEqual(result, 1, message)
+        self.assertEqual(self.stages(), [])
 
     def test_beta_and_stable_release_flags_follow_the_exact_tag(self):
         for tag, expected in (("v1.2.4", "false"), ("v1.2.4-beta.1", "true"), ("v1.2.4-alpha.1", "true")):
@@ -278,7 +319,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(result, 0, message)
         listings = [path for path in self.api_calls if "/releases?" in path]
         self.assertEqual(len(listings), 1, "creation must not wait for listing visibility")
-        self.assertEqual(self.stages(), ["validate", "package", "push", "create", "upload", "edit", "announce"])
+        self.assertEqual(self.stages(), ["validate", "package", "push", "create", "upload", "edit", "curseforge", "curseforge", "announce"])
 
     def test_beta_bumps_keep_stable_baseline_and_increment_prerelease_sequence(self):
         for expected, item in (("v1.3.0-beta.1", "Compare eligible quests with a selected player."),
@@ -334,7 +375,7 @@ class ReleaseTests(unittest.TestCase):
         self.failure = None
         result, message = self.invoke("--tag", "v1.2.4")
         self.assertEqual(result, 0, message)
-        self.assertEqual(self.stages(), ["package", "push", "upload", "edit", "announce"])
+        self.assertEqual(self.stages(), ["package", "push", "upload", "edit", "curseforge", "curseforge", "announce"])
         self.assertIn("/repos/" + REPOSITORY + "/releases/123", self.api_calls)
 
     def test_draft_lookup_paginates_and_rejects_duplicates_or_incomplete_listings(self):
@@ -405,7 +446,7 @@ class ReleaseTests(unittest.TestCase):
         self.existing = "public"
         result, message = self.invoke("--tag", "v1.2.4")
         self.assertEqual(result, 0, message)
-        self.assertEqual(self.stages(), ["validate", "package", "push", "announce"])
+        self.assertEqual(self.stages(), ["validate", "package", "push", "curseforge", "curseforge", "announce"])
         self.assertIn("already published", message)
 
     def test_receipt_reuse_requires_exact_commit_runner_hash_and_passed_shape(self):

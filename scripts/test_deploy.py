@@ -23,6 +23,7 @@ import deploy
 REPOSITORY = "offline-owner/QuestTogether"
 GITHUB_SECRET = "offline-github-secret-DO-NOT-LOG"
 DISCORD_SECRET = "offline-discord-secret-DO-NOT-LOG"
+CURSEFORGE_SECRET = "offline-curseforge-secret-DO-NOT-LOG"
 REAL_SUBPROCESS_RUN = subprocess.run
 REAL_DEPLOY_RUN = deploy.run
 
@@ -51,6 +52,7 @@ events.write_text(json.dumps(history))
 print("Validating offline release locally...", flush=True)
 print("fixture GitHub credential: " + os.environ.get("GH_TOKEN", ""), flush=True)
 print("fixture Discord credential: " + os.environ.get("DISCORD_BOT_TOKEN", ""), flush=True)
+print("fixture CurseForge credential: " + os.environ.get("CURSEFORGE_API_TOKEN", ""), flush=True)
 if (output / "fail-worker").exists():
     print("offline worker failed before publication", flush=True)
     sys.exit(9)
@@ -74,7 +76,8 @@ class DeployTests(unittest.TestCase):
                            GIT_ALLOW_PROTOCOL="file", GIT_TERMINAL_PROMPT="0",
                            GIT_AUTHOR_NAME="Offline deployment test", GIT_AUTHOR_EMAIL="test@example.invalid",
                            GIT_COMMITTER_NAME="Offline deployment test", GIT_COMMITTER_EMAIL="test@example.invalid",
-                           GH_TOKEN=GITHUB_SECRET, DISCORD_BOT_TOKEN=DISCORD_SECRET)
+                           GH_TOKEN=GITHUB_SECRET, DISCORD_BOT_TOKEN=DISCORD_SECRET,
+                           CURSEFORGE_API_TOKEN=CURSEFORGE_SECRET)
         patched = patch.dict(os.environ, environment, clear=True)
         patched.start()
         self.addCleanup(patched.stop)
@@ -385,8 +388,10 @@ class DeployTests(unittest.TestCase):
         command, environment = self.launches()[0]
         self.assertIn("--setenv=GH_TOKEN", command)
         self.assertIn("--setenv=DISCORD_BOT_TOKEN", command)
+        self.assertIn("--setenv=CURSEFORGE_API_TOKEN", command)
         self.assertEqual(environment["GH_TOKEN"], GITHUB_SECRET)
         self.assertEqual(environment["DISCORD_BOT_TOKEN"], DISCORD_SECRET)
+        self.assertEqual(environment["CURSEFORGE_API_TOKEN"], CURSEFORGE_SECRET)
         self.assertNotIn("--scope", command)
         self.assertNotIn("--wait", command)
         self.assertEqual(self.finish_worker(), 0)
@@ -395,7 +400,7 @@ class DeployTests(unittest.TestCase):
         text = "\n".join(command) + message
         for relative in ("state.json", "deploy.log", "worker.py"):
             text += (job / relative).read_text()
-        for secret in (GITHUB_SECRET, DISCORD_SECRET):
+        for secret in (GITHUB_SECRET, DISCORD_SECRET, CURSEFORGE_SECRET):
             self.assertNotIn(secret, text)
         self.assertIn("[REDACTED]", (job / "deploy.log").read_text())
         self.assertEqual((job / "deploy.log").stat().st_mode & 0o777, 0o600)

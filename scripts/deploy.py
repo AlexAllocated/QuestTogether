@@ -22,6 +22,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import curseforge_upload as curseforge
 
 sys.dont_write_bytecode = True
 
@@ -30,7 +31,7 @@ ACTIVE_STATES = {"queued", "running"}
 SERVICE_ENVIRONMENT = (
     "HOME", "PATH", "LANG", "LC_ALL", "XDG_RUNTIME_DIR", "XDG_CONFIG_HOME",
     "DBUS_SESSION_BUS_ADDRESS", "DISPLAY", "WAYLAND_DISPLAY", "SSH_AUTH_SOCK",
-    "GH_CONFIG_DIR", "GH_TOKEN", "DISCORD_BOT_TOKEN", "DISCORD_CHANGELOG_CHANNEL_ID",
+    "GH_CONFIG_DIR", "GH_TOKEN", "DISCORD_BOT_TOKEN", "DISCORD_CHANGELOG_CHANNEL_ID", "CURSEFORGE_API_TOKEN",
 )
 
 
@@ -175,6 +176,7 @@ def credentials(root):
         raise DeployError("sign in with gh auth login before deploying")
     env = {name: os.environ[name] for name in SERVICE_ENVIRONMENT if name in os.environ}
     env.update(GH_TOKEN=token, PYTHONDONTWRITEBYTECODE="1", GIT_TERMINAL_PROMPT="0")
+    env["CURSEFORGE_API_TOKEN"] = curseforge.token()
     return env
 
 
@@ -492,7 +494,7 @@ def worker(job):
             # still original, so their existing publisher derives it correctly.
             if '"--branch"' in (snapshot / "scripts/release.py").read_text():
                 command += ["--branch", state["branch"]]
-            secrets = [os.environ[name] for name in ("GH_TOKEN", "GITHUB_TOKEN", "DISCORD_BOT_TOKEN")
+            secrets = [os.environ[name] for name in ("GH_TOKEN", "GITHUB_TOKEN", "DISCORD_BOT_TOKEN", "CURSEFORGE_API_TOKEN")
                        if os.environ.get(name)]
             with (job / "deploy.log").open("a", encoding="utf-8", buffering=1) as log:
                 os.chmod(job / "deploy.log", 0o600)

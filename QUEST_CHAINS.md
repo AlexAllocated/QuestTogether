@@ -73,7 +73,10 @@ On Forever, install and enable a QuestieDB build that supports public API
 contract 4 and reports the Forever flavor through its status API or active
 packaged-addon metadata. QuestieDB 1.1.1 packaged builds leave the status API's
 expansion field empty, so QT checks their declared `X-Flavor` and `X-Mode`.
-QuestTogether does not bundle the database. A missing, incompatible, incorrectly
+The Forever CurseForge file declares QuestieDB as a required download, so the
+CurseForge app installs it automatically. Retail/Classic downloads do not carry
+that relation. QuestieDB remains optional for loading QT in-game, including
+manual installations. QuestTogether does not bundle the database. A missing, incompatible, incorrectly
 configured or failing provider leaves the ordinary comparison usable and gives
 a capability explanation. QT uses the provider's public composed reads,
 including its applicable corrections.

@@ -34,8 +34,10 @@
   checkout. Use the deployment's local status/logs and explicit resume command;
   do not add GitHub Actions workflows or wait for remote validation. The local
   `scripts/validate_release.py` checks the exact release tag before publication.
-  The tag push triggers the existing CurseForge webhook;
-  do not poll CurseForge or validate its generated content. Publishing consumes
+  The local publisher uploads separate Forever and Retail/Classic files to
+  CurseForge; the old single-file packaging webhook stays disabled. Only Forever
+  declares the required QuestieDB download relation. Do not poll CurseForge
+  review or validate its remote content. Publishing consumes
   reviewed canonical notes; authoring notes alone does not authorize a release.
 
 Use the active session for UI catalog wording as well. The optional UI translation

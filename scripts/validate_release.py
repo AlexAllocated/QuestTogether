@@ -35,6 +35,7 @@ PYTHON_CHECKS = (
     ("test_package.py",), ("check_architecture.py",),
     ("check_live_test_numeric.py",), ("test_live_test_numeric.py",),
     ("test_validate_release.py",), ("test_release.py",), ("test_deploy.py",),
+    ("test_curseforge_upload.py",),
 )
 LOCALES = ("enGB", "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW")
 CLIENTS = ("retail", "forever", "era", "tbc", "mists", "titan")
@@ -258,6 +259,10 @@ def validate(snapshot, tools, env, scope=None):
     # independently of whether packager unit tests were selected.
     run([tools["python"], "scripts/package.py", "--ref", "HEAD", "--output", "dist/QuestTogether.zip"],
         cwd=snapshot, env=env, label="exact-commit package and pinned library")
+    for flavor in ("forever", "retail-classic"):
+        run([tools["python"], "scripts/package.py", "--ref", "HEAD", "--flavor", flavor,
+             "--output", "dist/QuestTogether-" + flavor + ".zip"],
+            cwd=snapshot, env=env, label="CurseForge " + flavor + " package")
 
 
 def main(argv=None):
@@ -277,7 +282,7 @@ def main(argv=None):
                if not key.startswith("GIT_") and key not in (
                    "QT_TEST_LOCALE", "QT_TEST_LUA", "QT_TEST_TIMINGS", "QT_TEST_REQUIRE_NATIVE_BIT",
                    "QT_TEST_BATCH_INDEX", "QT_TEST_BATCH_COUNT",
-                   "DISCORD_BOT_TOKEN", "GH_TOKEN", "GITHUB_TOKEN")}
+                   "DISCORD_BOT_TOKEN", "GH_TOKEN", "GITHUB_TOKEN", "CURSEFORGE_API_TOKEN")}
         env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, PYTHONDONTWRITEBYTECODE="1")
         git_tool = executable("git", "Git")
         check_receipt_path(root, receipt, git_tool, env)

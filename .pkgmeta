@@ -1,3 +1,5 @@
+# Legacy source-package layout only. Local CurseForge uploads set dependencies
+# per client file; do not add a global QuestieDB requirement here.
 package-as: QuestTogether
 enable-nolib-creation: no
 

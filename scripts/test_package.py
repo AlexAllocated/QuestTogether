@@ -20,6 +20,28 @@ import check_architecture
 ROOT = Path(__file__).resolve().parents[1]
 
 class PackagingTests(unittest.TestCase):
+    def test_client_distributions_change_only_tocs_and_manifest(self):
+        _, original = package.payloads(ROOT)
+        for flavor in package.FLAVORS:
+            _, data = package.payloads(ROOT, flavor=flavor)
+            self.assertEqual(set(data), set(original))
+            for name in data:
+                if name not in {'QuestTogether/QuestTogether.toc', 'QuestTogether_Tests/QuestTogether_Tests.toc',
+                                'QuestTogether/package-manifest.json'}:
+                    self.assertEqual(data[name], original[name], name)
+            main = data['QuestTogether/QuestTogether.toc'].decode()
+            companion = data['QuestTogether_Tests/QuestTogether_Tests.toc'].decode()
+            package.validate_test_manifest(companion, main)
+            self.assertEqual('16001' in main, flavor == 'forever')
+            self.assertEqual('120001' in main, flavor == 'retail-classic')
+            self.assertIn('## OptionalDeps: QuestieDB', main)
+            self.assertNotIn('## RequiredDeps: QuestieDB', main)
+            self.assertEqual(json.loads(data['QuestTogether/package-manifest.json'])['distribution'], flavor)
+            package.verify_archive(self.archive_with_manifest(data))
+            other = 'retail-classic' if flavor == 'forever' else 'forever'
+            with self.assertRaisesRegex(package.PackageError, 'distribution'):
+                package.verify_archive(self.archive_with_manifest(data, metadata={'distribution': other}))
+
     def test_source_package_moves_thin_companion_and_resolves_shared_tests(self):
         # Simulate CurseForge's documented ignore-before-directory-move order
         # against real source bytes, without invoking an upload or a model.

@@ -19,6 +19,7 @@ TEST_BINDINGS = b"<Bindings>\n</Bindings>\n"
 SOURCE_TEST_TOC = TEST_ADDON + "/" + TEST_ADDON + ".toc"
 TEST_UNMARKED = {"scripts/test_bootstrap.lua", "scripts/test_complete.lua", "Libs/libchev/SelfTests.lua"}
 MANIFEST = "package-manifest.json"
+FLAVORS = ("forever", "retail-classic")
 # Runtime screenshot textures plus editable sources and both sets of notices.
 MAX_BYTES = 96 * 1024 * 1024
 ASSETS = ("Media/**/*.tga", "Media/*.tga", "Media/Audio/**/*.ogg", "Media/Audio/manifest.json", "Media/Audio/NOTICE.txt", "Media/QuestTogetherTipIcon.png", "Media/ReleaseNotes/*.png", "changelogs/*.md")
@@ -105,7 +106,28 @@ def check_source_companion(read, test_toc):
             raise PackageError("stale source companion: run scripts/package.py --write-source-companion (" + name + ")")
 
 
-def payloads(root, ref=None):
+def flavor_toc(text, flavor):
+    """Limit distribution metadata without changing runtime code or dependencies."""
+    if flavor not in FLAVORS:
+        raise PackageError("unknown distribution flavor")
+    groups = dict(re.findall(r"^## Interface-([^:]+): ([^\r\n]+)$", text, re.M))
+    if "Camelot" not in groups or "Mainline" not in groups:
+        raise PackageError("distribution requires explicit Forever and Retail interface metadata")
+    chosen = {name: values for name, values in groups.items()
+              if (name == "Camelot") == (flavor == "forever")}
+    values = [value.strip() for group in chosen.values() for value in group.split(",")]
+    all_values = re.findall(r"^## Interface: ([^\r\n]+)$", text, re.M)
+    if len(all_values) != 1 or set(v.strip() for v in all_values[0].split(",")) != {
+            v.strip() for group in groups.values() for v in group.split(",")}:
+        raise PackageError("base and client-specific interface metadata disagree")
+    if not values or any(not value.isdigit() for value in values):
+        raise PackageError("invalid distribution interface metadata")
+    text = re.sub(r"^## Interface: [^\r\n]+$", "## Interface: " + ", ".join(values), text, flags=re.M)
+    return re.sub(r"^## Interface-([^:]+): [^\r\n]+\n",
+                  lambda match: match[0] if match[1] in chosen else "", text, flags=re.M)
+
+
+def payloads(root, ref=None, flavor=None):
     root = Path(root).resolve()
     commit = None
     if ref:
@@ -156,10 +178,17 @@ def payloads(root, ref=None):
         key = ADDON + "/Libs/libchev/" + safe_path(name)
         if key not in data or digest(data[key]) != expected:
             raise PackageError("vendored library differs from its pinned manifest: " + key)
+    if flavor is not None:
+        for addon in (ADDON, TEST_ADDON):
+            key = addon + "/" + addon + ".toc"
+            if key in data:
+                data[key] = flavor_toc(data[key].decode("utf-8"), flavor).encode("utf-8")
     package_manifest = {"schema": 3, "addon": ADDON, "version": version, "sourceCommit": commit,
                         "license": PROJECT_LICENSE, "sourceRepository": SOURCE_REPOSITORY,
                         "sourceUrl": SOURCE_REPOSITORY + "/tree/" + commit if commit else None,
                         "files": {name: digest(value) for name, value in data.items()}}
+    if flavor is not None:
+        package_manifest["distribution"] = flavor
     data[ADDON + "/" + MANIFEST] = (json.dumps(package_manifest, sort_keys=True, indent=2) + "\n").encode()
     return version, data
 
@@ -235,6 +264,17 @@ def verify_archive(data, expected=None):
             toc = contents[ADDON + "/" + ADDON + ".toc"].decode("utf-8")
             if version_from_toc(toc) != manifest.get("version") or not {ADDON + "/" + p for p in toc_entries(toc)} <= set(contents):
                 raise PackageError("package version or live load manifest mismatch")
+            if "distribution" in manifest:
+                flavor = manifest["distribution"]
+                groups = dict(re.findall(r"^## Interface-([^:]+): ([^\r\n]+)$", toc, re.M))
+                if (flavor not in FLAVORS or not groups
+                        or (flavor == "forever" and set(groups) != {"Camelot"})
+                        or (flavor == "retail-classic" and ("Camelot" in groups or "Mainline" not in groups))):
+                    raise PackageError("package client metadata differs from distribution")
+                base = re.findall(r"^## Interface: ([^\r\n]+)$", toc, re.M)
+                declared = {v.strip() for values in groups.values() for v in values.split(",")}
+                if len(base) != 1 or set(v.strip() for v in base[0].split(",")) != declared:
+                    raise PackageError("package base interface differs from client metadata")
             documents = DOCUMENTS if schema == 3 else LEGACY_DOCUMENTS
             if not {ADDON + "/" + p for p in documents} <= set(contents):
                 raise PackageError("package is missing mandatory assets or licenses")
@@ -276,8 +316,8 @@ def verify_archive(data, expected=None):
         raise PackageError("invalid installation archive: " + str(error)) from error
 
 
-def package(root, output, ref=None):
-    version, contents = payloads(root, ref)
+def package(root, output, ref=None, flavor=None):
+    version, contents = payloads(root, ref, flavor)
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in sorted(contents.items()):
@@ -299,12 +339,13 @@ def main():
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--ref", help="Build exactly this git tag/commit, ignoring working-tree files")
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--flavor", choices=FLAVORS, help="Limit client metadata for a CurseForge distribution")
     companion = parser.add_mutually_exclusive_group()
     companion.add_argument("--write-source-companion", action="store_true", help="Regenerate thin CurseForge companion manifests and notices")
     companion.add_argument("--check-source-companion", action="store_true", help="Check thin CurseForge companion manifests and notices without writes")
     args = parser.parse_args()
     if args.write_source_companion or args.check_source_companion:
-        if args.ref or args.output:
+        if args.ref or args.output or args.flavor:
             parser.error("source companion commands use the working tree and cannot take --ref or --output")
         test_toc = (args.root / (TEST_ADDON + ".toc")).read_text()
         read = lambda name: (args.root / name).read_bytes()
@@ -319,7 +360,7 @@ def main():
         return
     if not args.output:
         parser.error("--output is required when building an archive")
-    version, count, sha = package(args.root, args.output, args.ref)
+    version, count, sha = package(args.root, args.output, args.ref, args.flavor)
     print(f"{ADDON} {version}: {count} verified files; SHA256 {sha}")
 
 if __name__ == "__main__":

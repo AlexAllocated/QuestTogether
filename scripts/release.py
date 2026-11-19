@@ -3,8 +3,8 @@
 # See LICENSING.md for scope and preserved third-party notices.
 """Validate and publish a release locally, in order. --check never publishes.
 
-CurseForge is handed the pushed tag through its existing webhook. This command
-does not poll CurseForge, download its files, or wait for GitHub Actions.
+CurseForge receives client-scoped local archives after the tag is pushed. This
+command does not poll CurseForge, download its files, or wait for GitHub Actions.
 """
 
 import argparse
@@ -23,6 +23,7 @@ sys.dont_write_bytecode = True
 
 import discord_changelog as discord
 import package
+import curseforge_upload as curseforge
 import validate_release
 
 
@@ -88,7 +89,7 @@ def local_credentials(root):
         token = run(root, ["gh", "auth", "token", "--hostname", "github.com"], capture=True)
     if not token:
         raise ReleaseError("sign in with gh auth login before releasing")
-    return {**os.environ, "GH_TOKEN": token}
+    return {**os.environ, "GH_TOKEN": token, "CURSEFORGE_API_TOKEN": curseforge.token()}
 
 
 def receipt_matches(path, sha):
@@ -309,6 +310,7 @@ def publish_github(root, repository, tag, sha, artifacts, body, env):
 
 def publish(root, repository, args, bump):
     env = local_credentials(root)
+    curseforge.check_webhook_disabled(discord.API(discord.GITHUB_API, env["GH_TOKEN"]), repository)
     with publication_lock(root):
         if bump:
             run(root, bump + ["--local-only"])
@@ -319,19 +321,28 @@ def publish(root, repository, args, bump):
         print("Validating " + tag + " locally...", flush=True)
         validate(root, tag, sha, output, args)
         artifacts = build_artifacts(root, tag, sha, output)
+        curse_files = curseforge.prepare(root, tag, sha, output)
         body = output / "github-notes.md"
         body.write_text(release_body(root, tag, sha, repository), encoding="utf-8")
+        cf_client = curseforge.Client(env["CURSEFORGE_API_TOKEN"])
+        cf_versions = cf_client.versions()
+        if not isinstance(cf_versions, list):
+            raise curseforge.UploadError("invalid CurseForge game-version response")
+        for file in curse_files:
+            curseforge.metadata(file, tag, body.read_text(), cf_versions)
         if exact_checkout(root, tag) != sha:
             raise ReleaseError("checkout changed during validation")
         branch = args.branch or git(root, "branch", "--show-current")
-        print("Pushing the validated release tag; handing off to CurseForge.", flush=True)
+        print("Pushing the validated release tag...", flush=True)
         push_release_refs(root, tag, sha, branch, env)
         publish_github(root, repository, tag, sha, artifacts, body, env)
+        curseforge.publish(curse_files, tag, sha, body.read_text(), output,
+                           cf_client, versions=cf_versions)
         print("Posting the release notes to Discord locally...", flush=True)
         run(root, [args.python, "scripts/discord_changelog.py", "--root", str(root), "--post",
                    "--tag", tag, "--repository", repository, "--all-locales"], env=env)
         print("Published " + tag + " on GitHub and announced it on Discord. "
-              "The tag was handed to CurseForge; its processing is not monitored.")
+              "Both client files were submitted to CurseForge; its processing is not monitored.")
 
 
 def main(argv=None):
@@ -367,7 +378,7 @@ def main(argv=None):
             discord.load_notes(root, args.tag, exact=True)
         if args.check:
             print("Preflight passed. Release steps: prepare locally; validate; package; push tag; "
-                  "publish GitHub; announce on Discord. CurseForge handles the tag independently.")
+                  "publish GitHub; upload Forever and Retail/Classic files to CurseForge; announce on Discord.")
             return 0
         publish(root, repository, args, bump)
         return 0

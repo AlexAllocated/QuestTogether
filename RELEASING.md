@@ -279,19 +279,23 @@ The deployment performs these steps in order:
 2. Copy the exact tagged commit into a separate checkout and run the local
    publisher there. Validate the tag and record successful validation for
    that commit. Later edits in the source checkout are not release inputs.
-3. Build and verify the deterministic installation ZIP, SHA-256 sidecar and
-   corresponding source archive locally.
+3. Build and verify the universal GitHub installation ZIP, separate Forever and
+   Retail/Classic CurseForge ZIPs, SHA-256 sidecars and corresponding source archive locally.
 4. Push the release commit and tag. Update the original release branch only
    when it can advance to that commit. If the remote branch already contains
    the release plus newer work, leave it ahead; divergent history stops the
-   deployment. The tag triggers the existing CurseForge webhook; no polling,
-   download inspection or extra CurseForge validation follows.
+   deployment. The old single-file CurseForge packaging webhook must be disabled;
+   the publisher checks this before release preparation.
 5. Upload the prepared archives to a draft GitHub release, then publish it.
-6. Post the canonical notes to Discord from the same detached local job.
+6. Submit both client-scoped ZIPs through the CurseForge upload API. Only Forever
+   declares QuestieDB as a required CurseForge dependency. Do not poll moderation
+   or inspect remote ZIP contents.
+7. Post the canonical notes to Discord from the same detached local job.
 
 Each step must succeed before the next starts. The publisher does not wait for
 GitHub Actions. A successful kickoff means the job started; only a completed
-job means GitHub publication and Discord announcements succeeded.
+job means GitHub publication, CurseForge submission and Discord announcements
+succeeded. CurseForge approval and app delivery are not monitored.
 The job also attempts a desktop notification on success or failure; the saved
 status and log remain available if desktop notifications are unavailable.
 It performs publication; do not run it merely to generate notes or preview a
@@ -481,8 +485,41 @@ missing permissions or an exhausted history scan fail instead of blindly posting
 The implementation follows [Discord's message limits and nonce contract](https://docs.discord.com/developers/resources/message).
 
 Do not send announcements for uncommitted work or a tag whose download or local
-validation is not ready. The tag push invokes CurseForge's existing packaging
-webhook; release publication does not poll CurseForge or inspect its output.
+validation is not ready. The publisher submits local client-scoped files to
+CurseForge before announcing; it does not poll review or inspect remote contents.
+
+## CurseForge client files and credentials
+
+The same CurseForge project receives two ordinary main files (not additional
+files): `QuestTogether-vX.Y.Z-forever.zip` and
+`QuestTogether-vX.Y.Z-retail-classic.zip`. Their main and test-companion TOCs carry
+only the relevant interfaces, derived from the canonical TOC. Their runtime Lua,
+addon folder names, SavedVariables and license/source notices stay identical.
+GitHub retains the universal installation ZIP and exact corresponding source.
+
+`package.py --flavor forever` and `--flavor retail-classic` build these files
+locally. `curseforge_upload.py` resolves supported interfaces against the WoW
+Game Versions API and submits per-file relations: `questiedb` (project 1696795)
+is `requiredDependency` only for Forever. QT keeps `OptionalDeps: QuestieDB`
+in-game, so manual installations can still load without the provider. Do not
+add a project-wide required relation or a global `.pkgmeta` dependency.
+
+Set `CURSEFORGE_API_TOKEN`, or store the upload token in
+`~/.config/QuestTogether/curseforge-token` with mode 0600 (respects
+`XDG_CONFIG_HOME`). The detached launcher forwards it privately and redacts it
+from logs. Keep the old `/api/projects/296929/package` GitHub webhook disabled
+before pushing tags. Do not delete old files or modify historical releases.
+
+Each accepted upload saves its returned file ID in
+`.local/releases/<tag>/curseforge-<flavor>.json`. Resume skips that submission.
+The API does not provide an idempotency key: a disconnected or malformed upload
+response leaves a `submitting` receipt and stops instead of risking a duplicate.
+For that actual failure only, reconcile the upload in the CurseForge dashboard:
+if it exists, record its `fileID` and change the receipt status to `submitted`
+without changing its identity; if it definitely did not arrive, remove that
+receipt and resume. Normal successful uploads require no monitoring or waiting.
+
+Upload contract: https://support.curseforge.com/support/solutions/articles/9000197321-curseforge-upload-api
 
 ## Synchronized repository changelogs
 
@@ -555,7 +592,8 @@ the staggered test runner. Both TOCs must have matching version/interface metada
 the bump script updates both version fields. Keep both folders when installing
 the release if in-game tests are wanted; QT gameplay does not depend on the companion.
 
-CurseForge's repository webhook packages source directly. `.pkgmeta` moves the
+The legacy source-packager path remains reproducible, but its automatic webhook
+is disabled in favor of local split uploads. `.pkgmeta` moves the
 checked-in `QuestTogether_Tests/` directory beside the main addon and excludes the
 canonical root companion TOC. Its generated TOC uses sibling-relative paths to
 the original QA files in `QuestTogether`, which remain unloaded during normal
