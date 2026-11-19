@@ -1,6 +1,14 @@
 -- Offline WoW test environment. Never load this script from the addon TOC.
 -- Run from the repository root: lua scripts/test.lua
 local addonRoot = arg[1] or "."
+-- Match WoW's native bit operations in the offline host. Plain Lua 5.1 has
+-- none, making large authenticated-network simulations use slow Lua arithmetic.
+if not bit32 and not bit then
+	local ok, nativeBit = pcall(require, "bit")
+	if ok then bit = nativeBit end
+end
+assert(not os.getenv("QT_TEST_REQUIRE_NATIVE_BIT") or bit32 or bit,
+	"install LuaBitOp for Lua 5.1 (or configure LUA_CPATH) before release validation")
 -- Forever's embedded formatter narrows integer conversions to 32 bits, while
 -- the host Lua builds use wider integers. Model that engine contract offline so
 -- epoch milliseconds cannot pass CI and then fail during addon initialization.
@@ -186,11 +194,21 @@ local selectedTestLocale = os.getenv("QT_TEST_LOCALE") or "enUS"
 local expectedTestLocale = selectedTestLocale == "enGB" and "enUS" or selectedTestLocale
 assert(QuestTogether.locale == expectedTestLocale, "client locale must survive addon initialization")
 local names, presentationCases = {}, 0
+local caseTimings = os.getenv("QT_TEST_TIMINGS") and {} or nil
 for _, case in ipairs(QuestTogether.tests) do
 	assert(not names[case.name], "duplicate test name: " .. case.name)
 	names[case.name] = true
 	if case.locale == "client" then
 		presentationCases = presentationCases + 1
+	end
+	if caseTimings then
+		local run, name = case.fn, case.name
+		case.fn = function(...)
+			local started = os.clock()
+			local ok, err = pcall(run, ...)
+			caseTimings[#caseTimings + 1] = { name = name, seconds = os.clock() - started }
+			if not ok then error(err, 0) end
+		end
 	end
 end
 assert(presentationCases > 0, "client-locale presentation coverage must be registered")
@@ -381,4 +399,11 @@ assert(#engineBoundaryCalls == 0, "live-test isolation failure: " .. table.conca
 -- QT's console adapter; avoid duplicating its presentation here.
 print("registered=" .. tostring(result.total))
 print("presentationLocale=" .. QuestTogether.locale .. " cases=" .. presentationCases)
+if caseTimings then
+	table.sort(caseTimings, function(a, b) return a.seconds > b.seconds end)
+	for index = 1, math.min(5, #caseTimings) do
+		local case = caseTimings[index]
+		print(string.format("Slow case: %.3fs %s", case.seconds, case.name))
+	end
+end
 os.exit(success and 0 or 1)

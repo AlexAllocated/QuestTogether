@@ -8,6 +8,7 @@ run writes a receipt outside tracked sources for the local release command.
 """
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import json
 import os
@@ -18,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 sys.dont_write_bytecode = True
 
@@ -31,7 +33,7 @@ PYTHON_CHECKS = (
     ("test_note_data_evidence.py",), ("test_discord_changelog.py",),
     ("test_package.py",), ("check_architecture.py",),
     ("check_live_test_numeric.py",), ("test_live_test_numeric.py",),
-    ("test_validate_release.py",), ("test_release.py",),
+    ("test_validate_release.py",), ("test_release.py",), ("test_deploy.py",),
 )
 LOCALES = ("enGB", "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW")
 CLIENTS = ("retail", "forever", "era", "tbc", "mists", "titan")
@@ -57,13 +59,17 @@ def executable(value, label):
 
 
 def run(command, *, cwd, env, label, capture=False, input=None):
+    started = time.monotonic()
     if not capture:
         print("Checking " + label + "...", flush=True)
     result = subprocess.run(command, cwd=cwd, env=env, text=True, input=input,
                             stdout=subprocess.PIPE if capture else None,
                             stderr=subprocess.PIPE if capture else None)
     if result.returncode:
-        raise ValidationError(label + " failed (exit " + str(result.returncode) + ")")
+        raise ValidationError(label + " failed (exit " + str(result.returncode) + ", "
+                              + format(time.monotonic() - started, ".1f") + "s)")
+    if not capture:
+        print("Passed " + label + " in " + format(time.monotonic() - started, ".1f") + "s.", flush=True)
     return result.stdout.strip() if capture else None
 
 
@@ -90,6 +96,13 @@ def preflight(snapshot, tools, env):
                      label="Lua " + version + " interpreter", capture=True)
         if actual != "Lua " + version:
             raise ValidationError("Lua " + version + " executable reports " + actual)
+        try:
+            run([tools["lua" + version], "-e",
+                 "local b=bit32 or bit or require('bit'); assert(b.bxor(1,3)%4294967296==2)"],
+                cwd=snapshot, env=env, label="native Lua " + version + " bit operations", capture=True)
+        except ValidationError:
+            raise ValidationError("Lua " + version + " needs native bit operations; install LuaBitOp for "
+                                  "Lua 5.1 and configure LUA_CPATH before deployment") from None
     run([tools["openssl"], "version"], cwd=snapshot, env=env, label="OpenSSL", capture=True)
     # The full VIP suite below determines compatibility. Dependencies must
     # already be available in the chosen interpreter; never install them here.
@@ -102,23 +115,54 @@ def preflight(snapshot, tools, env):
                               "prepare that environment locally and pass --python") from None
 
 
+def regression_matrix(snapshot, tools, env):
+    # These processes only read the checkout and own their fixtures. Keep each
+    # complete normal/reverse order intact; do not shard away ordering coverage.
+    jobs = [(version, mode) for mode in ("normal", "reverse", "live", "live-reverse")
+            for version in ("5.1", "5.2")]
+    def check(version, mode):
+        started = time.monotonic()
+        label = "Lua " + version + " " + mode
+        lua = tools["lua" + version]
+        # Buffer each suite separately so failures and slow-case reports remain
+        # readable even while the independent interpreters run concurrently.
+        with tempfile.TemporaryFile(mode="w+", encoding="utf-8") as log:
+            result = subprocess.run([lua, "scripts/test.lua", ".", mode], cwd=snapshot,
+                                    env=dict(env, QT_TEST_LUA=lua, QT_TEST_REQUIRE_NATIVE_BIT="1", QT_TEST_TIMINGS="1"),
+                                    text=True, stdout=log, stderr=subprocess.STDOUT)
+            log.seek(0)
+            return label, result.returncode, time.monotonic() - started, log.read()
+    print("Checking eight complete Lua suites with at most four local workers...", flush=True)
+    with ThreadPoolExecutor(max_workers=min(4, os.cpu_count() or 1)) as pool:
+        pending = [pool.submit(check, version, mode) for version, mode in jobs]
+        for future in as_completed(pending):
+            label, code, elapsed, output = future.result()
+            print(output, end="" if output.endswith("\n") else "\n", flush=True)
+            if code:
+                for other in pending:
+                    other.cancel()
+                raise ValidationError(label + " failed (exit " + str(code) + ")")
+            print("Passed " + label + " in " + format(elapsed, ".1f") + "s.", flush=True)
+
+
 def validate(snapshot, tools, env):
     python = tools["python"]
     for arguments in PYTHON_CHECKS:
         run([python, "scripts/" + arguments[0], *arguments[1:]], cwd=snapshot, env=env, label=arguments[0])
+    regression_matrix(snapshot, tools, env)
     for version in ("5.1", "5.2"):
         lua = tools["lua" + version]
         lua_env = dict(env, QT_TEST_LUA=lua)
         run([python, "scripts/test_release_notes.py"], cwd=snapshot, env=lua_env,
             label="release-note Lua " + version + " contracts")
         for script in LUA_CHECKS:
+            if script == "test.lua":
+                continue  # The complete matrix above includes normal order.
             run([lua, "scripts/" + script], cwd=snapshot, env=lua_env, label=script + " (Lua " + version + ")")
         for script in ("test_developer_crypto.py", "bindings_smoke.py"):
             run([python, "scripts/" + script, lua], cwd=snapshot, env=lua_env, label=script + " (Lua " + version + ")")
         run([python, "-m", "unittest", "discover", "-s", "services/vip", "-p", "test_*.py"],
             cwd=snapshot, env=lua_env, label="VIP service and Lua " + version + " interoperability")
-        for mode in ("reverse", "live", "live-reverse"):
-            run([lua, "scripts/test.lua", ".", mode], cwd=snapshot, env=lua_env, label="Lua " + version + " " + mode)
         for locale in LOCALES:
             run([lua, "scripts/test.lua", ".", "locale"], cwd=snapshot,
                 env=dict(lua_env, QT_TEST_LOCALE=locale), label="Lua " + version + " locale " + locale)

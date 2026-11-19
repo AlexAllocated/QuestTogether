@@ -262,12 +262,13 @@ def publish_github(root, repository, tag, sha, artifacts, body, env):
         print("GitHub release is already published; resuming its announcement.", flush=True)
         return
     if existing is None:
-        command = ["gh", "release", "create", tag, "--repo", repository, "--verify-tag", "--draft",
-                   "--title", "QuestTogether " + tag[1:], "--notes-file", str(body)]
-        if prerelease:
-            command.append("--prerelease")
-        run(root, command, env=env)
-        existing = find_github_release(api, prefix, tag)
+        # Use the creation response's identity. Immediately listing again can
+        # return the pre-creation view and strand an otherwise valid draft.
+        existing = api.request(prefix + "/releases", method="POST", payload={
+            "tag_name": tag, "target_commitish": sha,
+            "name": "QuestTogether " + tag[1:], "body": body.read_text(),
+            "draft": True, "prerelease": prerelease,
+        })
     release_id = existing.get("id") if existing else None
     if type(release_id) is not int or release_id <= 0:
         raise ReleaseError("GitHub draft release identity is unavailable; resume to check it again")

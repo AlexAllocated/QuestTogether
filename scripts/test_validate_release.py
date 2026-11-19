@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 # See LICENSING.md for scope and preserved third-party notices.
-"""Offline contracts for the sequential local validation gate."""
+"""Offline contracts for the local validation gate and isolated Lua workers."""
 
 import contextlib
 import hashlib
@@ -31,8 +31,9 @@ class PlanTests(unittest.TestCase):
         self.tools = {name: "/tools/" + name for name in ("git", "bash", "openssl", "python", "lua5.1", "lua5.2")}
 
     def test_all_ci_modes_clients_locales_and_publication_contracts_are_retained(self):
-        with patch.object(validation, "run") as run:
+        with patch.object(validation, "run") as run, patch.object(validation, "regression_matrix") as matrix:
             validation.validate(self.root, self.tools, {"PATH": "/tools"})
+        matrix.assert_called_once_with(self.root, self.tools, {"PATH": "/tools"})
         calls = run.call_args_list
         commands = [call.args[0] for call in calls]
         for script in ("test_release.py", "test_validate_release.py", "test_package.py", "test_discord_changelog.py",
@@ -41,9 +42,8 @@ class PlanTests(unittest.TestCase):
         for version in ("5.1", "5.2"):
             lua = self.tools["lua" + version]
             for script in validation.LUA_CHECKS:
-                self.assertIn([lua, "scripts/" + script], commands)
-            for mode in ("reverse", "live", "live-reverse"):
-                self.assertIn([lua, "scripts/test.lua", ".", mode], commands)
+                if script != "test.lua":
+                    self.assertIn([lua, "scripts/" + script], commands)
             locale_calls = [call for call in calls if call.args[0] == [lua, "scripts/test.lua", ".", "locale"]]
             self.assertEqual({call.kwargs["env"]["QT_TEST_LOCALE"] for call in locale_calls}, set(validation.LOCALES))
             for client in validation.CLIENTS:
@@ -85,6 +85,46 @@ class PlanTests(unittest.TestCase):
                 validation.run(["/fake/lua"], cwd=self.root, env={}, label="fixture", capture=True)
         self.assertEqual(execute.call_count, 1)
         self.assertNotIn("shell", execute.call_args.kwargs)
+
+    def test_matrix_runs_all_complete_orders_with_native_bits_and_readable_logs(self):
+        def execute(command, **kwargs):
+            kwargs["stdout"].write("complete fixture suite\n")
+            return subprocess.CompletedProcess(command, 0)
+        output = io.StringIO()
+        with patch.object(validation.subprocess, "run", side_effect=execute) as run, \
+                contextlib.redirect_stdout(output):
+            validation.regression_matrix(self.root, self.tools, {"PATH": "/tools"})
+        expected = {(self.tools["lua" + version], mode) for version in ("5.1", "5.2")
+                    for mode in ("normal", "reverse", "live", "live-reverse")}
+        self.assertEqual({(call.args[0][0], call.args[0][-1]) for call in run.call_args_list}, expected)
+        self.assertEqual(run.call_count, 8)
+        for call in run.call_args_list:
+            self.assertEqual(call.args[0][1:3], ["scripts/test.lua", "."])
+            self.assertEqual(call.kwargs["cwd"], self.root)
+            self.assertEqual(call.kwargs["env"]["QT_TEST_REQUIRE_NATIVE_BIT"], "1")
+            self.assertEqual(call.kwargs["env"]["QT_TEST_TIMINGS"], "1")
+        self.assertEqual(output.getvalue().count("complete fixture suite\n"), 8)
+
+    def test_failed_matrix_prints_failure_and_prevents_success(self):
+        def execute(command, **kwargs):
+            kwargs["stdout"].write("fixture assertion failed\n")
+            return subprocess.CompletedProcess(command, 9)
+        output = io.StringIO()
+        with patch.object(validation.subprocess, "run", side_effect=execute), \
+                patch.object(validation.os, "cpu_count", return_value=1), \
+                contextlib.redirect_stdout(output), \
+                self.assertRaisesRegex(validation.ValidationError, "failed.*9"):
+            validation.regression_matrix(self.root, self.tools, {})
+        self.assertIn("fixture assertion failed", output.getvalue())
+
+    def test_missing_native_bit_support_fails_preflight(self):
+        def execute(command, **kwargs):
+            if "require('bit')" in command[-1]:
+                raise validation.ValidationError("missing bit")
+            return "Lua 5.1"
+        with patch.object(validation, "run", side_effect=execute), \
+                self.assertRaisesRegex(validation.ValidationError, "LuaBitOp"):
+            validation.preflight(self.root, self.tools, {})
 
 
 class OrchestrationTests(unittest.TestCase):

@@ -71,6 +71,8 @@ class ReleaseTests(unittest.TestCase):
         self.private = False
         self.created = False
         self.draft_assets = []
+        self.creation_payload = None
+        self.stale_listing = False
 
     def git(self, *arguments):
         return REAL_RUN(self.root, ["git", "-c", "commit.gpgsign=false", "-c",
@@ -155,15 +157,26 @@ class ReleaseTests(unittest.TestCase):
 
     def request(self, path, method="GET", payload=None):
         self.api_calls.append(path)
-        self.assertEqual(method, "GET")
         prefix = "/repos/" + REPOSITORY
         tag = self.current_tag()
+        if method == "POST":
+            self.assertEqual(path, prefix + "/releases")
+            self.assertEqual(payload["tag_name"], tag)
+            self.assertEqual(payload["target_commitish"], self.git("rev-parse", "HEAD"))
+            self.assertTrue(payload["draft"])
+            self.creation_payload = payload
+            self.calls.append(["api", "create"])
+            self.created = True
+            return self.request(prefix + "/releases/123")
+        self.assertEqual(method, "GET")
         if path == prefix:
             return {"full_name": REPOSITORY, "private": self.private}
         if path == prefix + "/git/ref/tags/" + tag:
             return {"ref": "refs/tags/" + tag,
                     "object": {"sha": self.remote_sha or self.git("rev-parse", "HEAD"), "type": "commit"}}
         if path.startswith(prefix + "/releases?per_page=100&page="):
+            if self.stale_listing:
+                return []
             return ([self.request(prefix + "/releases/123")]
                     if self.existing is not None or self.created else [])
         if path in (prefix + "/releases/tags/" + tag, prefix + "/releases/123"):
@@ -215,6 +228,8 @@ class ReleaseTests(unittest.TestCase):
                 stages.append("push")
             elif command[:2] == ["gh", "release"]:
                 stages.append(command[2])
+            elif command == ["api", "create"]:
+                stages.append("create")
             elif len(command) > 1 and command[1] == "scripts/discord_changelog.py":
                 stages.append("announce")
         return stages
@@ -239,7 +254,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(self.git("cat-file", "-t", "v1.2.4"), "tag")
         manifest = release.package.verify_archive(self.archive().read_bytes())
         self.assertEqual(manifest["sourceCommit"], self.git("rev-parse", "HEAD"))
-        self.assertTrue(any("--draft" in command for command in self.calls if command[:3] == ["gh", "release", "create"]))
+        self.assertTrue(self.creation_payload["draft"])
         self.assertTrue(any("--draft=false" in command for command in self.calls if command[:3] == ["gh", "release", "edit"]))
         self.assertFalse(any("actions/" in path or "curseforge" in path.casefold() for path in self.api_calls))
 
@@ -250,10 +265,18 @@ class ReleaseTests(unittest.TestCase):
                 self.calls.clear()
                 result, message = self.invoke("--tag", tag)
                 self.assertEqual(result, 0, message)
-                create = next(command for command in self.calls if command[:3] == ["gh", "release", "create"])
                 edit = next(command for command in self.calls if command[:3] == ["gh", "release", "edit"])
-                self.assertEqual("--prerelease" in create, expected == "true")
+                self.assertEqual(self.creation_payload["prerelease"], expected == "true")
                 self.assertIn("--prerelease=" + expected, edit)
+
+    def test_new_draft_uses_creation_identity_when_listing_is_stale(self):
+        self.prepare()
+        self.stale_listing = True
+        result, message = self.invoke("--tag", "v1.2.4")
+        self.assertEqual(result, 0, message)
+        listings = [path for path in self.api_calls if "/releases?" in path]
+        self.assertEqual(len(listings), 1, "creation must not wait for listing visibility")
+        self.assertEqual(self.stages(), ["validate", "package", "push", "create", "upload", "edit", "announce"])
 
     def test_beta_bumps_keep_stable_baseline_and_increment_prerelease_sequence(self):
         for expected, item in (("v1.3.0-beta.1", "Compare eligible quests with a selected player."),

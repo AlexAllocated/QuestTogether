@@ -345,12 +345,18 @@ interrupted local job is resumed explicitly; no remote workflow continues it.
 
 ### Local validation environment
 
-The validator needs Git, Bash, OpenSSL, Lua 5.1, Lua 5.2 and Python with
+The validator needs Git, Bash, OpenSSL, Lua 5.1 with LuaBitOp, Lua 5.2 and Python with
 `services/vip/requirements.txt` installed. Set `LUA51` and `LUA52`, or pass
 `--lua51` and `--lua52`, if the interpreters are not named `lua5.1` and `lua5.2`.
 Use `--python` for a prepared Python environment; `deploy.py` passes these options
 through the publisher to the validator. Dependencies must already be installed: validation
 does not install packages or contact the network.
+
+LuaBitOp supplies the native bit operations available in WoW. Install it for the
+selected Lua 5.1 interpreter, using `LUA_CPATH` if needed. Preflight rejects a
+missing module rather than silently running large network simulations through
+the slow arithmetic fallback. The separate OpenSSL interoperability check still
+exercises that fallback with plain Lua 5.1.
 
 To validate an existing tag without publishing:
 
@@ -359,9 +365,14 @@ python3 scripts/validate_release.py --ref vX.Y.Z --receipt /tmp/questtogether-va
 ```
 
 The validator creates a temporary local clone at the exact ref, runs the Python,
-Lua, locale, client-profile, package and pinned-library checks sequentially, and
+Lua, locale, client-profile, package and pinned-library checks locally, and
 removes the temporary clone when finished. It streams logs to the terminal and
 writes the success receipt outside tracked sources only after all checks pass.
+The eight full Lua runs use at most four independent local processes. Each keeps
+its complete normal/reverse or simulated-live order; every previous case remains
+included. Other checks and publication steps run in sequence. Logs include step
+durations and the slowest cases in each full suite, with each suite's output kept
+together. No GitHub workflow or CurseForge wait is involved.
 Failure removes a stale receipt at that path. This automated suite supplements
 the live-client checks appropriate to the change; it does not run a WoW client.
 
