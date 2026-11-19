@@ -46,7 +46,7 @@ class UploadTests(unittest.TestCase):
         first, second = [values for _, values in self.submitted]
         self.assertEqual(first['gameVersions'], [10])
         self.assertEqual(second['gameVersions'], [20])
-        self.assertEqual(first['relations']['projects'], [{'slug':'questiedb', 'projectID':'1696795', 'type':'requiredDependency'}])
+        self.assertEqual(first['relations']['projects'], [{'slug':'questiedb', 'projectID':1696795, 'type':'requiredDependency'}])
         self.assertEqual(second['relations']['projects'], [])
         self.publish()
         self.assertEqual(len(self.submitted), 2)
@@ -114,6 +114,10 @@ class UploadTests(unittest.TestCase):
         self.assertIn(b'forever',req.data)
         with patch.object(client.opener,'open',side_effect=OSError('private-fixture-token')):
             with self.assertRaises(cf.UploadError) as failure:client.versions()
+        self.assertNotIn('private-fixture-token',str(failure.exception))
+        with patch.object(client.opener,'open',side_effect=urllib.error.HTTPError(
+                'https://example.invalid/private-fixture-token',400,'private-fixture-token',{},None)):
+            with self.assertRaisesRegex(cf.UploadError, 'HTTP 400') as failure:client.versions()
         self.assertNotIn('private-fixture-token',str(failure.exception))
         self.assertIsNone(cf.NoRedirect().redirect_request(None,None,302,'',{},'https://elsewhere.invalid'))
 

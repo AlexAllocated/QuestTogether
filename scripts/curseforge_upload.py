@@ -66,6 +66,11 @@ class Client:
         try:
             with self.opener.open(request, timeout=120 if body is not None else 30) as response:
                 return json.load(response)
+        except urllib.error.HTTPError as error:
+            # Keep the status actionable without exposing URLs, credentials or
+            # arbitrary server response text in unattended deployment logs.
+            raise UploadError("CurseForge request failed (HTTP " + str(error.code)
+                              + "); credentials and response body omitted") from None
         except (OSError, ValueError, urllib.error.URLError):
             # Response bodies and exception URLs can contain authentication data.
             raise UploadError("CurseForge request failed; credentials and response body omitted") from None
@@ -122,7 +127,7 @@ def metadata(file, tag, changelog, versions):
     return {"displayName": "QuestTogether " + tag[1:] + " (" + LABELS[file["flavor"]] + ")",
             "changelog": changelog, "changelogType": "markdown", "gameVersions": ids,
             "releaseType": "beta" if "-beta." in tag else "alpha" if "-alpha." in tag else "release",
-            "relations": {"projects": ([{"slug": "questiedb", "projectID": "1696795",
+            "relations": {"projects": ([{"slug": "questiedb", "projectID": 1696795,
                                          "type": "requiredDependency"}] if file["flavor"] == "forever" else [])}}
 
 
