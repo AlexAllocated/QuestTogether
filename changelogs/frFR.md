@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.1
+
+Profitez plus facilement des suites de quêtes sur Forever !
+
+### Une installation plus simple
+
+- Sur Forever, l’application CurseForge installe désormais QuestieDB avec QuestTogether. Retail et Classic disposent d’un fichier de téléchargement distinct, sans cette dépendance.
+- Si QuestieDB manque sur Forever, un message bien visible au-dessus de la liste du Journal de quêtes du groupe vous indique comment l’installer.
+- Vous installez vos addons manuellement ? Choisissez la version Forever de QuestieDB, activez-la, puis redémarrez WoW. Les autres fonctions de QuestTogether restent disponibles sans QuestieDB.
+
 ## 10.1.0
 
 À chaque aventure son QuestTogether ! Choisissez le niveau d’aide qui vous convient, accompagnez les plus jeunes et découvrez les outils de QT grâce à des réglages plus clairs et de nouvelles astuces.

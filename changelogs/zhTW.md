@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.1
+
+在 Forever 使用任務鏈，現在更方便了！
+
+### 輕鬆準備任務鏈資料
+
+- 在 Forever，CurseForge 應用程式現在會隨 QuestTogether 一併安裝 QuestieDB。Retail 與 Classic 使用另一個下載檔案，不需要這項相依插件。
+- Forever 若缺少 QuestieDB，隊伍任務日誌會在任務清單上方顯示清楚的安裝提示。
+- 如果你是手動安裝插件，請安裝並啟用 Forever 版 QuestieDB，然後重新啟動 WoW。沒有 QuestieDB，仍然可以使用 QuestTogether 的其他功能。
+
 ## 10.1.0
 
 讓 QuestTogether 陪你用喜歡的方式冒險！挑選合適預設、協助小夥伴跟上隊長，再透過更清楚的設定和新提示探索更多功能。

@@ -4,6 +4,16 @@
 
 [Other languages](changelogs/README.md)
 
+## 10.1.1
+
+Getting started with quest chains on Forever just got easier!
+
+### Easier quest-chain setup
+
+- The CurseForge app now installs QuestieDB alongside QuestTogether on Forever. Retail and Classic downloads have their own file without that dependency.
+- If QuestieDB is missing on Forever, Party Quest Log now shows a clear installation notice above the quest list.
+- Installing addons manually? Install and enable the Forever version of QuestieDB, then restart WoW. The rest of QuestTogether remains usable without it.
+
 ## 10.1.0
 
 Make QuestTogether your kind of adventure! Choose a preset that fits how you play, help a younger companion follow along, and discover more of QT through clearer settings and fresh tips.

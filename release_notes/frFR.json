@@ -1,46 +1,16 @@
 {
-  "source_sha256": "95e11cb22dab5baecf30d950ae933893c03d5e4738ba30eec2ab8eb01e1e424a",
+  "source_sha256": "421ee3b70cfeab14829c194c732fba6fa77cfe2a379c193f15e25a3638f8bd92",
   "notes": {
-    "version": "10.1.0",
-    "welcome": "À chaque aventure son QuestTogether ! Choisissez le niveau d’aide qui vous convient, accompagnez les plus jeunes et découvrez les outils de QT grâce à des réglages plus clairs et de nouvelles astuces.",
+    "version": "10.1.1",
+    "welcome": "Profitez plus facilement des suites de quêtes sur Forever !",
     "sections": [
       {
-        "title": "Choisissez votre façon de jouer",
+        "title": "Une installation plus simple",
         "items": [
-          "Une installation neuve affiche désormais un accueil de configuration, une fois par compte, à la place des notes. Aventure complète est présélectionné. Une mise à jour n’applique aucun préréglage à votre configuration existante.",
-          "Le bouton Configurations des notes en jeu ouvre le choix. Vous pouvez aussi y revenir à tout moment via /qt ou les options de WoW. Ouvrir et parcourir cette fenêtre ne modifie rien.",
-          "Aventure complète garde cartes, barres de nom, suivi de groupe, messages, bulles, sons et emotes. Vous choisissez votre objectif de quête vous-même.",
-          "Quêtes en toute tranquillité conserve cartes, partage de position et outils de groupe, mais coupe messages automatiques, bulles, sons, emotes et interruptions au démarrage ou lors des mises à jour.",
-          "Juste le journal propose le journal de groupe à la demande, accessible par minicarte et manette. Surcouches de carte, ajouts aux noms et au suivi, sorties automatiques et invites QT de partage entrantes sont désactivés.",
-          "Petit compagnon laisse la préparation aux parents : pas de fenêtres automatiques ni de lanceurs QT, partage limité au groupe et suivi automatique du chef. Remerciements et emotes de célébration restent actifs ; les options WoW donnent toujours accès aux réglages.",
-          "Chaque choix décrit une situation de jeu et permet d’afficher sa liste complète de réglages. Appliquez le préréglage quand vous êtes prêt, puis ajustez chaque option à votre goût. Disposition, raccourcis et notes privées sont conservés.",
-          "Vous pouvez mémoriser ce choix pour les futurs personnages sans modifier les profils existants ou copiés. Personnalisée indique simplement que vos options ne correspondent exactement à aucun préréglage."
+          "Sur Forever, l’application CurseForge installe désormais QuestieDB avec QuestTogether. Retail et Classic disposent d’un fichier de téléchargement distinct, sans cette dépendance.",
+          "Si QuestieDB manque sur Forever, un message bien visible au-dessus de la liste du Journal de quêtes du groupe vous indique comment l’installer.",
+          "Vous installez vos addons manuellement ? Choisissez la version Forever de QuestieDB, activez-la, puis redémarrez WoW. Les autres fonctions de QuestTogether restent disponibles sans QuestieDB."
         ]
-      },
-      {
-        "title": "Suivez l’objectif du chef",
-        "items": [
-          "Le suivi automatique de l’objectif du chef se règle séparément dans Suivi et objectif du groupe ; Petit compagnon l’active. Il utilise le chef réel et son objectif QT compatible si vous avez cette quête, et tient compte des changements de chef.",
-          "Tant que cet objectif est utilisable, QT le conserve sans avertissement de changement. Désactivez l’option pour arrêter. Si le chef n’a pas d’objectif utilisable ou si la quête manque à votre journal, choisissez librement un objectif provisoire ; le suivi reprendra dès que possible."
-        ]
-      },
-      {
-        "title": "Des réglages plus compréhensibles",
-        "items": [
-          "Les options sont mieux regroupées, avec une page Data Broker dédiée aux barres compatibles. Les infobulles expliquent effets et limites ; les cases affichent correctement les valeurs enregistrées ou par défaut.",
-          "Les nouveaux réglages activent tous les signaux sonores sans réactiver ceux que vous aviez désactivés. Audio permet de choisir les signaux, leurs sons, leur volume et de les écouter.",
-          "Votre bulle peut maintenant n’apparaître qu’en groupe, raids compris, en complément du choix solo. Ce réglage ne change pas les informations de quête envoyées."
-        ]
-      },
-      {
-        "title": "De nouvelles astuces à découvrir",
-        "items": [
-          "58 astuces s’ajoutent au catalogue, qui en compte maintenant 225 : suites, partage, préréglages, suivi du chef, manette, audio, cartes et notes privées. Toutes les langues prises en charge disposent de conseils adaptés au client et de liens vers les commandes utiles."
-        ],
-        "tip": {
-          "label": "Astuce :",
-          "text": "Tapez /qt tip ou /qt hint pour recevoir une astuce locale quand vous voulez, même si les astuces au démarrage sont désactivées."
-        }
       }
     ]
   }

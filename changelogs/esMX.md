@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.1
+
+¡Usar cadenas de misiones en Forever ahora es más sencillo!
+
+### Prepara tus cadenas de misiones
+
+- En Forever, la aplicación de CurseForge ahora instala QuestieDB junto con QuestTogether. Las descargas para Retail y Classic usan un archivo separado que no requiere esa dependencia.
+- Cuando falta QuestieDB en Forever, el Registro de misiones del grupo muestra instrucciones de instalación sobre la lista de misiones.
+- ¿Instalas tus addons manualmente? Instala y activa QuestieDB para Forever y luego reinicia WoW. Las demás funciones de QuestTogether siguen disponibles aunque no tengas QuestieDB.
+
 ## 10.1.0
 
 ¡QuestTogether a tu manera! Ahora puedes elegir cuánto acompañamiento quieres, ayudar a un pequeño aventurero a seguir al grupo y descubrir más funciones con opciones claras y nuevos consejos.

@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.1
+
+Forever에서 퀘스트 연계를 더 쉽게 이용할 수 있습니다!
+
+### 더 간편해진 퀘스트 연계 설정
+
+- Forever에서는 CurseForge 앱이 이제 QuestTogether와 함께 QuestieDB도 설치합니다. Retail과 Classic은 QuestieDB를 필수로 설치하지 않는 별도 파일을 사용합니다.
+- Forever에 QuestieDB가 없으면 파티 퀘스트 목록 위에 설치 안내가 표시됩니다.
+- 애드온을 직접 설치한다면 Forever용 QuestieDB를 설치하고 활성화한 뒤 WoW를 다시 시작하세요. QuestieDB 없이도 QuestTogether의 다른 기능은 계속 사용할 수 있습니다.
+
 ## 10.1.0
 
 나에게 맞는 QuestTogether로 모험하세요! 프리셋으로 필요한 도움을 고르고, 어린 동료가 파티를 따라가도록 돕고, 더 명확한 설정과 새로운 팁으로 기능을 알아보세요.

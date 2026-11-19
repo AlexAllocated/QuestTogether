@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.1
+
+Iniziare a usare le serie di missioni su Forever è ancora più semplice!
+
+### Configurazione delle serie di missioni
+
+- Su Forever, l’app CurseForge ora installa QuestieDB insieme a QuestTogether. I download per Retail e Classic hanno un file separato senza questa dipendenza.
+- Se manca QuestieDB su Forever, il Registro missioni del gruppo mostra un avviso ben visibile sopra l’elenco delle missioni con le indicazioni per installarlo.
+- Installi gli addon manualmente? Installa e attiva la versione Forever di QuestieDB, poi riavvia WoW. Le altre funzioni di QuestTogether restano disponibili anche senza QuestieDB.
+
 ## 10.1.0
 
 QuestTogether si adatta alla tua avventura! Scegli quanto aiuto vuoi vedere, accompagna i giocatori più giovani e scopri nuovi strumenti con configurazioni chiare e tanti consigli in più.

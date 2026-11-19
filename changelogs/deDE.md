@@ -2,6 +2,16 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.1
+
+Auf Forever gelingt der Einstieg in Questreihen jetzt leichter!
+
+### Questreihen leichter einrichten
+
+- Die CurseForge-App installiert auf Forever jetzt QuestieDB zusammen mit QuestTogether. Für Retail und Classic gibt es eine eigene Download-Datei ohne diese Abhängigkeit.
+- Fehlt QuestieDB auf Forever, erscheint im Gruppenquestlog nun ein gut sichtbarer Installationshinweis über der Questliste.
+- Wenn du Addons manuell installierst, lade die Forever-Version von QuestieDB herunter, aktiviere sie und starte WoW neu. Die übrigen Funktionen von QuestTogether kannst du auch ohne QuestieDB nutzen.
+
 ## 10.1.0
 
 QuestTogether passend zu deinem Abenteuer: Wähle eine Voreinstellung, lass jüngere Mitspieler dem Gruppenanführer folgen und entdecke mehr Möglichkeiten mit verständlicheren Einstellungen und neuen Tipps.
