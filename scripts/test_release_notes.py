@@ -207,7 +207,7 @@ class NotesTests(unittest.TestCase):
         wrapper.write_text("#!" + sys.executable + "\n" +
                            "import os, sys\n" +
                            "args = sys.argv[1:]\n" +
-                           "pos = 2 if args[:1] == ['-C'] else 0\n" +
+                           "pos = 2 if args[:1] == ['-C'] or args[:2] == ['-c','diff.autoRefreshIndex=false'] else 0\n" +
                            "cmd = args[pos] if len(args) > pos else ''\n" +
                            "allowed = cmd in {'rev-parse','show','cat-file','log','merge-base','diff','status','ls-files'}\n" +
                            "allowed = allowed or (cmd == 'tag' and any(x in args[pos+1:] for x in ['--list','--merged']))\n" +

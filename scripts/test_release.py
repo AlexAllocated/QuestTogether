@@ -236,12 +236,14 @@ class ReleaseTests(unittest.TestCase):
 
     def test_check_has_no_files_refs_credentials_or_network_side_effects(self):
         self.write_notes("1.2.3", "Compare eligible quests with a selected player.")
+        os.utime(self.root / "Core.lua", (1, 1))  # Force stale stat metadata without changing content.
         before = {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
         with patch.dict(os.environ, {"GH_TOKEN": "", "DISCORD_BOT_TOKEN": ""}):
             result, message = self.invoke("--bump", "patch", "--check")
         self.assertEqual(result, 0, message)
         after = {p.relative_to(self.root): p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
-        self.assertEqual(before, after)
+        changed = [str(path) for path in before.keys() | after.keys() if before.get(path) != after.get(path)]
+        self.assertEqual(changed, [])
         self.assertEqual(self.stages(), [])
         self.assertEqual(self.api_calls, [])
 

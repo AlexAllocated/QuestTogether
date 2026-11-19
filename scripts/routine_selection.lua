@@ -17,11 +17,12 @@ return function(cases, index, count)
 		if stress[case.name] then
 			assert(case.offline == true, "a stress selection must not remove a live regression")
 			found = found + 1
-			selected[case] = false
+			selected[case.name] = { fn = case.fn, include = false }
 		else
 			total = total + 1
-			selected[case] = (total - 1) % count + 1 == index
-			if selected[case] then expected = expected + 1 end
+			local include = (total - 1) % count + 1 == index
+			selected[case.name] = { fn = case.fn, include = include }
+			if include then expected = expected + 1 end
 		end
 	end
 	assert(found == 3, "update routine coverage when a stress scenario changes")
@@ -29,6 +30,9 @@ return function(cases, index, count)
 	return function(case)
 		-- Nested runner fixtures own a different registry. Their existing live/
 		-- offline filter must run unchanged instead of inheriting this partition.
-		return selected[case] ~= false
+		-- libchev snapshots descriptors before selection; table identity changes.
+		local entry = selected[case.name]
+		if entry and entry.fn == case.fn then return entry.include end
+		return true
 	end, expected, total, index, count
 end

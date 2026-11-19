@@ -93,13 +93,18 @@ import sys
 allowed = {os.fsencode(path) for path in sys.argv[1:]}
 changed = set()
 for arguments in (
-    ["diff", "--name-only", "--no-renames", "--no-ext-diff", "--ignore-submodules=none", "-z"],
-    ["diff", "--cached", "--name-only", "--no-renames", "--no-ext-diff", "--ignore-submodules=none", "-z"],
+    ["diff", "--numstat", "--no-renames", "--no-ext-diff", "--ignore-submodules=none", "-z"],
+    ["diff", "--cached", "--numstat", "--no-renames", "--no-ext-diff", "--ignore-submodules=none", "-z"],
     ["ls-files", "--others", "--exclude-standard", "-z"],
 ):
-    result = subprocess.run(["git", *arguments], stdout=subprocess.PIPE, check=True,
+    # git diff may refresh cached stat data even with optional locks disabled.
+    # A preflight must leave the index bytes unchanged as well as the worktree.
+    # numstat checks contents instead of reporting unchanged files with stale
+    # stat metadata. With renames disabled each NUL record has two count fields.
+    result = subprocess.run(["git", "-c", "diff.autoRefreshIndex=false", *arguments], stdout=subprocess.PIPE, check=True,
                             env={**os.environ, "GIT_OPTIONAL_LOCKS": "0"})
-    changed.update(path for path in result.stdout.split(b"\0") if path)
+    for record in filter(None, result.stdout.split(b"\0")):
+        changed.add(record.split(b"\t", 2)[2] if arguments[0] == "diff" else record)
 unexpected = changed - allowed
 if unexpected:
     print("Error: non-release changes must be committed before releasing:", file=sys.stderr)
