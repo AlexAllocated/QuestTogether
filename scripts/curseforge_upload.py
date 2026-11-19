@@ -124,11 +124,13 @@ def metadata(file, tag, changelog, versions):
         if len(matches) != 1 or type(matches[0]) is not int:
             raise UploadError("CurseForge has no unique game version for interface " + interface)
         ids.append(matches[0])
-    return {"displayName": "QuestTogether " + tag[1:] + " (" + LABELS[file["flavor"]] + ")",
+    values = {"displayName": "QuestTogether " + tag[1:] + " (" + LABELS[file["flavor"]] + ")",
             "changelog": changelog, "changelogType": "markdown", "gameVersions": ids,
-            "releaseType": "beta" if "-beta." in tag else "alpha" if "-alpha." in tag else "release",
-            "relations": {"projects": ([{"slug": "questiedb", "projectID": 1696795,
-                                         "type": "requiredDependency"}] if file["flavor"] == "forever" else [])}}
+            "releaseType": "beta" if "-beta." in tag else "alpha" if "-alpha." in tag else "release"}
+    if file["flavor"] == "forever":
+        values["relations"] = {"projects": [{"slug": "questiedb", "projectID": 1696795,
+                                            "type": "requiredDependency"}]}
+    return values
 
 
 def save(path, value):

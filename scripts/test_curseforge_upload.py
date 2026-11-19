@@ -47,7 +47,7 @@ class UploadTests(unittest.TestCase):
         self.assertEqual(first['gameVersions'], [10])
         self.assertEqual(second['gameVersions'], [20])
         self.assertEqual(first['relations']['projects'], [{'slug':'questiedb', 'projectID':1696795, 'type':'requiredDependency'}])
-        self.assertEqual(second['relations']['projects'], [])
+        self.assertNotIn('relations', second)
         self.publish()
         self.assertEqual(len(self.submitted), 2)
 
