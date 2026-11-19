@@ -42,6 +42,7 @@ class PlanTests(unittest.TestCase):
             self.assertIn([lua, "scripts/test.lua", ".", "normal", client], commands)
         self.assertEqual({job[2]["QT_TEST_LOCALE"] for job in jobs if "QT_TEST_LOCALE" in job[2]}, set(validation.LOCALES))
         self.assertFalse(any("lua5.2" in part for command in commands for part in command))
+        self.assertFalse(any("QT_TEST_BATCH_INDEX" in job[2] for job in jobs))
         self.assertEqual(len([j for j in jobs if j[1] == [lua, "-"]]), 1)
 
     def test_routine_keeps_runtime_security_clients_and_actual_package(self):
@@ -49,6 +50,9 @@ class PlanTests(unittest.TestCase):
         with patch.object(validation, "run_jobs") as execute, patch.object(validation, "run") as run:
             validation.validate(self.root, self.tools, {}, scope)
         commands = [job[1] for job in execute.call_args.args[1]]
+        batches = [job for job in execute.call_args.args[1] if "QT_TEST_BATCH_INDEX" in job[2]]
+        self.assertEqual([job[2]["QT_TEST_BATCH_INDEX"] for job in batches], ["1", "2", "3"])
+        self.assertTrue(all(job[2]["QT_TEST_BATCH_COUNT"] == "3" for job in batches))
         self.assertIn([self.tools["lua5.1"], "scripts/test.lua", ".", "routine"], commands)
         self.assertIn([self.tools["lua5.1"], "scripts/test.lua", ".", "live"], commands)
         for script in ("test_developer_crypto.py", "bindings_smoke.py", "check_release_notes.py", "localization.py", "changelogs.py"):
@@ -57,6 +61,17 @@ class PlanTests(unittest.TestCase):
         self.assertTrue(any("services/vip" in command for command in commands))
         self.assertIn("scripts/package.py", run.call_args.args[0])
         self.assertIn("--ref", run.call_args.args[0])
+
+    def test_inherited_batch_options_cannot_reduce_coverage(self):
+        env = {"QT_TEST_BATCH_INDEX": "1", "QT_TEST_BATCH_COUNT": "99"}
+        for scope in (validation.FULL_SCOPE, {"stress": False, "tools": False}):
+            jobs = validation.validation_jobs(self.root, self.tools, env, scope)
+            for _, command, environment, _ in jobs:
+                if command[-1] == "routine":
+                    self.assertEqual(environment["QT_TEST_BATCH_COUNT"], "3")
+                else:
+                    self.assertNotIn("QT_TEST_BATCH_INDEX", environment)
+                    self.assertNotIn("QT_TEST_BATCH_COUNT", environment)
 
     def test_failed_job_prevents_package_and_preserves_error_log(self):
         def fail(command, **kwargs):

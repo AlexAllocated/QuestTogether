@@ -27,17 +27,8 @@ def validate_entry(entry):
     return source['version']
 
 
-def approved_english(root, version):
-    """Use committed editorial history when it corrects an immutable tag's prose.
-
-    Implementation evidence still comes from the release tag. Only already
-    committed English corrections are authoritative; a dirty history entry or
-    a draft for the current release must not authorize itself.
-    """
-    version_key(version)
-    ref = 'refs/tags/v' + version
-    if toc_version(git(root, 'show', ref + ':QuestTogether.toc').stdout) != version:
-        raise NotesError('changelog tag version mismatch')
+def committed_english(root):
+    """Read and validate both committed archives once per revision check."""
     approved = {}
     for path in (HISTORY, LEGACY):
         result = git(root, 'show', 'HEAD:' + path, allow_failure=True)
@@ -55,12 +46,31 @@ def approved_english(root, version):
             if archived_version in approved:
                 raise NotesError('duplicate committed changelog version: ' + archived_version)
             approved[archived_version] = entry['enUS']
+    return approved
+
+
+def _approved_english(root, version, approved):
+    version_key(version)
+    ref = 'refs/tags/v' + version
+    if toc_version(git(root, 'show', ref + ':QuestTogether.toc').stdout) != version:
+        raise NotesError('changelog tag version mismatch')
     if version in approved:
         return approved[version]
     published = parse_notes(git(root, 'show', ref + ':release_notes.json').stdout)
     if published['version'] != version:
         raise NotesError('changelog tag version mismatch')
     return published
+
+
+def approved_english(root, version):
+    """Use committed editorial history when it corrects an immutable tag's prose.
+
+    Implementation evidence still comes from the release tag. Only already
+    committed English corrections are authoritative; a dirty history entry or
+    a draft for the current release must not authorize itself. No cache survives
+    this call, so a later commit or another checkout is read afresh.
+    """
+    return _approved_english(root, version, committed_english(root))
 
 
 def localized_revisions(root):
@@ -71,11 +81,12 @@ def localized_revisions(root):
     if not isinstance(data, dict) or set(data) != {'schema', 'releases'} or data['schema'] != 1 or not isinstance(data['releases'], list):
         raise NotesError('invalid localized revision schema')
     revised = {}
+    approved = committed_english(root) if data['releases'] else {}
     for entry in data['releases']:
         version = validate_entry(entry)
         if version in revised or set(entry) != {'enUS', *LOCALES}:
             raise NotesError('duplicate or incomplete localized revision: ' + version)
-        source = approved_english(root, version)
+        source = _approved_english(root, version, approved)
         if entry['enUS'] != source:
             raise NotesError('localized revision changes published English notes or their committed editorial correction: ' + version)
         revised[version] = entry

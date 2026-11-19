@@ -212,32 +212,28 @@ for _, case in ipairs(QuestTogether.tests) do
 	end
 end
 assert(presentationCases > 0, "client-locale presentation coverage must be registered")
+local routineExpected
 if mode == "routine" then
 	-- Only these three measured load scenarios are conditional. In particular,
 	-- offline-only security, protocol and numeric regressions still run.
-	local stress = {
-		["mesh public discovery covers a population beyond direct neighbors with authenticated relays"] = true,
-		["network v3 completes party logs and a diagnostic report while movement remains active"] = true,
-		["mesh two hundred simultaneous clients retain bounded progressive discovery"] = true,
-	}
-	local found = 0
-	for _, case in ipairs(QuestTogether.tests) do
-		if stress[case.name] then
-			assert(case.offline == true, "a stress selection must not remove a live regression")
-			found = found + 1
-		end
-	end
-	assert(found == 3, "update routine coverage when a stress scenario changes")
+	local selectRoutine = assert(loadfile(addonRoot .. "/scripts/routine_selection.lua"))()
+	local selected, expected, total, index, count = selectRoutine(QuestTogether.tests,
+		os.getenv("QT_TEST_BATCH_INDEX"), os.getenv("QT_TEST_BATCH_COUNT"))
+	routineExpected = expected
 	local getOptions = QuestTogether.GetDebugTestOptions
 	function QuestTogether:GetDebugTestOptions(present)
 		local options = getOptions(self, present)
 		local include = options.include
 		options.include = function(case)
-			return not stress[case.name] and (not include or include(case))
+			return selected(case) and (not include or include(case))
 		end
 		return options
 	end
 	print("Routine coverage: three network load scenarios deferred; all other regressions retained.")
+	print(string.format("Routine batch %d/%d: %d of %d retained cases", index, count, expected, total))
+else
+	assert(not os.getenv("QT_TEST_BATCH_INDEX") and not os.getenv("QT_TEST_BATCH_COUNT"),
+		"only routine mode can select a batch")
 end
 if mode == "locale" then
 	-- Domain fixtures deliberately run in English. Repeating those for every
@@ -414,6 +410,10 @@ else
 	success, passed, failed, result = QuestTogether:RunTests(mode == "reverse", false)
 end
 assert(result, "Shared debug controller did not return a test result")
+if routineExpected then
+	assert(result.total == routineExpected and result.completed == routineExpected,
+		"routine batch must execute every assigned case")
+end
 if mode == "locale" then
 	assert(
 		result.total == presentationCases and result.completed == presentationCases,

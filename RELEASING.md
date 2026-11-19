@@ -381,11 +381,21 @@ The validator compares the exact candidate against the highest earlier reachable
 release tag, excluding tags at the candidate commit. Release tags must remain
 immutable and follow the validated publishing flow. Known presentation, media,
 localization and documentation changes use the routine path. It runs Lua 5.1
-regressions in normal order, simulated live execution, all locales and client
+regressions in three deterministic batches, simulated live execution, all locales and client
 profiles, native control checks, crypto interoperability and syntax checks.
 Only three named load scenarios are deferred: the 200-player discovery test,
 the 20-player relayed-discovery soak and the long mixed party/diagnostics load.
 Other offline-only regressions, including security and protocol tests, remain.
+Every retained case runs exactly once across the three batches, in its original
+relative order within the batch. Each process has its own fixtures; the runner
+checks assigned and completed counts. The simulated-live suite stays intact.
+Full validation still runs the entire unpartitioned normal and reverse suites,
+including cross-batch order dependencies. To reproduce routine coverage in one
+process, run `lua5.1 scripts/test.lua . routine` without batch environment variables.
+
+Release-history checks validate each committed archive once per invocation and
+reuse that parsed data for all revised releases. Each release tag is still
+checked; no cached result survives the invocation or substitutes for file checks.
 
 Core, communications, authentication, manifest or Lua test-harness changes, and
 unrecognized paths, select the stress scenarios and reverse-order runs as well.

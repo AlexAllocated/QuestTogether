@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 sys.dont_write_bytecode = True
@@ -48,6 +49,36 @@ class ChangelogFixture:
 
 
 class ChangelogTests(ChangelogFixture, unittest.TestCase):
+    def test_revision_check_reads_committed_archives_once_and_refreshes_after_commit(self):
+        entries = []
+        self.git('init', '-q')
+        for version in ('1.0.0', '1.0.1'):
+            notes = copy.deepcopy(self.notes)
+            notes['version'] = version
+            entries.append({locale: copy.deepcopy(notes) for locale in c.TITLES})
+            self.write_source(notes)
+            (self.root / 'QuestTogether.toc').write_text('## Version: ' + version + '\nCore.lua\n')
+            self.git('add', '.'); self.git('commit', '-qm', version); self.git('tag', 'v' + version)
+        history = self.root / c.HISTORY
+        revisions = self.root / c.REVISIONS
+        history.write_text(dumps({'schema': 1, 'releases': entries}))
+        revisions.write_text(dumps({'schema': 1, 'releases': entries}))
+        self.git('add', '.'); self.git('commit', '-qm', 'Approved archives')
+        with patch.object(c, 'git', wraps=c.git) as git, patch.object(c, 'validate_entry', wraps=c.validate_entry) as validate:
+            self.assertEqual(set(c.localized_revisions(self.root)), {'1.0.0', '1.0.1'})
+        for filename in (c.HISTORY, c.LEGACY):
+            self.assertEqual(sum(call.args[1:] == ('show', 'HEAD:' + filename) for call in git.call_args_list), 1)
+        self.assertEqual(validate.call_count, 4)  # Two committed entries and two revisions.
+        corrected = copy.deepcopy(entries)
+        corrected[0]['enUS']['welcome'] = 'Committed correction.'
+        history.write_text(dumps({'schema': 1, 'releases': corrected}))
+        # Uncommitted corrections cannot authorize themselves.
+        self.assertEqual(c.localized_revisions(self.root)['1.0.0']['enUS'], entries[0]['enUS'])
+        self.git('add', '.'); self.git('commit', '-qm', 'New approved correction')
+        with self.assertRaisesRegex(ValueError, 'changes published English'):
+            c.localized_revisions(self.root)
+        self.assertEqual(c.approved_english(self.root, '1.0.0'), corrected[0]['enUS'])
+
     def test_tip_uses_same_plain_sample_in_markdown_github_and_discord(self):
         from check_release_notes import format_tip
         from generate_release_notes import markdown as github_markdown

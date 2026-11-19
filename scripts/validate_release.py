@@ -38,7 +38,7 @@ PYTHON_CHECKS = (
 )
 LOCALES = ("enGB", "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW")
 CLIENTS = ("retail", "forever", "era", "tbc", "mists", "titan")
-LUA_CHECKS = ("test.lua", "test_loader.lua", "regression_gamepad_adapter.lua",
+LUA_CHECKS = ("test.lua", "test_routine_selection.lua", "test_loader.lua", "regression_gamepad_adapter.lua",
               "regression_gamepad_launcher.lua", "regression_party_map_native.lua", "settings_smoke.lua")
 PRESENTATION = {
     "Options.lua", "PresetWindow.lua", "ReleaseNotesWindow.lua", "Hints.lua",
@@ -201,12 +201,18 @@ def run_jobs(snapshot, jobs):
 
 def validation_jobs(snapshot, tools, env, scope):
     python, lua = tools["python"], tools["lua5.1"]
-    lua_env = dict(env, QT_TEST_LUA=lua)
+    lua_env = {key: value for key, value in env.items() if key not in ("QT_TEST_BATCH_INDEX", "QT_TEST_BATCH_COUNT")}
+    lua_env["QT_TEST_LUA"] = lua
     jobs = []
     def add(label, command, environment=lua_env, source=None):
         jobs.append((label, command, environment, source))
-    modes = ("normal", "reverse", "live", "live-reverse") if scope["stress"] else ("routine", "live")
-    # Start the longest tasks first; complete order checks are never sharded.
+    modes = ("normal", "reverse", "live", "live-reverse") if scope["stress"] else ("live",)
+    if not scope["stress"]:
+        for index in range(1, 4):
+            add("Lua 5.1 routine batch " + str(index) + "/3", [lua, "scripts/test.lua", ".", "routine"],
+                dict(lua_env, QT_TEST_REQUIRE_NATIVE_BIT="1", QT_TEST_TIMINGS="1",
+                     QT_TEST_BATCH_INDEX=str(index), QT_TEST_BATCH_COUNT="3"))
+    # Full order checks and the simulated-live run remain whole processes.
     for mode in modes:
         add("Lua 5.1 " + mode, [lua, "scripts/test.lua", ".", mode],
             dict(lua_env, QT_TEST_REQUIRE_NATIVE_BIT="1", QT_TEST_TIMINGS="1"))
@@ -270,6 +276,7 @@ def main(argv=None):
         env = {key: value for key, value in os.environ.items()
                if not key.startswith("GIT_") and key not in (
                    "QT_TEST_LOCALE", "QT_TEST_LUA", "QT_TEST_TIMINGS", "QT_TEST_REQUIRE_NATIVE_BIT",
+                   "QT_TEST_BATCH_INDEX", "QT_TEST_BATCH_COUNT",
                    "DISCORD_BOT_TOKEN", "GH_TOKEN", "GITHUB_TOKEN")}
         env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull, PYTHONDONTWRITEBYTECODE="1")
         git_tool = executable("git", "Git")
