@@ -231,7 +231,10 @@ if mode == "routine" then
 	local getOptions = QuestTogether.GetDebugTestOptions
 	function QuestTogether:GetDebugTestOptions(present)
 		local options = getOptions(self, present)
-		options.include = function(case) return not stress[case.name] end
+		local include = options.include
+		options.include = function(case)
+			return not stress[case.name] and (not include or include(case))
+		end
 		return options
 	end
 	print("Routine coverage: three network load scenarios deferred; all other regressions retained.")
