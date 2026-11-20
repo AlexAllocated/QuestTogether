@@ -108,6 +108,7 @@ function QT:SuspendAutoThanks()
 	end
 end
 function QT:PLAYER_REGEN_DISABLED()
+	self:DismissManagedWindowsForCombat()
 	self:SuspendAutoThanks()
 end
 function QT:InitializeAutoThanks()

@@ -200,7 +200,11 @@ function QT:RegisterManagedWindow(frame, key, minWidth, minHeight, defaultPositi
 		frame:EnableKeyboard(true)
 		frame:SetPropagateKeyboardInput(true)
 		frame:SetScript("OnKeyDown", function(_, keyPressed)
-			if self:IsWorkBlocked("foreign_frame_mutation") or not self.LibChev.CanMutateOwnedRegion(frame) then
+			if not self.LibChev.CanMutateOwnedRegion(frame) then return end
+			if self:IsWorkBlocked("foreign_frame_mutation") then
+				-- Closing owned presentation remains possible without changing a
+				-- protected keyboard-propagation attribute or invoking row actions.
+				if keyPressed == "ESCAPE" then self:DismissManagedWindow(frame, "escape") end
 				return
 			end
 			frame:SetPropagateKeyboardInput(true)

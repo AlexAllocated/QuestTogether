@@ -399,7 +399,10 @@ function QuestTogether:FlushDeferredWork(reason)
 	return self.isEnabled == true
 end
 
-function QuestTogether:ADDON_RESTRICTION_STATE_CHANGED()
+function QuestTogether:ADDON_RESTRICTION_STATE_CHANGED(_, kind, newState)
+	if self:IsCombatWindowCloseEvent("ADDON_RESTRICTION_STATE_CHANGED", kind, newState) then
+		self:DismissManagedWindowsForCombat()
+	end
 	self:SuspendAutoThanks()
 	-- RestrictedActionsDocumentation sequences this event before activation
 	-- and after deactivation. Retire the hover while native object permissions

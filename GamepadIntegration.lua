@@ -148,6 +148,54 @@ local function Restricted()
 			and C_RestrictedActions.IsAddOnRestrictionActive(Enum.AddOnRestrictionType.Combat)
 		)
 end
+-- Dismissal only removes existing owned presentation. Ordinary combat lockdown
+-- does not itself forbid the native wrapper, but an active addon restriction
+-- does. Never use this narrower policy for registration or quest actions.
+local function DismissRestricted()
+	if not Methods(C_RestrictedActions, { "IsAddOnRestrictionActive" })
+		or not Enum or not Enum.AddOnRestrictionType then return true end
+	local ok, active = pcall(C_RestrictedActions.IsAddOnRestrictionActive, Enum.AddOnRestrictionType.Combat)
+	if not ok or not Accessible(active) or active ~= false then return true end
+	if type(QT.IsRuntimeRestrictionTypeActive) ~= "function" then return true end
+	for kind in pairs(QT.runtimeRestrictionTypes or { combat = true, encounter = true, challenge = true, pvp = true, map = true }) do
+		if QT:IsRuntimeRestrictionTypeActive(kind) then
+			-- Activating is the documented pre-enforcement event window. Only
+			-- teardown may use it; ordinary actions still treat it as blocked.
+			local states = Enum.AddOnRestrictionState
+			if kind ~= "combat" or not states or states.Activating == nil
+				or not Methods(C_RestrictedActions, { "GetAddOnRestrictionState" }) then return true end
+			local read, phase = pcall(C_RestrictedActions.GetAddOnRestrictionState, Enum.AddOnRestrictionType.Combat)
+			if not read or not Accessible(phase) or phase ~= states.Activating then return true end
+		end
+	end
+	return false
+end
+-- Keep only the latest combat close attempt, including after combat recovery.
+-- This is local scalar state: no player identities, quest data or frame refs.
+local function DiagnosticBool(fn, ...)
+	if type(fn) ~= "function" then return "unknown" end
+	local ok, value = pcall(fn, ...)
+	if ok and Accessible(value) and type(value) == "boolean" then return value end
+	return "unknown"
+end
+local function RememberCombatClose(record, source)
+	if DiagnosticBool(Restricted) == false then return end
+	local snapshot = {
+		role = record.role, source = source, outcome = "requested",
+		lockdown = DiagnosticBool(InCombatLockdown),
+		runtimeRestricted = DiagnosticBool(QT.IsRuntimeRestricted, QT),
+		dismissalRestricted = DiagnosticBool(DismissRestricted),
+		registered = record.registered == true, retiring = record.retiring == true,
+		failed = state.failed == true,
+	}
+	local api, kinds = C_RestrictedActions, Enum and Enum.AddOnRestrictionType
+	snapshot.nativeCombat = DiagnosticBool(api and api.IsAddOnRestrictionActive, kinds and kinds.Combat)
+	for _, kind in ipairs({ "combat", "encounter", "challenge", "pvp", "map" }) do
+		snapshot[kind] = DiagnosticBool(QT.IsRuntimeRestrictionTypeActive, QT, kind)
+	end
+	state.lastCombatClose = snapshot
+	return snapshot
+end
 local function Owned(frame)
 	return frame and QT.LibChev.CanMutateOwnedRegion(frame)
 end
@@ -188,7 +236,8 @@ local function Fail(reason)
 	end
 end
 local function Native(method, target, ...)
-	if state.failed or Restricted() then
+	local blocked = method == "FrameHidden" and DismissRestricted() or method ~= "FrameHidden" and Restricted()
+	if state.failed or blocked then
 		return false
 	end
 	if not AuthoredGeneration() then
@@ -466,7 +515,7 @@ local function Retained(record)
 	return false
 end
 local function Detach(record)
-	if state.failed or Restricted() or not Owned(record.frame) or not AncestorsVisible(record) then
+	if state.failed or DismissRestricted() or not Owned(record.frame) or not AncestorsVisible(record) then
 		return false
 	end
 	if record.modeReset and not ResetComplete() then
@@ -493,7 +542,7 @@ local function Detach(record)
 		record.attempted, record.registered = false, false
 	end
 	-- Recheck after every native callback: it can hide UIParent synchronously.
-	if state.failed or Restricted() or not AncestorsVisible(record) then
+	if state.failed or DismissRestricted() or not AncestorsVisible(record) then
 		return false
 	end
 	if not FooterHide(record) or not AncestorsVisible(record) or Retained(record) then
@@ -547,7 +596,7 @@ Retire = function(record, hide, complete)
 	return true
 end
 Reconcile = function()
-	if state.reconciling or state.failed or Restricted() or not Capable() or not Visible() then
+	if state.reconciling or state.failed or DismissRestricted() or not Capable() or not Visible() then
 		return
 	end
 	state.reconciling = true
@@ -564,7 +613,7 @@ Reconcile = function()
 				break
 			end
 		end
-		if state.worldReady and not state.failed and QT.TryInstallDefaultGamepadLauncher
+		if not Restricted() and state.worldReady and not state.failed and QT.TryInstallDefaultGamepadLauncher
 			and QT:IsDefaultGamepadLauncherPending() then
 			QT:TryInstallDefaultGamepadLauncher()
 		end
@@ -620,7 +669,23 @@ local function InstallOwnedHooks(record)
 		return record.hide(region)
 	end
 	frame.SmartNavigationCloseHandler = function()
+		local closeSnapshot = RememberCombatClose(record, "back")
+		if closeSnapshot then closeSnapshot.outcome = "not_current" end
 		if state.failed or record.retiring then
+			if closeSnapshot then closeSnapshot.outcome = state.failed and "failed" or "already_pending" end
+			return true
+		end
+		if Restricted() then
+			-- Back remains dismissal-only in combat. Read native focus directly;
+			-- the normal action predicate deliberately rejects combat. The hide
+			-- path queues cleanup if the client currently forbids detachment.
+			if Capable() and record.registered and Owned(frame) and frame:IsVisible() then
+				local focused, managed, active = Manager().isUIFocused, Manager():GetActiveFrame(), SmartNavigation:GetActiveFrame()
+				if Accessible(focused) and focused == true and Accessible(managed) and managed == frame
+					and Accessible(active) and active == frame then
+					QT:DismissManagedWindow(frame, "gamepad_back")
+				end
+			end
 			return true
 		end
 		if not QT:IsGamepadActionCurrent(frame) then
@@ -997,11 +1062,16 @@ function QT:HideGamepadWindow(frame, complete)
 	if not record or not (record.attempted or record.retiring or (state.failed and record.hadNative)) then
 		return false
 	end
+	local closeSnapshot = RememberCombatClose(record, "hide")
 	if state.failed then
+		if closeSnapshot then closeSnapshot.outcome = "failed" end
 		return true, false
 	end
 	Retire(record, true, complete)
 	Reconcile()
+	if closeSnapshot then
+		closeSnapshot.outcome = state.failed and "failed" or record.retiring and "deferred" or "closed"
+	end
 	return true, not record.retiring
 end
 
@@ -1055,6 +1125,17 @@ local function RetireAll(reason)
 		Retire(record, true)
 	end
 	Notify()
+end
+function QT:DismissGamepadWindowsForCombat()
+	if self ~= QT or rawget(QT, "isRunningTests") == true then return end
+	local pending = {}
+	for index = #state.order, 1, -1 do pending[#pending + 1] = state.order[index] end
+	for _, record in ipairs(pending) do
+		if Owned(record.frame) and record.frame:IsShown() then
+			self:DismissManagedWindow(record.frame, "combat")
+		end
+	end
+	Reconcile()
 end
 local function Attach()
 	if state.attached or state.failed or Restricted() or not Capable() then
@@ -1154,7 +1235,10 @@ function QT:InitializeGamepadIntegration()
 				listener:RegisterEvent(event)
 			end
 		end
-		listener:SetScript("OnEvent", function(_, event, source)
+		listener:SetScript("OnEvent", function(_, event, source, restrictionState)
+			if QT:IsCombatWindowCloseEvent(event, source, restrictionState) then
+				QT:DismissManagedWindowsForCombat()
+			end
 			if event == "PLAYER_LEAVING_WORLD" then state.worldReady = false; return end
 			if event == "PLAYER_ENTERING_WORLD" then state.worldReady = true end
 			if event == "CURSOR_CHANGED" or event == "UPDATE_MACROS" or event == "ACTIONBAR_SLOT_CHANGED" then
@@ -1205,12 +1289,13 @@ function QT:GetGamepadIntegrationStatus()
 		return false
 	end
 	local available = Capable() and true or false
-	return {
+	local result = {
 		available = available,
 		clientVersion = state.clientVersion or "unknown",
 		clientBuild = state.clientBuild or "unknown",
 		supportedClient = SupportedClient() == true,
 		unavailableReason = available and "none" or state.unavailableReason or "native_missing_functions",
+		dismissalRestricted = DismissRestricted(),
 		worldReady = state.worldReady == true,
 		enabled = state.enabled,
 		failed = state.failed == true,
@@ -1218,4 +1303,8 @@ function QT:GetGamepadIntegrationStatus()
 		failure = state.failure,
 		registered = #state.order,
 	}
+	for key, value in pairs(state.lastCombatClose or {}) do
+		result["lastCombatClose." .. key] = value
+	end
+	return result
 end

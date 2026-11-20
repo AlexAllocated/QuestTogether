@@ -819,4 +819,50 @@ QT:RegisterTest("temporary native Edit Mode settings visits preserve the bubble 
 	assert(a.options.chatBubbleSize == 160)
 end)
 
+
+QT:RegisterTest("combat start dismisses owned managed windows once and preserves hidden and foreign frames", function()
+	local a, _, root = Fixture()
+	local first, hidden, foreign = QT:CreateTestUIRegion(a, root), QT:CreateTestUIRegion(a, root), QT:CreateTestUIRegion(a, root)
+	local dismissals = 0
+	for _, frame in ipairs({ first, hidden, foreign }) do
+		a:ConfigureWindowController(frame, { dismiss = function(reason)
+			assert(reason == "combat"); dismissals = dismissals + 1
+		end })
+	end
+	-- A hidden window is not a new user dismissal.
+	hidden.shown = false
+	foreign.forbidden = true
+	a.blocked = true
+	a:PLAYER_REGEN_DISABLED()
+	assert(not first:IsShown() and foreign.shown and dismissals == 1)
+	a:PLAYER_REGEN_DISABLED()
+	assert(dismissals == 1 and a.closingWindowsForCombat == nil)
+	local welcome = Fixture()
+	welcome.hasLoggedIn = true
+	welcome.db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = { welcomeSetupComplete = false } }
+	welcome.GetOption = QT.GetOption
+	function welcome:ApplySettingsTransaction() error("Combat must not choose a preset") end
+	function welcome:RefreshOptionsWindow() end
+	assert(welcome:OpenPresetWindow())
+	welcome.blocked = true
+	welcome:PLAYER_REGEN_DISABLED()
+	assert(not welcome.presetWindow:IsShown() and welcome:IsWelcomeSetupPending())
+	assert(not welcome.presetWindow.finishDefault, "Combat queued automatic preset selection")
+end)
+
+QT:RegisterTest("restriction event routes native payload before ordinary deferred work", function()
+	local a, _, root = Fixture()
+	local events = {}
+	function a:IsCombatWindowCloseEvent(event, kind, phase)
+		assert(event == "ADDON_RESTRICTION_STATE_CHANGED" and kind == "combatType" and phase == "activatingState")
+		return true
+	end
+	function a:DismissManagedWindowsForCombat() events[#events + 1] = "close" end
+	function a:SuspendAutoThanks() events[#events + 1] = "thanks" end
+	function a:HideLocationTargetButton() events[#events + 1] = "target" end
+	function a:FlushDeferredWork() events[#events + 1] = "flush" end
+	a:ADDON_RESTRICTION_STATE_CHANGED("ADDON_RESTRICTION_STATE_CHANGED", "combatType", "activatingState")
+	assert(table.concat(events, ",") == "close,thanks,target,flush")
+end)
+
 _G.QuestTogether:RecordTestModule("scripts/regression_ui_runtime.lua")

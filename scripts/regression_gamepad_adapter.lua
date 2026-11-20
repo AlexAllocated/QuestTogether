@@ -29,7 +29,7 @@ local function newHarness(options)
 	local function noop() end
 	env.print = noop
 	local function call(name, frame)
-		assert(not h.combat, "Native write during combat: " .. name)
+		assert(not h.combat or options.ordinaryCombat or h.activating, "Native write during restricted combat: " .. name)
 		h.calls[#h.calls + 1] = name
 		h.callFrames[#h.callFrames + 1] = frame or false
 	end
@@ -263,10 +263,13 @@ local function newHarness(options)
 	env.GetBuildInfo = function()
 		return options.version or "1.60.1", options.build or "70888"
 	end
-	env.Enum = { AddOnRestrictionType = { Combat = 1 } }
+	env.Enum = { AddOnRestrictionType = { Combat = 1, Encounter = 2 }, AddOnRestrictionState = { Inactive = 0, Activating = 1, Active = 2 } }
 	env.C_RestrictedActions = {
 		IsAddOnRestrictionActive = function()
-			return h.combat
+			return h.combat and not options.ordinaryCombat and not h.activating
+		end,
+		GetAddOnRestrictionState = function()
+			return h.activating and 1 or h.combat and not options.ordinaryCombat and 2 or 0
 		end,
 	}
 	env.C_EventUtils = {
@@ -516,6 +519,7 @@ local function newHarness(options)
 	})
 	env.QuestTogether = {
 		LibChev = {
+			CanAccess = function() return true end,
 			CanMutateOwnedRegion = function(frame)
 				return frame and frame.owned ~= false
 			end,
@@ -525,6 +529,9 @@ local function newHarness(options)
 		},
 		IsRuntimeRestricted = function()
 			return h.combat
+		end,
+		IsRuntimeRestrictionTypeActive = function(_, kind)
+			return kind == "combat" and h.combat and not options.ordinaryCombat or h.otherRestriction == kind
 		end,
 		GetOption = function()
 			return options.savedEnabled
@@ -1336,3 +1343,173 @@ do
 	print("PASS: welcome uses one automatic native owner and Back releases its input")
 end
 print("OFFLINE ONLY: no WoW taint, protected API, physical input, cursor geometry or production live proof")
+
+-- Ordinary lockdown and the native addon restriction are different policies.
+for _, closePath in ipairs({ "mouse", "back", "hide" }) do
+	local h = newHarness({ ordinaryCombat = true })
+	local root = panel(h, "CombatDismiss")
+	local policyCloses, completions = 0, 0
+	h.qt:ConfigureGamepadWindow(root, { role = "compare", close = function() policyCloses = policyCloses + 1 end })
+	h.qt:ConfigureWindowController(root, { dismiss = function() completions = completions + 1 end })
+	present(h, root)
+	h.combat = true
+	assert(not h.qt:IsGamepadActionCurrent(root), "Combat enabled ordinary quest actions")
+	local writes = #h.calls
+	assert(not h.qt:PresentGamepadWindow(root, "user"), "Combat allowed registration")
+	assert(not h.qt:RefreshGamepadNavigation(root), "Combat allowed navigation mutation")
+	assert(#h.calls == writes)
+	if closePath == "back" then root:SmartNavigationCloseHandler()
+	elseif closePath == "hide" then root:Hide()
+	else h.qt:DismissManagedWindow(root) end
+	h:flushAll()
+	assert(not root:IsShown() and not h.nav.bindingActive and not h.manager.active)
+	assert(completions == 1 and policyCloses == 0, "Combat dismissal invoked a row/chain action")
+	assert(not h.qt:GetGamepadIntegrationStatus().failed)
+	h.combat = false; h:event("PLAYER_REGEN_ENABLED"); h:flushAll()
+	assert(not root:IsShown() and completions == 1, "Dismissed window returned after combat")
+end
+print("PASS: ordinary combat allows mouse, Back and Hide dismissal without enabling quest actions")
+do
+	local h = newHarness({ ordinaryCombat = true })
+	local root = panel(h, "RestrictedDismiss")
+	present(h, root)
+	h.combat, h.otherRestriction = true, "encounter"
+	local writes = #h.calls
+	h.qt:DismissManagedWindow(root); h:flushAll()
+	assert(root:IsShown() and #h.calls == writes, "Encounter restriction bypassed")
+	h.combat, h.otherRestriction = false, nil
+	h:event("PLAYER_REGEN_ENABLED"); h:flushAll()
+	assert(not root:IsShown() and not h.nav.bindingActive)
+end
+print("PASS: non-combat addon restrictions still defer native dismissal")
+
+do
+	local h = newHarness()
+	local root = panel(h, "RestrictedBack")
+	present(h, root)
+	h.combat = true
+	local writes = #h.calls
+	root:SmartNavigationCloseHandler(); h:flushAll()
+	assert(root:IsShown() and #h.calls == writes)
+	h.combat = false; h:event("PLAYER_REGEN_ENABLED"); h:flushAll()
+	assert(not root:IsShown() and not h.nav.bindingActive, "Restricted Back failed to queue dismissal")
+end
+print("PASS: Back queues dismissal through actual restrictions and releases input afterward")
+
+for _, source in ipairs({ "back", "mouse" }) do
+	local h = newHarness()
+	local root = panel(h, "RememberCombatClose")
+	present(h, root)
+	h.combat = true
+	local writes = #h.calls
+	if source == "back" then root:SmartNavigationCloseHandler()
+	else h.qt:DismissManagedWindow(root) end
+	local status = h.qt:GetGamepadIntegrationStatus()
+	assert(status["lastCombatClose.outcome"] == "deferred")
+	assert(status["lastCombatClose.lockdown"] == true and status["lastCombatClose.nativeCombat"] == true)
+	assert(status["lastCombatClose.combat"] == true and status["lastCombatClose.encounter"] == false)
+	assert(#h.calls == writes, "Diagnostic capture performed native mutations")
+	h.combat = false; h:event("PLAYER_REGEN_ENABLED"); h:flushAll()
+	-- Opening/closing diagnostics after combat must not replace the saved attempt.
+	local report = panel(h, "DiagnosticReport")
+	present(h, report); h.qt:DismissManagedWindow(report); h:flushAll()
+	status = h.qt:GetGamepadIntegrationStatus()
+	assert(status.dismissalRestricted == false and status["lastCombatClose.dismissalRestricted"] == true)
+	assert(status["lastCombatClose.outcome"] == "deferred" and status["lastCombatClose.combat"] == true)
+	status["lastCombatClose.outcome"] = "changed copy"
+	assert(h.qt:GetGamepadIntegrationStatus()["lastCombatClose.outcome"] == "deferred")
+	assert(not root:IsShown() and not h.nav.bindingActive)
+end
+print("PASS: combat close evidence survives recovery and report windows without native writes or shared mutable state")
+do
+	local h = newHarness({ ordinaryCombat = true })
+	local root = panel(h, "SuccessfulCombatClose")
+	present(h, root); h.combat = true; root:SmartNavigationCloseHandler()
+	local status = h.qt:GetGamepadIntegrationStatus()
+	assert(status["lastCombatClose.outcome"] == "closed" and status["lastCombatClose.nativeCombat"] == false)
+end
+print("PASS: successful ordinary-combat dismissal is recorded distinctly from a deferred close")
+do
+	local h = newHarness()
+	local root = panel(h, "UnfocusedCombatBack")
+	present(h, root); h.combat = true; h.manager.isUIFocused = false
+	root:SmartNavigationCloseHandler()
+	assert(h.qt:GetGamepadIntegrationStatus()["lastCombatClose.outcome"] == "not_current")
+	assert(root:IsShown(), "Diagnostic recording dismissed an unfocused window")
+end
+print("PASS: ignored controller Back is recorded without claiming a dismissal happened")
+
+-- The restriction event is synchronous and precedes native enforcement.
+do
+	local h = newHarness()
+	local root = panel(h, "CombatRoot")
+	present(h, root)
+	local child = panel(h, "CombatPopup", root)
+	present(h, child, root)
+	local ordinary = h.env.CreateFrame("Frame", "MouseWindow", h.env.UIParent)
+	local dismissed = 0
+	h.qt:ConfigureWindowController(ordinary, { dismiss = function(reason)
+		assert(reason == "combat"); dismissed = dismissed + 1
+	end })
+	local writes = #h.calls
+	h.combat, h.activating = true, true
+	h:event("ADDON_RESTRICTION_STATE_CHANGED", h.env.Enum.AddOnRestrictionType.Combat, h.env.Enum.AddOnRestrictionState.Activating)
+	assert(not root:IsShown() and not child:IsShown() and not ordinary:IsShown(), "Windows waited beyond the pre-combat event")
+	assert(not h.nav.bindingActive and not h.manager.active and dismissed == 1)
+	local detached = {}
+	for index = writes + 1, #h.calls do
+		if h.calls[index] == "FrameHidden" then detached[#detached + 1] = h.callFrames[index] end
+		assert(h.calls[index] ~= "FrameShown" and h.calls[index] ~= "RefreshButtonGroups", "Combat teardown performed presentation")
+	end
+	assert(detached[1] == child and detached[2] == root, "Combat must detach popup before parent")
+	h.activating = false
+	h:event("PLAYER_REGEN_DISABLED"); h:flushAll()
+	assert(dismissed == 1 and not root:IsShown())
+	h.combat = false; h:event("PLAYER_REGEN_ENABLED"); h:flushAll()
+	assert(not root:IsShown() and not child:IsShown() and not ordinary:IsShown())
+	assert(h.qt:GetGamepadIntegrationStatus().registered == 0 and not h.qt:GetGamepadIntegrationStatus().failed)
+end
+print("PASS: pre-combat event synchronously closes nested native and ordinary windows before restrictions, once, without reopening")
+do
+	local h = newHarness()
+	local root = panel(h, "OtherRestriction")
+	present(h, root)
+	h:event("ADDON_RESTRICTION_STATE_CHANGED", h.env.Enum.AddOnRestrictionType.Encounter, h.env.Enum.AddOnRestrictionState.Activating)
+	h:event("ADDON_RESTRICTION_STATE_CHANGED", h.env.Enum.AddOnRestrictionType.Combat, h.env.Enum.AddOnRestrictionState.Inactive)
+	h:flushAll()
+	assert(root:IsShown(), "Non-combat/deactivation event dismissed a window")
+	h.combat = true
+	h:event("PLAYER_REGEN_DISABLED")
+	assert(root:IsShown(), "Fallback bypassed an already active restriction")
+	h.combat = false; h:event("PLAYER_REGEN_ENABLED"); h:flushAll()
+	assert(not root:IsShown() and not h.nav.bindingActive)
+end
+print("PASS: combat fallback queues if already restricted; other events do not dismiss windows")
+
+for _, version in ipairs({ "1.60.1", "12.1.0" }) do
+	for _, view in ipairs({ "log", "report" }) do
+		local h = newHarness({ version = version })
+		h:load("GamepadWindows.lua")
+		h.qt.isEnabled = false
+		local frame = h.env.CreateFrame("Frame", "Debug" .. view, h.env.UIParent)
+		for _, name in ipairs({ "Close", "Scroll", "Search", "Category", "Popup" }) do
+			frame[name] = h.env.CreateFrame("Button", nil, frame)
+		end
+		frame.Buttons = {}
+		frame.Category:SetScript("OnClick", function() end)
+		h.qt:ConfigureDiagnosticGamepadWindow(frame)
+		local observer = assert(h.qt.windowCombatObserver)
+		h.qt:ConfigureWindowController(frame)
+		assert(h.qt.windowCombatObserver == observer, "Window observer duplicated")
+		if version == "1.60.1" then assert(h.qt:PresentGamepadWindow(frame, "user")) end
+		-- Feature runtime events are not registered on this harness. Only the
+		-- window-lifetime observer supplies cross-client disabled-addon cleanup.
+		h.combat, h.activating = true, true
+		h:event("ADDON_RESTRICTION_STATE_CHANGED", h.env.Enum.AddOnRestrictionType.Combat, h.env.Enum.AddOnRestrictionState.Activating)
+		assert(not frame:IsShown() and not h.nav.bindingActive, "Debug view survived combat: " .. version .. "/" .. view)
+		h.activating = false; h:event("PLAYER_REGEN_DISABLED")
+		h.combat = false; h:event("PLAYER_REGEN_ENABLED"); h:flushAll()
+		assert(not frame:IsShown(), "Debug view reopened after combat")
+	end
+end
+print("PASS: debug log and report frames close even with QT disabled, on native and non-native clients")

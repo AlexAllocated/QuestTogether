@@ -150,6 +150,26 @@ QT:RegisterTest("QT window keyboard input propagates normal keys and uses dismis
 	assert(dismissals == 1)
 end)
 
+QT:RegisterTest("combat Escape dismisses owned windows without keyboard attribute or row actions", function()
+	local a, f = Fixture()
+	local dismissals = 0
+	function a:DismissManagedWindow(frame, reason)
+		assert(frame == f and reason == "escape")
+		dismissals = dismissals + 1
+		frame:Hide()
+	end
+	f.escapeAction = function() error("Combat Escape invoked a browsing action") end
+	f.SetPropagateKeyboardInput = function() error("Combat Escape changed keyboard propagation") end
+	a.blocked = true
+	f.scripts.OnKeyDown(f, "W")
+	assert(dismissals == 0 and f.shown)
+	f.scripts.OnKeyDown(f, "ESCAPE")
+	assert(dismissals == 1 and not f.shown)
+	f.forbidden = true
+	f.scripts.OnKeyDown(f, "ESCAPE")
+	assert(dismissals == 1)
+end)
+
 QT:RegisterTest("managed layout reflows restored and deferred reset dimensions before screen fit", function()
 	local a, f, root = Fixture()
 	local calls = 0

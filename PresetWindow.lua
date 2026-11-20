@@ -215,7 +215,7 @@ function QT:OpenPresetWindow()
 		end)
 		self:ConfigureWindowController(frame, { theme = frame.LayoutManagedWindow,
 			dismiss = function(reason)
-				if self:IsWelcomeSetupPending() and reason ~= "hide" then self:ClosePresetWindow() end
+				if self:IsWelcomeSetupPending() and reason ~= "hide" and reason ~= "combat" then self:ClosePresetWindow() end
 			end,
 		})
 	end

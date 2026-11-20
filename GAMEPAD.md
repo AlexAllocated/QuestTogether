@@ -87,6 +87,34 @@ controls, dialogs and native Select/Back prompts retain their original styling.
 - Text entry, moving/resizing HUD elements, and window corner resizing retain
   their existing controls. No on-screen keyboard is supplied.
 
+QT-managed windows and their open menus close automatically when combat begins.
+On clients with addon restriction notifications, teardown runs synchronously
+inside the combat **Activating** event, before native focus changes become
+restricted. Popups detach before their parent windows. Other clients use the
+normal combat-start event. Dialogs cancel through their existing dismissal
+paths; a combat interruption does not apply a preset or complete first-run setup.
+Ordinary dismissed dialogs do not reopen automatically after combat.
+
+If a client already enforces restrictions before QT receives the event, native
+cleanup remains queued until it is allowed. X, Escape and Back also remain
+dismissal-only during ordinary combat when the native cleanup APIs are available;
+quest actions and navigation remain suspended. `gamepad.dismissalRestricted`
+reports the current cleanup restriction. Since the diagnostic report window
+cannot open during combat, QT retains the latest combat close attempt in
+`gamepad.lastCombatClose.*`. After reproducing a stuck close, leave combat and
+run `/qt diagnostics` without reloading. Opening the report does not overwrite
+the saved restrictions and outcome. Only one local scalar snapshot is retained;
+it contains no player or quest data and is cleared by reload. PQL automatic
+closure was confirmed in-game on Forever build 70959. The shared lifetime also
+covers the debug log/report window with QT disabled, independently of native
+controller availability; those additional paths have offline coverage.
+
+The managed-window audit covers PQL and its previews, quest details, focus
+confirmations, share/join prompts, player notes, recent companions, VIP/Discord
+dialogs, patch notes, presets, HUD edit dialogs and QT-owned action menus.
+Debug log and diagnostic-report modes share the same registered console window.
+Blizzard's Settings host remains owned by Blizzard.
+
 ## Safety and validation
 
 Controller support is included in the stable release. The remaining live checks

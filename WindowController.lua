@@ -10,6 +10,50 @@ local function Invoke(controller, action, ...)
 	end
 end
 
+-- Combat's restriction event arrives before enforcement. Close synchronously;
+-- scheduling this work for the next frame misses the native teardown window.
+function QT:IsCombatWindowCloseEvent(event, kind, newState)
+	if event == "PLAYER_REGEN_DISABLED" then return true end
+	local types, states = Enum and Enum.AddOnRestrictionType, Enum and Enum.AddOnRestrictionState
+	return event == "ADDON_RESTRICTION_STATE_CHANGED" and types and states
+		and types.Combat ~= nil and states.Activating ~= nil
+		and Lib.CanAccess(kind) and Lib.CanAccess(newState)
+		and kind == types.Combat and newState == states.Activating or false
+end
+
+function QT:DismissManagedWindowsForCombat()
+	if self == QT and rawget(self, "isRunningTests") == true then return end
+	if rawget(self, "closingWindowsForCombat") then return end
+	self.closingWindowsForCombat = true
+	local ok, err = pcall(function()
+		-- Native popups must be retired before their parent can be hidden.
+		if self.DismissGamepadWindowsForCombat then self:DismissGamepadWindowsForCombat() end
+		local pending = {}
+		for frame in pairs(rawget(self, "windowControllers") or {}) do
+			if Lib.CanMutateOwnedRegion(frame) and frame:IsShown() then pending[#pending + 1] = frame end
+		end
+		for _, frame in ipairs(pending) do
+			if Lib.CanMutateOwnedRegion(frame) and frame:IsShown() then self:DismissManagedWindow(frame, "combat") end
+		end
+	end)
+	self.closingWindowsForCombat = nil
+	if not ok and self.RecordDiagnosticError then self:RecordDiagnosticError("combat_windows", err) end
+end
+
+-- Window cleanup outlives feature enablement: the debug console can be opened
+-- with QT disabled, and clients without native gamepad support need it too.
+function QT:EnsureWindowCombatObserver()
+	if self ~= QT or rawget(self, "isRunningTests") == true or self.windowCombatObserver then return end
+	local observer = self:CreateOwnedUICleanupFrame()
+	observer:SetScript("OnEvent", function(_, event, kind, newState)
+		if self:IsCombatWindowCloseEvent(event, kind, newState) then self:DismissManagedWindowsForCombat() end
+	end)
+	for _, event in ipairs({ "PLAYER_REGEN_DISABLED", "ADDON_RESTRICTION_STATE_CHANGED" }) do
+		pcall(observer.RegisterEvent, observer, event)
+	end
+	self.windowCombatObserver = observer
+end
+
 function QT:GetWindowController(frame)
 	local controllers = rawget(self, "windowControllers")
 	return controllers and controllers[frame]
@@ -25,6 +69,7 @@ function QT:StopWindowInteraction(frame)
 end
 
 function QT:ConfigureWindowController(frame, hooks)
+	self:EnsureWindowCombatObserver()
 	self.windowControllers = rawget(self, "windowControllers") or Lib.WeakKeys()
 	local controller = self.windowControllers[frame]
 	if not controller then
