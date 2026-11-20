@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.1
+## 10.1.2
 
 继续用手柄畅快冒险！
 
@@ -16,6 +16,16 @@
 
 - 进入战斗时，QT 窗口及其菜单现在会自动关闭，保持视野清晰，并让手柄输入重新用于游戏操作。
 - 调试日志和诊断报告窗口也会自动关闭，即使已在 QuestTogether 设置中停用插件也一样。
+
+## 10.1.1
+
+在 Forever 中使用任务链，现在更方便了！
+
+### 更轻松地启用任务链
+
+- 在 Forever 中，CurseForge 应用现在会在安装 QuestTogether 时一并安装 QuestieDB。Retail 和 Classic 使用单独的下载文件，不包含这项必需依赖。
+- 如果 Forever 中缺少 QuestieDB，队伍任务日志会在任务列表上方显示醒目的安装提示。
+- 手动安装插件的玩家，请安装并启用 Forever 版 QuestieDB，然后重启 WoW。没有 QuestieDB，仍可使用 QuestTogether 的其他功能。
 
 ## 10.1.0
 

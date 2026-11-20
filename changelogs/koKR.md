@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.1
+## 10.1.2
 
 컨트롤러로 모험을 이어가세요!
 
@@ -16,6 +16,16 @@
 
 - 전투가 시작되면 QT 창과 메뉴가 자동으로 닫힙니다. 화면을 가리지 않고 컨트롤러로 다시 게임을 조작할 수 있습니다.
 - 디버그 로그와 진단 보고서도 자동으로 닫히며, QuestTogether 설정에서 애드온을 비활성화한 상태에서도 적용됩니다.
+
+## 10.1.1
+
+Forever에서 퀘스트 연계를 더 쉽게 이용할 수 있습니다!
+
+### 더 간편해진 퀘스트 연계 설정
+
+- Forever에서는 CurseForge 앱이 이제 QuestTogether와 함께 QuestieDB도 설치합니다. Retail과 Classic은 QuestieDB를 필수로 설치하지 않는 별도 파일을 사용합니다.
+- Forever에 QuestieDB가 없으면 파티 퀘스트 목록 위에 설치 안내가 표시됩니다.
+- 애드온을 직접 설치한다면 Forever용 QuestieDB를 설치하고 활성화한 뒤 WoW를 다시 시작하세요. QuestieDB 없이도 QuestTogether의 다른 기능은 계속 사용할 수 있습니다.
 
 ## 10.1.0
 

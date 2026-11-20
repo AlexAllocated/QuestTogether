@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.1
+## 10.1.2
 
 Continua le tue avventure con il controller!
 
@@ -16,6 +16,16 @@ Continua le tue avventure con il controller!
 
 - Quando inizia un combattimento, le finestre di QT e i loro menu si chiudono automaticamente, liberando la visuale e restituendo al gioco i comandi del controller.
 - Vale anche per il registro di debug e i rapporti diagnostici, persino quando QuestTogether è disattivato nelle proprie impostazioni.
+
+## 10.1.1
+
+Iniziare a usare le serie di missioni su Forever è ancora più semplice!
+
+### Configurazione delle serie di missioni
+
+- Su Forever, l’app CurseForge ora installa QuestieDB insieme a QuestTogether. I download per Retail e Classic hanno un file separato senza questa dipendenza.
+- Se manca QuestieDB su Forever, il Registro missioni del gruppo mostra un avviso ben visibile sopra l’elenco delle missioni con le indicazioni per installarlo.
+- Installi gli addon manualmente? Installa e attiva la versione Forever di QuestieDB, poi riavvia WoW. Le altre funzioni di QuestTogether restano disponibili anche senza QuestieDB.
 
 ## 10.1.0
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.1
+## 10.1.2
 
 Continuez vos aventures à la manette !
 
@@ -16,6 +16,16 @@ Continuez vos aventures à la manette !
 
 - Au début d’un combat, les fenêtres de QT et leurs menus se ferment automatiquement pour dégager la vue et rendre les commandes de la manette au jeu.
 - Le journal de débogage et les rapports de diagnostic se ferment eux aussi, même si QuestTogether est désactivé dans ses réglages.
+
+## 10.1.1
+
+Profitez plus facilement des suites de quêtes sur Forever !
+
+### Une installation plus simple
+
+- Sur Forever, l’application CurseForge installe désormais QuestieDB avec QuestTogether. Retail et Classic disposent d’un fichier de téléchargement distinct, sans cette dépendance.
+- Si QuestieDB manque sur Forever, un message bien visible au-dessus de la liste du Journal de quêtes du groupe vous indique comment l’installer.
+- Vous installez vos addons manuellement ? Choisissez la version Forever de QuestieDB, activez-la, puis redémarrez WoW. Les autres fonctions de QuestTogether restent disponibles sans QuestieDB.
 
 ## 10.1.0
 

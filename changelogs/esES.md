@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.1
+## 10.1.2
 
 ¡Sigue de aventuras con tu mando!
 
@@ -16,6 +16,16 @@
 
 - Las ventanas de QT y sus menús se cierran automáticamente al entrar en combate, despejando la pantalla y devolviendo el control del mando al juego.
 - También se cierran el registro de depuración y los informes de diagnóstico, incluso si has desactivado QuestTogether en sus ajustes.
+
+## 10.1.1
+
+¡Ahora es más fácil empezar a explorar cadenas de misiones en Forever!
+
+### Configuración más sencilla
+
+- La aplicación de CurseForge instala ahora QuestieDB junto con QuestTogether en Forever. Retail y Classic tienen un archivo de descarga independiente, sin esa dependencia.
+- Si falta QuestieDB en Forever, el Registro de misiones del grupo muestra un aviso claro de instalación sobre la lista de misiones.
+- Si instalas los addons manualmente, instala y activa la versión de QuestieDB para Forever y reinicia WoW. Puedes seguir usando las demás funciones de QuestTogether sin QuestieDB.
 
 ## 10.1.0
 

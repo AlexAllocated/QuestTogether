@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 10.1.1
+## 10.1.2
 
 Keep questing with your controller!
 
@@ -18,6 +18,16 @@ Keep questing with your controller!
 
 - QT windows and their menus now close automatically when combat begins, keeping your view clear and returning controller input to the game.
 - This includes the debug log and diagnostic reports, even when QuestTogether is disabled in its settings.
+
+## 10.1.1
+
+Getting started with quest chains on Forever just got easier!
+
+### Easier quest-chain setup
+
+- The CurseForge app now installs QuestieDB alongside QuestTogether on Forever. Retail and Classic downloads have their own file without that dependency.
+- If QuestieDB is missing on Forever, Party Quest Log now shows a clear installation notice above the quest list.
+- Installing addons manually? Install and enable the Forever version of QuestieDB, then restart WoW. The rest of QuestTogether remains usable without it.
 
 ## 10.1.0
 

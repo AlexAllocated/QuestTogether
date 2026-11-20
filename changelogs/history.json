@@ -3,6 +3,162 @@
   "releases": [
     {
       "enUS": {
+        "version": "10.1.1",
+        "welcome": "Getting started with quest chains on Forever just got easier!",
+        "sections": [
+          {
+            "title": "Easier quest-chain setup",
+            "items": [
+              "The CurseForge app now installs QuestieDB alongside QuestTogether on Forever. Retail and Classic downloads have their own file without that dependency.",
+              "If QuestieDB is missing on Forever, Party Quest Log now shows a clear installation notice above the quest list.",
+              "Installing addons manually? Install and enable the Forever version of QuestieDB, then restart WoW. The rest of QuestTogether remains usable without it."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "10.1.1",
+        "welcome": "Auf Forever gelingt der Einstieg in Questreihen jetzt leichter!",
+        "sections": [
+          {
+            "title": "Questreihen leichter einrichten",
+            "items": [
+              "Die CurseForge-App installiert auf Forever jetzt QuestieDB zusammen mit QuestTogether. Für Retail und Classic gibt es eine eigene Download-Datei ohne diese Abhängigkeit.",
+              "Fehlt QuestieDB auf Forever, erscheint im Gruppenquestlog nun ein gut sichtbarer Installationshinweis über der Questliste.",
+              "Wenn du Addons manuell installierst, lade die Forever-Version von QuestieDB herunter, aktiviere sie und starte WoW neu. Die übrigen Funktionen von QuestTogether kannst du auch ohne QuestieDB nutzen."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "10.1.1",
+        "welcome": "Profitez plus facilement des suites de quêtes sur Forever !",
+        "sections": [
+          {
+            "title": "Une installation plus simple",
+            "items": [
+              "Sur Forever, l’application CurseForge installe désormais QuestieDB avec QuestTogether. Retail et Classic disposent d’un fichier de téléchargement distinct, sans cette dépendance.",
+              "Si QuestieDB manque sur Forever, un message bien visible au-dessus de la liste du Journal de quêtes du groupe vous indique comment l’installer.",
+              "Vous installez vos addons manuellement ? Choisissez la version Forever de QuestieDB, activez-la, puis redémarrez WoW. Les autres fonctions de QuestTogether restent disponibles sans QuestieDB."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "10.1.1",
+        "welcome": "¡Ahora es más fácil empezar a explorar cadenas de misiones en Forever!",
+        "sections": [
+          {
+            "title": "Configuración más sencilla",
+            "items": [
+              "La aplicación de CurseForge instala ahora QuestieDB junto con QuestTogether en Forever. Retail y Classic tienen un archivo de descarga independiente, sin esa dependencia.",
+              "Si falta QuestieDB en Forever, el Registro de misiones del grupo muestra un aviso claro de instalación sobre la lista de misiones.",
+              "Si instalas los addons manualmente, instala y activa la versión de QuestieDB para Forever y reinicia WoW. Puedes seguir usando las demás funciones de QuestTogether sin QuestieDB."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "10.1.1",
+        "welcome": "¡Usar cadenas de misiones en Forever ahora es más sencillo!",
+        "sections": [
+          {
+            "title": "Prepara tus cadenas de misiones",
+            "items": [
+              "En Forever, la aplicación de CurseForge ahora instala QuestieDB junto con QuestTogether. Las descargas para Retail y Classic usan un archivo separado que no requiere esa dependencia.",
+              "Cuando falta QuestieDB en Forever, el Registro de misiones del grupo muestra instrucciones de instalación sobre la lista de misiones.",
+              "¿Instalas tus addons manualmente? Instala y activa QuestieDB para Forever y luego reinicia WoW. Las demás funciones de QuestTogether siguen disponibles aunque no tengas QuestieDB."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "10.1.1",
+        "welcome": "Ficou mais fácil começar a usar sequências de missões no Forever!",
+        "sections": [
+          {
+            "title": "Configuração mais simples",
+            "items": [
+              "No Forever, o aplicativo do CurseForge agora instala o QuestieDB junto com o QuestTogether. Retail e Classic têm um arquivo de download separado, sem essa dependência.",
+              "Se o QuestieDB estiver faltando no Forever, o Registro de Missões do Grupo exibe um aviso de instalação acima da lista de missões.",
+              "Instala os addons manualmente? Instale e ative a versão do QuestieDB para Forever e reinicie o WoW. Os outros recursos do QuestTogether continuam funcionando sem ele."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "10.1.1",
+        "welcome": "Начать пользоваться цепочками заданий на Forever стало проще!",
+        "sections": [
+          {
+            "title": "Простая настройка цепочек",
+            "items": [
+              "На Forever приложение CurseForge теперь устанавливает QuestieDB вместе с QuestTogether. Для Retail и Classic используется отдельный файл загрузки без этой зависимости.",
+              "Если на Forever не установлен QuestieDB, над списком в журнале заданий группы появляется заметная подсказка по установке.",
+              "Устанавливаете аддоны вручную? Установите и включите версию QuestieDB для Forever, затем перезапустите WoW. Остальные функции QuestTogether доступны и без QuestieDB."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "10.1.1",
+        "welcome": "Iniziare a usare le serie di missioni su Forever è ancora più semplice!",
+        "sections": [
+          {
+            "title": "Configurazione delle serie di missioni",
+            "items": [
+              "Su Forever, l’app CurseForge ora installa QuestieDB insieme a QuestTogether. I download per Retail e Classic hanno un file separato senza questa dipendenza.",
+              "Se manca QuestieDB su Forever, il Registro missioni del gruppo mostra un avviso ben visibile sopra l’elenco delle missioni con le indicazioni per installarlo.",
+              "Installi gli addon manualmente? Installa e attiva la versione Forever di QuestieDB, poi riavvia WoW. Le altre funzioni di QuestTogether restano disponibili anche senza QuestieDB."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "10.1.1",
+        "welcome": "Forever에서 퀘스트 연계를 더 쉽게 이용할 수 있습니다!",
+        "sections": [
+          {
+            "title": "더 간편해진 퀘스트 연계 설정",
+            "items": [
+              "Forever에서는 CurseForge 앱이 이제 QuestTogether와 함께 QuestieDB도 설치합니다. Retail과 Classic은 QuestieDB를 필수로 설치하지 않는 별도 파일을 사용합니다.",
+              "Forever에 QuestieDB가 없으면 파티 퀘스트 목록 위에 설치 안내가 표시됩니다.",
+              "애드온을 직접 설치한다면 Forever용 QuestieDB를 설치하고 활성화한 뒤 WoW를 다시 시작하세요. QuestieDB 없이도 QuestTogether의 다른 기능은 계속 사용할 수 있습니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "10.1.1",
+        "welcome": "在 Forever 中使用任务链，现在更方便了！",
+        "sections": [
+          {
+            "title": "更轻松地启用任务链",
+            "items": [
+              "在 Forever 中，CurseForge 应用现在会在安装 QuestTogether 时一并安装 QuestieDB。Retail 和 Classic 使用单独的下载文件，不包含这项必需依赖。",
+              "如果 Forever 中缺少 QuestieDB，队伍任务日志会在任务列表上方显示醒目的安装提示。",
+              "手动安装插件的玩家，请安装并启用 Forever 版 QuestieDB，然后重启 WoW。没有 QuestieDB，仍可使用 QuestTogether 的其他功能。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "10.1.1",
+        "welcome": "在 Forever 使用任務鏈，現在更方便了！",
+        "sections": [
+          {
+            "title": "輕鬆準備任務鏈資料",
+            "items": [
+              "在 Forever，CurseForge 應用程式現在會隨 QuestTogether 一併安裝 QuestieDB。Retail 與 Classic 使用另一個下載檔案，不需要這項相依插件。",
+              "Forever 若缺少 QuestieDB，隊伍任務日誌會在任務清單上方顯示清楚的安裝提示。",
+              "如果你是手動安裝插件，請安裝並啟用 Forever 版 QuestieDB，然後重新啟動 WoW。沒有 QuestieDB，仍然可以使用 QuestTogether 的其他功能。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "10.1.0",
         "welcome": "Make QuestTogether your kind of adventure! Choose a preset that fits how you play, help a younger companion follow along, and discover more of QT through clearer settings and fresh tips.",
         "sections": [
