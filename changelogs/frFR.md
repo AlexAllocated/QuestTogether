@@ -4,13 +4,18 @@
 
 ## 10.1.1
 
-Profitez plus facilement des suites de quêtes sur Forever !
+Continuez vos aventures à la manette !
 
-### Une installation plus simple
+### Compatibilité des manettes
 
-- Sur Forever, l’application CurseForge installe désormais QuestieDB avec QuestTogether. Retail et Classic disposent d’un fichier de téléchargement distinct, sans cette dépendance.
-- Si QuestieDB manque sur Forever, un message bien visible au-dessus de la liste du Journal de quêtes du groupe vous indique comment l’installer.
-- Vous installez vos addons manuellement ? Choisissez la version Forever de QuestieDB, activez-la, puis redémarrez WoW. Les autres fonctions de QuestTogether restent disponibles sans QuestieDB.
+- Une mise à jour compatible de WoW Forever ne désactive plus la prise en charge des manettes de QT simplement parce que le numéro de build a changé. Les vérifications des API et de sécurité restent actives.
+- La vérification du build empêchait certains nouveaux personnages de recevoir le raccourci manette du PQL. Après un rechargement, QT peut le placer dans l’emplacement libre LT + RT + haut de la croix directionnelle, sur la page d’actions 1, si l’installation automatique est activée. Les macros existantes et les commandes personnalisées sont conservées.
+- Les marqueurs de groupe de QT sur la carte du monde suivent le même principe : les builds compatibles restent pris en charge sans correspondance exacte du numéro.
+
+### Place au combat
+
+- Au début d’un combat, les fenêtres de QT et leurs menus se ferment automatiquement pour dégager la vue et rendre les commandes de la manette au jeu.
+- Le journal de débogage et les rapports de diagnostic se ferment eux aussi, même si QuestTogether est désactivé dans ses réglages.
 
 ## 10.1.0
 

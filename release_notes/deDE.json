@@ -1,15 +1,22 @@
 {
-  "source_sha256": "421ee3b70cfeab14829c194c732fba6fa77cfe2a379c193f15e25a3638f8bd92",
+  "source_sha256": "e4843d03637bd0822e4921984175988f83c2d8e51bf4bd452d669eac238a04dd",
   "notes": {
     "version": "10.1.1",
-    "welcome": "Auf Forever gelingt der Einstieg in Questreihen jetzt leichter!",
+    "welcome": "Mit dem Controller weiter auf Abenteuerreise!",
     "sections": [
       {
-        "title": "Questreihen leichter einrichten",
+        "title": "Controller-Kompatibilität",
         "items": [
-          "Die CurseForge-App installiert auf Forever jetzt QuestieDB zusammen mit QuestTogether. Für Retail und Classic gibt es eine eigene Download-Datei ohne diese Abhängigkeit.",
-          "Fehlt QuestieDB auf Forever, erscheint im Gruppenquestlog nun ein gut sichtbarer Installationshinweis über der Questliste.",
-          "Wenn du Addons manuell installierst, lade die Forever-Version von QuestieDB herunter, aktiviere sie und starte WoW neu. Die übrigen Funktionen von QuestTogether kannst du auch ohne QuestieDB nutzen."
+          "Ein kompatibles Update von WoW Forever schaltet die Controller-Unterstützung von QT nicht mehr allein wegen einer neuen Buildnummer ab. Die nötigen API- und Sicherheitsprüfungen bleiben erhalten.",
+          "Die bisherige Buildprüfung konnte bei neuen Charakteren die Einrichtung der PQL-Controller-Verknüpfung verhindern. Nach dem Neuladen kann QT sie bei aktivierter automatischer Einrichtung auf den freien Platz LT + RT + Steuerkreuz oben auf Aktionsseite 1 legen. Vorhandene Makros und eigene Belegungen bleiben erhalten.",
+          "Auch die Gruppenmarkierungen auf der Weltkarte benötigen keine exakt passende Buildnummer mehr, solange der Client die erforderlichen Schnittstellen unterstützt."
+        ]
+      },
+      {
+        "title": "Freie Sicht im Kampf",
+        "items": [
+          "Sobald ein Kampf beginnt, schließen sich QT-Fenster und ihre Menüs automatisch. So bleibt die Sicht frei und die Controller-Steuerung geht zurück ans Spiel.",
+          "Das gilt auch für das Debug-Protokoll und Diagnoseberichte – selbst wenn QuestTogether in den eigenen Einstellungen deaktiviert ist."
         ]
       }
     ]

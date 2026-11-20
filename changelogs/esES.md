@@ -4,13 +4,18 @@
 
 ## 10.1.1
 
-¡Ahora es más fácil empezar a explorar cadenas de misiones en Forever!
+¡Sigue de aventuras con tu mando!
 
-### Configuración más sencilla
+### Compatibilidad con mandos
 
-- La aplicación de CurseForge instala ahora QuestieDB junto con QuestTogether en Forever. Retail y Classic tienen un archivo de descarga independiente, sin esa dependencia.
-- Si falta QuestieDB en Forever, el Registro de misiones del grupo muestra un aviso claro de instalación sobre la lista de misiones.
-- Si instalas los addons manualmente, instala y activa la versión de QuestieDB para Forever y reinicia WoW. Puedes seguir usando las demás funciones de QuestTogether sin QuestieDB.
+- Las actualizaciones compatibles de WoW Forever ya no desactivan el soporte de mando de QT por cambiar el número de compilación. Se mantienen las comprobaciones necesarias de API y seguridad.
+- Corregida la comprobación que impedía crear el acceso al PQL con mando para personajes nuevos. Tras recargar la interfaz, QT puede colocarlo en LT + RT + arriba en la cruceta, en la página de acciones 1, si ese espacio está libre y la instalación automática está activada. Se respetan las macros existentes y las asignaciones personalizadas.
+- Los marcadores de grupo de QT en el mapa del mundo también admiten compilaciones compatibles sin exigir un número de compilación exacto.
+
+### Todo listo para el combate
+
+- Las ventanas de QT y sus menús se cierran automáticamente al entrar en combate, despejando la pantalla y devolviendo el control del mando al juego.
+- También se cierran el registro de depuración y los informes de diagnóstico, incluso si has desactivado QuestTogether en sus ajustes.
 
 ## 10.1.0
 

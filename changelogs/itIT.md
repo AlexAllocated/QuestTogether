@@ -4,13 +4,18 @@
 
 ## 10.1.1
 
-Iniziare a usare le serie di missioni su Forever è ancora più semplice!
+Continua le tue avventure con il controller!
 
-### Configurazione delle serie di missioni
+### Compatibilità dei controller
 
-- Su Forever, l’app CurseForge ora installa QuestieDB insieme a QuestTogether. I download per Retail e Classic hanno un file separato senza questa dipendenza.
-- Se manca QuestieDB su Forever, il Registro missioni del gruppo mostra un avviso ben visibile sopra l’elenco delle missioni con le indicazioni per installarlo.
-- Installi gli addon manualmente? Installa e attiva la versione Forever di QuestieDB, poi riavvia WoW. Le altre funzioni di QuestTogether restano disponibili anche senza QuestieDB.
+- Gli aggiornamenti compatibili di WoW Forever non disattivano più il supporto controller di QT solo perché cambia il numero di build. Restano attivi i controlli sulle API e sulla sicurezza.
+- Corretto il controllo della build che impediva ai nuovi personaggi di ricevere la scorciatoia controller del PQL. Dopo aver ricaricato l’interfaccia, QT può inserirla nello spazio libero LT + RT + freccia su della croce direzionale, nella pagina azioni 1, se l’installazione automatica è attiva. Macro esistenti e assegnazioni personalizzate vengono conservate.
+- Anche gli indicatori di gruppo di QT sulla mappa del mondo ora accettano build compatibili senza richiedere una corrispondenza esatta del numero.
+
+### Spazio al combattimento
+
+- Quando inizia un combattimento, le finestre di QT e i loro menu si chiudono automaticamente, liberando la visuale e restituendo al gioco i comandi del controller.
+- Vale anche per il registro di debug e i rapporti diagnostici, persino quando QuestTogether è disattivato nelle proprie impostazioni.
 
 ## 10.1.0
 

@@ -4,13 +4,18 @@
 
 ## 10.1.1
 
-Auf Forever gelingt der Einstieg in Questreihen jetzt leichter!
+Mit dem Controller weiter auf Abenteuerreise!
 
-### Questreihen leichter einrichten
+### Controller-Kompatibilität
 
-- Die CurseForge-App installiert auf Forever jetzt QuestieDB zusammen mit QuestTogether. Für Retail und Classic gibt es eine eigene Download-Datei ohne diese Abhängigkeit.
-- Fehlt QuestieDB auf Forever, erscheint im Gruppenquestlog nun ein gut sichtbarer Installationshinweis über der Questliste.
-- Wenn du Addons manuell installierst, lade die Forever-Version von QuestieDB herunter, aktiviere sie und starte WoW neu. Die übrigen Funktionen von QuestTogether kannst du auch ohne QuestieDB nutzen.
+- Ein kompatibles Update von WoW Forever schaltet die Controller-Unterstützung von QT nicht mehr allein wegen einer neuen Buildnummer ab. Die nötigen API- und Sicherheitsprüfungen bleiben erhalten.
+- Die bisherige Buildprüfung konnte bei neuen Charakteren die Einrichtung der PQL-Controller-Verknüpfung verhindern. Nach dem Neuladen kann QT sie bei aktivierter automatischer Einrichtung auf den freien Platz LT + RT + Steuerkreuz oben auf Aktionsseite 1 legen. Vorhandene Makros und eigene Belegungen bleiben erhalten.
+- Auch die Gruppenmarkierungen auf der Weltkarte benötigen keine exakt passende Buildnummer mehr, solange der Client die erforderlichen Schnittstellen unterstützt.
+
+### Freie Sicht im Kampf
+
+- Sobald ein Kampf beginnt, schließen sich QT-Fenster und ihre Menüs automatisch. So bleibt die Sicht frei und die Controller-Steuerung geht zurück ans Spiel.
+- Das gilt auch für das Debug-Protokoll und Diagnoseberichte – selbst wenn QuestTogether in den eigenen Einstellungen deaktiviert ist.
 
 ## 10.1.0
 
