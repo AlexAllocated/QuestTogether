@@ -69,7 +69,7 @@ function QT:StopWindowInteraction(frame)
 end
 
 function QT:ConfigureWindowController(frame, hooks)
-	self:EnsureWindowCombatObserver()
+	QT.EnsureWindowCombatObserver(self)
 	self.windowControllers = rawget(self, "windowControllers") or Lib.WeakKeys()
 	local controller = self.windowControllers[frame]
 	if not controller then
