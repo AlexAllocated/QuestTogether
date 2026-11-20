@@ -28,10 +28,11 @@ unassigned. For a macro, use `/qt focus` for your current target or
 `/qt focus Full Name` for a specific party member; `/qt unfollow` stops following.
 These commands follow quest focus, not the player's movement.
 
-Controller navigation supports the audited native interfaces in Forever 1.60.1 builds
-70888 and 70938. Other builds and clients without those interfaces keep their
-existing mouse and keyboard windows. Hardware detection alone does not enable
-navigation.
+Controller navigation supports Forever 1.60.1 when the required native APIs and
+secure wrappers are available. Build numbers are reported for diagnostics, not
+used to enable or disable support. Other clients and clients without those
+interfaces keep their existing mouse and keyboard windows. Hardware detection
+alone does not enable navigation.
 Native context menus failed live testing on build 70888, and no safe supported
 repair was found in that build's public menu interfaces. While Gamepad UI is
 active, QT therefore uses compact owned menus for actions and choices, including
@@ -109,6 +110,16 @@ The relevant native interfaces were source-compared for build 70938 and remain
 unchanged from 70888. Basic PQL and owned-menu acceptance on 70938 is recorded
 above; the earlier fixture lifecycle results remain evidence for 70888 only.
 
+On 2026-11-19, the build-number allowlist was removed after comparing Blizzard's
+[70938 to 70959 UI source](https://github.com/Gethe/wow-ui-source/compare/bebcb6bf309cf41b41bd74f8ca651e6a105b2676...3d8abb1da73acd38e412e24fb3f99454a6392346).
+The 17 changed files do not change QT's native navigation wrappers, gamepad
+action storage and binding helpers, or the group-map provider and secure
+unit-position delegate. The bag window changes affect its own navigation only.
+The previous build gate prevented new-character launcher installation and
+controller navigation entirely. Compatibility checks now cover arbitrary build
+numbers, including rejection of missing/insecure wrappers. Macro placement, controller
+input and party-map behavior on this build still require live confirmation.
+
 On 2026-11-12, the tester confirmed that reloading after deleting the macro
 recreated the quest-book launcher, bound it to LT + RT + D-pad Up, and opened
 PQL. Basic production PQL controller navigation was also reported working well.
@@ -124,8 +135,8 @@ menu path still need live validation.
 The related world-map party marker presentation keeps verified VIP stars and
 developer icons when grouped, and returns Blizzard's party markers when QT's
 map overlays are turned off. This was confirmed on build 70888. Its required
-native interfaces were source-compared and found unchanged in 70938, which is
-also enabled; the 70938 party-marker behavior still needs live confirmation.
+native interfaces were source-compared and found unchanged in 70938 and 70959,
+which are also enabled; their party-marker behavior still needs live confirmation.
 The minimap remains unchanged.
 
 POT controller browsing, settings and other windows still require live acceptance. Remaining

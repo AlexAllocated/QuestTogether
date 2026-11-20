@@ -40,12 +40,9 @@ local function Supported()
 	if state.supported ~= nil then return state.supported end
 	local buildInfo = Trusted(_G, "GetBuildInfo")
 	if not buildInfo then return false end
-	local ok, version, build = pcall(buildInfo)
-	state.supported = ok and Accessible(version) and Accessible(build)
-		and version == "1.60.1"
-		-- The group provider, map canvas, unit-position secure delegate and its
-		-- XML registration are unchanged in the source-audited 70938 build.
-		and (build == "70888" or build == 70888 or build == "70938" or build == 70938)
+	local ok, version = pcall(buildInfo)
+	-- Native provider and secure-delegate checks below govern compatibility.
+	state.supported = ok and Accessible(version) and version == "1.60.1"
 	return state.supported
 end
 local function Setter(pin)

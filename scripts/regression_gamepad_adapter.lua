@@ -751,7 +751,6 @@ newHarness = function(options)
 	h.qt:InitializeGamepadIntegration()
 	h:flushAll()
 	local expectedAvailable = not options or ((not options.version or options.version == "1.60.1")
-		and (not options.build or tostring(options.build) == "70888" or tostring(options.build) == "70938")
 		and not options.missingNativeMethod and not options.insecureNativeWrapper)
 	assert(
 		h.qt:GetGamepadIntegrationStatus().available
@@ -935,11 +934,11 @@ do
 	local writes = #h.calls
 	assert(not h.qt:PresentGamepadWindow(frame, "user"))
 	assert(#h.calls == writes and h.qt:GetGamepadIntegrationStatus().enabled == false)
-	for _, client in ipairs({ { "1.60.1", "99999" }, { "1.60.2", "99999" }, { "1.60.1", "70939" } }) do
+	for _, client in ipairs({ { "12.1.0", "99999" }, { "1.60.2", "99999" }, { "1.15.9", "70939" } }) do
 		local unsupported = newHarness({ version = client[1], build = client[2] })
 		local status = unsupported.qt:GetGamepadIntegrationStatus()
 		assert(status.clientVersion == client[1] and status.clientBuild == client[2])
-		assert(not status.supportedBuild and status.unavailableReason == "unsupported_build")
+		assert(not status.supportedClient and status.unavailableReason == "unsupported_client")
 		assert(not status.failed and not status.reloadRequired and status.registered == 0)
 		local before = #unsupported.frames
 		unsupported.qt:InitializeGamepadIntegration()
@@ -951,16 +950,23 @@ do
 		assert(not unsupported.qt:PresentGamepadWindow(f, "user") and #unsupported.calls == 0)
 	end
 	print(
-		"PASS: saved disable is respected at initialization; unsupported builds install no hooks/listeners/native calls"
+		"PASS: saved disable is respected at initialization; unsupported clients install no hooks/listeners/native calls"
 	)
 end
 
 do
-	for _, build in ipairs({ "70888", "70938" }) do
+	for _, build in ipairs({ "70888", "70938", "70959", "70939", "99999", 99999 }) do
 		local supported = newHarness({ build = build })
 		local ready = supported.qt:GetGamepadIntegrationStatus()
-		assert(ready.clientVersion == "1.60.1" and ready.clientBuild == build and ready.supportedBuild)
+		assert(ready.clientVersion == "1.60.1" and ready.clientBuild == tostring(build) and ready.supportedClient)
 		assert(ready.available and ready.unavailableReason == "none")
+		local launcherAttempts = 0
+		function supported.qt:IsDefaultGamepadLauncherPending() return launcherAttempts == 0 end
+		function supported.qt:TryInstallDefaultGamepadLauncher() launcherAttempts = launcherAttempts + 1 end
+		supported:event("PLAYER_ENTERING_WORLD")
+		supported:flushAll()
+		assert(supported.qt:GetGamepadIntegrationStatus().worldReady and launcherAttempts == 1,
+			"Supported build did not wake new-character launcher setup")
 		local frame = panel(supported, "SupportedBuild")
 		present(supported, frame)
 		assert(supported.qt:HideOwnedUI(frame) and not frame:IsShown())
@@ -968,7 +974,7 @@ do
 			insecureNativeWrapper = "native_security_wrapper_unavailable" }) do
 			local h = newHarness({ build = build, [option] = true })
 			local status = h.qt:GetGamepadIntegrationStatus()
-			assert(status.clientVersion == "1.60.1" and status.clientBuild == build and status.supportedBuild)
+			assert(status.clientVersion == "1.60.1" and status.clientBuild == tostring(build) and status.supportedClient)
 			assert(not status.available and status.unavailableReason == reason, option)
 			assert(not status.failed and not status.reloadRequired and status.registered == 0)
 			assert(#h.calls == 0 and h.apiCounts.registrations == 0 and h.apiCounts.footers == 0)
@@ -976,9 +982,13 @@ do
 	end
 	local h = newHarness({ version = string.rep("9", 4096) })
 	local status = h.qt:GetGamepadIntegrationStatus()
-	assert(status.clientVersion == "unknown" and status.unavailableReason == "unsupported_build")
+	assert(status.clientVersion == "unknown" and status.unavailableReason == "unsupported_client")
 	assert(#h.calls == 0 and h.apiCounts.registrations == 0)
-	print("PASS: bounded gamepad availability diagnostics distinguish build, missing APIs and insecure wrappers without native writes")
+	local diagnosticOnly = newHarness({ build = string.rep("9", 4096) })
+	local diagnosticStatus = diagnosticOnly.qt:GetGamepadIntegrationStatus()
+	assert(diagnosticStatus.clientBuild == "unknown" and diagnosticStatus.available,
+		"Unreadable build diagnostics must not disable compatible native APIs")
+	print("PASS: bounded gamepad availability diagnostics distinguish client, missing APIs and insecure wrappers without native writes")
 end
 
 do

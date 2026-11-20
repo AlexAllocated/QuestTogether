@@ -1,4 +1,4 @@
--- Native Forever navigation, using the audited 70888/70938 wrappers. QT owns every
+-- Native Forever navigation, using capability-checked wrappers. QT owns every
 -- configured frame; native focus/binding tables and cursor anchors stay native.
 local QT = _G.QuestTogether
 local records, observers, owner = {}, {}, {}
@@ -31,9 +31,9 @@ local function BuildDiagnostic(value)
 	if type(value) ~= "string" or #value > 32 or not value:match("^%d[%d%.]*$") then return "unknown" end
 	return value
 end
-local function SupportedBuild()
-	if state.supportedBuild ~= nil then
-		return state.supportedBuild
+local function SupportedClient()
+	if state.supportedClient ~= nil then
+		return state.supportedClient
 	end
 	if type(GetBuildInfo) ~= "function" then
 		return false
@@ -41,15 +41,13 @@ local function SupportedBuild()
 	local ok, version, build = pcall(GetBuildInfo)
 	if not ok then return false end
 	state.clientVersion, state.clientBuild = BuildDiagnostic(version), BuildDiagnostic(build)
-	state.supportedBuild = Accessible(version)
-		and Accessible(build)
-		and version == "1.60.1"
-		and (tostring(build) == "70888" or tostring(build) == "70938")
-	return state.supportedBuild
+	-- Build numbers are diagnostic only; native capabilities govern compatibility.
+	state.supportedClient = Accessible(version) and version == "1.60.1"
+	return state.supportedClient
 end
 local function AuthoredGeneration()
-	if not SupportedBuild() then
-		return false, "unsupported_build"
+	if not SupportedClient() then
+		return false, "unsupported_client"
 	end
 	if
 		not Methods(
@@ -59,8 +57,8 @@ local function AuthoredGeneration()
 	then
 		return false, "native_missing_functions"
 	end
-	-- No public generation constant exists in this source. The audited build,
-	-- helper feature set and secure entrypoints together bound support. Never
+	-- The client family, helper feature set and secure entrypoints bound
+	-- support without requiring a patch for each client build. Never
 	-- call WrapFunction/SetSecureValue or write the helper's attributes ourselves.
 	if type(issecurevariable) ~= "function" then
 		return false, "native_security_wrapper_unavailable"
@@ -1133,7 +1131,7 @@ function QT:InitializeGamepadIntegration()
 	if state.enabled == nil then
 		state.enabled = type(self.GetOption) ~= "function" or self:GetOption("nativeGamepadNavigation") ~= false
 	end
-	if not SupportedBuild() then
+	if not SupportedClient() then
 		return false
 	end
 	if not state.listener then
@@ -1211,7 +1209,7 @@ function QT:GetGamepadIntegrationStatus()
 		available = available,
 		clientVersion = state.clientVersion or "unknown",
 		clientBuild = state.clientBuild or "unknown",
-		supportedBuild = SupportedBuild() == true,
+		supportedClient = SupportedClient() == true,
 		unavailableReason = available and "none" or state.unavailableReason or "native_missing_functions",
 		worldReady = state.worldReady == true,
 		enabled = state.enabled,

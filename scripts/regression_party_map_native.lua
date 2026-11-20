@@ -70,21 +70,21 @@ local function Harness()
 	return h
 end
 
-for _, build in ipairs({ "70888", 70888, "70938", 70938 }) do
+for _, build in ipairs({ "70888", 70888, "70938", 70938, "70959", 70959, "99999", 99999, "70939" }) do
 	local h = Harness()
 	h.build = build
-	local c = assert(h.qt:GetPartyMapNativeContext(), "Audited build refused: " .. tostring(build))
+	local c = assert(h.qt:GetPartyMapNativeContext(), "Compatible native capabilities refused: " .. tostring(build))
 	assert(h.qt:SetPartyMapNativeVisibility(c, false, false))
 	assert(h.qt:SetPartyMapNativeVisibility(c, true, true))
 	assert(#h.calls == 4 and #h.errors == 0)
 end
-for _, info in ipairs({ { "1.60.1", "70939" }, { "1.60.2", "70938" }, { "12.0.0", "70938" } }) do
+for _, info in ipairs({ { "1.15.9", "70939" }, { "1.60.2", "70938" }, { "12.0.0", "70938" } }) do
 	local h = Harness()
 	h.version, h.build = info[1], info[2]
 	assert(not h.qt:GetPartyMapNativeContext())
 	assert(#h.calls == 0 and #h.hooks == 0 and #h.errors == 0)
 end
-print("PASS: exact audited builds accept numeric/string identifiers; other versions and builds remain inert")
+print("PASS: compatible native capabilities accept arbitrary build identifiers; unsupported clients remain inert")
 
 do
 	local h = Harness()
@@ -144,9 +144,9 @@ do
 end
 print("PASS: restricted state permits only captured-policy restoration and refuses reassigned native pins")
 
-for _, scenario in ipairs({ "build", "raw", "tainted", "forbidden", "secret", "missing", "duplicate", "hidden", "size", "level", "live-tests" }) do
+for _, scenario in ipairs({ "client", "raw", "tainted", "forbidden", "secret", "missing", "duplicate", "hidden", "size", "level", "live-tests" }) do
 	local h = Harness()
-	if scenario == "build" then h.build = "70889"
+	if scenario == "client" then h.version = "12.1.0"
 	elseif scenario == "raw" then h.pin.SetAppearanceField = h.env.UnitPositionFrameUpdateSecureMixin.SetAppearanceField
 	elseif scenario == "tainted" then h.tainted[h.pin] = { SetAppearanceField = true }
 	elseif scenario == "forbidden" then h.pin.forbidden = true
