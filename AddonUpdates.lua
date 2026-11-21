@@ -118,7 +118,7 @@ function QT:ObserveAddonVersion(version)
 	return true
 end
 
-local VERSION_LIFETIME, VERSION_LIMIT, VERSION_CACHE_LIFETIME = 600, 512, 180
+local VERSION_LIFETIME, VERSION_CACHE_LIFETIME = 600, 180
 local function VersionNow(a)
 	return a.API.GetTime and a:SafeToNumber(a.API.GetTime())
 end
@@ -136,19 +136,6 @@ local function VersionRecord(a, name)
 		record.observationSequence, record.sourceSampledAt) then return nil end
 	if record.cached and not a:GetFreshPlayerLocation(name) then return nil end
 	return record
-end
-local function StoreVersion(a, name, record)
-	local state = a:GetQTPlayerPresenceState()
-	state.peerVersions = state.peerVersions or {}
-	if not state.peerVersions[name] then
-		local count, oldest, at = 0
-		for peer, value in pairs(state.peerVersions) do
-			count = count + 1
-			if not at or value.receivedAt < at then oldest, at = peer, value.receivedAt end
-		end
-		if count >= VERSION_LIMIT then state.peerVersions[oldest] = nil end
-	end
-	state.peerVersions[name] = record
 end
 local function VersionObservation(name, observation)
 	if type(observation) ~= "table" or observation.name ~= name then return nil end
@@ -170,7 +157,7 @@ function QT:RememberPlayerAddonVersion(sender, version, observation, establishes
 	end
 	local record = { version = version }
 	if not self:CommitPeerObservation(observation, record, establishesPresence == true) then return false end
-	StoreVersion(self, name, record)
+	self:StorePlayerVersionRecord(name, record)
 	return true
 end
 
@@ -238,7 +225,7 @@ function QT:RestorePlayerAddonVersionCacheEntry(name, cached, now, wall)
 	if remaining <= 0 or not self:CanAcceptPeerUpdate(name, nil, now - (wall - sampled), session, sequence, sourceStamp) then
 		return false
 	end
-	StoreVersion(self, name, { version = cached.version, cached = true, sampledAt = now - (wall - sampled),
+	self:StorePlayerVersionRecord(name, { version = cached.version, cached = true, sampledAt = now - (wall - sampled),
 		receivedAt = now, expiresAt = now + remaining, lifetime = remaining, sourceSampledAt = sourceStamp,
 		observationName = name, observationSession = session, observationSequence = sequence,
 		observationSource = "cache" })
@@ -323,9 +310,7 @@ function QT:HandleAddonVersionMessage(payload, sender, observation)
 		if not self:RememberPlayerAddonVersion(sender, version, observation, true) then return false end
 	end
 	if extended then
-		local state = self:GetQTPlayerPresenceState()
-		state.peerTooltipStats = state.peerTooltipStats or {}
-		state.peerTooltipStats[self:NormalizeMemberName(sender)] = record
+		self:StorePlayerTooltipStats(name, record)
 		self:InvalidatePartyVisualMembership(name, record.partySize, record.sampledAt, record)
 	end
 	self:ObserveAddonVersion(version)

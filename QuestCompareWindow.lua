@@ -285,15 +285,6 @@ local function Checkbox(addon, parent, x, y, text, callback)
 	return check
 end
 
--- These factories are addon-owned seams for live-safe UI fixtures.
-function QuestTogether:CreatePartyQuestUIFrame(...)
-	return self:CreateOwnedWindowFrame(...)
-end
-
-function QuestTogether:GetPartyQuestUIParent()
-	return self:GetOwnedUIParent()
-end
-
 -- QT owns these buttons and textures; use Blizzard's ordinary mini quest POI
 -- artwork without registering remote quests with Blizzard's POI button mixins.
 local FocusAtlas = Style.SetAtlas

@@ -67,6 +67,12 @@ local function Fixture()
 		end, { owner = state.workOwner })
 		return self:GetQuestChainProviderCapability()
 	end
+	-- This fake provider publishes names with its index in one atomic snapshot.
+	-- It has no backing database to query if metadata is requested while loading.
+	function a:RequestQuestChainMetadata(...)
+		if self.questChainProviderState.kind == "retail" then return QT.RequestQuestChainMetadata(self, ...) end
+		return true
+	end
 	function a:FlushPreview()
 		for _ = 1, 30 do
 			local pending = self.delayed; self.delayed = {}
@@ -224,7 +230,7 @@ QT:RegisterTest("chain preview refresh rebuilds actual log and retires pending p
 	for _, action in ipairs(actions) do Equal(action.action(), false) end
 	a:FlushPreview()
 	Equal(p.partyQuestCompareSession, nil); Equal(p.questChainProviderState, nil)
-	Equal(next(p.chainPreviewJobs), nil)
+	assert(not p.runtimeUIWorkState or not next(p.runtimeUIWorkState.entries))
 	assert(a:OpenPartyQuestComparePreview("chains")); a:FlushPreview()
 	Equal(a.partyQuestComparePreview, p)
 	assert(p.partyQuestCompareSession ~= replacement)
@@ -253,8 +259,10 @@ QT:RegisterTest("chain preview resumes suspended indexing and history work after
 	local pending = a.delayed; a.delayed = {}
 	for _, work in ipairs(pending) do work.callback() end
 	Equal(p:GetQuestChainProviderCapability().state, "loading")
-	assert(#a.delayed > 0)
-	a.blocked = false; a:FlushPreview()
+	assert(next(p:GetRuntimeUIWorkState().entries))
+	a.blocked = false
+	p:FlushRuntimeUIWork("test restriction recovery")
+	a:FlushPreview()
 	Equal(p:GetQuestChainProviderCapability().state, "ready")
 	assert(Step(Rows(p), 30))
 	Equal(p.partyQuestCompareSession.members[1].questHistory[10].status, "completed")
@@ -318,6 +326,25 @@ QT:RegisterTest("chain preview provider publication preserves explicit close and
 	assert(p:TogglePartyQuestChain(50, "quest:50"))
 	a:FlushPreview()
 	Equal(p.partyQuestCompareSession.chains.rootQuestID, 50)
+end)
+
+QT:RegisterTest("chain preview preserves deferred delays and shared coalescing", function()
+	local a = Fixture()
+	assert(a:OpenPartyQuestComparePreview("chains")); a:FlushPreview()
+	local p, timer, delay, called = a.partyQuestComparePreview, nil, nil, 0
+	p.API.Delay = function(seconds, callback) delay, timer = seconds, callback end
+	p:ScheduleDeferredWork("foreign_frame_mutation", "test-delay", function() called = called + 1 end, 30)
+	Equal(delay, 30)
+	p:FlushRuntimeUIWork("before timer")
+	Equal(called, 0)
+	timer(); Equal(called, 1)
+	p:ScheduleRuntimeWork("foreign_frame_mutation", "test-coalesce", function() called = called + 1 end,
+		{ mode = "bounded", delay = 1 })
+	local first = timer
+	p:ScheduleRuntimeWork("foreign_frame_mutation", "test-coalesce", function() called = called + 100 end,
+		{ mode = "bounded", delay = 1 })
+	Equal(timer, first); timer(); Equal(called, 2)
+	a:ClosePartyQuestComparePreview()
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_compare_chain_preview.lua")

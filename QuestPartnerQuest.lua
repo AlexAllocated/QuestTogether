@@ -1,5 +1,5 @@
 local QT = _G.QuestTogether
-local LIFETIME, MAX_PEERS = 65, 256
+local LIFETIME = 65
 
 local function QuestID(addon, value)
 	local id = addon:SafeToNumber(value)
@@ -57,20 +57,6 @@ function QT:BroadcastQuestPartnerQuest(state, looking)
 	return sent
 end
 
-function QT:PruneQuestPartnerQuests(now)
-	local state = rawget(self, "qtPlayerPresenceState")
-	for name, record in pairs(state and state.partnerQuests or {}) do
-		if
-			not now
-			or now < record.receivedAt
-			or now - record.receivedAt >= (record.lifetime or LIFETIME)
-			or self:IsIgnoredPlayerName(name)
-		then
-			state.partnerQuests[name] = nil
-		end
-	end
-end
-
 function QT:HandleQuestPartnerQuestMessage(payload, sender, observation)
 	if not self.isEnabled or type(payload) ~= "table" then
 		return false
@@ -97,36 +83,6 @@ function QT:HandleQuestPartnerQuestMessage(payload, sender, observation)
 		return false
 	end
 	self:PruneQuestPartnerQuests(now)
-	local state = self:GetQTPlayerPresenceState()
-	state.partnerQuests = state.partnerQuests or {}
-	local previous = state.partnerQuests[name]
-	if previous and previous.session == session and previous.sequence >= sequence then
-		return false
-	end
-	local retired = previous and previous.retired or {}
-	for _, oldSession in ipairs(retired) do
-		if oldSession == session then
-			return false
-		end
-	end
-	if previous and previous.session ~= session then
-		retired[#retired + 1] = previous.session
-		if #retired > 4 then
-			table.remove(retired, 1)
-		end
-	end
-	if not previous then
-		local count, oldest, oldestAt = 0, nil, math.huge
-		for peer, record in pairs(state.partnerQuests) do
-			count = count + 1
-			if record.receivedAt < oldestAt then
-				oldest, oldestAt = peer, record.receivedAt
-			end
-		end
-		if count >= MAX_PEERS then
-			state.partnerQuests[oldest] = nil
-		end
-	end
 	-- This packet alone cannot renew LFG status or restore a departed identity.
 	local record = {
 		session = session,
@@ -134,12 +90,10 @@ function QT:HandleQuestPartnerQuestMessage(payload, sender, observation)
 		questID = id,
 		title = id ~= 0 and title ~= "" and title or nil,
 		receivedAt = now,
-		retired = retired,
 	}
-	if not self:CommitPeerObservation(observation, record, false) then
+	if not self:CommitQuestPartnerObservation("quest", name, record, observation, false, true) then
 		return false
 	end
-	state.partnerQuests[name] = record
 	return true
 end
 
@@ -172,11 +126,5 @@ function QT:GetPlayerPartnerQuestID(name)
 		and record.sequence == status.sequence
 	then
 		return QuestID(self, record.questID), record.title
-	end
-end
-
-function QuestTogether:RecordQuestPartnerQuestPublication(record)
-	if record.questID and record.questID > 0 and self:GetOption("lookingForQuestPartners") == true then
-		self:GetQTPlayerPresenceState().lastPartnerQuestOnAt = Now(self)
 	end
 end

@@ -2391,7 +2391,7 @@ QT:RegisterTest("reload versions follow original cached location expiry without 
 	Equal(b:GetPlayerAddonVersion("Peer-Realm"), "9.0.3")
 	assert(not b:IsKnownQTPlayer("Peer-Realm"))
 	Equal(b:GetPlayerTooltipStats("Peer-Realm"), nil)
-	Equal(b.qtPlayerPresenceState.peerTooltipStats, nil)
+	Equal(next(b.qtPlayerPresenceState.peerTooltipStats), nil)
 	local diagnostics = b:GetPlayerLocationDiagnostics()
 	Equal(diagnostics.currentPublicMapRecords, 0)
 	Equal(diagnostics.cachedPublicMapRecords, 1)

@@ -1,0 +1,500 @@
+-- SPDX-License-Identifier: GPL-3.0-only
+-- Owns player recognition, partner streams and their bounded record stores.
+local L = _G.QuestTogether.Translate
+local QT = _G.QuestTogether
+local HEARTBEAT, LIFETIME, MAX_PEERS = 20, 65, 256
+local MAX_KNOWN_PLAYERS = 512
+local PARTNER_ANNOUNCEMENT_COOLDOWN = 30
+
+local function Now(addon)
+	local getTime = addon.API and addon.API.GetTime
+	return type(getTime) == "function" and addon:SafeToNumber(getTime()) or nil
+end
+
+function QT:NewPlayerPresenceState()
+	return { peers = {}, peerVersions = {}, peerTooltipStats = {}, questPartners = {}, partnerQuests = {} }
+end
+
+function QT:GetQTPlayerPresenceState()
+	local state = rawget(self, "qtPlayerPresenceState")
+	if not state then
+		state = self:NewPlayerPresenceState()
+		self.qtPlayerPresenceState = state
+	end
+	return state
+end
+
+-- Eviction happens only after validation/acceptance; rejected observations do
+-- not mutate the retained stream or its session retirement history.
+local function PutBounded(records, name, record, limit)
+	if not records[name] then
+		local count, oldest, at = 0
+		for peer, value in pairs(records) do
+			count = count + 1
+			if not at or value.receivedAt < at then oldest, at = peer, value.receivedAt end
+		end
+		if count >= limit then records[oldest] = nil end
+	end
+	records[name] = record
+end
+
+function QT:StorePlayerVersionRecord(name, record)
+	PutBounded(self:GetQTPlayerPresenceState().peerVersions, name, record, MAX_KNOWN_PLAYERS)
+end
+
+function QT:StorePlayerTooltipStats(name, record)
+	self:GetQTPlayerPresenceState().peerTooltipStats[name] = record
+end
+
+function QT:CommitQuestPartnerObservation(kind, name, record, observation, establishesPresence, ordered)
+	local state = self:GetQTPlayerPresenceState()
+	assert(kind == "status" or kind == "quest", "invalid partner stream")
+	local records = kind == "status" and state.questPartners or state.partnerQuests
+	local previous = records[name]
+	local retired = {}
+	for _, session in ipairs(previous and previous.retired or {}) do
+		if ordered and session == record.session then return false end
+		retired[#retired + 1] = session
+	end
+	if ordered and previous then
+		if previous.session == record.session and previous.sequence >= record.sequence then return false end
+		if previous.session ~= record.session then
+			retired[#retired + 1] = previous.session
+			if #retired > 4 then table.remove(retired, 1) end
+		end
+	end
+	record.retired = retired
+	if not self:CommitPeerObservation(observation, record, establishesPresence) then return false end
+	PutBounded(records, name, record, MAX_PEERS)
+	return true
+end
+
+function QT:RetireQuestPartnerPresence(name, now, sampledAt)
+	local state = rawget(self, "qtPlayerPresenceState")
+	if not state then return end
+	local status = state.questPartners[name]
+	if status then
+		-- Keep the inner stream counter so delayed On copies cannot revive it.
+		status.looking, status.receivedAt, status.sampledAt, status.lifetime = false, now, sampledAt, 600
+	end
+	state.partnerQuests[name] = nil
+end
+
+function QT:IsKnownQTPlayer(name)
+	local state, now = rawget(self, "qtPlayerPresenceState"), Now(self)
+	name = self:NormalizeMemberName(name)
+	local seen = state and name and state.peers[name]
+	return self.isEnabled == true and now ~= nil and seen ~= nil and now >= seen and not self:IsIgnoredPlayerName(name)
+end
+
+-- Display recognition can use a still-valid restored location before a live
+-- reply arrives. Reading it never creates presence or renews the source lease.
+function QT:HasQTPlayerDisplayEvidence(name)
+	name = self:NormalizeMemberName(name)
+	if not self.isEnabled or self.isLoggingOut or not name or self:IsIgnoredPlayerName(name) then return false end
+	if self:IsSelfSender(name) or self:IsKnownQTPlayer(name) then return true end
+	local row = self:GetFreshPlayerLocation(name)
+	if row and self:CanAcceptPeerUpdate(name, nil, row.sampledAt or row.receivedAt, row.session, row.sequence) then return true end
+	return self:IsPlayerLocationHiddenForDeveloper(name) == true
+end
+
+function QT:RecordQTPlayerPresence(name, active, observation)
+	if not self.isEnabled then
+		return false
+	end
+	name = self:NormalizeMemberName(name)
+	local now = Now(self)
+	if not now or not name or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
+		return false
+	end
+	if active and not self:CanRecordPeerPresence(name, observation) then
+		return false
+	end
+	local state = self:GetQTPlayerPresenceState()
+	local wasKnown = self:IsKnownQTPlayer(name)
+	local hadRecord = state.peers[name] ~= nil
+	if not active then
+		self:RetirePeerServices(name, "departure")
+	end
+	if active then
+		if not state.peers[name] then
+			local count, oldest, oldestAt = 0, nil, math.huge
+			for peer, seen in pairs(state.peers) do
+				count = count + 1
+				if seen < oldestAt then
+					oldest, oldestAt = peer, seen
+				end
+			end
+			if count >= MAX_KNOWN_PLAYERS then
+				state.peers[oldest] = nil
+				self:ForgetPartyVisualPeer(oldest)
+				if state.peerVersions then
+					state.peerVersions[oldest] = nil
+				end
+				if state.peerTooltipStats then
+					state.peerTooltipStats[oldest] = nil
+				end
+			end
+		end
+		state.peers[name] = now
+	else
+		state.peers[name] = nil
+		if state.peerVersions then
+			state.peerVersions[name] = nil
+		end
+		if state.peerTooltipStats then
+			state.peerTooltipStats[name] = nil
+		end
+	end
+	-- Recognition lasts for this UI session, independently of short-lived map
+	-- positions and partner status. Departures and evictions still clear logos.
+	if (wasKnown ~= active or (not active and hadRecord)) and self.RefreshQTPlayerPlatePresence then
+		self:RefreshQTPlayerPlatePresence()
+	end
+	return true
+end
+
+function QT:HandleQTPlayerPresenceMessage(data, sender, observation)
+	if type(data) ~= "table" or type(data.active) ~= "boolean" then
+		return false
+	end
+	local name = self:NormalizeMemberName(sender)
+	if not name or self:IsIgnoredPlayerName(name) or self:IsSelfSender(name) then
+		return false
+	end
+	observation = self:ResolvePeerObservation(name, "QTPR", observation)
+	if not self:CanAcceptPeerObservation(observation) then
+		return false
+	end
+	if not data.active then
+		return self:RecordPeerDeparture(name, observation.sampledAt, observation.session, observation.sequence)
+	end
+	return self:CommitPeerObservation(observation, nil, true)
+end
+
+function QT:BroadcastQTPlayerPresence(inactive)
+	if not self.isEnabled or (self.isLoggingOut and not inactive) then
+		return false
+	end
+	local state, now = self:GetQTPlayerPresenceState(), Now(self)
+	if not now or (not inactive and state.lastSentAt and now - state.lastSentAt < HEARTBEAT) then
+		return false
+	end
+	state.lastSentAt = now
+	if inactive then
+		self:BroadcastQuestPartnerStatus(true, true)
+	end
+	if not inactive then
+		self:BroadcastPartyVisualMetadata()
+		self:BroadcastAddonVersion(true)
+	end
+	return self:Publish("QTPR", { active = not inactive })
+end
+
+-- Only an explicit LFQP observation renews partner status.
+function QT:IsPlayerLookingForQuestPartners(name)
+	name = self:NormalizeMemberName(name)
+	if not name or not self.isEnabled then
+		return false
+	end
+	if self:IsSelfSender(name) then
+		return self:GetOption("lookingForQuestPartners") == true
+	end
+	local state, now = rawget(self, "qtPlayerPresenceState"), Now(self)
+	local record = state and state.questPartners and state.questPartners[name]
+	-- Legacy QTPR has no ordering information. A delayed old departure must not
+	-- overwrite a newer ordered status after the sender rejoins.
+	return not self:IsIgnoredPlayerName(name)
+		and record ~= nil
+		and record.looking == true
+		and now ~= nil
+		and now >= record.receivedAt
+		and now - record.receivedAt < (record.lifetime or LIFETIME)
+end
+
+function QT:HandleQuestPartnerStatusMessage(payload, sender, observation)
+	if not self.isEnabled or type(payload) ~= "table" or type(payload.looking) ~= "boolean" then
+		return false
+	end
+	local session, sequence, looking = payload.session, payload.sequence, payload.looking
+	if
+		type(session) ~= "string"
+		or #session > 64
+		or type(sequence) ~= "number"
+		or sequence < 1
+		or sequence > 2147483647
+	then
+		return false
+	end
+	local name, now = self:NormalizeMemberName(sender), Now(self)
+	if not name or not now or self:IsSelfSender(name) or self:IsIgnoredPlayerName(name) then
+		return false
+	end
+	observation = self:ResolvePeerObservation(name, "QTLF", observation)
+	if not self:CanAcceptPeerObservation(observation) then
+		return false
+	end
+	local sampledAt = observation.sampledAt
+	self:PruneQTPlayerPresence()
+	-- Off can be a delayed departure withdrawal. It clears partner status while
+	-- preserving an existing identity, but must not restore a departed logo.
+	-- Keep Off records until expiry too: a delayed copy of On must not revive it.
+	local record = {
+		session = session,
+		sequence = sequence,
+		looking = looking,
+		receivedAt = now,
+		sampledAt = sampledAt,
+		lifetime = observation.expiresAt - now,
+	}
+	if not self:CommitQuestPartnerObservation("status", name, record, observation, looking, true) then
+		return false
+	end
+	if self.RefreshQTPlayerPartnerIndicators then
+		self:RefreshQTPlayerPartnerIndicators()
+	end
+	return true
+end
+
+-- Manual snapshots refresh normal LFQP state without inventing a QTLF sequence.
+function QT:RefreshQuestPartnerStatusFromPing(name, looking, age)
+	local now = Now(self)
+	if not self.isEnabled or type(looking) ~= "boolean" or not now then
+		return false
+	end
+	local observation = self:CreatePeerObservation(name, "QTLF", { source = "diagnostic", age = age })
+	if not self:CanAcceptPeerObservation(observation) then
+		return false
+	end
+	local sampledAt = observation.sampledAt
+	self:PruneQTPlayerPresence()
+	local state = self:GetQTPlayerPresenceState()
+	local previous = state.questPartners[name]
+	if previous and sampledAt < (previous.sampledAt or previous.receivedAt) then
+		return false
+	end
+	local record = {
+		session = previous and previous.session or "0-0",
+		sequence = previous and previous.sequence or 1,
+		looking = looking,
+		receivedAt = now,
+		sampledAt = sampledAt,
+		lifetime = self:GetGeographicSnapshotLifetime() - age,
+	}
+	if not self:CommitQuestPartnerObservation("status", name, record, observation, looking, false) then
+		return false
+	end
+	if self.RefreshQTPlayerPartnerIndicators then
+		self:RefreshQTPlayerPartnerIndicators()
+	end
+	return true
+end
+
+-- Only an explicit off-to-on setting change announces a search. Heartbeats,
+-- login, profile loading, and withdrawals remain metadata-only updates.
+function QT:AnnounceQuestPartnerSearch()
+	if
+		not self.isEnabled
+		or self.isLoggingOut
+		or self:IsRuntimeRestricted()
+		or self:GetOption("lookingForQuestPartners") ~= true
+		or not self:ShouldDisplayAnnouncementType("LOOKING_FOR_QUEST_PARTNERS")
+	then
+		return false
+	end
+	local now = Now(self)
+	if not now then
+		return false
+	end
+	local last = rawget(self, "lastQuestPartnerAnnouncementAt")
+	if last and now >= last and now - last < PARTNER_ANNOUNCEMENT_COOLDOWN then
+		return false
+	end
+	local event =
+		self:BuildLocalAnnouncementEvent("LOOKING_FOR_QUEST_PARTNERS", L("Looking for questing partners") .. " :)")
+	if not event then
+		return false
+	end
+	-- Pace attempts too; failed routes must not let rapid toggles flood comms.
+	-- Keep this separate from presence state so disabling/re-enabling the addon
+	-- or changing profiles does not reset the session cooldown.
+	self.lastQuestPartnerAnnouncementAt = now
+	local sent = self:SendAnnouncementWireEvent(event)
+	if not self.suppressLocalAnnouncementDisplayDuringTests then
+		self:HandleAnnouncementEvent(event, true)
+	end
+	return sent
+end
+
+function QT:StopLookingForPartnersOnGroupJoin()
+	if
+		not self.isEnabled
+		or self.isLoggingOut
+		or self:GetOption("stopLookingForPartnersOnJoin") ~= true
+		or self:GetOption("lookingForQuestPartners") ~= true
+	then
+		return false
+	end
+	return self:SetOption("lookingForQuestPartners", false)
+end
+
+-- Allocate ordering exactly once for either a heartbeat or a requested refresh.
+function QT:BuildQuestPartnerStatusPayload(state, looking)
+	state.partnerSession = self:GetCommunicationSession()
+	state.partnerSequence = self:NextCommunicationSequence()
+	return { session = state.partnerSession, sequence = state.partnerSequence, looking = looking == true }
+end
+
+function QT:BroadcastQuestPartnerStatus(force, inactive)
+	if not self.isEnabled or (self.isLoggingOut and not inactive) then
+		return false
+	end
+	local now = Now(self)
+	if not now then
+		return false
+	end
+	local state = self:GetQTPlayerPresenceState()
+	local looking = not inactive and self:GetOption("lookingForQuestPartners") == true
+	-- Most users leave this opt-in setting off. Send nothing periodically unless
+	-- an earlier On can still be visible, in which case repeat its withdrawal.
+	local withdrawing = state.lastPartnerOnAt
+		and now >= state.lastPartnerOnAt
+		and now - state.lastPartnerOnAt < (rawget(self, "geographicCommsState") and 600 or LIFETIME)
+	if not looking and not force and not withdrawing then
+		return false
+	end
+	if
+		not force
+		and state.lastPartnerSentAt
+		and now >= state.lastPartnerSentAt
+		and now - state.lastPartnerSentAt < HEARTBEAT
+	then
+		return false
+	end
+	local payload = self:BuildQuestPartnerStatusPayload(state, looking)
+	state.lastPartnerSentAt = now -- Pace failed sends too.
+	local sent = self:Publish("QTLF", payload, nil, {
+		owner = state,
+		onComplete = function(accepted)
+			if accepted and self:GetQTPlayerPresenceState() == state then
+				self:RecordQuestPartnerPublication(payload)
+			end
+		end,
+	})
+	self:BroadcastQuestPartnerQuest(state, looking)
+	return sent
+end
+
+function QT:HandleQuestPartnerCommand(input)
+	local action = string.lower(self:SafeTrimString(input, ""))
+	local looking = self:GetOption("lookingForQuestPartners") == true
+	if action == "" or action == "toggle" then
+		looking = not looking
+	elseif action == "on" then
+		looking = true
+	elseif action == "off" then
+		looking = false
+	elseif action ~= "status" then
+		self:Print(L("Usage: /qt lfg [on|off|toggle|status]"))
+		return false
+	end
+	if action ~= "status" then
+		if not self:SetOption("lookingForQuestPartners", looking) then
+			return false
+		end
+		if not self:IsRuntimeRestricted() and self.RefreshOptionsWindow then
+			self:RefreshOptionsWindow()
+		end
+	end
+	self:Print(
+		L("Looking for questing partners: ")
+			.. (looking and L("On") or L("Off"))
+			.. (looking and not self.isEnabled and L(" (paused while QuestTogether is disabled).") or ".")
+	)
+	return true
+end
+
+function QT:PruneQTPlayerPresence(force)
+	local state, now = rawget(self, "qtPlayerPresenceState"), Now(self)
+	if not state then
+		return
+	end
+	if not force and now and state.lastPruneAt and now - state.lastPruneAt < 1 then
+		return
+	end
+	state.lastPruneAt = now
+	self:PruneQuestPartnerQuests(now)
+	local changed = false
+	for name, seen in pairs(state.peers) do
+		if not now or now < seen or self:IsIgnoredPlayerName(name) then
+			state.peers[name], changed = nil, true
+			self:ForgetPartyVisualPeer(name)
+			if state.peerVersions then
+				state.peerVersions[name] = nil
+			end
+			if state.peerTooltipStats then
+				state.peerTooltipStats[name] = nil
+			end
+		end
+	end
+	for name, record in pairs(state.questPartners or {}) do
+		if
+			not now
+			or now < record.receivedAt
+			or now - record.receivedAt >= (record.lifetime or LIFETIME)
+			or self:IsIgnoredPlayerName(name)
+		then
+			state.questPartners[name] = nil
+		end
+	end
+	if changed and self.RefreshQTPlayerPlatePresence then
+		self:RefreshQTPlayerPlatePresence()
+	end
+	if self.RefreshQTPlayerPartnerIndicators then
+		self:RefreshQTPlayerPartnerIndicators()
+	end
+end
+
+function QT:UpdateQTPlayerPresence()
+	self:UpdatePartyChatReminder()
+	if self.UpdatePartyJoin then
+		self:UpdatePartyJoin()
+	end
+	self:BroadcastQTPlayerPresence()
+	self:BroadcastQuestPartnerStatus()
+	if not rawget(self, "geographicCommsState") then
+		self:BroadcastAddonVersion()
+	end
+	self:PruneQTPlayerPresence()
+end
+
+function QT:ResetQTPlayerPresence()
+	self.qtPlayerPresenceState = nil
+end
+
+function QuestTogether:RecordQuestPartnerPublication(record)
+	if record.looking == true and self:GetOption("lookingForQuestPartners") == true then
+		self:GetQTPlayerPresenceState().lastPartnerOnAt = Now(self)
+	end
+end
+
+function QT:PruneQuestPartnerQuests(now)
+	local state = rawget(self, "qtPlayerPresenceState")
+	for name, record in pairs(state and state.partnerQuests or {}) do
+		if
+			not now
+			or now < record.receivedAt
+			or now - record.receivedAt >= (record.lifetime or LIFETIME)
+			or self:IsIgnoredPlayerName(name)
+		then
+			state.partnerQuests[name] = nil
+		end
+	end
+end
+
+
+function QuestTogether:RecordQuestPartnerQuestPublication(record)
+	if record.questID and record.questID > 0 and self:GetOption("lookingForQuestPartners") == true then
+		self:GetQTPlayerPresenceState().lastPartnerQuestOnAt = Now(self)
+	end
+end

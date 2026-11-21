@@ -303,9 +303,6 @@ function QT:InitializeTransport()
 		}
 		self.transportState = state
 	end
-	if self.RegisterAddonWhisperChatFilter then
-		self:RegisterAddonWhisperChatFilter()
-	end
 	return state
 end
 function QT:GetTransportState()

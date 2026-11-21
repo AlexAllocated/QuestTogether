@@ -25,7 +25,7 @@ local function Peer(name)
 		wire = {},
 		known = {},
 		count = 0,
-		qtPlayerPresenceState = { peers = {} },
+		qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = {} }),
 	}, { __index = QT })
 	a.API = {
 		GetTime = function()

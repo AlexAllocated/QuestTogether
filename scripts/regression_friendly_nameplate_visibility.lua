@@ -161,7 +161,7 @@ local function Fixture()
 	end
 	QT.isEnabled = true
 	QT.db.profile.nameplatePlayerIconEnabled = true
-	QT.qtPlayerPresenceState = { peers = { ["Friend Othername"] = 100 } }
+	QT.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = { ["Friend Othername"] = 100 } })
 	QT.API = {
 		GetCVar = function(key)
 			state.reads[#state.reads + 1] = key

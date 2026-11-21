@@ -828,7 +828,7 @@ local function WithPlate(run)
 	state.plate, state.frame = plate, frame
 	QT.isEnabled = true
 	QT.db.profile.nameplatePlayerIconEnabled = true
-	QT.qtPlayerPresenceState = { peers = { [state.name] = state.now } }
+	QT.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = { [state.name] = state.now } })
 	QT.peerSnapshotState = nil
 	QT.qtPlayerIconStateByFrame = {}
 	Patch({
@@ -939,7 +939,7 @@ QT:RegisterTest("all QT communications identify players before or after their fr
 						QT.API.RegionalUniqueNamesEnabled = function()
 							return regional
 						end
-						QT.qtPlayerPresenceState = { peers = {} }
+						QT.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = {} })
 						QT.recentCommMessageSignatures = {}
 						QT.playerLocationState = nil
 						QT.nameplateRegisteredEvents.NAME_PLATE_UNIT_ADDED = true

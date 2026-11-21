@@ -3,35 +3,6 @@ local L = QuestTogether.Translate
 local RESULT_LIFETIME = 60
 local AUDIO_DUPLICATE_WINDOW = 2
 
-local function EscapePattern(text)
-	return (text:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1"))
-end
-
--- A native result names a player, not a quest. Never use timing to attach it to
--- an individual QT request: a different addon or the quest log can share too.
-local function ResultPattern(format)
-	local parts, index, captures = { "^" }, 1, 0
-	while index <= #format do
-		local marker = format:find("%", index, true)
-		if not marker then
-			parts[#parts + 1] = EscapePattern(format:sub(index))
-			break
-		end
-		parts[#parts + 1] = EscapePattern(format:sub(index, marker - 1))
-		if format:sub(marker, marker + 1) == "%%" then
-			parts[#parts + 1], index = "%%", marker + 2
-		elseif format:sub(marker, marker + 1) == "%s" or format:sub(marker, marker + 3) == "%1$s" then
-			captures = captures + 1
-			parts[#parts + 1] = "(.+)"
-			index = marker + (format:sub(marker, marker + 1) == "%s" and 2 or 4)
-		else
-			return nil
-		end
-	end
-	parts[#parts + 1] = "$"
-	return captures == 1 and table.concat(parts) or nil
-end
-
 function QuestTogether:FindQuestShareResultPlayer(value)
 	local text = self:NormalizeQuestDisplayTitleText(value)
 	if #text > 120 or text == "" then
@@ -77,7 +48,7 @@ function QuestTogether:HandleQuestShareSystemMessage(message)
 			return false
 		end
 		if self:CanAccessValue(format) and type(format) == "string" and #format <= 512 then
-			local pattern = ResultPattern(format)
+			local pattern = self:CompileSingleStringMessagePattern(format)
 			local captured = pattern and message:match(pattern)
 			local name = captured and self:FindQuestShareResultPlayer(captured)
 			if name then

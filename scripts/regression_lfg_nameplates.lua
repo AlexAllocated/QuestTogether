@@ -155,7 +155,7 @@ local function Fixture()
 	s.plate.UnitFrame = s.unitFrame
 	QT.isEnabled = true
 	QT.db.profile.nameplatePlayerIconEnabled = true
-	QT.qtPlayerPresenceState = { peers = { [s.name] = 100 } }
+	QT.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = { [s.name] = 100 } })
 	QT.peerSnapshotState = nil
 	QT.recentCommMessageSignatures = {}
 	QT.nameplateRegisteredEvents.NAME_PLATE_UNIT_ADDED = true

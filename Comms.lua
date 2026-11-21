@@ -529,37 +529,12 @@ end
 local function PruneWhisperObserver(a, s)
 	WhisperTargetCount(s, WhisperNow(a))
 end
-local function PlayerNotFoundPattern(format)
-	local parts, index, captures = { "^" }, 1, 0
-	local function Literal(text)
-		return (text:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1"))
-	end
-	while index <= #format do
-		local marker = format:find("%", index, true)
-		if not marker then
-			parts[#parts + 1] = Literal(format:sub(index))
-			break
-		end
-		parts[#parts + 1] = Literal(format:sub(index, marker - 1))
-		if format:sub(marker, marker + 1) == "%%" then
-			parts[#parts + 1], index = "%%", marker + 2
-		elseif format:sub(marker, marker + 1) == "%s" or format:sub(marker, marker + 3) == "%1$s" then
-			captures = captures + 1
-			parts[#parts + 1] = "(.+)"
-			index = marker + (format:sub(marker, marker + 1) == "%s" and 2 or 4)
-		else
-			return nil
-		end
-	end
-	parts[#parts + 1] = "$"
-	return captures == 1 and table.concat(parts) or nil
-end
 local function ReadWhisperNoticePattern(a)
 	local getter = a.API.GetPlayerNotFoundMessageFormat
 	if type(getter) ~= "function" then return nil end
 	local ok, format = pcall(getter)
 	if not ok or not a:CanAccessValue(format) or type(format) ~= "string" or #format > 512 then return nil end
-	return PlayerNotFoundPattern(format)
+	return a:CompileSingleStringMessagePattern(format)
 end
 local function WhisperNoticeFormatSupported(a, s, now)
 	if s.noticeFormatCheckedAt and now >= s.noticeFormatCheckedAt

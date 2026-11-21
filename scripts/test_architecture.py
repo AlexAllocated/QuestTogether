@@ -17,4 +17,10 @@ class ArchitectureTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 check(source_overrides={"Nameplates.lua": source})
 
+    def test_rejects_duplicate_presence_owner_and_preview_scheduler(self):
+        with self.assertRaisesRegex(ValueError, "player presence"):
+            check(source_overrides={"PlayerPlates.lua": "function QT:NewPlayerPresenceState() end"})
+        with self.assertRaisesRegex(ValueError, "shared work scheduler"):
+            check(source_overrides={"QuestCompareChainPreview.lua": "self.API.Delay(0, callback)"})
+
 if __name__ == "__main__": unittest.main()

@@ -179,6 +179,26 @@ function QuestTogether:GetPartyQuestAbsenceState(member, questID)
 	return "Absent"
 end
 
+-- The same bounded local evidence reader serves live and preview sessions.
+-- It owns expiration; callers own when their session is eligible for work.
+function QuestTogether:RefreshPartyQuestLocalHistory(member, ids, budget, now)
+	member.questHistory = member.questHistory or {}
+	local changed, pending = false, false
+	for _, id in ipairs(ids or {}) do
+		local evidence = member.questHistory[id]
+		local fresh = evidence and now >= evidence.sampledAt and now < evidence.sampledAt + HISTORY_LIFETIME
+		if evidence and not fresh then member.questHistory[id], changed = nil, true end
+		if not member.entries[id] and not fresh then
+			if budget > 0 then
+				budget = budget - 1
+				member.questHistory[id] = { status = self:ReadCharacterQuestHistoryStatus(id), sampledAt = now }
+				changed = true
+			else pending = true end
+		end
+	end
+	return changed, pending, budget
+end
+
 function QuestTogether:UpdatePartyQuestCompletion()
 	local session = rawget(self, "partyQuestCompareSession")
 	if not session then
@@ -195,25 +215,27 @@ function QuestTogether:UpdatePartyQuestCompletion()
 		return
 	end
 	session.nextHistoryUpdate = now + 1
-	local localBudget, requested, changed = 8, false, false
+	local requested, changed = false, false
 	for _, member in ipairs(session.members) do
 		if member.state == "ready" and not self:IsIgnoredPlayerName(member.name) then
 			member.questHistory = member.questHistory or {}
+			if member.isLocal then
+				local updated = self:RefreshPartyQuestLocalHistory(member, session.historyInterestOrder, 8, now)
+				changed = changed or updated
+			end
 			local records = {}
-			for _, id in ipairs(session.historyInterestOrder or {}) do
-				local previous = member.questHistory[id]
-				local fresh = previous and now >= previous.sampledAt and now < previous.sampledAt + HISTORY_LIFETIME
-				if previous and not fresh then
-					member.questHistory[id] = nil
-					changed = true
-				end
-				if not member.entries[id] and not fresh then
-					if member.isLocal and localBudget > 0 then
-						localBudget = localBudget - 1
-						member.questHistory[id] = { status = self:ReadCharacterQuestHistoryStatus(id), sampledAt = now }
+			if not member.isLocal then
+				for _, id in ipairs(session.historyInterestOrder or {}) do
+					local previous = member.questHistory[id]
+					local fresh = previous and now >= previous.sampledAt and now < previous.sampledAt + HISTORY_LIFETIME
+					if previous and not fresh then
+						member.questHistory[id] = nil
 						changed = true
-					elseif not member.isLocal and #records < MAX_QUERY then
-						records[#records + 1] = { questId = id }
+					end
+					if not member.entries[id] and not fresh then
+						if #records < MAX_QUERY then
+							records[#records + 1] = { questId = id }
+						end
 					end
 				end
 			end

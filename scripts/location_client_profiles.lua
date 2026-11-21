@@ -46,7 +46,7 @@ addon.API.GetTime = function()
 end
 local partnerName = addon:NormalizeMemberName(client == "forever" and "Partner Othername" or "Partner-Realm")
 local partnerStatus = { looking = false, receivedAt = 100 }
-addon.qtPlayerPresenceState = { peers = {}, questPartners = { [partnerName] = partnerStatus } }
+addon.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = {}, questPartners = { [partnerName] = partnerStatus } })
 local restricted, rotated, ignoredRotation, facing = false, false, false, math.pi / 2
 function addon:IsRuntimeRestricted()
 	return restricted

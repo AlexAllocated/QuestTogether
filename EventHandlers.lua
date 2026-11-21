@@ -80,22 +80,6 @@ local function SafeMatch(text, pattern)
 	return first, second
 end
 
-local function NormalizeQuestId(addon, questId)
-	if not addon then
-		return nil
-	end
-
-	if addon.NormalizeQuestID then
-		return addon:NormalizeQuestID(questId)
-	end
-
-	local numericQuestId = addon.SafeToNumber and addon:SafeToNumber(questId) or nil
-	if not numericQuestId or numericQuestId <= 0 then
-		return nil
-	end
-	return math.floor(numericQuestId + 0.5)
-end
-
 local DrainQueuedQuestLogTasks
 
 DrainQueuedQuestLogTasks = function(addon)
@@ -363,7 +347,7 @@ function QuestTogether:ShouldPublishObjectiveProgress(currentValue)
 end
 
 function QuestTogether:GetTaskAnnouncementType(questId)
-	questId = NormalizeQuestId(self, questId)
+	questId = self:NormalizeQuestID(questId)
 	if not questId then
 		return nil
 	end
@@ -387,7 +371,7 @@ local function ResolveCapturedQuestTitle(addon, questId, title)
 end
 
 function QuestTogether:BuildTrackedQuestRemovalData(questId)
-	questId = NormalizeQuestId(self, questId)
+	questId = self:NormalizeQuestID(questId)
 	if not questId then
 		return nil
 	end
@@ -418,7 +402,7 @@ function QuestTogether:BuildTrackedQuestRemovalData(questId)
 end
 
 function QuestTogether:BuildTrackedQuestCompletionData(questId)
-	questId = NormalizeQuestId(self, questId)
+	questId = self:NormalizeQuestID(questId)
 	if not questId then
 		return nil
 	end
@@ -466,7 +450,7 @@ function QuestTogether:BuildTrackedQuestCompletionData(questId)
 end
 
 function QuestTogether:ClearTrackedQuestState(questId)
-	questId = NormalizeQuestId(self, questId)
+	questId = self:NormalizeQuestID(questId)
 	if not questId then
 		return
 	end
@@ -486,7 +470,7 @@ function QuestTogether:ClearTrackedQuestState(questId)
 end
 
 function QuestTogether:ResolvePendingQuestRemoval(questId)
-	questId = NormalizeQuestId(self, questId)
+	questId = self:NormalizeQuestID(questId)
 	if not questId then
 		return false
 	end
@@ -564,7 +548,7 @@ function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
 	if not self:CanAccessValue(classicQuestId) then return end
 	local questId = questIndexOrId
 	if classicQuestId ~= nil then questId = classicQuestId end
-	local normalizedQuestId = NormalizeQuestId(self, questId)
+	local normalizedQuestId = self:NormalizeQuestID(questId)
 	if not normalizedQuestId then
 		return
 	end
@@ -631,7 +615,7 @@ function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
 		end
 		-- A recycled slot or a partially sanitized record is not evidence that
 		-- this acceptance is ready. Supported adapters normalize legacy IDs too.
-		if questInfo.isHeader == true or NormalizeQuestId(self, questInfo.questID) ~= normalizedQuestId then
+		if questInfo.isHeader == true or self:NormalizeQuestID(questInfo.questID) ~= normalizedQuestId then
 			return false
 		end
 		local classification = self:ObserveQuestClassification(normalizedQuestId, questInfo)
@@ -677,7 +661,7 @@ function QuestTogether:QUEST_ACCEPTED(_, questIndexOrId, classicQuestId)
 end
 
 function QuestTogether:QUEST_TURNED_IN(_, questId)
-	questId = NormalizeQuestId(self, questId)
+	questId = self:NormalizeQuestID(questId)
 	if not questId then
 		return
 	end
@@ -714,7 +698,7 @@ function QuestTogether:QUEST_TURNED_IN(_, questId)
 end
 
 function QuestTogether:QUEST_REMOVED(_, questId)
-	questId = NormalizeQuestId(self, questId)
+	questId = self:NormalizeQuestID(questId)
 	if not questId then
 		return
 	end
@@ -782,7 +766,7 @@ function QuestTogether:RefreshTrackedQuestProgress(combatRead)
 	local tracker = self:GetPlayerTracker()
 
 	for questId, questData in pairs(tracker) do
-		local normalizedQuestId = NormalizeQuestId(self, questId)
+		local normalizedQuestId = self:NormalizeQuestID(questId)
 		if normalizedQuestId
 			and not self.pendingQuestRemovals[normalizedQuestId]
 			and not self.questsCompleted[normalizedQuestId]

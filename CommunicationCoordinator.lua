@@ -44,7 +44,7 @@ end
 local function Current(a, s)
 	return rawget(a, "communicationState") == s and a.isEnabled and not a.isLoggingOut and not s.departing
 end
-function QT:InitializeCommunications()
+local function CommunicationState(self)
 	local s = rawget(self, "communicationState")
 	if not s then
 		local now = Now(self)
@@ -67,14 +67,18 @@ function QT:InitializeCommunications()
 		}
 		self.communicationState = s
 	end
-	self:InitializeTransport()
 	return s
 end
+function QT:InitializeCommunications()
+	self:InitializeTransport()
+	return CommunicationState(self)
+end
+
 function QT:GetCommunicationSession()
-	return self:InitializeCommunications().session
+	return CommunicationState(self).session
 end
 function QT:NextCommunicationSequence()
-	local s = self:InitializeCommunications()
+	local s = CommunicationState(self)
 	s.sequence = s.sequence + 1
 	return s.sequence
 end
@@ -363,6 +367,7 @@ function QT:ReplayCommResponses(sender, id)
 	return found
 end
 function QT:SubmitCommunication(operation, record, routes, options)
+	self:InitializeTransport()
 	local spec = self:GetCommOperation(operation)
 	options = Copy(options)
 	local s = self:InitializeCommunications()

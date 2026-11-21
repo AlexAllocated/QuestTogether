@@ -390,17 +390,7 @@ function QT:RecordPeerDeparture(name, sampledAt, session, sequence)
 	row.at = now
 	row.activeAfterDeparture = false
 	row.departed = { sampledAt = sampledAt, session = session, sequence = sequence or 0 }
-	local presence = rawget(self, "qtPlayerPresenceState")
-	if presence then
-		local status = presence.questPartners and presence.questPartners[name]
-		if status then
-			-- Retain the real inner stream counter to reject delayed old On copies.
-			status.looking, status.receivedAt, status.sampledAt, status.lifetime = false, now, sampledAt, TTL
-		end
-		if presence.partnerQuests then
-			presence.partnerQuests[name] = nil
-		end
-	end
+	self:RetireQuestPartnerPresence(name, now, sampledAt)
 	self:RecordQTPlayerPresence(name, false)
 	return true
 end

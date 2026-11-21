@@ -749,9 +749,10 @@
       "QTPH",
       "WHISPER"
     ],
-    "PlayerPlates.lua": [
+    "PlayerPresence.lua": [
       "QTLF",
-      "QTPR"
+      "QTPR",
+      "invalid partner stream"
     ],
     "PlayerTooltipPresenter.lua": [
       "ARTWORK",

@@ -217,6 +217,7 @@ local function WhisperFailureFixture(regional)
 		assert(self:SendTransportNow("private-wire", "MHEL", { distribution = "WHISPER", target = name }))
 	end
 	a:InitializeTransport()
+	a:RegisterAddonWhisperChatFilter()
 	return a
 end
 
@@ -3858,7 +3859,7 @@ end)
 local function PartyChatFixture()
 	local addon = NewCommsFixture()
 	addon.suppressLocalAnnouncementDisplayDuringTests = false
-	addon.qtPlayerPresenceState = { peers = {} }
+	addon.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = {} })
 	function addon:IsRuntimeRestrictionTypeActive()
 		return self.chatRestricted == true
 	end

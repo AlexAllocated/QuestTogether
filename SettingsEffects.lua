@@ -14,14 +14,12 @@ function QT:ApplyFeaturePolicies(changed, all)
 	then
 		-- Retiring communication lifetimes prevents already admitted public work
 		-- from surviving a permission change. Ordinary group sync restarts below.
-		if self.EndCommsWorldSession then
-			self:EndCommsWorldSession(false)
-		end
+		self:EndCommsWorldSession(false)
 		if not self:IsPublicSharingAllowed() then
 			self:RetirePublicSharingChannels()
 			self:ResetGeographicComms(true)
 		end
-		if self.isEnabled and self.ResumeCommsWorldSession then
+		if self.isEnabled then
 			self:InitializeGeographicComms()
 			self:ResumeCommsWorldSession()
 		end
@@ -56,13 +54,12 @@ function QT:ApplyFeaturePolicies(changed, all)
 			and (self.dataBrokerState.object ~= nil or self.dataBrokerState.candidate ~= nil)
 		self:RefreshDataBroker()
 	end
-	if Has("automaticGamepadLauncher") and self.RefreshAutomaticGamepadLauncher then
+	if Has("automaticGamepadLauncher") then
 		self:RefreshAutomaticGamepadLauncher()
 	end
 	if
 		Has("automaticLeaderFocus")
 		and self.isEnabled
-		and self.ReconcileAutomaticLeaderFocus
 		and (self:GetOption("automaticLeaderFocus") == true or rawget(self, "partyFocusController"))
 	then
 		self:ReconcileAutomaticLeaderFocus()

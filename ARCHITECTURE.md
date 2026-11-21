@@ -53,6 +53,8 @@ private `.local` notes are historical context, not the source of truth.
 | ObjectiveAnnouncements | Bounded local objective burst aggregation before publication | Remote-event rewriting, native quest reads or a separate timer |
 | PlayerDetails | Active hover interests, metadata refresh and roster fetch coordination | Tooltip drawing or an independent timer |
 | PlayerPhases | Short-lived native phase evidence and bounded experimental nearby comparisons | Target mutation, arbitrary-name targetability guesses or inferred mismatches from absent units |
+| PlayerPresence | Player recognition, bounded version/tooltip records, partner stream acceptance and retirement | Native nameplate mutation or transport-envelope ordering |
+| PlayerPlates | Plate visibility decisions using accepted presence evidence | Network record ownership or partner message handling |
 | PartyVisuals | Shared party identity, validated rosters, partial membership evidence and freshness-aware member lookup | Tooltip-specific membership inference or manufacturing peer presence |
 | Keybindings | Fixed player actions delegated to existing feature operations | Key assignment, binding overrides, native input state |
 | OwnedUI | Guarded owned-region access and a durable cleanup queue | Permission to modify Blizzard-owned frames |
@@ -1307,3 +1309,15 @@ startup handoff or cluster path is ready for production.
 included in installation packages.
 Offline adapter tests live outside the in-game test manifest; safe domain/owned
 frame regressions are included in the optional test companion.
+
+### Shared preview execution
+
+Chain previews use the runtime work scheduler with their own UI-lifetime stores,
+frames and session guards. Closing a preview retires its work without touching
+live work. Completion interests, retention and the bounded local history reader
+come from QuestCompletion, including its 60-second evidence lifetime. Simulated
+peers and action feedback remain preview-owned; previews never send party requests.
+
+Communication session/sequence reads do not initialize transport or install chat
+observers. Transport composition happens at lifecycle, mesh setup and submission
+boundaries; observer registration/recovery belongs to lifecycle and whisper admission.

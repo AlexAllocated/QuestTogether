@@ -145,6 +145,7 @@ DataBroker.lua
 Keybindings.lua
 PlayerLocations.lua
 MapLocationPresentation.lua
+PlayerPresence.lua
 PlayerPlates.lua
 QuestPartnerQuest.lua
 PlayerTooltips.lua

@@ -20,6 +20,12 @@ def check(root=ROOT, source_overrides=None):
          "client version/build values must not gate runtime behavior")
     only(r"\b(?:worldQuestAreaStateByQuestID|bonusObjectiveAreaStateByQuestID|nameplateQuestStateByGuid|nameplateQuestTextCache)\b",
          set(), "transient state belongs to its domain store, not legacy aliases")
+    only(r"function (?:QT|QuestTogether):(?:NewPlayerPresenceState|GetQTPlayerPresenceState|CommitQuestPartnerObservation|StorePlayerVersionRecord|StorePlayerTooltipStats)\(",
+         {"PlayerPresence.lua"}, "player presence records belong to PlayerPresence")
+    only(r"function (?:QT|QuestTogether):CompileSingleStringMessagePattern\(",
+         {"NativeAccess.lua"}, "native single-string format compilation has one implementation")
+    if re.search(r"self\.API\.Delay\s*\(|chainPreviewJobs", sources["QuestCompareChainPreview.lua"]):
+        errors.append("chain preview must use the shared work scheduler")
     only(r"function (?:QT|QuestTogether):(?:EnsureRuntimeStateStore|NewRuntimeStateStore)\(", {"HotPathState.lua"},
          "runtime state construction belongs to HotPathState")
     only(r"function (?:QT|QuestTogether):(?:ValidateSetting|RegisterSetting|GetSettingDefinition)\(", {"SettingsCatalog.lua"},
@@ -94,6 +100,7 @@ def check(root=ROOT, source_overrides=None):
              ("QuestProgressStyle.lua", "QuestFocusWindow.lua"), ("OwnedUI.lua", "WindowController.lua"),
              ("WindowController.lua", "WindowTheme.lua"), ("HotPathState.lua", "QuestObservations.lua"),
              ("QuestObservations.lua", "TaskArea.lua"), ("PeerState.lua", "PeerLifecycle.lua"),
+             ("PlayerPresence.lua", "PlayerPlates.lua"), ("PlayerPresence.lua", "QuestPartnerQuest.lua"),
              ("CommsProtocol.lua", "Transport.lua"), ("Transport.lua", "CommsTransfer.lua"),
              ("CommsTransfer.lua", "CommunicationCoordinator.lua"),
              ("CommunicationCoordinator.lua", "MeshNetwork.lua"), ("MeshNetwork.lua", "MeshPublications.lua"),

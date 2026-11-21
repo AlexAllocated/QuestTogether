@@ -11,6 +11,17 @@ function QT:RegisterPartyQuestPresentation(definitions)
 	end
 end
 local serviceMethods = {
+	"NewRuntimeStateStore",
+	"EnsureRuntimeStateStore",
+	"GetRuntimeWorkStateStore",
+	"GetDeferredWorkStateStore",
+	"GetRuntimeUIWorkState",
+	"CreateRuntimeUIWorkFrame",
+	"StopRuntimeUIWorkWakeup",
+	"EnsureRuntimeUIWorkWakeup",
+	"FlushRuntimeUIWork",
+	"CancelRuntimeWorkOwner",
+	"RefreshPartyQuestLocalHistory",
 	"BuildPartyQuestDiffRows",
 	"CallOwnedUI",
 	"CanMutateOwnedUI",

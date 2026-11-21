@@ -193,28 +193,8 @@ function QuestTogether:ScheduleNameplateContextRefresh(reason, delaySeconds)
 	self:ScheduleNameplatePresentationRefresh(reason, delaySeconds)
 end
 
--- Full presentation reconciliation uses the same observed quest state as
--- incremental updates; readiness comes from quest and world events.
-function QuestTogether:FullRefreshVisibleNameplates(reason)
-	if self:IsNameplateAugmentationBlockedInCurrentContext() then
-		return self:RefreshVisibleNameplates(reason)
-	end
-
-	self:ClearNameplateResolvedQuestState()
-	self:ForEachVisibleNamePlate(function(frame)
-		self:RefreshNameplateIcon(frame)
-	end)
-
-	return true
-end
-
 function QuestTogether:ScheduleFullNameplateRefresh(delaySeconds)
-	if self.ScheduleNameplatePresentationRefresh then
-		self:ScheduleNameplatePresentationRefresh("ScheduleFullNameplateRefresh", delaySeconds)
-		return
-	end
-
-	self:RefreshVisibleNameplates("ScheduleFullNameplateRefresh")
+	self:ScheduleNameplatePresentationRefresh("ScheduleFullNameplateRefresh", delaySeconds)
 end
 
 function QuestTogether:OnNameplateAdded(unitToken)

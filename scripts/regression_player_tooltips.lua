@@ -222,7 +222,7 @@ end
 QT:RegisterTest("whole player tooltip section follows current friendship and group membership", function()
 	local a = Fixture()
 	function a:GetPlayerNoteTooltipText() return "Private note: A helpful healer" end
-	a.qtPlayerPresenceState = { peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } }
+	a.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } })
 	Equal(a:GetPlayerTooltipIdentifierMode(), "friends")
 	for _, mode in ipairs({ "all", "friends", "party", "friends_party", "hidden" }) do
 		a.db.profile.playerTooltipIdentifierMode = mode
@@ -406,7 +406,7 @@ QT:RegisterTest("hiding the player tooltip section clears its partner glow and r
 	Equal(#a.frames, 0)
 	function a:GetPlayerNoteTooltipText() return self.note end
 	a.note = "Private note: A helpful healer"
-	a.qtPlayerPresenceState = { peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } }
+	a.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } })
 	assert(not a:UpdatePlayerTooltipBadge())
 	Equal(#a.frames, 0)
 	a.db.profile.playerTooltipIdentifierMode = "all"
@@ -467,7 +467,7 @@ end)
 
 QT:RegisterTest("player tooltip adds partner status only while LFG is active and hides it on expiry", function()
 	local a = Fixture()
-	a.qtPlayerPresenceState = { peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } }
+	a.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = {}, questPartners = { [a.name] = { receivedAt = 100, looking = true } } })
 	assert(a:UpdatePlayerTooltipBadge())
 	assert(a.playerTooltipBadge.icon.qtLookingForPartners)
 	a.qtPlayerPresenceState.questPartners[a.name].looking = false

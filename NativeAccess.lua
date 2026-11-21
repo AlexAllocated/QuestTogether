@@ -377,3 +377,32 @@ function Access.Call(object, name, ...)
 		return value
 	end
 end
+
+local function EscapePattern(text)
+	return (text:gsub("([%^%$%(%)%%%.%[%]%*%+%-%?])", "%%%1"))
+end
+
+-- Compile only native message formats with one string slot. Matching a format
+-- does not establish a sender, quest, or permission to suppress its message.
+function QuestTogether:CompileSingleStringMessagePattern(format)
+	local parts, index, captures = { "^" }, 1, 0
+	while index <= #format do
+		local marker = format:find("%", index, true)
+		if not marker then
+			parts[#parts + 1] = EscapePattern(format:sub(index))
+			break
+		end
+		parts[#parts + 1] = EscapePattern(format:sub(index, marker - 1))
+		if format:sub(marker, marker + 1) == "%%" then
+			parts[#parts + 1], index = "%%", marker + 2
+		elseif format:sub(marker, marker + 1) == "%s" or format:sub(marker, marker + 3) == "%1$s" then
+			captures = captures + 1
+			parts[#parts + 1] = "(.+)"
+			index = marker + (format:sub(marker, marker + 1) == "%s" and 2 or 4)
+		else
+			return nil
+		end
+	end
+	parts[#parts + 1] = "$"
+	return captures == 1 and table.concat(parts) or nil
+end

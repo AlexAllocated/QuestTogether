@@ -7880,4 +7880,13 @@ QuestTogether:RegisterTest(
 	end
 )
 
+
+
+-- Fixtures use the same complete state constructor as the live runtime.
+function QuestTogether:CreateTestPlayerPresenceState(seed)
+	local state = self:NewPlayerPresenceState()
+	for key, value in pairs(seed or {}) do state[key] = value end
+	return state
+end
+
 _G.QuestTogether:RecordTestModule("Tests.lua")

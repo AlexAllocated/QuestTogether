@@ -719,4 +719,61 @@ QT:RegisterTest("unreadable map visibility keeps deferred tooltip work blocked",
 	Equal(calls, 1)
 end)
 
+
+
+QT:RegisterTest("audit message format compiler keeps literal syntax and exactly one player slot", function()
+	for _, format in ipairs({ "No player '%s' [100%%].", "No player '%1$s' [100%%]." }) do
+		local pattern = QT:CompileSingleStringMessagePattern(format)
+		Equal(("No player 'First Last' [100%]."):match(pattern), "First Last")
+		Equal(("prefix No player 'First Last' [100%]."):match(pattern), nil)
+	end
+	Equal(QT:CompileSingleStringMessagePattern("%s %s"), nil)
+	Equal(QT:CompileSingleStringMessagePattern("%d"), nil)
+	Equal(QT:CompileSingleStringMessagePattern("no slot"), nil)
+end)
+
+QT:RegisterTest("audit communication reads and transport state do not install native observers", function()
+	local a = setmetatable({ communicationState = { session = "sample", sequence = 4 },
+		API = { GetTime = function() return 100 end } }, { __index = QT })
+	function a:RegisterAddonWhisperChatFilter() error("state access installed an observer") end
+	Equal(a:GetCommunicationSession(), "sample")
+	Equal(a:NextCommunicationSequence(), 5)
+	Equal(rawget(a, "transportState"), nil)
+	local transport = a:InitializeTransport()
+	Equal(a:InitializeTransport(), transport)
+end)
+
+QT:RegisterTest("audit rejected partner observations cannot retire sessions or evict records", function()
+	local a = setmetatable({}, { __index = QT })
+	local state = a:GetQTPlayerPresenceState()
+	local previous = { session = "old", sequence = 5, retired = { "older" }, receivedAt = 1 }
+	state.questPartners.friend = previous
+	for i = 1, 255 do state.questPartners["peer" .. i] = { receivedAt = i + 1 } end
+	function a:CommitPeerObservation() return false end
+	local update = { session = "new", sequence = 1, receivedAt = 400 }
+	Equal(a:CommitQuestPartnerObservation("status", "friend", update, {}, true, true), false)
+	Equal(state.questPartners.friend, previous); Equal(#previous.retired, 1)
+	Equal(a:CommitQuestPartnerObservation("status", "newcomer", update, {}, true, true), false)
+	Equal(state.questPartners.friend, previous); Equal(state.questPartners.newcomer, nil)
+	function a:CommitPeerObservation() return true end
+	Equal(a:CommitQuestPartnerObservation("status", "friend", update, {}, true, true), true)
+	Equal(#previous.retired, 1); Equal(update.retired[2], "old")
+	Equal(a:CommitQuestPartnerObservation("status", "friend", previous, {}, true, true), false)
+	Equal(state.questPartners.friend, update)
+	local other = setmetatable({}, { __index = QT })
+	assert(other:GetQTPlayerPresenceState() ~= state)
+end)
+
+QT:RegisterTest("audit local history reader preserves sixty second evidence and bounded work", function()
+	local a, calls = setmetatable({}, { __index = QT }), 0
+	function a:ReadCharacterQuestHistoryStatus() calls = calls + 1; return "completed" end
+	local member = { entries = { [3] = {} }, questHistory = { [1] = { status = "completed", sampledAt = 100 } } }
+	local changed, pending = a:RefreshPartyQuestLocalHistory(member, { 1, 2, 3, 4 }, 1, 159)
+	Equal(changed, true); Equal(pending, true); Equal(calls, 1)
+	Equal(member.questHistory[1].sampledAt, 100); Equal(member.questHistory[2].sampledAt, 159)
+	Equal(member.questHistory[3], nil); Equal(member.questHistory[4], nil)
+	a:RefreshPartyQuestLocalHistory(member, { 1, 2, 3, 4 }, 1, 160)
+	Equal(calls, 2); Equal(member.questHistory[1].sampledAt, 160)
+end)
+
 _G.QuestTogether:RecordTestModule("scripts/regression_runtime.lua")

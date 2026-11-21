@@ -806,10 +806,10 @@ Register("remote dot and chat tooltips show fresh party size without tracked que
 		return 100, 200
 	end
 	local row = Row("Friend-Realm")
-	a.qtPlayerPresenceState = {
+	a.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({
 		peers = { [row.name] = now },
 		peerTooltipStats = { [row.name] = { count = 12, partySize = 4, at = now } },
-	}
+	})
 	a.rows.map, a.playerLocationState = { row }, { peers = { [row.name] = row } }
 	a:RefreshPlayerLocationPins()
 	Pin(a, "map").frame.scripts.OnEnter()
@@ -1139,10 +1139,10 @@ Register("location hover refreshes explicit quest partner status without replaci
 	function a:GetPlayerFullName()
 		return "Me-Realm"
 	end
-	a.qtPlayerPresenceState = {
+	a.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({
 		peers = { ["Friend-Realm"] = 100 },
 		questPartners = { ["Friend-Realm"] = { receivedAt = 100, looking = true } },
-	}
+	})
 	a.rows.map = { Row() }
 	a:RefreshPlayerLocationPins()
 	local pin = Pin(a, "map")
@@ -1174,7 +1174,7 @@ Register("quest partner dots gain a gold glow and return to normal on expiry or 
 	function a:GetPlayerFullName()
 		return "Me-Realm"
 	end
-	a.qtPlayerPresenceState = { peers = {}, questPartners = {} }
+	a.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = {}, questPartners = {} })
 	for _, surface in ipairs({ "map", "minimap" }) do
 		a.rows[surface] = { Row() }
 	end
@@ -1339,13 +1339,13 @@ Register("partner dot tooltips show localized super-tracking and clear it on new
 			return self.title
 		end
 		a.title = "Une quête |cffff0000test"
-		a.qtPlayerPresenceState = {
+		a.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({
 			peers = {},
 			questPartners = {
 				["Friend-Realm"] = { session = "10-1234", sequence = 1, receivedAt = 100, looking = true },
 			},
 			partnerQuests = { ["Friend-Realm"] = { session = "10-1234", sequence = 1, receivedAt = 100, questID = 42 } },
-		}
+		})
 		a.rows[surface] = { Row() }
 		a:RefreshPlayerLocationPins()
 		Pin(a, surface).frame.scripts.OnEnter({})
@@ -1688,7 +1688,7 @@ Register("party tooltip reserves aligned QT icon slots and updates recognition o
 	function a:NormalizeMemberName(name)
 		return name
 	end
-	a.qtPlayerPresenceState = { peers = { ["Leader-Realm"] = 90 } }
+	a.qtPlayerPresenceState = _G.QuestTogether:CreateTestPlayerPresenceState({ peers = { ["Leader-Realm"] = 90 } })
 	a.rows.map = { Row("Friend-Realm") }
 	a:RefreshPlayerLocationPins()
 	Pin(a, "map").frame.scripts.OnEnter()

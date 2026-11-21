@@ -14,23 +14,6 @@ local function SafeText(value, fallback)
 	return QuestTogether:SafeToString(value, fallback or "")
 end
 
-local function NormalizeQuestId(addon, questId)
-	if not addon then
-		return nil
-	end
-
-	if addon.NormalizeQuestID then
-		return addon:NormalizeQuestID(questId)
-	end
-
-	local numericQuestId = addon.SafeToNumber and addon:SafeToNumber(questId) or nil
-	if not numericQuestId or numericQuestId <= 0 then
-		return nil
-	end
-
-	return math.floor(numericQuestId + 0.5)
-end
-
 local function CountKeys(tableValue)
 	local count = 0
 	for _ in pairs(tableValue or {}) do
@@ -242,7 +225,7 @@ function QuestTogether:GetTaskAreaSnapshot(taskType)
 	local sourceState = self.GetTaskAreaStateStore and self:GetTaskAreaStateStore(taskType) or {}
 	local activeByQuestId = {}
 	for questId, questTitle in pairs(sourceState) do
-		local normalizedQuestId = NormalizeQuestId(self, questId)
+		local normalizedQuestId = self:NormalizeQuestID(questId)
 		if normalizedQuestId then
 			activeByQuestId[normalizedQuestId] = questTitle
 		end
@@ -289,14 +272,14 @@ function QuestTogether:RefreshTaskAreaState(taskType, shouldAnnounce)
 	local currentState = {}
 
 	for questId, questTitle in pairs(previousStateRaw) do
-		local normalizedQuestId = NormalizeQuestId(self, questId)
+		local normalizedQuestId = self:NormalizeQuestID(questId)
 		if normalizedQuestId then
 			previousState[normalizedQuestId] = questTitle
 		end
 	end
 
 	for questId, questTitle in pairs(currentStateRaw) do
-		local normalizedQuestId = NormalizeQuestId(self, questId)
+		local normalizedQuestId = self:NormalizeQuestID(questId)
 		if normalizedQuestId then
 			currentState[normalizedQuestId] = questTitle
 		end

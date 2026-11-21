@@ -581,7 +581,7 @@ QT:RegisterTest("correlated handshake versions retain source ordering without in
 	assert(a:RememberPlayerHandshakeVersion("Friend-Realm", "9.0.4", context))
 	assert(not a:IsKnownQTPlayer("Friend-Realm"), "a version observation is not public presence")
 	Equal(a:GetPlayerAddonVersion("Friend-Realm"), nil)
-	Equal(a.qtPlayerPresenceState.peerTooltipStats, nil)
+	Equal(next(a.qtPlayerPresenceState.peerTooltipStats), nil)
 	assert(ObserveState(a, "HandleQTPlayerPresenceMessage", "QTPR", { active = true }, "Friend-Realm"))
 	Equal(a:GetPlayerAddonVersion("Friend-Realm"), "9.0.4")
 	a.now = 101

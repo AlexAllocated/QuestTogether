@@ -40,7 +40,8 @@ end
 function QT:ConfigurePartyQuestChainPreview(preview)
 	local owner, paint = self, self.RenderPartyQuestCompare
 	preview.chainPreview, preview.liveQuestData, preview.isEnabled = true, true, true
-	preview.db, preview.chainPreviewJobs = { profile = {} }, {}
+	preview.db = { profile = {} }
+	preview.runtimeWorkDelayByClass = Copy(self.runtimeWorkDelayByClass)
 	preview.options.compareGroupByChain = self:GetOption("compareGroupByChain") == true
 	preview.options.compareHideFutureQuestNames = self:GetOption("compareHideFutureQuestNames") ~= false
 	-- Explicit read adapters only: never inherit the live addon, its provider,
@@ -65,30 +66,21 @@ function QT:ConfigurePartyQuestChainPreview(preview)
 		return closed, origin
 	end
 
+	function preview:CreateRuntimeUIWorkFrame()
+		return self:CreateOwnedWindowFrame("Frame")
+	end
+	function preview:Debugf(...) owner:Debugf(...) end
+	function preview:IsMapTooltipSensitiveStateActive() return owner:IsMapTooltipSensitiveStateActive() end
+	function preview:EnsureMapWorkWakeup() self:EnsureRuntimeUIWorkWakeup() end
 	function preview:ScheduleRuntimeWork(category, key, callback, options)
 		local session = self.partyQuestCompareSession
-		if not session or type(self.API.Delay) ~= "function" then return false end
-		local identity = category .. ":" .. key
-		local work = { owner = options and options.owner }
-		self.chainPreviewJobs[identity] = work
-		local run
-		run = function()
-			if self.partyQuestCompareSession ~= session or self.chainPreviewJobs[identity] ~= work
-				or (work.owner and work.owner.active == false) then return end
-			if owner.isLoggingOut then return end
-			-- A temporary restriction suspends the same guarded work item. Dropping
-			-- it would strand chain pending flags or a partially indexed provider.
-			if self:IsRuntimeRestricted() or self:IsWorkBlocked(category) then self.API.Delay(0.25, run); return end
-			self.chainPreviewJobs[identity] = nil
-			callback()
-		end
-		self.API.Delay(options and options.delay or 0, run)
-		return true
-	end
-	function preview:CancelRuntimeWorkOwner(workOwner)
-		for key, work in pairs(self.chainPreviewJobs) do
-			if work.owner == workOwner then self.chainPreviewJobs[key] = nil end
-		end
+		if not session then return false end
+		local settings = Copy(options)
+		settings.lifetime = "ui"
+		settings.mode = settings.mode or ((settings.delay or 0) > 0 and "debounce" or "nextFrame")
+		return QT.ScheduleRuntimeWork(self, category, key, function()
+			if self.partyQuestCompareSession == session and not owner.isLoggingOut then callback() end
+		end, settings)
 	end
 	function preview:ScheduleDeferredWork(category, key, callback, delay)
 		return self:ScheduleRuntimeWork(category, key, callback, { delay = delay })
@@ -100,40 +92,21 @@ function QT:ConfigurePartyQuestChainPreview(preview)
 		end
 		return { classFile = member.classFile }
 	end
-	function preview:SetPartyQuestCompletionInterest(ids, source)
+	local function QueueLocalHistory(self)
 		local session = self.partyQuestCompareSession
-		if not session then return end
-		session.historyInterestOwners = session.historyInterestOwners or {}
-		session.historyInterestOwners[source or "visible"] = Copy(ids)
-		-- This method also runs while painting visible rows. It only records
-		-- demand; bounded native history reads happen on later frames and publish
-		-- evidence exclusively into the preview's local member.
-		if session.previewHistoryPending then return end
-		local own, now, needsRead = session.members[1], self:GetPartyQuestCompareTime(), false
-		for _, interested in pairs(session.historyInterestOwners) do
-			for _, id in ipairs(interested) do
-				local evidence = own.questHistory[id]
-				if not evidence or now < evidence.sampledAt or now >= evidence.sampledAt + 30 then needsRead = true end
-			end
-		end
-		if not needsRead then return end
+		if not session or session.previewHistoryPending then return end
 		session.previewHistoryPending = true
 		self:ScheduleDeferredWork("quest_snapshot_refresh", "preview_local_history", function()
 			session.previewHistoryPending = nil
-			local read, wanted = 0, {}
-			local sampledAt = self:GetPartyQuestCompareTime()
-			for _, interested in pairs(session.historyInterestOwners) do
-				for _, id in ipairs(interested) do wanted[id] = true end
-			end
-			for _, id in ipairs(IDs(wanted)) do
-				local evidence = own.questHistory[id]
-				if read < 32 and (not evidence or sampledAt < evidence.sampledAt or sampledAt >= evidence.sampledAt + 30) then
-					own.questHistory[id] = { status = self:ReadCharacterQuestHistoryStatus(id), sampledAt = sampledAt }
-					read = read + 1
-				end
-			end
-			self:QueuePartyQuestCompareRender()
+			local changed, pending = self:RefreshPartyQuestLocalHistory(
+				session.members[1], session.historyInterestOrder, 8, self:GetPartyQuestCompareTime())
+			if pending then QueueLocalHistory(self) end
+			if changed then self:QueuePartyQuestCompareRender() end
 		end, 0)
+	end
+	function preview:SetPartyQuestCompletionInterest(ids, source)
+		QT.SetPartyQuestCompletionInterest(self, ids, source)
+		QueueLocalHistory(self)
 	end
 
 	local function Feedback(action)
@@ -295,7 +268,9 @@ function QT:ConfigurePartyQuestChainPreview(preview)
 	end
 	function preview:CancelPartyQuestCompare()
 		self:CancelPartyQuestChains(self.partyQuestCompareSession)
-		self.partyQuestCompareSession, self.partyNavigationState, self.chainPreviewJobs = nil, nil, {}
+		self:StopRuntimeUIWorkWakeup()
+		self.runtimeUIWorkState = nil
+		self.partyQuestCompareSession, self.partyNavigationState = nil, nil
 		if self.chainPreviewObserver then
 			if self.chainPreviewObserver.UnregisterAllEvents then self.chainPreviewObserver:UnregisterAllEvents() end
 			self.chainPreviewObserver:Hide()
