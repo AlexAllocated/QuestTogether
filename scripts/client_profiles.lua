@@ -3077,6 +3077,55 @@ return rawRow end
 			C_QuestLog, Settings, Menu = savedLog, savedSettings, savedMenu
 			GetCurrentKeyBoardFocus, addon.IsRuntimeRestricted, addon.IsWorkBlocked = savedFocus, savedRestricted, savedBlocked
 		end
+		do
+			-- Offline native contracts: readable combat progress never changes
+			-- selection and unknown/secret observations cannot become progress.
+			local savedLog, savedTitle, savedCount = C_QuestLog, GetQuestLogTitle, GetNumQuestLeaderBoards
+			local savedObjective, savedPercent, savedCombat = GetQuestObjectiveInfo, GetQuestProgressBarPercent, InCombatLockdown
+			local savedBlocked = addon.IsWorkBlocked
+			local ok, err = pcall(function()
+				local blocked, count = false, 1
+				local rows = { { text = "Wolves slain: 3/5", type = "monster", finished = false, numFulfilled = 3, numRequired = 5 } }
+				InCombatLockdown = function() return true end
+				addon.IsWorkBlocked = function(_, kind)
+					if kind == "quest_progress_read" then return blocked end
+					return true
+				end
+				GetQuestLogTitle, GetQuestObjectiveInfo = nil, nil
+				C_QuestLog = {
+					GetInfo = function(index) return { questID = index == 7 and 12345 or 54321, title = "Wolf Hunt" } end,
+					GetNumQuestLogEntries = function() return 7 end,
+					GetQuestObjectives = function(id) assert(id == 12345); return rows end,
+					IsComplete = function() return false end,
+					ReadyForTurnIn = function() return false end,
+				}
+				GetNumQuestLeaderBoards = function() return count end
+				local observed = addon:GetCombatQuestProgress(12345)
+				assert(observed and observed.objectives[1].current == 3 and observed.isReadyForTurnIn == false)
+				GetNumQuestLeaderBoards = nil
+				assert(addon:GetCombatQuestProgress(12345).objectives[1].required == 5, "native objective array supplies missing legacy count")
+				GetNumQuestLeaderBoards = function() return count end
+				for _, value in ipairs({ secret, inaccessible, -1, 101, 1.5 }) do
+					count = value; assert(addon:GetCombatQuestProgress(12345) == nil)
+				end
+				count = nil; assert(addon:GetCombatQuestProgress(12345) == nil)
+				count = 1
+				rows[1].text = secret; assert(addon:GetCombatQuestProgress(12345) == nil)
+				rows[1].text, rows[1].type = "Area explored", "progressbar"
+				GetQuestProgressBarPercent = function() return secret end
+				assert(addon:GetCombatQuestProgress(12345) == nil)
+				GetQuestProgressBarPercent = function() return 63 end
+				assert(addon:GetCombatQuestProgress(12345).objectives[1].current == 63)
+				rows = inaccessible; assert(addon:GetCombatQuestProgress(12345) == nil)
+				blocked = true
+				C_QuestLog.GetInfo = function() error("blocked reads must not reach native API") end
+				assert(addon:GetCombatQuestProgress(12345) == nil)
+			end)
+			C_QuestLog, GetQuestLogTitle, GetNumQuestLeaderBoards = savedLog, savedTitle, savedCount
+			GetQuestObjectiveInfo, GetQuestProgressBarPercent, InCombatLockdown = savedObjective, savedPercent, savedCombat
+			addon.IsWorkBlocked = savedBlocked
+			assert(ok, err)
+		end
 		print("Offline " .. client .. " quest API contract checks passed.")
 	end
 end

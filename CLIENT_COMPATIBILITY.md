@@ -190,6 +190,20 @@ Quest-state events clear addon-owned nameplate caches immediately and schedule a
 
 If an in-instance refresh clears quest text, world/zone events after returning outdoors schedule a coalesced quest-state rebuild. Recovery waits through combat, encounter and map restrictions and is canceled with its disabled runtime lifetime. Ordinary outdoor zone events keep their existing presentation-only refresh.
 
+Already tracked quests can publish readable objective progress and ready-to-turn-in
+milestones during ordinary combat. Their bounded progress scan uses public quest
+getters without selecting a quest, rebuilding the log, or opening native tooltips.
+Missing or inaccessible observations wait for a later readable update; they do not
+erase progress. Structured objective arrays supply counts when the legacy count
+API is absent, and legacy readable objective text retains its counter fallback.
+Other active restrictions still defer reads. Existing chat, bubble and audio
+preferences remain in effect, including the optional combat audio mute.
+Offline checks cover combat progress, readiness, recovery without duplicates,
+legacy counters, restricted/missing data and retired callbacks. Live acceptance:
+advance and finish an existing quest objective during open-world combat, confirm
+the enabled announcement outputs arrive before combat ends, then confirm recovery
+does not replay them. Check for blocked-action or taint errors separately in-client.
+
 Untyped tooltip text terminates the current quest block at unknown labels while preserving recognized player rows from the copied party roster. Unreadable structured, hidden-tooltip or Questie rows retain an incomplete-data signal through source traversal and cannot establish NPC-wide completion. Positive objective evidence remains usable. The fallback sources retain their existing runtime restrictions.
 
 A readable typed quest-title row retains its block boundary even when its title text is inaccessible. Following objectives cannot match another owned quest solely through shared wording. The boundary and incomplete-data flag contain only addon-owned values; independently readable structured, Questie, hidden-tooltip and later quest-block evidence remain usable under their existing guards.
@@ -695,3 +709,16 @@ and emote delivery therefore still require live acceptance, especially a drive-b
 buff with friendly nameplates hidden. A nonthrowing native call establishes an
 attempt, not proof that chat displayed it. Offline tests use private adapters and
 cannot send live emotes.
+
+### Suppressed quest-tooltip placement
+
+When QT hides a matching quest-header tooltip, snapped POT uses that tooltip's
+captured top-right position rather than falling back to the objective tracker.
+Geometry belongs to the current hover only and follows the source row's position
+and scale. A reused tooltip, changed quest/profile, hidden content or restriction
+transition retires the snapshot. Native tooltip scripts, anchors and visibility
+are otherwise untouched; QT never forces the hidden tooltip to show. Showing both
+tooltips retains the configured Top/Bottom/Side placement, and manual POT placement
+remains respected. Offline coverage includes native Hide clearing owner/geometry,
+repeated updates, row movement, mixed scales, screen edges and stale-hover cleanup.
+Live mouse/controller placement confirmation is still required.

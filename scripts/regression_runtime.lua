@@ -660,6 +660,22 @@ QT:RegisterTest("map-close recovery keeps combat and encounter restrictions inta
 	Equal(scans, 1)
 end)
 
+QT:RegisterTest("combat progress reads retain map encounter and mutation restrictions", function()
+	local a = NewMapWakeFixture()
+	a.mapVisible, a.combat = false, true
+	assert(not a:IsWorkBlocked("quest_progress_read"))
+	for _, kind in ipairs({ "quest_log_drain", "quest_snapshot_refresh", "quest_share", "foreign_frame_mutation", "waypoint_mutation" }) do
+		assert(a:IsWorkBlocked(kind))
+	end
+	for _, restricted in ipairs({ "encounter", "challenge", "pvp", "map" }) do
+		function a:IsRuntimeRestrictionTypeActive(kind) return kind == restricted end
+		assert(a:IsWorkBlocked("quest_progress_read"))
+	end
+	function a:IsRuntimeRestrictionTypeActive() return false end
+	a.mapVisible = true
+	assert(a:IsWorkBlocked("quest_progress_read"))
+end)
+
 QT:RegisterTest("map watcher stops on disable and cannot revive another work lifetime", function()
 	local addon, calls = NewMapWakeFixture(), 0
 	addon:ScheduleDeferredWork("nameplate_refresh", "plates", function()

@@ -798,88 +798,116 @@ function QuestTogether:UNIT_QUEST_LOG_CHANGED(_, unit)
 	queue.progressScanQueued = true
 	self:QueueQuestLogTask(function()
 		queue.progressScanQueued = nil
-		local tracker = self:GetPlayerTracker()
+		self:RefreshTrackedQuestProgress()
+	end)
+end
 
-		for questId, questData in pairs(tracker) do
-			local normalizedQuestId = NormalizeQuestId(self, questId)
-			if normalizedQuestId
-				and not self.pendingQuestRemovals[normalizedQuestId]
-				and not self.questsCompleted[normalizedQuestId]
-				and not (self.retiredQuestIds and self.retiredQuestIds[normalizedQuestId])
-			then
-				questId = normalizedQuestId
-				local questLogIndex = self.GetQuestLogIndexForQuest and self:GetQuestLogIndexForQuest(questId)
-				if questLogIndex then
-					local numObjectives = self.API.GetNumQuestLeaderBoards and self.API.GetNumQuestLeaderBoards(questLogIndex)
-						or 0
+function QuestTogether:RefreshTrackedQuestProgress(combatRead)
+	local tracker = self:GetPlayerTracker()
 
-					for objectiveIndex = 1, numObjectives do
-						local objectiveText, objectiveType, finished, currentValue, requiredValue =
-							self:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, false)
+	for questId, questData in pairs(tracker) do
+		local normalizedQuestId = NormalizeQuestId(self, questId)
+		if normalizedQuestId
+			and not self.pendingQuestRemovals[normalizedQuestId]
+			and not self.questsCompleted[normalizedQuestId]
+			and not (combatRead and self.pendingQuestAcceptances[normalizedQuestId])
+			and not (self.retiredQuestIds and self.retiredQuestIds[normalizedQuestId])
+		then
+			questId = normalizedQuestId
+			local observation = combatRead and self:GetCombatQuestProgress(questId) or nil
+			local questLogIndex
+			if not combatRead then questLogIndex = self.GetQuestLogIndexForQuest and self:GetQuestLogIndexForQuest(questId) end
+			if observation or questLogIndex then
+				local numObjectives = observation and #observation.objectives
+					or (self.API.GetNumQuestLeaderBoards and self.API.GetNumQuestLeaderBoards(questLogIndex) or 0)
 
-						if self:UpdateTrackedObjectiveProgress(questData, objectiveIndex, objectiveText, currentValue, questId) then
-							local taskAnnouncementType = self:GetTaskAnnouncementType(questId)
-							local eventType = "QUEST_PROGRESS"
-							if taskAnnouncementType == "world" then
-								eventType = "WORLD_QUEST_PROGRESS"
-							elseif taskAnnouncementType == "bonus" then
-								eventType = "BONUS_OBJECTIVE_PROGRESS"
-							end
-							self:PublishAnnouncementEvent(eventType, objectiveText, questId, {
-								eventFacts = self:BuildAnnouncementFacts(eventType, objectiveIndex, objectiveType, finished, currentValue, requiredValue),
-								objectiveFinished = finished == true,
-							})
-						end
+				for objectiveIndex = 1, numObjectives do
+					local objectiveText, objectiveType, finished, currentValue, requiredValue
+					if observation then
+						local objective = observation.objectives[objectiveIndex]
+						objectiveText, objectiveType, finished, currentValue, requiredValue =
+							objective.text, objective.kind, objective.finished, objective.current, objective.required
+					else
+						objectiveText, objectiveType, finished, currentValue, requiredValue =
+							self:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, false, questLogIndex)
 					end
 
-					-- Retain milestone history when objective rows temporarily disappear.
-					-- Only the current snapshot should shrink.
-					questData.objectives = questData.objectives or {}
-					local previousObjectiveCount = #questData.objectives
-					if previousObjectiveCount > numObjectives then
-						for objectiveIndex = numObjectives + 1, previousObjectiveCount do
-							questData.objectives[objectiveIndex] = nil
-							if questData.objectiveValues then
-								questData.objectiveValues[objectiveIndex] = nil
-							end
+					if self:UpdateTrackedObjectiveProgress(questData, objectiveIndex, objectiveText, currentValue, questId) then
+						local taskAnnouncementType = self:GetTaskAnnouncementType(questId)
+						local eventType = "QUEST_PROGRESS"
+						if taskAnnouncementType == "world" then
+							eventType = "WORLD_QUEST_PROGRESS"
+						elseif taskAnnouncementType == "bonus" then
+							eventType = "BONUS_OBJECTIVE_PROGRESS"
+						end
+						self:PublishAnnouncementEvent(eventType, objectiveText, questId, {
+							eventFacts = self:BuildAnnouncementFacts(eventType, objectiveIndex, objectiveType, finished, currentValue, requiredValue),
+							objectiveFinished = finished == true,
+						})
+					end
+				end
+
+				-- Retain milestone history when objective rows temporarily disappear.
+				-- Only the current snapshot should shrink.
+				questData.objectives = questData.objectives or {}
+				local previousObjectiveCount = #questData.objectives
+				if previousObjectiveCount > numObjectives then
+					for objectiveIndex = numObjectives + 1, previousObjectiveCount do
+						questData.objectives[objectiveIndex] = nil
+						if questData.objectiveValues then
+							questData.objectiveValues[objectiveIndex] = nil
 						end
 					end
+				end
 
-					local statusState = self.GetTrackedQuestStatusState
-						and self:GetTrackedQuestStatusState(questId, true)
-						or nil
-					local currentIsComplete = statusState and statusState.isComplete == true or false
-					local completionChanged = questData.isComplete ~= currentIsComplete
-					if completionChanged then
-						questData.isComplete = currentIsComplete
-					end
+				local statusState = observation or (self.GetTrackedQuestStatusState
+					and self:GetTrackedQuestStatusState(questId, true) or nil)
+				local currentIsComplete = statusState and statusState.isComplete
+				if not combatRead then
+					currentIsComplete = currentIsComplete == true
+				elseif currentIsComplete == nil then
+					currentIsComplete = questData.isComplete
+				end
+				local completionChanged = questData.isComplete ~= currentIsComplete
+				if completionChanged then
+					questData.isComplete = currentIsComplete
+				end
 
-					local currentReadyForTurnIn = statusState and statusState.isReadyForTurnIn
-					if type(currentReadyForTurnIn) == "boolean" then
-						local wasNotReady = questData.isReadyForTurnIn == false
-						local alreadyObserved = questData.readyForTurnInObserved == true
-							or questData.isReadyForTurnIn == true
-						questData.isReadyForTurnIn = currentReadyForTurnIn
-						-- Unknown -> ready initializes silently. Once observed, a
-						-- false/true API wobble must not replay this quest milestone.
-						questData.readyForTurnInObserved = alreadyObserved or currentReadyForTurnIn
-						if currentReadyForTurnIn and wasNotReady and not alreadyObserved
-							and not self:GetTaskAnnouncementType(questId) then
-							local questTitle = self:GetQuestDisplayTitle(questId, questData.title)
-							self:PublishAnnouncementEvent(
-								"QUEST_READY_TO_TURN_IN",
-								L("Ready to Turn In: ") .. SafeText(questTitle, L("Unknown")),
-								questId
-							)
-						end
+				local currentReadyForTurnIn = statusState and statusState.isReadyForTurnIn
+				if type(currentReadyForTurnIn) == "boolean" then
+					local wasNotReady = questData.isReadyForTurnIn == false
+					local alreadyObserved = questData.readyForTurnInObserved == true
+						or questData.isReadyForTurnIn == true
+					questData.isReadyForTurnIn = currentReadyForTurnIn
+					-- Unknown -> ready initializes silently. Once observed, a
+					-- false/true API wobble must not replay this quest milestone.
+					questData.readyForTurnInObserved = alreadyObserved or currentReadyForTurnIn
+					if currentReadyForTurnIn and wasNotReady and not alreadyObserved
+						and not self:GetTaskAnnouncementType(questId) then
+						local questTitle = self:GetQuestDisplayTitle(questId, questData.title)
+						self:PublishAnnouncementEvent(
+							"QUEST_READY_TO_TURN_IN",
+							L("Ready to Turn In: ") .. SafeText(questTitle, L("Unknown")),
+							questId
+						)
 					end
 				end
 			end
 		end
-	end)
+	end
 end
 
 function QuestTogether:QUEST_LOG_UPDATE()
+	-- Only the progress scan may run while the ordinary lifecycle queue is
+	-- blocked. Capture its lifetime so profile changes and resets retire it.
+	local queue = self.onQuestLogUpdate
+	if queue and queue.progressScanQueued and self:IsWorkBlocked("quest_log_drain") then
+		self:ScheduleRuntimeWork("quest_progress_read", "combat_quest_progress", function()
+			if self.onQuestLogUpdate == queue and queue.progressScanQueued then
+				self:RefreshTrackedQuestProgress(true)
+			end
+		end, { mode = "bounded", owner = queue, delay = 0.1, reason = "QUEST_LOG_UPDATE" })
+	end
 	self:InvalidateQuestCompareSnapshot()
 	if self.OnPartyQuestLogChanged then self:OnPartyQuestLogChanged() end
 	-- Progress initialization must recover even with nameplate features off.

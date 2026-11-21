@@ -2224,7 +2224,7 @@ QuestTogether.API = QuestTogether.API
 			return true
 		end,
 		GetQuestLogIndexForQuestID = function(questID)
-			if InCombatLockdown and InCombatLockdown() then
+			if QuestTogether:IsWorkBlocked("quest_progress_read") then
 				return nil
 			end
 			local numericQuestID = QuestTogether
@@ -2448,7 +2448,8 @@ QuestTogether.API = QuestTogether.API
 			if not numericQuestID then
 				return nil
 			end
-			if C_QuestLog and C_QuestLog.ReadyForTurnIn then
+			if CanAccessForeignTable(C_QuestLog) and CanAccessForeignValue(C_QuestLog.ReadyForTurnIn)
+				and type(C_QuestLog.ReadyForTurnIn) == "function" then
 				local ok, isReady = pcall(C_QuestLog.ReadyForTurnIn, numericQuestID)
 				if ok and CanAccessForeignValue(isReady) and type(isReady) == "boolean" then
 					return isReady
@@ -2465,7 +2466,8 @@ QuestTogether.API = QuestTogether.API
 			if not numericQuestID then
 				return nil
 			end
-			if C_QuestLog and C_QuestLog.IsComplete then
+			if CanAccessForeignTable(C_QuestLog) and CanAccessForeignValue(C_QuestLog.IsComplete)
+				and type(C_QuestLog.IsComplete) == "function" then
 				local ok, isComplete = pcall(C_QuestLog.IsComplete, numericQuestID)
 				if ok and CanAccessForeignValue(isComplete) and type(isComplete) == "boolean" then
 					return isComplete
@@ -3597,40 +3599,50 @@ QuestTogether.API = QuestTogether.API
 			end
 			return titleInfo
 		end,
-		GetNumQuestLeaderBoards = function(questLogIndex)
-			if InCombatLockdown and InCombatLockdown() then
-				return 0
+		GetNumQuestLeaderBoards = function(questLogIndex, requireReadable)
+			local unavailable = 0
+			if requireReadable then unavailable = nil end
+			if QuestTogether:IsWorkBlocked("quest_progress_read") then
+				return unavailable
 			end
 			local numericQuestLogIndex = QuestTogether
 					and QuestTogether.SafeToNumber
 					and QuestTogether:SafeToNumber(questLogIndex)
 				or nil
 			if numericQuestLogIndex == nil then
-				return 0
+				return unavailable
 			end
 			numericQuestLogIndex = math.floor(numericQuestLogIndex + 0.5)
 			if numericQuestLogIndex <= 0 then
-				return 0
+				return unavailable
 			end
-			if type(GetNumQuestLeaderBoards) ~= "function" then
-				return 0
+			local ok, objectiveCount
+			if type(GetNumQuestLeaderBoards) == "function" then
+				ok, objectiveCount = pcall(GetNumQuestLeaderBoards, numericQuestLogIndex)
+			elseif CanAccessForeignTable(C_QuestLog) and type(C_QuestLog.GetQuestObjectives) == "function" then
+				local row = QuestTogether.API.GetQuestLogInfo(numericQuestLogIndex)
+				local id = row and QuestTogether:NormalizeQuestID(row.questID)
+				if not id then return unavailable end
+				local readOK, objectives = pcall(C_QuestLog.GetQuestObjectives, id)
+				if readOK and CanAccessForeignTable(objectives) then
+					ok, objectiveCount = true, #objectives
+				end
 			end
-			local ok, objectiveCount = pcall(GetNumQuestLeaderBoards, numericQuestLogIndex)
 			if not ok then
-				return 0
+				return unavailable
 			end
 			if QuestTogether and QuestTogether.IsSecretValue and QuestTogether:IsSecretValue(objectiveCount) then
-				return 0
+				return unavailable
 			end
 			local numericObjectiveCount = QuestTogether
 					and QuestTogether.SafeToNumber
 					and QuestTogether:SafeToNumber(objectiveCount)
 				or nil
 			if numericObjectiveCount == nil then
-				return 0
+				return unavailable
 			end
-			if numericObjectiveCount <= 0 then
-				return 0
+			if numericObjectiveCount < 0 or numericObjectiveCount > 100 or numericObjectiveCount % 1 ~= 0 then
+				return unavailable
 			end
 			return math.floor(numericObjectiveCount + 0.5)
 		end,
@@ -3892,7 +3904,7 @@ QuestTogether.API = QuestTogether.API
 			return pcall(request, id)
 		end,
 		GetQuestObjectiveInfo = function(questID, objectiveIndex, displayComplete, questLogIndex)
-			if InCombatLockdown and InCombatLockdown() then
+			if QuestTogether:IsWorkBlocked("quest_progress_read") then
 				return nil, nil, nil, nil
 			end
 			local numericQuestID = QuestTogether
@@ -3916,10 +3928,11 @@ QuestTogether.API = QuestTogether.API
 			end
 
 			local ok, text, objectiveType, finished, currentValue, requiredValue
-			if type(GetQuestObjectiveInfo) == "function" then
+			if CanAccessForeignValue(GetQuestObjectiveInfo) and type(GetQuestObjectiveInfo) == "function" then
 				ok, text, objectiveType, finished, currentValue, requiredValue =
 					pcall(GetQuestObjectiveInfo, numericQuestID, numericObjectiveIndex, displayComplete)
-			elseif C_QuestLog and type(C_QuestLog.GetQuestObjectives) == "function" then
+			elseif CanAccessForeignTable(C_QuestLog) and CanAccessForeignValue(C_QuestLog.GetQuestObjectives)
+				and type(C_QuestLog.GetQuestObjectives) == "function" then
 				local queryOK, objectives = pcall(C_QuestLog.GetQuestObjectives, numericQuestID)
 				if not queryOK or not CanAccessForeignTable(objectives) then
 					return nil, nil, nil, nil
@@ -4001,7 +4014,7 @@ QuestTogether.API = QuestTogether.API
 			return text, objectiveType, finished, currentValue, requiredValue
 		end,
 		GetQuestProgressBarPercent = function(questID)
-			if InCombatLockdown and InCombatLockdown() then
+			if QuestTogether:IsWorkBlocked("quest_progress_read") then
 				return nil
 			end
 			local numericQuestID = QuestTogether
@@ -7070,6 +7083,30 @@ function QuestTogether:NormalizeQuestObjectiveCounters(kind, finished, current, 
 		current = 0
 	end
 	return current, required
+end
+
+-- Read only already-tracked progress during ordinary combat. This does not
+-- rebuild the log, initialize acceptances, select quests or query tooltips.
+function QuestTogether:GetCombatQuestProgress(questId)
+	if self:IsWorkBlocked("quest_progress_read") then return nil end
+	local index = self.API.GetQuestLogIndexForQuestID(questId)
+	if not index then return nil end
+	local count = self.API.GetNumQuestLeaderBoards(index, true)
+	if not count or count < 0 or count > 100 then return nil end
+	local result = { objectives = {} }
+	for slot = 1, count do
+		local text, kind, finished, current, required = self:GetNormalizedQuestObjectiveInfo(questId, slot, false, index)
+		-- An unreadable row must not erase the last known objective or advance
+		-- its milestone. Keep the ordinary queued scan as the recovery path.
+		if type(text) ~= "string" or text == "" or type(kind) ~= "string"
+			or (kind == "progressbar" and current == nil) then return nil end
+		result.objectives[slot] = { text = text, kind = kind, finished = finished, current = current, required = required }
+	end
+	result.isComplete = self.API.IsQuestComplete and self.API.IsQuestComplete(questId)
+	result.isReadyForTurnIn = self.API.IsQuestReadyForTurnIn and self.API.IsQuestReadyForTurnIn(questId)
+	local row = self.API.GetQuestLogInfo(index)
+	if not row or self:NormalizeQuestID(row.questID) ~= questId then return nil end
+	return result
 end
 
 function QuestTogether:GetNormalizedQuestObjectiveInfo(questId, objectiveIndex, displayComplete, questLogIndex)

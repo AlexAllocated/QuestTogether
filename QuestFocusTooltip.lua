@@ -6,7 +6,7 @@ local function Read(a, frame, method)
 	local getter = a:GetAccessibleFrameMember(frame, method)
 	if type(getter) ~= "function" then return end
 	local ok, value = pcall(getter, frame)
-	if ok and a:CanAccessValue(value) then return value end
+	if ok and a:CanAccessValue(value) then return value, true end
 end
 
 local function Number(a, frame, method)
@@ -50,19 +50,45 @@ function QT:InstallQuestFocusHoverEvents()
 	-- leaving without installing global tooltip or protected header hooks.
 end
 
-function QT:GetQuestFocusMatchingTooltip(state)
+local function MatchingHover(self, state)
 	if not self.isEnabled or self.isLoggingOut or not state or state ~= rawget(self, "questFocusState")
 		or not self.db or state.profile ~= self.db.profile or state.mode ~= self:GetQuestTrackerMode()
 		or state.mode == "hidden" or self:IsQuestTrackerHiddenWhileSolo()
 		or state.editing or not state.hoverBlock
 		or not state.hoverID or state.hoverID ~= state.id
 		or self:IsWorkBlocked("foreign_frame_mutation") then return end
-	local block, tooltip = state.hoverBlock, self:GetQuestFocusNativeTooltip()
-	if not self:CanAccessForeignFrame(block, true) or not self:CanAccessForeignFrame(tooltip, true)
-		or Read(self, tooltip, "IsVisible") ~= true
-		or self:NormalizeQuestID(self:GetAccessibleFrameMember(block, "id")) ~= state.hoverID
-		or Read(self, tooltip, "GetOwner") ~= block then return end
-	return tooltip
+	local block = state.hoverBlock
+	if not self:CanAccessForeignFrame(block, true) or Read(self, block, "IsVisible") ~= true
+		or self:NormalizeQuestID(self:GetAccessibleFrameMember(block, "id")) ~= state.hoverID then return end
+	return block
+end
+
+function QT:GetQuestFocusMatchingTooltip(state)
+	local block, tooltip = MatchingHover(self, state), self:GetQuestFocusNativeTooltip()
+	if block and self:CanAccessForeignFrame(tooltip, true) and Read(self, tooltip, "IsVisible") == true
+		and Read(self, tooltip, "GetOwner") == block then return tooltip end
+end
+
+local function HiddenTooltipRect(a, state)
+	local block = MatchingHover(a, state)
+	local saved = state and state.nativeTooltipAnchor
+	if not block or not state.hoverNative or not saved or saved.block ~= block or saved.id ~= state.hoverID
+		or a:GetOption("questTrackerHideBlizzardTooltip") ~= true then return end
+	local tooltip = a:GetQuestFocusNativeTooltip()
+	if tooltip ~= saved.tooltip or not a:CanAccessForeignFrame(tooltip)
+		or Read(a, tooltip, "IsShown") ~= false then return end
+	local owner, readable = Read(a, tooltip, "GetOwner")
+	if not readable or owner ~= nil and owner ~= block then return end
+	local current = Rect(a, block)
+	if not current then return end
+	-- Follow the source row if the tracker moves or UI scale changes. Native
+	-- Hide may clear both owner and geometry; only our snapshot is retained.
+	local result = {}
+	for _, edge in ipairs({ "left", "right", "top", "bottom" }) do
+		local axis = (edge == "left" or edge == "right") and "left" or "top"
+		result[edge] = current[axis] + (saved.tip[edge] - saved.source[axis]) * current.scale / saved.source.scale
+	end
+	return result
 end
 
 -- Rectangles are in physical screen coordinates, so mixed UI scales do not
@@ -72,12 +98,13 @@ function QT:PlaceQuestTrackerAtTooltip(screen, tip, width, height, gap, obstacle
 	local side = placement == "side"
 	local verticalGap = side and gap or 0
 	local boxes = {
+		replace = { left = screen.left, right = screen.right, bottom = screen.bottom, top = screen.top, side = "replace" },
 		left = { left = screen.left, right = math.min(screen.right, tip.left - gap), bottom = screen.bottom, top = screen.top, side = "left" },
 		right = { left = math.max(screen.left, tip.right + gap), right = screen.right, bottom = screen.bottom, top = screen.top, side = "right" },
 		above = { left = screen.left, right = screen.right, bottom = math.max(screen.bottom, tip.top + verticalGap), top = screen.top, side = "above" },
 		below = { left = screen.left, right = screen.right, bottom = screen.bottom, top = math.min(screen.top, tip.bottom - verticalGap), side = "below" },
 	}
-	local order = side and { "left", "right", "above", "below" }
+	local order = placement == "replace" and { "replace", "left", "right", "above", "below" } or side and { "left", "right", "above", "below" }
 		or placement == "bottom" and { "below", "above", "left", "right" }
 		or { "above", "below", "left", "right" }
 	local bestX, bestY, factor = nil, nil, 0
@@ -88,7 +115,9 @@ function QT:PlaceQuestTrackerAtTooltip(screen, tip, width, height, gap, obstacle
 			local w, h = width * fit, height * fit
 			local x = box.side == "left" and tip.left - gap - w or tip.right + gap
 			local y = tip.top
-			if box.side == "above" or box.side == "below" then
+			if box.side == "replace" then
+				x = tip.right - w
+			elseif box.side == "above" or box.side == "below" then
 				x = side and tip.left or tip.right - w
 				y = box.side == "above" and tip.top + verticalGap + h or tip.bottom - verticalGap
 			end
@@ -124,22 +153,32 @@ function QT:UpdateQuestTrackerTooltipAnchor(frame, state)
 	if not frame or self:IsWorkBlocked("foreign_frame_mutation") or not self:CanMutateOwnedUI(frame) then return end
 	-- IsShown ignores hidden parents. Only suppress native information when
 	-- the matching POT content is actually visible, not merely configured on.
-	local tooltip = Read(self, frame, "IsVisible") == true and Read(self, frame.panel, "IsVisible") == true
-		and self:GetQuestFocusMatchingTooltip(state)
+	local visible = Read(self, frame, "IsVisible") == true and Read(self, frame.panel, "IsVisible") == true
+	local tooltip = visible and self:GetQuestFocusMatchingTooltip(state)
+	local hiddenTip = visible and HiddenTooltipRect(self, state)
+	if state and not hiddenTip then state.nativeTooltipAnchor = nil end
 	if tooltip and state.hoverNative and self:GetOption("questTrackerHideBlizzardTooltip") == true then
 		-- Hide runs native cleanup. Never change alpha, replace native scripts,
 		-- or force Show on a reused tooltip when POT goes away.
 		if not self:IsProtectedFrame(tooltip) then
 			local hide = self:GetAccessibleFrameMember(tooltip, "Hide")
 			if type(hide) == "function" then
+				local tip, source = Rect(self, tooltip), Rect(self, state.hoverBlock)
 				local ok = pcall(hide, tooltip)
-				if ok and Read(self, tooltip, "IsShown") == false then tooltip = nil end
+				if ok and Read(self, tooltip, "IsShown") == false then
+					if tip and source then
+						state.nativeTooltipAnchor = { tip = tip, source = source, tooltip = tooltip,
+							block = state.hoverBlock, id = state.hoverID }
+						hiddenTip = HiddenTooltipRect(self, state)
+					end
+					tooltip = nil
+				end
 			end
 		end
 	end
-	if tooltip and self:IsQuestTrackerSnapped() and not frame.dragging and not frame.resizing then
+	if (tooltip or hiddenTip) and self:IsQuestTrackerSnapped() and not frame.dragging and not frame.resizing then
 		local root = self:GetOwnedUIParent()
-		local screen, tip = Rect(self, root), Rect(self, tooltip)
+		local screen, tip = Rect(self, root), hiddenTip or Rect(self, tooltip)
 		local fs, scale = Number(self, frame, "GetEffectiveScale"), Number(self, frame, "GetScale")
 		if screen and tip and fs and scale and fs > 0 and scale > 0 then
 			local dock = frame.questTooltipDocked
@@ -148,7 +187,7 @@ function QT:UpdateQuestTrackerTooltipAnchor(frame, state)
 			local effective = fs * base / scale
 			local x, y, factor = self:PlaceQuestTrackerAtTooltip(screen, tip,
 				frame.panel:GetWidth() * effective, frame.panel:GetHeight() * effective, 4 * screen.scale,
-				Rect(self, state.hoverBlock), self:GetQuestTrackerTooltipPlacement())
+				Rect(self, state.hoverBlock), hiddenTip and "replace" or self:GetQuestTrackerTooltipPlacement())
 			if x then
 				local wanted = base * factor
 				frame.questTooltipDocked = { baseScale = base, appliedScale = wanted }

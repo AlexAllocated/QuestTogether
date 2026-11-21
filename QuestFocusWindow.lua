@@ -135,6 +135,7 @@ function QT:UpdateQuestFocusWindow()
 	end
 	if self:IsWorkBlocked("foreign_frame_mutation") or self:IsWorkBlocked("quest_snapshot_refresh") then
 		local state = rawget(self, "questFocusState")
+		if state then state.nativeTooltipAnchor = nil end
 		if self:GetQuestTrackerMode() == "hidden" or self:IsQuestTrackerHiddenWhileSolo()
 			or (state and (state.profile ~= self.db.profile or state.mode ~= self:GetQuestTrackerMode())) then
 			self:ResetQuestFocusWindow()

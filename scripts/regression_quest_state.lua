@@ -1360,4 +1360,110 @@ QuestTogether:RegisterTest("restricted progress bursts coalesce without losing a
 	AssertEqual(#a.onQuestLogUpdate, 1, "reset cannot retain a marker from the old queue")
 end)
 
+local function NewCombatProgressFixture()
+	local a = NewObjectiveProgressFixture()
+	a.combat = true
+	a.API.IsQuestComplete = function() return a.ready end
+	a.API.IsQuestReadyForTurnIn = function() return a.ready end
+	function a:GetTrackedQuestStatusState() return { isComplete = self.ready, isReadyForTurnIn = self.ready } end
+	function a:GetQuestDisplayTitle(_, title) return title end
+	a:WatchQuest(12345, { title = "Photo Quest" })
+	a.tracker[12345].isReadyForTurnIn = false
+	function a:RunTimers()
+		local callbacks = self.delayed
+		self.delayed = {}
+		for _, callback in ipairs(callbacks) do callback() end
+	end
+	return a
+end
+
+QuestTogether:RegisterTest("combat progress announces before combat ends without draining acceptance or replaying", function()
+	local a = NewCombatProgressFixture()
+	local accepted = false
+	a:QueueQuestLogTask(function() accepted = true end)
+	a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+	a.liveValue = 81
+	a:RunTimers()
+	AssertEqual(#a.announcements, 0, "a real log update must release progress")
+	for _ = 1, 20 do a:QUEST_LOG_UPDATE() end
+	a:RunTimers()
+	AssertEqual(#a.announcements, 1)
+	AssertEqual(a.announcements[1][1], "QUEST_PROGRESS")
+	AssertEqual(a.tracker[12345].objectiveValues[1], 81)
+	assert(not accepted, "acceptance is still deferred")
+	a.liveValue, a.ready = 100, true
+	a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+	a:QUEST_LOG_UPDATE()
+	a:RunTimers()
+	AssertEqual(#a.announcements, 3, "progress and readiness publish in order")
+	AssertEqual(a.announcements[3][1], "QUEST_READY_TO_TURN_IN")
+	a.combat = false
+	a:DrainQueuedQuestLogTasks()
+	assert(accepted)
+	AssertEqual(#a.announcements, 3, "recovery must not replay combat milestones")
+end)
+
+QuestTogether:RegisterTest("combat progress preserves unknown observations and retries the next log event", function()
+	for _, failure in ipairs({ "count", "objective", "identity" }) do
+		local a = NewCombatProgressFixture()
+		local count, objective, info = a.API.GetNumQuestLeaderBoards, a.API.GetQuestObjectiveInfo, a.API.GetQuestLogInfo
+		if failure == "count" then a.API.GetNumQuestLeaderBoards = function() return nil end
+		elseif failure == "objective" then a.API.GetQuestObjectiveInfo = function() end
+		else a.API.GetQuestLogInfo = function() return { questID = 54321 } end end
+		a.liveValue = 81
+		a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+		a:QUEST_LOG_UPDATE()
+		a:RunTimers()
+		AssertEqual(#a.announcements, 0)
+		AssertEqual(a.tracker[12345].objectiveValues[1], 80)
+		a.API.GetNumQuestLeaderBoards, a.API.GetQuestObjectiveInfo, a.API.GetQuestLogInfo = count, objective, info
+		a:QUEST_LOG_UPDATE()
+		a:RunTimers()
+		AssertEqual(#a.announcements, 1)
+	end
+end)
+
+QuestTogether:RegisterTest("combat progress honors encounter restrictions and resumes with current evidence", function()
+	local a = NewCombatProgressFixture()
+	a.encounter = true
+	function a:IsRuntimeRestrictionTypeActive(kind) return kind == "encounter" and self.encounter end
+	a.liveValue = 81
+	a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+	a:QUEST_LOG_UPDATE()
+	a:RunTimers()
+	AssertEqual(#a.announcements, 0)
+	a.encounter = false
+	a:FlushDeferredWork("test")
+	a:RunTimers()
+	AssertEqual(#a.announcements, 1)
+end)
+
+QuestTogether:RegisterTest("combat progress supports legacy text counters without structured counters", function()
+	local a = NewCombatProgressFixture()
+	a.liveText, a.liveType, a.liveObjectiveValue = "Wolves slain: 1/5", "monster", nil
+	a:WatchQuest(12345, { title = "Wolf Hunt" })
+	a.liveText = "Wolves slain: 2/5"
+	a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+	a:QUEST_LOG_UPDATE()
+	a:RunTimers()
+	AssertEqual(#a.announcements, 1)
+	AssertEqual(a.announcements[1][2], "Wolves slain: 2/5")
+end)
+
+QuestTogether:RegisterTest("combat progress callbacks retire with reset disable and quest lifetimes", function()
+	for _, retirement in ipairs({ "reset", "disabled", "removed", "accepting", "retired" }) do
+		local a = NewCombatProgressFixture()
+		a.liveValue = 81
+		a:UNIT_QUEST_LOG_CHANGED(nil, "player")
+		a:QUEST_LOG_UPDATE()
+		if retirement == "reset" then a:ResetQuestEventState()
+		elseif retirement == "disabled" then a.isEnabled = false
+		elseif retirement == "removed" then a.pendingQuestRemovals[12345] = {}
+		elseif retirement == "accepting" then a.pendingQuestAcceptances[12345] = {}
+		else a.retiredQuestIds[12345] = true end
+		a:RunTimers()
+		AssertEqual(#a.announcements, 0)
+	end
+end)
+
 _G.QuestTogether:RecordTestModule("scripts/regression_quest_state.lua")

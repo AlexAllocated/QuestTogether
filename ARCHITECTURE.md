@@ -169,7 +169,12 @@ private `.local` notes are historical context, not the source of truth.
   on and is shared by Groups & Sharing and Edit Mode. Existing explicit false
   choices remain unchanged; Reset to Default restores hiding. It may hide only the
   matching unprotected quest/campaign progress tooltip while POT is shown and
-  restrictions permit. Failed suppression retains adjacency. Reward, item and
+  restrictions permit. Successful suppression keeps a private snapshot of the
+  tooltip geometry for that exact quest/header hover. Snapped POT replaces the
+  tooltip at its top-right edge, follows header movement and scale, and remains
+  bounded by the screen and hovered row. The snapshot retires on hover/owner,
+  profile, visibility, mode or restriction changes; it never shows or reanchors
+  the hidden native tooltip. Failed suppression retains adjacency. Reward, item and
   unrelated tooltips remain untouched; QT never forces a reused tooltip to show.
 
 - Native tracker party-focus markers use `GetPartyQuestFocusID` for up to four
@@ -1048,6 +1053,17 @@ Use native settings controls through the shared constructors. Player-facing
 text is localized at presentation; wire facts and diagnostic identifiers stay
 stable. Vendored LibChev is immutable under its pinned manifest: fixes belong
 upstream followed by a deliberate vendor update.
+
+Local progress has a separate `quest_progress_read` work class. A real
+`QUEST_LOG_UPDATE` releases a bounded 100 ms scan of already tracked quests while
+the lifecycle queue is blocked by ordinary combat. Guarded, read-only adapters
+copy objective data and readiness; missing data retains the previous observation.
+The existing progress reducer and announcement aggregator suppress replays when
+the lifecycle queue later drains. Acceptance, complete snapshot rebuilds, native
+tooltip reads, quest selection and protected UI work retain their restrictions.
+Encounter, challenge, PvP and map restrictions also block the progress reader.
+The queued progress job belongs to the captured event-queue lifetime, so resets,
+profile replacement and disabled runtimes cannot publish stale observations.
 
 EventLocalization owns the shared local quest-title cache and native load budget.
 Core reads local quest titles, links and structured tooltip headers without

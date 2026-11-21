@@ -1032,6 +1032,99 @@ QT:RegisterTest("POT docks to matching native quest tooltips and restores its or
 	for i = 1, 5 do Equal(after[i], before[i]) end
 end)
 
+QT:RegisterTest("POT replaces its suppressed tooltip and follows the same hover without native geometry", function()
+	for _, placement in ipairs({ "top", "bottom", "side" }) do
+		local a, tip = TooltipFixture()
+		a.db.profile.questTrackerHideBlizzardTooltip = true
+		a.db.profile.questTrackerTooltipPlacement = placement
+		local hide = tip.Hide
+		function tip:Hide()
+			hide(self)
+			self.tooltipOwner, self.left, self.top = nil, nil, nil
+		end
+		a:UpdateQuestFocusWindow(); a:Drain()
+		local frame = a.questFocusWindow
+		local function Anchor(right, top)
+			local point, relative, rp, x, y = frame:GetPoint(1)
+			Equal(point, "TOPLEFT"); Equal(relative, a.root); Equal(rp, "BOTTOMLEFT")
+			Equal(x + frame.panel:GetWidth(), right); Equal(y, top)
+		end
+		Equal(tip:IsShown(), false)
+		assert(frame.questTooltipDocked and a.questFocusState.nativeTooltipAnchor)
+		Anchor(850, 650)
+		local writes = tip.writes
+		for _ = 1, 3 do a:UpdateQuestFocusWindow(); a:Drain(); Anchor(850, 650) end
+		Equal(tip.writes, writes, "hidden tooltip must not be shown or manipulated to retain docking")
+		a.hoverBlock.left, a.hoverBlock.top = 950, 600
+		a:UpdateQuestFocusWindow(); Anchor(900, 600)
+		Equal(a.db.profile.windowLayouts, nil)
+		a.hover = nil
+		a:UpdateQuestFocusWindow(); a:Drain()
+		Equal(frame.questTooltipDocked, nil)
+		Equal(a.questFocusState.nativeTooltipAnchor, nil)
+		Equal(select(1, frame:GetPoint(1)), "TOPRIGHT")
+		Equal(tip.writes, writes)
+	end
+end)
+
+QT:RegisterTest("suppressed POT anchors retire on reused owners profiles restrictions and visibility changes", function()
+	for _, change in ipairs({
+		function(a, tip) tip.tooltipOwner = a:CreateTestUIRegion(a) end,
+		function(a, tip) tip:Show(); tip.tooltipOwner = a:CreateTestUIRegion(a) end,
+		function(a) a.hoverBlock.id = 99 end,
+		function(a) a.hoverBlock:Hide() end,
+		function(a) a.hoverBlock = a:CreateTestUIRegion(a); a.hoverBlock.id = 42 end,
+		function(a) a.db.profile.questTrackerHideBlizzardTooltip = false end,
+		function(a) a.db.profile = { questTrackerMode = "both", questTrackerHideBlizzardTooltip = true } end,
+		function(a) a.questFocusWindow.panel:Hide() end,
+		function(a, tip) tip.GetOwner = function() error("unavailable owner") end end,
+	}) do
+		local a, tip = TooltipFixture()
+		a.db.profile.questTrackerHideBlizzardTooltip = true
+		a:UpdateQuestFocusWindow(); a:Drain()
+		assert(a.questFocusState.nativeTooltipAnchor)
+		change(a, tip)
+		a:UpdateQuestFocusWindow(); a:Drain()
+		Equal(a.questFocusState.nativeTooltipAnchor, nil)
+		Equal(a.questFocusWindow.questTooltipDocked, nil)
+	end
+	local a = TooltipFixture()
+	a.db.profile.questTrackerHideBlizzardTooltip = true
+	a:UpdateQuestFocusWindow(); a:Drain()
+	a.restricted = true
+	a:UpdateQuestFocusWindow()
+	Equal(a.questFocusState.nativeTooltipAnchor, nil)
+	a.restricted = false
+	a:UpdateQuestFocusWindow()
+	Equal(a.questFocusWindow.questTooltipDocked, nil)
+end)
+
+QT:RegisterTest("suppressed POT tooltip placement respects mixed scales screen edges and manual positioning", function()
+	local a, tip = TooltipFixture()
+	a.root:SetScale(0.8); tip.scale, tip.left, tip.top = 1.25, 300, 500
+	a.db.profile.questTrackerHideBlizzardTooltip = true
+	local right, top = (tip.left + tip:GetWidth()) * tip:GetEffectiveScale(), tip.top * tip:GetEffectiveScale()
+	a:UpdateQuestFocusWindow(); a:Drain()
+	local frame = a.questFocusWindow
+	local _, _, _, x, y = frame:GetPoint(1)
+	assert(math.abs((x + frame.panel:GetWidth()) * frame:GetEffectiveScale() - right) < 0.001)
+	assert(math.abs(y * frame:GetEffectiveScale() - top) < 0.001)
+	a:SetOption("questTrackerSnapToBlizzard", false); a:Drain()
+	Equal(frame.questTooltipDocked, nil)
+	local before = { frame:GetPoint(1) }
+	a.hoverBlock.top = 300
+	a:UpdateQuestFocusWindow()
+	local after = { frame:GetPoint(1) }
+	for i = 1, 5 do Equal(after[i], before[i]) end
+	local screen = { left = 0, right = 800, bottom = 0, top = 600 }
+	local rect = { left = 600, right = 900, bottom = -100, top = 80 }
+	local px, py, scale = a:PlaceQuestTrackerAtTooltip(screen, rect, 340, 220, 4, nil, "replace")
+	Equal(scale, 1); Equal(px, 460); Equal(py, 220)
+	local source = { left = 650, right = 780, bottom = 40, top = 130 }
+	px, py, scale = a:PlaceQuestTrackerAtTooltip(screen, rect, 340, 220, 4, source, "replace")
+	assert(py - 220 * scale >= source.top + 4 or py <= source.bottom - 4)
+end)
+
 QT:RegisterTest("POT native tooltip suppression cannot hide unrelated pooled protected or restricted UI", function()
 	-- The hide preference never replaces the rules deciding whether POT can
 	-- present this quest. Exercise the real update path for each exclusion.

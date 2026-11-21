@@ -168,7 +168,8 @@ function QuestTogether:IsWorkBlocked(workClass)
 	end
 
 	if
-		workClass == "nameplate_tooltip_resolve"
+		workClass == "quest_progress_read"
+		or workClass == "nameplate_tooltip_resolve"
 		or workClass == "nameplate_quest_refresh"
 		or workClass == "nameplate_refresh"
 		or workClass == "nameplate_tint_refresh"
