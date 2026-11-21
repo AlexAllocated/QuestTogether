@@ -3,6 +3,239 @@
   "releases": [
     {
       "enUS": {
+        "version": "10.1.2",
+        "welcome": "Keep questing with your controller!",
+        "sections": [
+          {
+            "title": "Controller compatibility",
+            "items": [
+              "Compatible updates to WoW Forever no longer disable QT controller support just because the build number changed. Required API and security checks remain in place.",
+              "Fixed the build check that prevented new characters from receiving the PQL controller shortcut. After reloading, QT can add it to an empty LT + RT + D-pad Up slot on action page 1 when automatic installation is enabled. Existing macros and custom bindings are preserved.",
+              "QT’s world-map party markers now use the same approach: compatible client builds remain supported without an exact build-number match."
+            ]
+          },
+          {
+            "title": "Ready for combat",
+            "items": [
+              "QT windows and their menus now close automatically when combat begins, keeping your view clear and returning controller input to the game.",
+              "This includes the debug log and diagnostic reports, even when QuestTogether is disabled in its settings."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "10.1.2",
+        "welcome": "Mit dem Controller weiter auf Abenteuerreise!",
+        "sections": [
+          {
+            "title": "Controller-Kompatibilität",
+            "items": [
+              "Ein kompatibles Update von WoW Forever schaltet die Controller-Unterstützung von QT nicht mehr allein wegen einer neuen Buildnummer ab. Die nötigen API- und Sicherheitsprüfungen bleiben erhalten.",
+              "Die bisherige Buildprüfung konnte bei neuen Charakteren die Einrichtung der PQL-Controller-Verknüpfung verhindern. Nach dem Neuladen kann QT sie bei aktivierter automatischer Einrichtung auf den freien Platz LT + RT + Steuerkreuz oben auf Aktionsseite 1 legen. Vorhandene Makros und eigene Belegungen bleiben erhalten.",
+              "Auch die Gruppenmarkierungen auf der Weltkarte benötigen keine exakt passende Buildnummer mehr, solange der Client die erforderlichen Schnittstellen unterstützt."
+            ]
+          },
+          {
+            "title": "Freie Sicht im Kampf",
+            "items": [
+              "Sobald ein Kampf beginnt, schließen sich QT-Fenster und ihre Menüs automatisch. So bleibt die Sicht frei und die Controller-Steuerung geht zurück ans Spiel.",
+              "Das gilt auch für das Debug-Protokoll und Diagnoseberichte – selbst wenn QuestTogether in den eigenen Einstellungen deaktiviert ist."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "10.1.2",
+        "welcome": "Continuez vos aventures à la manette !",
+        "sections": [
+          {
+            "title": "Compatibilité des manettes",
+            "items": [
+              "Une mise à jour compatible de WoW Forever ne désactive plus la prise en charge des manettes de QT simplement parce que le numéro de build a changé. Les vérifications des API et de sécurité restent actives.",
+              "La vérification du build empêchait certains nouveaux personnages de recevoir le raccourci manette du PQL. Après un rechargement, QT peut le placer dans l’emplacement libre LT + RT + haut de la croix directionnelle, sur la page d’actions 1, si l’installation automatique est activée. Les macros existantes et les commandes personnalisées sont conservées.",
+              "Les marqueurs de groupe de QT sur la carte du monde suivent le même principe : les builds compatibles restent pris en charge sans correspondance exacte du numéro."
+            ]
+          },
+          {
+            "title": "Place au combat",
+            "items": [
+              "Au début d’un combat, les fenêtres de QT et leurs menus se ferment automatiquement pour dégager la vue et rendre les commandes de la manette au jeu.",
+              "Le journal de débogage et les rapports de diagnostic se ferment eux aussi, même si QuestTogether est désactivé dans ses réglages."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "10.1.2",
+        "welcome": "¡Sigue de aventuras con tu mando!",
+        "sections": [
+          {
+            "title": "Compatibilidad con mandos",
+            "items": [
+              "Las actualizaciones compatibles de WoW Forever ya no desactivan el soporte de mando de QT por cambiar el número de compilación. Se mantienen las comprobaciones necesarias de API y seguridad.",
+              "Corregida la comprobación que impedía crear el acceso al PQL con mando para personajes nuevos. Tras recargar la interfaz, QT puede colocarlo en LT + RT + arriba en la cruceta, en la página de acciones 1, si ese espacio está libre y la instalación automática está activada. Se respetan las macros existentes y las asignaciones personalizadas.",
+              "Los marcadores de grupo de QT en el mapa del mundo también admiten compilaciones compatibles sin exigir un número de compilación exacto."
+            ]
+          },
+          {
+            "title": "Todo listo para el combate",
+            "items": [
+              "Las ventanas de QT y sus menús se cierran automáticamente al entrar en combate, despejando la pantalla y devolviendo el control del mando al juego.",
+              "También se cierran el registro de depuración y los informes de diagnóstico, incluso si has desactivado QuestTogether en sus ajustes."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "10.1.2",
+        "welcome": "¡Sigue tus aventuras con el control!",
+        "sections": [
+          {
+            "title": "Compatibilidad con controles",
+            "items": [
+              "Una actualización compatible de WoW Forever ya no desactiva el soporte de control de QT solo porque cambió el número de compilación. Las verificaciones de API y seguridad siguen activas.",
+              "Corregimos la verificación que impedía agregar el acceso al PQL con control en personajes nuevos. Después de recargar la interfaz, QT puede agregarlo al espacio libre LT + RT + arriba en la cruceta de la página de acciones 1, si la instalación automática está habilitada. Las macros existentes y las asignaciones personalizadas se conservan.",
+              "Los marcadores de grupo de QT en el mapa del mundo también aceptan compilaciones compatibles sin requerir una coincidencia exacta del número."
+            ]
+          },
+          {
+            "title": "A combatir sin estorbos",
+            "items": [
+              "Al entrar en combate, las ventanas y los menús de QT se cierran solos para despejar la pantalla y devolverle al juego la entrada del control.",
+              "Esto también incluye el registro de depuración y los reportes de diagnóstico, aunque QuestTogether esté desactivado en su configuración."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "10.1.2",
+        "welcome": "Continue suas aventuras com o controle!",
+        "sections": [
+          {
+            "title": "Compatibilidade com controles",
+            "items": [
+              "Atualizações compatíveis do WoW Forever não desativam mais o suporte a controles do QT só porque o número da compilação mudou. As verificações de API e segurança continuam ativas.",
+              "Corrigimos a verificação que impedia a criação do atalho de controle do PQL para personagens novos. Após recarregar a interface, o QT pode adicioná-lo ao espaço livre LT + RT + direcional para cima na página de ações 1, se a instalação automática estiver habilitada. Macros existentes e atalhos personalizados são preservados.",
+              "Os marcadores de grupo do QT no mapa-múndi também passam a aceitar compilações compatíveis sem exigir um número exato."
+            ]
+          },
+          {
+            "title": "Tela livre para o combate",
+            "items": [
+              "As janelas e os menus do QT agora fecham automaticamente quando o combate começa, liberando a visão e devolvendo os comandos do controle ao jogo.",
+              "O registro de depuração e os relatórios de diagnóstico também fecham, mesmo se o QuestTogether estiver desativado nas próprias configurações."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "10.1.2",
+        "welcome": "Продолжайте приключения с контроллером!",
+        "sections": [
+          {
+            "title": "Совместимость с контроллером",
+            "items": [
+              "Совместимые обновления WoW Forever больше не отключают поддержку контроллера в QT только из-за нового номера сборки. Проверки необходимых API и безопасности сохранены.",
+              "Исправлена проверка сборки, из-за которой у новых персонажей не создавался ярлык PQL для контроллера. После перезагрузки интерфейса QT сможет добавить его в свободную ячейку LT + RT + вверх на крестовине на странице действий 1, если включена автоматическая установка. Существующие макросы и пользовательские назначения сохраняются.",
+              "Метки участников группы QT на карте мира также больше не требуют точного совпадения номера сборки, если клиент предоставляет необходимые возможности."
+            ]
+          },
+          {
+            "title": "Ничего лишнего в бою",
+            "items": [
+              "При вступлении в бой окна QT и их меню теперь закрываются автоматически: обзор остаётся свободным, а команды геймпада снова получает игра.",
+              "Это относится и к журналу отладки, и к диагностическим отчётам, даже если QuestTogether отключён в собственных настройках."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "10.1.2",
+        "welcome": "Continua le tue avventure con il controller!",
+        "sections": [
+          {
+            "title": "Compatibilità dei controller",
+            "items": [
+              "Gli aggiornamenti compatibili di WoW Forever non disattivano più il supporto controller di QT solo perché cambia il numero di build. Restano attivi i controlli sulle API e sulla sicurezza.",
+              "Corretto il controllo della build che impediva ai nuovi personaggi di ricevere la scorciatoia controller del PQL. Dopo aver ricaricato l’interfaccia, QT può inserirla nello spazio libero LT + RT + freccia su della croce direzionale, nella pagina azioni 1, se l’installazione automatica è attiva. Macro esistenti e assegnazioni personalizzate vengono conservate.",
+              "Anche gli indicatori di gruppo di QT sulla mappa del mondo ora accettano build compatibili senza richiedere una corrispondenza esatta del numero."
+            ]
+          },
+          {
+            "title": "Spazio al combattimento",
+            "items": [
+              "Quando inizia un combattimento, le finestre di QT e i loro menu si chiudono automaticamente, liberando la visuale e restituendo al gioco i comandi del controller.",
+              "Vale anche per il registro di debug e i rapporti diagnostici, persino quando QuestTogether è disattivato nelle proprie impostazioni."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "10.1.2",
+        "welcome": "컨트롤러로 모험을 이어가세요!",
+        "sections": [
+          {
+            "title": "컨트롤러 호환성",
+            "items": [
+              "호환되는 WoW Forever 업데이트 후 빌드 번호가 바뀌었다는 이유만으로 QT 컨트롤러 지원이 꺼지지 않습니다. 필요한 API와 보안 검사는 그대로 유지됩니다.",
+              "새 캐릭터에게 PQL 컨트롤러 바로가기가 생성되지 않던 빌드 검사 문제를 수정했습니다. 자동 설치가 켜져 있고 행동 페이지 1의 LT + RT + 방향 패드 위 슬롯이 비어 있으면, 인터페이스를 다시 불러온 뒤 QT가 바로가기를 추가할 수 있습니다. 기존 매크로와 사용자 지정 키 설정은 유지됩니다.",
+              "세계 지도의 QT 파티원 표식도 정확한 빌드 번호 일치 대신 클라이언트 호환 여부를 확인합니다."
+            ]
+          },
+          {
+            "title": "전투에 바로 집중하세요",
+            "items": [
+              "전투가 시작되면 QT 창과 메뉴가 자동으로 닫힙니다. 화면을 가리지 않고 컨트롤러로 다시 게임을 조작할 수 있습니다.",
+              "디버그 로그와 진단 보고서도 자동으로 닫히며, QuestTogether 설정에서 애드온을 비활성화한 상태에서도 적용됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "10.1.2",
+        "welcome": "继续用手柄畅快冒险！",
+        "sections": [
+          {
+            "title": "手柄兼容性修复",
+            "items": [
+              "WoW Forever 更新后，只要所需功能仍然兼容，QT 就不会仅因构建编号改变而停用手柄支持。必要的 API 和安全检查仍然保留。",
+              "修复了构建检查导致新角色无法自动创建 PQL 手柄快捷方式的问题。启用自动安装后，重新加载界面，QT 即可在动作栏第 1 页空闲的 LT + RT + 方向键上槽位添加快捷方式。已有宏和自定义按键设置不会被覆盖。",
+              "世界地图上的 QT 队友标记也不再要求构建编号完全匹配，只要客户端具备所需的兼容功能即可继续使用。"
+            ]
+          },
+          {
+            "title": "战斗开始，界面自动让路",
+            "items": [
+              "进入战斗时，QT 窗口及其菜单现在会自动关闭，保持视野清晰，并让手柄输入重新用于游戏操作。",
+              "调试日志和诊断报告窗口也会自动关闭，即使已在 QuestTogether 设置中停用插件也一样。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "10.1.2",
+        "welcome": "繼續用控制器享受冒險！",
+        "sections": [
+          {
+            "title": "控制器相容性修正",
+            "items": [
+              "WoW Forever 更新後，只要所需功能仍然相容，QT 就不會只因組建編號改變而停用控制器支援。必要的 API 與安全檢查仍會保留。",
+              "修正組建檢查導致新角色無法自動建立 PQL 控制器捷徑的問題。啟用自動安裝後，重新載入介面，QT 就能在動作列第 1 頁空白的 LT + RT + 方向鍵上欄位加入捷徑。現有巨集與自訂按鍵設定都會保留。",
+              "世界地圖上的 QT 隊友標記也不再要求組建編號完全相符，只要用戶端提供所需的相容功能即可繼續使用。"
+            ]
+          },
+          {
+            "title": "戰鬥開始，視野不受干擾",
+            "items": [
+              "進入戰鬥時，QT 視窗及其選單現在會自動關閉，保持視野清晰，並讓控制器輸入重新用於遊戲操作。",
+              "偵錯紀錄和診斷報告視窗也會自動關閉，即使已在 QuestTogether 設定中停用插件也一樣。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "10.1.1",
         "welcome": "Getting started with quest chains on Forever just got easier!",
         "sections": [

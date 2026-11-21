@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.2
+## 10.1.3
 
 Una correzione per i compagni recenti su Forever.
 
@@ -10,6 +10,21 @@ Una correzione per i compagni recenti su Forever.
 
 - La lista dei compagni recenti ora si carica e registra i giocatori anche quando Forever restituisce un nome del reame vuoto.
 - La cronologia esistente viene conservata e riunita per i tuoi personaggi della stessa regione, mantenendo il dato più recente per ogni giocatore. Resta privata, con gli stessi limiti di 100 giocatori e 90 giorni. Su Retail e Classic, la cronologia resta separata per reame.
+
+## 10.1.2
+
+Continua le tue avventure con il controller!
+
+### Compatibilità dei controller
+
+- Gli aggiornamenti compatibili di WoW Forever non disattivano più il supporto controller di QT solo perché cambia il numero di build. Restano attivi i controlli sulle API e sulla sicurezza.
+- Corretto il controllo della build che impediva ai nuovi personaggi di ricevere la scorciatoia controller del PQL. Dopo aver ricaricato l’interfaccia, QT può inserirla nello spazio libero LT + RT + freccia su della croce direzionale, nella pagina azioni 1, se l’installazione automatica è attiva. Macro esistenti e assegnazioni personalizzate vengono conservate.
+- Anche gli indicatori di gruppo di QT sulla mappa del mondo ora accettano build compatibili senza richiedere una corrispondenza esatta del numero.
+
+### Spazio al combattimento
+
+- Quando inizia un combattimento, le finestre di QT e i loro menu si chiudono automaticamente, liberando la visuale e restituendo al gioco i comandi del controller.
+- Vale anche per il registro di debug e i rapporti diagnostici, persino quando QuestTogether è disattivato nelle proprie impostazioni.
 
 ## 10.1.1
 

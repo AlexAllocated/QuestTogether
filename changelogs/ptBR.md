@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.2
+## 10.1.3
 
 Correção de compatibilidade para os companheiros recentes no Forever.
 
@@ -10,6 +10,21 @@ Correção de compatibilidade para os companheiros recentes no Forever.
 
 - A lista de companheiros recentes volta a carregar e registrar jogadores mesmo quando o Forever retorna um nome de reino vazio.
 - Seu histórico anterior é preservado e reunido para os personagens da mesma região, mantendo o registro mais recente de cada jogador. Ele continua privado, com os mesmos limites de 100 jogadores e 90 dias. No Retail e no Classic, o histórico continua separado por reino.
+
+## 10.1.2
+
+Continue suas aventuras com o controle!
+
+### Compatibilidade com controles
+
+- Atualizações compatíveis do WoW Forever não desativam mais o suporte a controles do QT só porque o número da compilação mudou. As verificações de API e segurança continuam ativas.
+- Corrigimos a verificação que impedia a criação do atalho de controle do PQL para personagens novos. Após recarregar a interface, o QT pode adicioná-lo ao espaço livre LT + RT + direcional para cima na página de ações 1, se a instalação automática estiver habilitada. Macros existentes e atalhos personalizados são preservados.
+- Os marcadores de grupo do QT no mapa-múndi também passam a aceitar compilações compatíveis sem exigir um número exato.
+
+### Tela livre para o combate
+
+- As janelas e os menus do QT agora fecham automaticamente quando o combate começa, liberando a visão e devolvendo os comandos do controle ao jogo.
+- O registro de depuração e os relatórios de diagnóstico também fecham, mesmo se o QuestTogether estiver desativado nas próprias configurações.
 
 ## 10.1.1
 

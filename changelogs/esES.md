@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.2
+## 10.1.3
 
 Corregida la compatibilidad del historial de compañeros recientes con Forever.
 
@@ -10,6 +10,21 @@ Corregida la compatibilidad del historial de compañeros recientes con Forever.
 
 - Compañeros recientes vuelve a cargar y registrar jugadores aunque Forever devuelva un nombre de reino vacío.
 - Tu historial anterior se conserva y se reúne para tus personajes de la misma región, guardando el registro más reciente de cada jugador. Sigue siendo privado, con los mismos límites de 100 jugadores y 90 días. En Retail y Classic, el historial sigue separado por reino.
+
+## 10.1.2
+
+¡Sigue de aventuras con tu mando!
+
+### Compatibilidad con mandos
+
+- Las actualizaciones compatibles de WoW Forever ya no desactivan el soporte de mando de QT por cambiar el número de compilación. Se mantienen las comprobaciones necesarias de API y seguridad.
+- Corregida la comprobación que impedía crear el acceso al PQL con mando para personajes nuevos. Tras recargar la interfaz, QT puede colocarlo en LT + RT + arriba en la cruceta, en la página de acciones 1, si ese espacio está libre y la instalación automática está activada. Se respetan las macros existentes y las asignaciones personalizadas.
+- Los marcadores de grupo de QT en el mapa del mundo también admiten compilaciones compatibles sin exigir un número de compilación exacto.
+
+### Todo listo para el combate
+
+- Las ventanas de QT y sus menús se cierran automáticamente al entrar en combate, despejando la pantalla y devolviendo el control del mando al juego.
+- También se cierran el registro de depuración y los informes de diagnóstico, incluso si has desactivado QuestTogether en sus ajustes.
 
 ## 10.1.1
 

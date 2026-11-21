@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.2
+## 10.1.3
 
 Un correctif pour retrouver vos compagnons récents sur Forever.
 
@@ -10,6 +10,21 @@ Un correctif pour retrouver vos compagnons récents sur Forever.
 
 - La liste des compagnons récents se charge et enregistre de nouveau les joueurs lorsque Forever renvoie un nom de royaume vide.
 - Votre historique existant est conservé et regroupé pour vos personnages d’une même région, avec l’entrée la plus récente pour chaque joueur. Il reste privé et conserve ses limites de 100 joueurs et de 90 jours. Sur Retail et Classic, les historiques restent séparés par royaume.
+
+## 10.1.2
+
+Continuez vos aventures à la manette !
+
+### Compatibilité des manettes
+
+- Une mise à jour compatible de WoW Forever ne désactive plus la prise en charge des manettes de QT simplement parce que le numéro de build a changé. Les vérifications des API et de sécurité restent actives.
+- La vérification du build empêchait certains nouveaux personnages de recevoir le raccourci manette du PQL. Après un rechargement, QT peut le placer dans l’emplacement libre LT + RT + haut de la croix directionnelle, sur la page d’actions 1, si l’installation automatique est activée. Les macros existantes et les commandes personnalisées sont conservées.
+- Les marqueurs de groupe de QT sur la carte du monde suivent le même principe : les builds compatibles restent pris en charge sans correspondance exacte du numéro.
+
+### Place au combat
+
+- Au début d’un combat, les fenêtres de QT et leurs menus se ferment automatiquement pour dégager la vue et rendre les commandes de la manette au jeu.
+- Le journal de débogage et les rapports de diagnostic se ferment eux aussi, même si QuestTogether est désactivé dans ses réglages.
 
 ## 10.1.1
 

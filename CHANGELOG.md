@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 10.1.2
+## 10.1.3
 
 A compatibility fix for Recent Companions on Forever.
 
@@ -12,6 +12,21 @@ A compatibility fix for Recent Companions on Forever.
 
 - Fixed Recent Companions not loading or recording players when Forever returns an empty realm name.
 - Your existing history is preserved and combined across your characters in the same region, keeping the latest record for each player. It stays private, with the same limits of 100 players and 90 days. Retail and Classic history remains separate by realm.
+
+## 10.1.2
+
+Keep questing with your controller!
+
+### Controller compatibility
+
+- Compatible updates to WoW Forever no longer disable QT controller support just because the build number changed. Required API and security checks remain in place.
+- Fixed the build check that prevented new characters from receiving the PQL controller shortcut. After reloading, QT can add it to an empty LT + RT + D-pad Up slot on action page 1 when automatic installation is enabled. Existing macros and custom bindings are preserved.
+- QT’s world-map party markers now use the same approach: compatible client builds remain supported without an exact build-number match.
+
+### Ready for combat
+
+- QT windows and their menus now close automatically when combat begins, keeping your view clear and returning controller input to the game.
+- This includes the debug log and diagnostic reports, even when QuestTogether is disabled in its settings.
 
 ## 10.1.1
 

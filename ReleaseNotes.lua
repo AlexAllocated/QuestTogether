@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "10.1.2",
+	version = "10.1.3",
 	welcome = "A compatibility fix for Recent Companions on Forever.",
 	sections = {
 		{
