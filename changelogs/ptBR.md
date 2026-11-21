@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.4
+
+Novidades das suas missões durante o combate e dicas de tela com posicionamento mais estável.
+
+### Avisos de missão em combate
+
+- Os avisos de progresso e de missão pronta para entrega das missões que você já acompanha agora podem aparecer durante combates comuns. Suas configurações de avisos continuam valendo.
+- Se os dados não puderem ser lidos ou houver outras restrições ativas, o QT aguarda uma atualização segura. Avisos exibidos em combate não se repetem quando ele termina.
+
+### Posição do rastreador de objetivos do grupo
+
+- Quando o QT oculta a dica de tela nativa da missão, o rastreador de objetivos do grupo encaixado mantém essa posição, em vez de voltar para o lado do rastreador da Blizzard. Ele também acompanha os movimentos e as mudanças de escala da linha da missão sob o cursor.
+
 ## 10.1.3
 
 Correção de compatibilidade para os companheiros recentes no Forever.

@@ -3,14 +3,20 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "10.1.3",
-	welcome = "A compatibility fix for Recent Companions on Forever.",
+	version = "10.1.4",
+	welcome = "Smoother quest updates in combat and more consistent tooltip placement.",
 	sections = {
 		{
-			title = "Recent Companions",
+			title = "Quest updates during combat",
 			items = {
-				"Fixed Recent Companions not loading or recording players when Forever returns an empty realm name.",
-				"Your existing history is preserved and combined across your characters in the same region, keeping the latest record for each player. It stays private, with the same limits of 100 players and 90 days. Retail and Classic history remains separate by realm.",
+				"Progress and ready-to-turn-in announcements for quests you are already tracking can now appear during ordinary combat, using your existing announcement settings.",
+				"Unreadable quest data and other active restrictions still wait for a safe update. Announcements made during combat are not repeated when combat ends.",
+			},
+		},
+		{
+			title = "Party Objective Tracker placement",
+			items = {
+				"When QT hides the native quest tooltip, the snapped Party Objective Tracker now keeps that tooltip’s position instead of jumping back beside Blizzard’s tracker. It also follows movement and scale changes of the hovered quest row.",
 			},
 		},
 	},

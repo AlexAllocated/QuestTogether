@@ -1,14 +1,20 @@
 {
-  "source_sha256": "c27caffbe2ad4ab70b992de7acac479f2b24d169bff5a6721de6833fcf599af0",
+  "source_sha256": "aec7533eb24575f7c9127cf3105da96cde292bf063176f83f65ca8f6c86a45f8",
   "notes": {
-    "version": "10.1.3",
-    "welcome": "Corregida la compatibilidad del historial de compañeros recientes con Forever.",
+    "version": "10.1.4",
+    "welcome": "Actualizaciones de misión durante el combate y una posición más estable para la información emergente.",
     "sections": [
       {
-        "title": "Compañeros recientes",
+        "title": "Avisos de misión en combate",
         "items": [
-          "Compañeros recientes vuelve a cargar y registrar jugadores aunque Forever devuelva un nombre de reino vacío.",
-          "Tu historial anterior se conserva y se reúne para tus personajes de la misma región, guardando el registro más reciente de cada jugador. Sigue siendo privado, con los mismos límites de 100 jugadores y 90 días. En Retail y Classic, el historial sigue separado por reino."
+          "Los avisos de progreso y de misión lista para entregar de las misiones que ya sigues pueden mostrarse ahora durante los combates normales. Se mantienen tus ajustes de avisos.",
+          "Si los datos no se pueden leer o hay otras restricciones activas, QT espera a una actualización segura. Los avisos mostrados durante el combate no se repiten al terminar."
+        ]
+      },
+      {
+        "title": "Posición del seguimiento de objetivos del grupo",
+        "items": [
+          "Cuando QT oculta la información emergente nativa de una misión, el seguimiento de objetivos del grupo acoplado conserva esa posición en lugar de volver al lado del seguimiento de Blizzard. También se adapta al movimiento y a los cambios de escala de la fila de misión bajo el cursor."
         ]
       }
     ]

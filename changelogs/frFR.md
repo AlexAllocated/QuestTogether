@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.4
+
+Des nouvelles de vos quêtes pendant le combat et des infobulles mieux placées.
+
+### Annonces de quête en combat
+
+- Pour les quêtes déjà suivies, les annonces de progression et de quête prête à être rendue peuvent désormais apparaître pendant les combats ordinaires. Vos réglages d’annonce restent appliqués.
+- QT attend toujours une mise à jour sûre si les données sont illisibles ou si une autre restriction est active. Les annonces affichées en combat ne sont pas répétées à sa fin.
+
+### Position du suivi des objectifs du groupe
+
+- Lorsque QT masque l’infobulle de quête native, le suivi des objectifs du groupe ancré conserve désormais sa position au lieu de revenir à côté du suivi de Blizzard. Il suit aussi les déplacements et les changements d’échelle de la ligne de quête survolée.
+
 ## 10.1.3
 
 Un correctif pour retrouver vos compagnons récents sur Forever.

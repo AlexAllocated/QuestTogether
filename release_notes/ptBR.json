@@ -1,14 +1,20 @@
 {
-  "source_sha256": "c27caffbe2ad4ab70b992de7acac479f2b24d169bff5a6721de6833fcf599af0",
+  "source_sha256": "aec7533eb24575f7c9127cf3105da96cde292bf063176f83f65ca8f6c86a45f8",
   "notes": {
-    "version": "10.1.3",
-    "welcome": "Correção de compatibilidade para os companheiros recentes no Forever.",
+    "version": "10.1.4",
+    "welcome": "Novidades das suas missões durante o combate e dicas de tela com posicionamento mais estável.",
     "sections": [
       {
-        "title": "Companheiros recentes",
+        "title": "Avisos de missão em combate",
         "items": [
-          "A lista de companheiros recentes volta a carregar e registrar jogadores mesmo quando o Forever retorna um nome de reino vazio.",
-          "Seu histórico anterior é preservado e reunido para os personagens da mesma região, mantendo o registro mais recente de cada jogador. Ele continua privado, com os mesmos limites de 100 jogadores e 90 dias. No Retail e no Classic, o histórico continua separado por reino."
+          "Os avisos de progresso e de missão pronta para entrega das missões que você já acompanha agora podem aparecer durante combates comuns. Suas configurações de avisos continuam valendo.",
+          "Se os dados não puderem ser lidos ou houver outras restrições ativas, o QT aguarda uma atualização segura. Avisos exibidos em combate não se repetem quando ele termina."
+        ]
+      },
+      {
+        "title": "Posição do rastreador de objetivos do grupo",
+        "items": [
+          "Quando o QT oculta a dica de tela nativa da missão, o rastreador de objetivos do grupo encaixado mantém essa posição, em vez de voltar para o lado do rastreador da Blizzard. Ele também acompanha os movimentos e as mudanças de escala da linha da missão sob o cursor."
         ]
       }
     ]

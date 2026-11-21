@@ -1,14 +1,20 @@
 {
-  "source_sha256": "c27caffbe2ad4ab70b992de7acac479f2b24d169bff5a6721de6833fcf599af0",
+  "source_sha256": "aec7533eb24575f7c9127cf3105da96cde292bf063176f83f65ca8f6c86a45f8",
   "notes": {
-    "version": "10.1.3",
-    "welcome": "Un correctif pour retrouver vos compagnons récents sur Forever.",
+    "version": "10.1.4",
+    "welcome": "Des nouvelles de vos quêtes pendant le combat et des infobulles mieux placées.",
     "sections": [
       {
-        "title": "Compagnons récents",
+        "title": "Annonces de quête en combat",
         "items": [
-          "La liste des compagnons récents se charge et enregistre de nouveau les joueurs lorsque Forever renvoie un nom de royaume vide.",
-          "Votre historique existant est conservé et regroupé pour vos personnages d’une même région, avec l’entrée la plus récente pour chaque joueur. Il reste privé et conserve ses limites de 100 joueurs et de 90 jours. Sur Retail et Classic, les historiques restent séparés par royaume."
+          "Pour les quêtes déjà suivies, les annonces de progression et de quête prête à être rendue peuvent désormais apparaître pendant les combats ordinaires. Vos réglages d’annonce restent appliqués.",
+          "QT attend toujours une mise à jour sûre si les données sont illisibles ou si une autre restriction est active. Les annonces affichées en combat ne sont pas répétées à sa fin."
+        ]
+      },
+      {
+        "title": "Position du suivi des objectifs du groupe",
+        "items": [
+          "Lorsque QT masque l’infobulle de quête native, le suivi des objectifs du groupe ancré conserve désormais sa position au lieu de revenir à côté du suivi de Blizzard. Il suit aussi les déplacements et les changements d’échelle de la ligne de quête survolée."
         ]
       }
     ]

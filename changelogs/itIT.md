@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.4
+
+Aggiornamenti delle missioni durante il combattimento e suggerimenti posizionati meglio.
+
+### Annunci delle missioni in combattimento
+
+- Gli annunci di avanzamento e di missione pronta per la consegna possono ora comparire durante i combattimenti ordinari per le missioni già tracciate. Restano valide le tue impostazioni degli annunci.
+- Quando i dati non sono leggibili o sono attive altre restrizioni, QT attende un aggiornamento sicuro. Gli annunci mostrati in combattimento non vengono ripetuti al termine.
+
+### Posizione del tracciamento obiettivi del gruppo
+
+- Quando QT nasconde il suggerimento nativo della missione, il tracciamento obiettivi del gruppo agganciato ne mantiene la posizione, invece di tornare accanto al tracciamento di Blizzard. Segue anche gli spostamenti e i cambi di scala della riga della missione sotto il cursore.
+
 ## 10.1.3
 
 Una correzione per i compagni recenti su Forever.

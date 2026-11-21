@@ -2,6 +2,19 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
+## 10.1.4
+
+Actualizaciones de misión durante el combate y una posición más estable para la información emergente.
+
+### Avisos de misión en combate
+
+- Los avisos de progreso y de misión lista para entregar de las misiones que ya sigues pueden mostrarse ahora durante los combates normales. Se mantienen tus ajustes de avisos.
+- Si los datos no se pueden leer o hay otras restricciones activas, QT espera a una actualización segura. Los avisos mostrados durante el combate no se repiten al terminar.
+
+### Posición del seguimiento de objetivos del grupo
+
+- Cuando QT oculta la información emergente nativa de una misión, el seguimiento de objetivos del grupo acoplado conserva esa posición en lugar de volver al lado del seguimiento de Blizzard. También se adapta al movimiento y a los cambios de escala de la fila de misión bajo el cursor.
+
 ## 10.1.3
 
 Corregida la compatibilidad del historial de compañeros recientes con Forever.
