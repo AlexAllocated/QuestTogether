@@ -45,14 +45,10 @@ function QT:ApplyFeaturePolicies(changed, all)
 			end
 		end, 0, "chat visibility")
 	end
-	if Has("showWorldMapButton") then
-		self:RefreshQuestTogetherMapControl()
-	end
 	if Has("showDataBrokerLauncher") then
 		self.dataBrokerReloadRequired = self:GetOption("showDataBrokerLauncher") == false
 			and rawget(self, "dataBrokerState") ~= nil
 			and (self.dataBrokerState.object ~= nil or self.dataBrokerState.candidate ~= nil)
-		self:RefreshDataBroker()
 	end
 	if Has("automaticGamepadLauncher") then
 		self:RefreshAutomaticGamepadLauncher()
@@ -114,7 +110,6 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 		Invoke(self, "InitializeAutoThanks")
 	end
 	if all then
-		Invoke(self, "ClearPlayerMapSelection")
 		Invoke(self, "ResetObjectiveAnnouncements")
 		Invoke(self, "InvalidateQuestCompareSnapshot")
 	end
@@ -142,7 +137,6 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	end
 	if Has("experimentalLayerDetection", "sharePlayerLocation") then
 		Invoke(self, "ResetPlayerPhases")
-		Invoke(self, "RefreshPlayerLocationPins")
 	end
 	if Has("lightMode", "reduceMotion") then
 		Invoke(self, "RefreshWindowThemes")
@@ -169,26 +163,29 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 		Invoke(self, "UpdatePartyChatReminder")
 	end
 	if Has("lookingForQuestPartners") then
-		Invoke(self, "BroadcastQuestPartnerStatus", true)
 		Invoke(self, "RefreshMinimapPartnerGlow")
 	end
-	if Has("lookingForQuestPartners", "brokerLeftClick", "brokerRightClick") then
+	if Has("showDataBrokerLauncher", "lookingForQuestPartners", "brokerLeftClick", "brokerRightClick") then
 		Invoke(self, "RefreshDataBroker")
 	end
 	if context.startedLooking then
 		Invoke(self, "AnnounceQuestPartnerSearch")
 	end
 	if Has("sharePlayerLocation", "showPlayerLocations", "onlyShowQuestPartners") then
-		Invoke(self, "OnPlayerLocationOptionsChanged", context.key)
+		Invoke(self, "OnPlayerLocationOptionsChanged", Has("sharePlayerLocation"))
 	end
-	if not all and changed.clusterPlayerLocations then
-		-- Clustering changes presentation only. Do not restart location sharing
-		-- or its discovery/subscription work for a local display preference.
+	if Has("lookingForQuestPartners", "sharePlayerLocation") then
+		Invoke(self, "BroadcastQuestPartnerStatus", true)
+	end
+	-- Each presentation effect runs once against the final option values.
+	if Has("experimentalLayerDetection", "sharePlayerLocation", "showPlayerLocations",
+		"onlyShowQuestPartners", "clusterPlayerLocations", "showWorldMapData") then
 		Invoke(self, "RefreshPlayerLocationPins")
 	end
 	if Has("showWorldMapData") then
-		Invoke(self, "RefreshPlayerLocationPins")
 		Invoke(self, "RefreshPartyWaypointPins")
+	end
+	if Has("showWorldMapData", "showWorldMapButton") then
 		Invoke(self, "RefreshQuestTogetherMapControl")
 	end
 	if Has("showMinimapButton", "minimapButtonPosition") then

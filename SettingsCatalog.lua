@@ -201,10 +201,6 @@ function QuestTogether:NormalizeChatBubbleSizeValue(value)
 	return numericValue
 end
 
-function QuestTogether:IsChatBubbleSize(value)
-	return self:NormalizeChatBubbleSizeValue(value) ~= nil
-end
-
 function QuestTogether:NormalizeChatBubbleDurationValue(value)
 	local numericValue = self:SafeToNumber(value)
 	if not numericValue then
@@ -220,10 +216,6 @@ function QuestTogether:NormalizeChatBubbleDurationValue(value)
 	end
 
 	return numericValue
-end
-
-function QuestTogether:IsChatBubbleDuration(value)
-	return self:NormalizeChatBubbleDurationValue(value) ~= nil
 end
 
 function QuestTogether:IsNameplateQuestIconStyle(styleKey)
@@ -265,18 +257,6 @@ function QuestTogether:GetChatBubbleSizeLabel(sizeKey)
 	return tostring(numericValue) .. "%"
 end
 
-function QuestTogether:GetChatBubbleDurationLabel(durationValue)
-	local numericValue = self:NormalizeChatBubbleDurationValue(durationValue)
-	if not numericValue then
-		return tostring(durationValue)
-	end
-
-	if math.abs(numericValue - math.floor(numericValue)) < 0.001 then
-		return string.format(L("%d sec"), numericValue)
-	end
-
-	return string.format(L("%.1f sec"), numericValue)
-end
 
 local validators = {
 	sharingAudience = function(_, v)

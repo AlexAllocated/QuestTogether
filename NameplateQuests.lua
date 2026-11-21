@@ -1433,15 +1433,6 @@ function QuestTogether:IsQuestObjectiveUnit(unitToken, unitFrame)
 	return self:IsQuestObjectiveViaTooltip(unitToken, unitFrame)
 end
 
-function QuestTogether:IsQuestObjectiveNameplate(unitToken, unitFrame)
-	local hasResolvedQuestState, isQuestObjective =
-		self:TryResolveNameplateQuestObjectiveState(unitToken, unitFrame, false)
-	if not hasResolvedQuestState then
-		return false
-	end
-
-	return isQuestObjective
-end
 
 Services.Quests = {
 	NAMEPLATE_TOOLTIP_RETRY_MAX_ATTEMPTS = NAMEPLATE_TOOLTIP_RETRY_MAX_ATTEMPTS,

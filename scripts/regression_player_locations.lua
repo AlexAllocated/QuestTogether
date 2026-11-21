@@ -1023,7 +1023,7 @@ QT:RegisterTest("display preferences do not withdraw streams shared with other p
 	local a = Fixture()
 	local subscribers = { ["Friend-Realm"] = { at = 100 } }
 	a.nearbyStreamState = { subscribers = subscribers, wanted = {}, nextCapability = 130 }
-	a:OnPlayerLocationOptionsChanged("showPlayerLocations")
+	a:OnPlayerLocationOptionsChanged(false)
 	Equal(a.nearbyStreamState.subscribers, subscribers)
 	Equal(a.nearbyStreamState.nextCapability, 130)
 end)

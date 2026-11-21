@@ -137,6 +137,8 @@ local function Fixture()
 		"RefreshPartyWaypointPins",
 		"RefreshQuestTogetherMapControl",
 		"RefreshMinimapButton",
+		"RefreshDataBroker",
+		"BroadcastPlayerLocation",
 		"RefreshMinimapPartnerGlow",
 		"RefreshPartyRoster",
 		"RefreshOptionsWindow",
@@ -164,6 +166,41 @@ local function Fixture()
 	function a:Debugf() end
 	return a
 end
+
+QT:RegisterTest("map filter transactions preserve outgoing leases and do not publish", function()
+	local a = Fixture()
+	a.isEnabled = true
+	a.OnPlayerLocationOptionsChanged = QT.OnPlayerLocationOptionsChanged
+	local wanted, outgoing = {}, {}
+	a.nearbyStreamState = { wanted = { viewer = wanted }, subscribers = { subscriber = outgoing }, nextCapability = 130 }
+	local cancelled = {}
+	function a:CancelCommunicationOwner(owner) cancelled[owner] = true end
+	-- The settings dropdown submits both options without a single-option key.
+	assert(a:SetOptions({ onlyShowQuestPartners = true, showPlayerLocations = true }))
+	assert(cancelled[wanted] and not cancelled[outgoing])
+	assert(a.nearbyStreamState.subscribers.subscriber == outgoing and a.nearbyStreamState.nextCapability == 130)
+	assert(not a.effects.BroadcastPlayerLocation and not a.effects.BroadcastQuestPartnerStatus)
+	assert(a.effects.RefreshPlayerLocationPins == 1)
+end)
+
+QT:RegisterTest("batched sharing changes revoke leases and publish once independent of transaction reason", function()
+	for _, reason in ipairs({ "preset", "sharePlayerLocation" }) do
+		local a = Fixture()
+		a.isEnabled = true
+		a.OnPlayerLocationOptionsChanged = QT.OnPlayerLocationOptionsChanged
+		local outgoing = {}
+		a.nearbyStreamState = { wanted = {}, subscribers = { subscriber = outgoing }, nextCapability = 130 }
+		function a:CancelCommunicationOwner(owner) self.cancelled = owner end
+		assert(a:SetOptions({ sharePlayerLocation = false, lookingForQuestPartners = false,
+			clusterPlayerLocations = false, showWorldMapData = false, showWorldMapButton = false,
+			showDataBrokerLauncher = false }, reason))
+		assert(a.cancelled == outgoing and not next(a.nearbyStreamState.subscribers))
+		assert(a.nearbyStreamState.nextCapability == 0)
+		assert(a.effects.BroadcastPlayerLocation == 1 and a.effects.BroadcastQuestPartnerStatus == 1)
+		assert(a.effects.RefreshPlayerLocationPins == 1)
+		assert(a.effects.RefreshQuestTogetherMapControl == 1 and a.effects.RefreshDataBroker == 1)
+	end
+end)
 
 QT:RegisterTest("settings batches validate all inputs before persistence or effects", function()
 	local a = Fixture()
@@ -211,6 +248,9 @@ QT:RegisterTest("profile activation applies the same appearance privacy and navi
 	assert(a.effects.RefreshWindowThemes == 1 and a.effects.RefreshManagedWindowLayouts == 1)
 	assert(a.effects.QueuePartyNavigationUpdate == 1)
 	assert(a.effects.OnPlayerLocationOptionsChanged == 1)
+	assert(a.effects.RefreshPlayerLocationPins == 1)
+	assert(a.effects.RefreshQuestTogetherMapControl == 1 and a.effects.RefreshDataBroker == 1)
+	assert(a.effects.BroadcastQuestPartnerStatus == 1)
 	assert(a.effects.CancelDeveloperDiagnosticReplies == 1 and a.developerRequestState == nil)
 	assert(not a.effects.AnnounceQuestPartnerSearch, "profile activation does not announce a new search")
 end)

@@ -48,11 +48,7 @@ end
 local function Schedule(addon, state, key, callback)
 	if state.failed then return false end
 	local run = function() if Current(addon, state) and not state.failed then callback() end end
-	if addon.ScheduleRuntimeWork then
-		return addon:ScheduleRuntimeWork("quest_chain_provider", key, run, { mode = "nextFrame", owner = state.workOwner })
-	end
-	if addon.API and addon.API.Delay then addon.API.Delay(0, run); return true end
-	return false
+	return addon:ScheduleRuntimeWork("quest_chain_provider", key, run, { mode = "nextFrame", owner = state.workOwner })
 end
 local function Snapshot(state, status, reason)
 	return { kind = state.kind, state = status, reason = reason, generation = state.generation,
@@ -63,7 +59,7 @@ local function Fail(addon, state, reason)
 	if not Current(addon, state) then return end
 	state.failed = true
 	state.workOwner.active = false
-	if addon.CancelRuntimeWorkOwner then addon:CancelRuntimeWorkOwner(state.workOwner) end
+	addon:CancelRuntimeWorkOwner(state.workOwner)
 	addon.questChainProviderSnapshot = Snapshot(state, "unavailable", reason)
 	Notify(addon, state)
 end
@@ -209,7 +205,7 @@ function QT:CancelQuestChainProvider(owner)
 	local state = self.questChainProviderState
 	if not state or (owner and state.owner ~= owner) then return false end
 	state.active, state.workOwner.active = false, false
-	if self.CancelRuntimeWorkOwner then self:CancelRuntimeWorkOwner(state.workOwner) end
+	self:CancelRuntimeWorkOwner(state.workOwner)
 	self.questChainProviderState = nil
 	return true
 end

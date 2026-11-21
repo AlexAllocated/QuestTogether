@@ -171,10 +171,6 @@ for publicName, sharedName in pairs(forwards) do
 	end
 end
 
-function QuestTogether:NormalizeDebugCategory(category)
-	return LibChev.Category(category, self.DEBUG_DEFAULT_CATEGORY)
-end
-
 function QuestTogether:Debug(message, category)
 	self:GetDebugController():Append(message, category)
 	return true
@@ -191,23 +187,10 @@ function QuestTogether:Debugf(category, formatString, ...)
 	return true
 end
 
-function QuestTogether:DebugState(category, label, value)
-	self:GetDebugController():AppendState(category, label, value)
-	return true
-end
-
 function QuestTogether:LogDebugLine(line, options)
 	return self:GetDebugController():Append(line, type(options) == "table" and options.category or nil)
 end
 
 function QuestTogether:AppendDebugLogLine(line)
 	return self:LogDebugLine(line)
-end
-
-function QuestTogether:AppendDebugLogLines(lines, options)
-	self:BeginDebugLogBatchUpdate()
-	for _, line in ipairs(lines or {}) do
-		self:LogDebugLine(line, options)
-	end
-	self:EndDebugLogBatchUpdate()
 end

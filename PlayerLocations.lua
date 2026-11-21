@@ -631,16 +631,11 @@ function QT:ResetPlayerLocations()
 	self:HidePlayerLocationPins()
 end
 
-function QT:OnPlayerLocationOptionsChanged(key)
-	self:OnNearbyLocationOptionsChanged(key)
-	if not self.isEnabled then
-		return
-	end
-	if not key or key == "sharePlayerLocation" then
+function QT:OnPlayerLocationOptionsChanged(sharingChanged)
+	self:OnNearbyLocationOptionsChanged(sharingChanged)
+	if self.isEnabled and sharingChanged then
 		self:BroadcastPlayerLocation(true)
-		self:BroadcastQuestPartnerStatus(true)
 	end
-	self:RefreshPlayerLocationPins()
 end
 
 -- Race/class labels belong to the viewer's client locale. Race IDs arrive in

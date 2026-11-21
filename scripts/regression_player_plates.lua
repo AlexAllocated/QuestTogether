@@ -1762,8 +1762,8 @@ QT:RegisterTest("Forever full-name partner quests withdraw on location opt-out a
 	function a:RefreshPlayerLocationPins() end
 	a:BroadcastQuestPartnerStatus(true)
 	Equal(b:GetPlayerPartnerQuestID(a.name), 42)
-	a.db.profile.sharePlayerLocation = false
-	a:OnPlayerLocationOptionsChanged("sharePlayerLocation")
+	function a:ResetPlayerPhases() end
+	assert(a:SetOption("sharePlayerLocation", false))
 	Equal(b:GetPlayerPartnerQuestID(a.name), nil)
 	local count = #a.sent
 	a.now = 166

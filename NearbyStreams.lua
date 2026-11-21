@@ -556,7 +556,7 @@ function QT:ResetNearbyStreams()
 	end
 end
 
-function QT:OnNearbyLocationOptionsChanged(key)
+function QT:OnNearbyLocationOptionsChanged(sharingChanged)
 	local s = rawget(self, "nearbyStreamState")
 	if not s then
 		return
@@ -566,7 +566,7 @@ function QT:OnNearbyLocationOptionsChanged(key)
 	for _, peer in pairs(wanted) do
 		self:CancelCommunicationOwner(peer, "cancelled")
 	end
-	if not key or key == "sharePlayerLocation" then
+	if sharingChanged then
 		local subscribers = s.subscribers
 		s.subscribers, s.nextCapability = {}, 0
 		for _, peer in pairs(subscribers) do

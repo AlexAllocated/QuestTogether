@@ -16,8 +16,6 @@ local retirement = {
 }
 function QT:RetirePeerServices(name, reason)
 	for _, method in ipairs(retirement) do
-		if self[method] then
-			self[method](self, name, reason)
-		end
+		self[method](self, name, reason)
 	end
 end

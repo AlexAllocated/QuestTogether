@@ -69,10 +69,6 @@ function QuestTogether:GetTaskAreaResolverStore()
 	return self:GetTaskAreaSubsystemStateStore().resolvedByQuestID
 end
 
-function QuestTogether:GetTaskAreaResolutionOrder()
-	return self:GetTaskAreaSubsystemStateStore().resolutionOrder
-end
-
 function QuestTogether:GetTaskAreaResolution(questID)
 	local numericQuestID = self.NormalizeQuestID and self:NormalizeQuestID(questID) or nil
 	if not numericQuestID then
