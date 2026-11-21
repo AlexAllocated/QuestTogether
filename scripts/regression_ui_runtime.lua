@@ -1,6 +1,6 @@
 local QT = _G.QuestTogether
 local function Fixture()
-	local a = setmetatable({ isEnabled = true, db = { profile = {} }, options = {}, runtimeStateStore = {} }, { __index = QT })
+	local a = setmetatable({ isEnabled = true, db = { profile = {} }, options = {}, runtimeStateStore = nil }, { __index = QT })
 	local clock = QT:CreateTestClock(0)
 	a.audioCues = {}
 	function a:PlayAudioCue(key, identity)
@@ -491,7 +491,7 @@ QT:RegisterTest("focus dot delayed acceptance rejects retired lifetimes peers pr
 		function(a) a.partyNavigationState.peers["Friend-Realm"].at = -91 end,
 		function(a) a.db.profile = QT:DeepCopy(a.db.profile) end,
 		function(a) a.activeProfileKey = "Other" end,
-		function(a) a:GetRuntimeWorkStateStore().deferredWorkState = {} end,
+		function(a) a:GetRuntimeWorkStateStore().deferredWorkState = QT.LibChev.NewWorkState() end,
 		function(a) a.partyNavigationState = { peers = a.partyNavigationState.peers } end,
 		function(a) a.partyNavigationState.following, a.partyNavigationState.followToken = "Other-Realm", {} end,
 		-- Following and then stopping another player returns to no target, but
@@ -672,31 +672,25 @@ QT:RegisterTest("same-key synchronous successor retains its own work owner", fun
 	assert(calls == 1)
 end)
 
-QT:RegisterTest("nameplate startup work obeys restrictions and is retired with its lifecycle", function()
+QT:RegisterTest("nameplate readiness refresh coalesces and respects restrictions and lifetimes", function()
 	local a, clock = Fixture()
-	local quest, full = 0, 0
-	function a:ScheduleDeferredNameplateQuestStateRefresh()
-		quest = quest + 1
-	end
-	function a:FullRefreshVisibleNameplates()
-		full = full + 1
-	end
-	assert(a:SchedulePlaterStartupNameplateRefreshes())
-	clock:Advance(4.1)
-	assert(quest == 1 and full == 0)
+	local snapshots, paints = 0, 0
+	function a:RebuildQuestSnapshotStore() snapshots = snapshots + 1; return {} end
+	function a:ReconcileQuestTracking() end
+	function a:RefreshNameplatesForQuestStateChange() paints = paints + 1 end
 	a.blocked = true
-	clock:Advance(1)
-	assert(full == 0)
+	a:ScheduleDeferredNameplateQuestStateRefresh("startup", 1)
+	a:ScheduleDeferredNameplateQuestStateRefresh("quest data ready", 1)
+	clock:Advance(2)
+	assert(snapshots == 0 and paints == 0)
 	a.blocked = false
 	a:FlushDeferredWork("restriction ended")
-	assert(full == 1)
-	a:SchedulePlaterStartupNameplateRefreshes()
-	a:ResetNameplateStateStore()
-	-- A new enable lifetime may queue the same startup keys before old timers
-	-- fire. Only the replacement lifetime should refresh at those deadlines.
-	a:SchedulePlaterStartupNameplateRefreshes()
+	assert(snapshots == 1 and paints == 1)
+	a:ScheduleDeferredNameplateQuestStateRefresh("old lifetime", 1)
+	a:ResetRuntimeWorkStateStore()
+	a:ScheduleDeferredNameplateQuestStateRefresh("new lifetime", 1)
 	clock:Advance(6)
-	assert(quest == 2 and full == 2 and not next(a:GetDeferredWorkStateStore().entries))
+	assert(snapshots == 2 and paints == 2 and not next(a:GetDeferredWorkStateStore().entries))
 end)
 
 QT:RegisterTest("UI work survives disabled runtime resets and stops polling after completion or cancellation", function()

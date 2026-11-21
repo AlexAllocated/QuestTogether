@@ -28,7 +28,7 @@ def lua_string(text):
     return "[" + delimiter + "[" + text + "]" + delimiter + "]"
 
 
-def verify(xml_source, core_source, lua):
+def verify(xml_source, runtime_source, lua):
     bindings = ET.fromstring(xml_source)
     assert bindings.tag == "Bindings", "expected Bindings XML root"
     rows = list(bindings)
@@ -46,11 +46,11 @@ def verify(xml_source, core_source, lua):
             assert row.get("runOnUp") in (None, "false"), "ordinary action must not fire on both edges"
 
     # Evaluate the real display-label declarations, including their L() calls,
-    # in the same private environment as the real XML bodies. No Core or native
+    # in the same private environment as the real XML bodies. No addon or native
     # state is bootstrapped, and the production action dispatcher is a spy.
     declarations = re.findall(
         r"^(BINDING_(?:HEADER_QUESTTOGETHER|NAME_QUESTTOGETHER_[A-Z_]+))\s*=([^\r\n]+)$",
-        core_source,
+        runtime_source,
         re.MULTILINE,
     )
     declared = [name for name, _ in declarations]
@@ -117,7 +117,10 @@ def main():
     parser.add_argument("lua", nargs="?", default="lua", help="Lua 5.1 or 5.2 executable")
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args()
-    verify((args.root / "Bindings.xml").read_text(), (args.root / "Core.lua").read_text(), args.lua)
+    modules = [line.strip() for line in (args.root / "QuestTogether.toc").read_text().splitlines()
+               if line.strip().endswith(".lua") and not line.lstrip().startswith("#")]
+    runtime_source = "\n".join((args.root / name).read_text() for name in modules)
+    verify((args.root / "Bindings.xml").read_text(), runtime_source, args.lua)
     print(f"Bindings: {len(EXPECTED)} actions, localized category/labels, preserved IDs and release-only menu dispatch passed")
 
 

@@ -10,13 +10,6 @@ QuestTogether.runtimeRestrictionTypes = QuestTogether.runtimeRestrictionTypes
 		map = true,
 	}
 
-if not QuestTogether.GetDeferredWorkStateStore then
-	QuestTogether.deferredWorkState = QuestTogether.deferredWorkState or {
-		generations = {},
-		entries = {},
-	}
-end
-
 QuestTogether.runtimeWorkDelayByClass = QuestTogether.runtimeWorkDelayByClass
 	or {
 		quest_log_drain = 0,

@@ -7,10 +7,13 @@ private `.local` notes are historical context, not the source of truth.
 
 | Component | Owns | Does not own |
 | --- | --- | --- |
-| Core / EventHandlers | Native adapters, initialization, event routing, quest lifecycle orchestration | Feature timers, profile effects, live classification caches |
-| Settings | Profile storage, migrations, value validation, atomic edits and effect dispatch | Widget construction, native navigation or frame mutation |
+| Core / Lifecycle / EventHandlers | Addon composition, initialization, event routing and quest lifecycle orchestration | Native adapter implementations, profile effects, live classification caches |
+| NativeAccess / NativeQuestValues / NativeChat / NativeUnits / NativeQuests / NativeMap / NativeUI | Shared guarded access and domain-specific native adapters | Feature state, policy or client-version admission |
+| HotPathState | One complete transient store per instance, explicit resets and retained cleanup handles | Profile migration, legacy aliases or getter-time repair |
+| SettingsCatalog | Defaults, value validation and shared setting descriptions | Profile persistence, widgets or effects |
+| Settings / SettingsEffects | Profile storage and migrations, validated atomic edits, ordered revocation and effect dispatch | Duplicated option definitions or widget construction |
 | Presets / PresetWindow | Ordinary option bundles, account first-run/default selection and an owned chooser | Runtime feature policy keyed to preset names or profile reset |
-| FeatureOptions | Individually editable presentation and sharing policies, revocation and cleanup dispatch | Another network or focus controller |
+| FeatureOptions | Shared presentation and sharing predicates, public-channel retirement | Preset-specific runtime behavior or another network controller |
 | RuntimeCoordinator | The enabled addon's periodic lifetime and feature tick order | Individual feature caches or wire codecs |
 | Audio | Cue catalog, per-profile sound preferences, bounded suppression and QT-owned playback handles | Shared game sound settings, other addons' sounds or a delayed notification queue |
 | AutoThanks / AutoThanksNative | Readable local buff observations, bounded gratitude delay/cooldowns and directed native emotes | Network-triggered reactions, target selection, combat-log access or foreign aura storage |
@@ -39,7 +42,8 @@ private `.local` notes are historical context, not the source of truth.
 | QuestChainGiver | View-owned temporary starter-location preview through the existing map overlay pool | Saved user waypoints, quest focus, following or provider reads |
 | QuestCompletion | Bounded visible/chain-owned character-history interests, evidence age and completed/absent classification | Account-wide completion, full history broadcasts or static quest relationships |
 | QuestSharingResults | Exact native share-result matching and recent per-player explanations | Guessing which quest a native result belongs to |
-| QuestCompareInteraction | Column presentation and keyboard selection geometry | Removing members from comparison calculations or global key bindings |
+| QuestComparePresenter / QuestCompareInteraction / QuestCompareWindow | Shared stateless PQL presentation methods, column geometry and owned rendering | Live-state fallback in previews or global key bindings |
+| NameplateAccess / NameplateQuests / NameplateDecorations / PersonalBubbles / AnnouncementBubbles / Nameplates | Guarded frame access, quest evidence, decorations, personal placement, playback and lifecycle reconciliation in separate facets | Fixed startup guesses, duplicate transient stores or native-frame state |
 | PartyFocusController | Manual and automatic party-leader following, missing-quest fallback and confirmation policy | Party networking, persistence policy or preview fixtures |
 | PartyNavigation / QuestComparePreview | Live/preview adapters, persistence and ownership of native focus | Copies of the following state machine or repair of another controller's fields |
 | QuestCompareChainPreview | Read-only real log and provider adapters, private asynchronous chain sample and simulated teammate evidence | Live PQL/provider state, native focus/follow/waypoints, saved completion or simulated packets |
@@ -308,8 +312,8 @@ private `.local` notes are historical context, not the source of truth.
   or replace map input. Hover identity is revalidated against the native token.
   `PartyMapNative` alone suppresses/restores native party/raid artwork through
   the primitive-only secure appearance delegate, never a shared provider table.
-  It is gated to audited Forever 1.60.1 builds 70888 and 70938; other clients retain
-  native markers. Native visibility settings, the self arrow and minimap remain
+  It requires the readable, trusted secure appearance delegate; clients without
+  that capability retain native markers. Native visibility settings, the self arrow and minimap remain
   unchanged. The existing runtime and shared owned-UI cleanup own refresh and
   restoration, including disable, restriction and roster-token reuse. Unknown
   capabilities/incomplete rosters retain native markers; delegate failure stops
@@ -989,6 +993,32 @@ ambiguous outcomes, low FPS, mixed workloads and lifecycle changes. Run the
 [live communication release gate](docs/COMMUNICATION_LIVE_TESTS.md) before publishing
 the major upgrade; offline results alone do not validate real delivery or coexistence.
 
+## Composition and instance boundaries
+
+The TOC is the composition order. `Core.lua` establishes identity and registers
+native domains; `Lifecycle.lua` is last and starts the fully assembled addon.
+Each native domain registers its adapters once, rejecting duplicate names. The
+existing `API` facade remains the stable caller and private-fixture boundary.
+Quest tracking, announcement policy, announcement presentation, chat and waypoint
+actions have their own modules rather than accumulating in bootstrap.
+
+`HotPathState.lua` creates complete stores once per instance. A raw instance lookup
+prevents test fixtures from borrowing a live parent's store. Getters only select
+their domain; explicit resets cancel work and preserve visual handles until safe
+cleanup. SavedVariables migration remains in Settings.
+
+PQL rendering and interaction modules register functions in one presenter class.
+The live addon exposes that class through its existing public methods; previews
+instantiate it with owned data and explicit function services. There is no lookup
+fallback to the live addon and no hand-maintained copy of rendering methods.
+Preview data, requests and action implementations remain explicitly isolated.
+
+The settings catalog is shared by profile validation, ordinary controls and preset
+detail summaries. Dynamic controls supply their own contextual text without
+mutating the catalog. SettingsEffects applies revocation before presentation
+restarts. Missing required services fail visibly rather than silently skipping
+part of a transaction.
+
 ## UI and client boundaries
 
 `DataBroker.lua` registers a `QuestTogether` launcher only when another addon has
@@ -1066,7 +1096,7 @@ The queued progress job belongs to the captured event-queue lifetime, so resets,
 profile replacement and disabled runtimes cannot publish stale observations.
 
 EventLocalization owns the shared local quest-title cache and native load budget.
-Core reads local quest titles, links and structured tooltip headers without
+The native quest adapter reads local quest titles, links and structured tooltip headers without
 opening or selecting native UI. Foreign-language announcements may wait at most
 two seconds for an already-requested title, with at most 32 pending messages;
 runtime owners cancel them on reset or world exit. Pending presentation is tied
@@ -1123,10 +1153,14 @@ Offline runs seed populated phase/target stores to exercise tests after gameplay
 WoW can reject division by zero: live numeric fixtures use supported nonfinite
 constants, while mandatory real NaN assertions remain outside the TOC.
 
-Run Lua 5.1 and 5.2 suites in both orders; settings construction, all locale and
+Lua 5.1 is the authoritative local runtime. Settings construction, locale and
 client profiles, crypto, localization, release-note and packaging checks are local
-release requirements. `scripts/validate_release.py` runs them sequentially before
-publication. `scripts/check_architecture.py` protects key ownership boundaries;
+release requirements. `scripts/validate_release.py` runs bounded parallel jobs
+against an isolated exact-commit snapshot before publication. Routine presentation
+changes run partitioned behavioral tests and simulated-live coverage; shared runtime,
+network and unknown changes retain full stress and reverse-order checks. The explicit
+module domains in `scripts/architecture_domains.py` keep extracted modules in the
+right validation scope. `--full` always runs the complete set. `scripts/check_architecture.py` protects key ownership boundaries;
 behavioral tests cover cancellation, incomplete observations, replay, recovery
 and the protocol upgrade boundary. Do not replace those with only source-pattern tests.
 
@@ -1164,7 +1198,7 @@ tested to compute their answers.
 the selected `QT_TEST_LOCALE`. Local validation uses that subset for each additional locale;
 the full default and reverse runs already cover the fixtures that force English.
 Python-only validators run once. Generated release-note Lua, bindings and
-crypto checks still run under both interpreters because they execute Lua code.
+crypto checks use the same Lua 5.1 runtime as the addon fixtures.
 Avoid fixed test/catalog counts and exact UI geometry assertions unless those
 numbers are the product contract and the fixture actually models that behavior.
 
@@ -1179,22 +1213,20 @@ network delivery or behavior with other addons. Keep those checks explicit.
 
 ## Native gamepad ownership
 
-`GamepadIntegration.lua` is the sole caller of Forever's audited wrapped
-registration, popup, navigation-refresh and selection APIs. It owns capability
-and build checks, input ownership, visual-only prompts, interface transitions,
-read-only selection observers and native retirement. Explicit WindowController
-policies identify participating QT frames; merely showing a HUD or incoming
-prompt grants no controller ownership. Owned frame hiding retires native focus
-before actual Hide, deferring during restrictions or inherited invisibility.
-Session generations and a failure latch prevent stale cleanup and repeated
-blocked native calls. The exact build allowlist is Forever 1.60.1 builds 70888
-and 70938; relevant native interfaces in 70938 were source-compared with the
-audited 70888 implementation. The tester confirmed basic PQL navigation and
-owned dropdown/quick-menu operation on 70938. Remaining production acceptance
-is pending; earlier 70888 fixture results are not upgraded by source comparison.
-Unsupported clients do not install native integration. Bounded status fields
-report the client version/build, build support and whether unavailable native
-integration comes from the build gate, missing functions or security wrappers.
+`GamepadIntegration.lua` is the sole caller of the native wrapped registration,
+popup, navigation-refresh and selection APIs. It owns capability checks, input
+ownership, visual-only prompts, interface transitions, read-only selection observers
+and native retirement. Explicit WindowController policies identify participating
+QT frames; merely showing a HUD or incoming prompt grants no controller ownership.
+Owned frame hiding retires native focus before actual Hide, deferring when the
+native security contract requires it. Session generations and a failure latch
+prevent stale cleanup and repeated blocked native calls.
+
+Admission checks the actual API methods, trusted wrappers, ownership and required
+native values. No feature compares a client version, build or interface number.
+`ClientDiagnostics.lua` reads version/build solely for reports; missing or malformed
+build information cannot disable a working integration. Data-provider flavor and
+wire-protocol compatibility are separate contracts and remain explicit.
 
 `GamepadLauncher.lua` alone owns default normal action-bar setup. After world
 entry, the existing integration owner coalesces its work; there is no separate

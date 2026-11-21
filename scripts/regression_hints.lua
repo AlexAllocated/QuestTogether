@@ -9,7 +9,7 @@ local function Fixture(global)
 			global = global or {},
 			profile = { enabled = true, showStartupTips = QT.DEFAULTS.profile.showStartupTips },
 		},
-		runtimeStateStore = {},
+		runtimeStateStore = nil,
 		messages = {},
 		notices = {},
 		capabilities = {},

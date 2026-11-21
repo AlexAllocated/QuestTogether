@@ -2768,7 +2768,7 @@ return rawRow end
 			local questieLines = addon:GetQuestieQuestObjectiveTooltipLines("Creature-0-0-0-0-12345-0000000000")
 			assert(questieLines[1].leftText == "Wolf Hunt" and questieLines.hasIncompleteQuestData == true,
 				"Questie must retain the incomplete-data signal after copying readable text")
-			local questTextCache = addon.nameplateQuestTextCache
+			local questTextCache = addon:GetNameplateStateStore().textCache
 			local originalQuestTextCache = addon:DeepCopy(questTextCache)
 			local tracker = addon:GetPlayerTracker()
 			local originalTrackedQuest = tracker[12345]
@@ -2863,7 +2863,7 @@ return rawRow end
 		local originalRestrictionTypes, originalRestrictedActions = Enum.AddOnRestrictionType, C_RestrictedActions
 		Enum.AddOnRestrictionType = { Combat = 0, Encounter = 1, ChallengeMode = 2, PvPMatch = 3, Map = 4, Chat = 5 }
 		local diagnostic = setmetatable({
-			runtimeStateStore = {}, debugLogLines = {}, db = { profile = {}, global = {} },
+			runtimeStateStore = nil, debugLogLines = {}, db = { profile = {}, global = {} },
 			API = { InCombatLockdown = function() return false end, IsWorldMapVisible = function() return false end },
 			GetOption = function() return false end,
 			GetPlayerTracker = function() return {} end,
@@ -2920,7 +2920,7 @@ return rawRow end
 			end,
 		}
 		C_SuperTrack = { SetSuperTrackedUserWaypoint = function() native.tracks = native.tracks + 1 end }
-		local waypoint = setmetatable({ runtimeStateStore = {}, isEnabled = true, IsWorkBlocked = function() return false end }, { __index = addon })
+		local waypoint = setmetatable({ runtimeStateStore = nil, isEnabled = true, IsWorkBlocked = function() return false end }, { __index = addon })
 		for _, mode in ipairs({ "accept", "reject", "throw", "secret", "inaccessible", "missing" }) do
 			native.mode, native.point, native.tracks, native.writes = mode, { uiMapID = 7 }, 0, 0
 			assert(waypoint:CreateBlizzardWaypoint(84, 25, 50) == (mode == "accept"), mode)

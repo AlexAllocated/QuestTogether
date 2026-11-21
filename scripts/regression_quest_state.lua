@@ -123,7 +123,7 @@ end
 local function NewTaskLifecycleFixture(taskType)
 	local clock = QuestTogether:CreateTestClock(100)
 	local addon = setmetatable({
-		runtimeStateStore = {}, db = { global = {}, profile = {} }, isEnabled = true,
+		runtimeStateStore = nil, db = { global = {}, profile = {} }, isEnabled = true,
 		questsCompleted = {}, retiredQuestIds = {}, announcements = {}, tracker = {},
 		pendingQuestRemovals = {}, pendingQuestAcceptances = {}, onQuestLogUpdate = {},
 		worldQuestAreaStateByQuestID = {}, bonusObjectiveAreaStateByQuestID = {},

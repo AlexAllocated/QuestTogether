@@ -249,7 +249,7 @@ local function WithBubbles(run)
 			QT:CompleteAnnouncementBubblePlayback(bubble)
 		end
 		self.hosts[token] = host
-		QT.nameplateBubbleByUnitFrame[unitFrame] = bubble
+		QT:GetNameplateStateStore().bubbleByUnitFrame[unitFrame] = bubble
 		Equal(QT:ShowAnnouncementBubbleOnNameplate(host, "Initial progress", "QUEST_PROGRESS", nil, nil, sender), true)
 		return bubble, host
 	end
@@ -310,7 +310,7 @@ QT:RegisterTest("ignore cleanup discards only ignored remote playback without lo
 				return true
 			end,
 		} }
-		QT.nameplateBubbleStateByFrame[personal] =
+		QT:GetNameplateStateStore().bubbleStateByFrame[personal] =
 			{ unitToken = "player", text = "Personal", senderName = "Ignored-Realm" }
 		state.ignored["Ignored-Realm"] = true
 		Patch({
@@ -323,10 +323,10 @@ QT:RegisterTest("ignore cleanup discards only ignored remote playback without lo
 		end)
 		Equal(ignored.shown, false)
 		Equal(ignored.animationGroup.stops, 1)
-		Equal(QT.nameplateBubbleStateByFrame[ignored], nil)
+		Equal(QT:GetNameplateStateStore().bubbleStateByFrame[ignored], nil)
 		Equal(allowed.shown, true)
 		Equal(allowed.animationGroup.stops, 0)
-		Equal(QT.nameplateBubbleStateByFrame[personal].text, "Personal")
+		Equal(QT:GetNameplateStateStore().bubbleStateByFrame[personal].text, "Personal")
 		Equal(QT:ClearIgnoredAnnouncementBubbles(), 0, "duplicate updates are idempotent")
 	end)
 	Equal(unexpectedCalls, 0)
@@ -352,7 +352,7 @@ QT:RegisterTest("ignore-list runtime event clears existing ignored bubbles", fun
 			QT:IGNORELIST_UPDATE()
 		end)
 		Equal(ignored.shown, false)
-		Equal(QT.nameplateBubbleStateByFrame[ignored], nil)
+		Equal(QT:GetNameplateStateStore().bubbleStateByFrame[ignored], nil)
 		Equal(allowed.shown, true)
 	end)
 end)
@@ -369,7 +369,7 @@ QT:RegisterTest("ignored bubble cleanup defers blocked mutations and never repla
 			Equal(QT:ClearIgnoredAnnouncementBubbles(), 1)
 			Equal(bubble.writes, writes)
 			Equal(bubble.animationGroup.stops, 0)
-			Equal(QT.nameplateBubbleStateByFrame[bubble], nil, "replayable data is discarded while blocked")
+			Equal(QT:GetNameplateStateStore().bubbleStateByFrame[bubble], nil, "replayable data is discarded while blocked")
 			Equal(QT:GetNameplateStateStore().pendingVisualCleanupByFrame[bubble], "bubble")
 			Equal(QT.pendingNameplateVisualCleanup, true)
 			state.ignored["Ignored-Realm"] = false
@@ -411,9 +411,9 @@ QT:RegisterTest("new allowed playback cancels deferred ignore cleanup on the reu
 		Equal(QT.pendingNameplateVisualCleanup, false)
 		Equal(QT:RetryPendingNameplateVisualCleanup(), true)
 		Equal(bubble.shown, true)
-		Equal(QT.nameplateBubbleStateByFrame[bubble].senderName, "Allowed-Realm")
-		Equal(QT.nameplateBubbleStateByFrame[bubble].unitGUID, "Player-fixture-recycled")
-		Equal(QT.nameplateBubbleStateByFrame[bubble].text, "New allowed progress")
+		Equal(QT:GetNameplateStateStore().bubbleStateByFrame[bubble].senderName, "Allowed-Realm")
+		Equal(QT:GetNameplateStateStore().bubbleStateByFrame[bubble].unitGUID, "Player-fixture-recycled")
+		Equal(QT:GetNameplateStateStore().bubbleStateByFrame[bubble].text, "New allowed progress")
 	end)
 end)
 

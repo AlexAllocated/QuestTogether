@@ -219,7 +219,7 @@ local function Fixture()
 	end
 	function s:Show()
 		QT:OnNameplateAdded("nameplate1")
-		self.icon = QT.nameplateIconByUnitFrame[self.unitFrame]
+		self.icon = QT:GetNameplateStateStore().iconByUnitFrame[self.unitFrame]
 		assert(self.icon and self.icon.shown)
 		return self.icon
 	end

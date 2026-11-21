@@ -1,186 +1,55 @@
 local QuestTogether = _G.QuestTogether
 local LibChev = QuestTogether.LibChev
 
-local function NewWeakKeyTable()
-	return LibChev.WeakKeys()
-end
-
-local function EnsureWeakKeyTable(value)
-	if type(value) == "table" then
-		return value
-	end
-	return NewWeakKeyTable()
-end
-
-local function BindRuntimeReferenceAliases(self, state)
-	self.worldQuestAreaStateByQuestID = state.taskArea.worldByQuestID
-	self.bonusObjectiveAreaStateByQuestID = state.taskArea.bonusByQuestID
-	self.questSnapshotByQuestID = state.questSnapshot.byQuestID
-	self.questSnapshotOrder = state.questSnapshot.order
-
-	self.nameplateQuestTextCache = state.nameplate.textCache
-	self.nameplateQuestStateByGuid = state.nameplate.questStateByGuid
-	self.nameplateQuestStateByUnitToken = state.nameplate.questStateByUnitToken
-	self.nameplateQuestGuidByUnitToken = state.nameplate.questGuidByUnitToken
-	self.nameplateIconByUnitFrame = state.nameplate.iconByUnitFrame
-	self.nameplateHealthOverlayByUnitFrame = state.nameplate.healthOverlayByUnitFrame
-	self.nameplateBubbleByUnitFrame = state.nameplate.bubbleByUnitFrame
-	self.nameplateBubbleStateByFrame = state.nameplate.bubbleStateByFrame
-	self.nameplateRefreshPendingByUnitToken = state.nameplate.refreshPendingByUnitToken
-	self.nameplateRefreshGenerationByUnitToken = state.nameplate.refreshGenerationByUnitToken
-	self.nameplateHealthTintRefreshPendingByUnitToken = state.nameplate.healthTintRefreshPendingByUnitToken
-	self.nameplateTooltipResolveRetryCountByUnitToken = state.nameplate.tooltipResolveRetryCountByUnitToken
-
-	self.personalBubbleDialogPositionByFrame = state.personalBubble.dialogPositionByFrame
-
-	self.deferredWorkState = state.runtime.deferredWorkState
+-- This is transient per-instance state, never a SavedVariables migration.
+-- Visual handles survive domain resets until restricted teardown can finish.
+function QuestTogether:NewRuntimeStateStore()
+	local weak = LibChev.WeakKeys
+	local state = {
+		taskArea = {
+			worldByQuestID = {},
+			bonusByQuestID = {},
+			resolvedByQuestID = {},
+			resolutionOrder = {},
+			generation = 0,
+			pendingAnnounce = false,
+		},
+		questSnapshot = { byQuestID = {}, order = {}, generation = 0 },
+		nameplate = {
+			questStateByGuid = {},
+			completedByNpcID = {},
+			questStateByUnitToken = {},
+			questGuidByUnitToken = {},
+			textCache = {},
+			identityGenerationByUnitToken = {},
+			refreshGenerationByUnitToken = {},
+			refreshPendingByUnitToken = {},
+			healthTintRefreshPendingByUnitToken = {},
+			tooltipResolveRetryCountByUnitToken = {},
+			workOwnersByUnitToken = {},
+			iconByUnitFrame = weak(),
+			healthOverlayByUnitFrame = weak(),
+			bubbleByUnitFrame = weak(),
+			bubbleStateByFrame = weak(),
+		},
+		personalBubble = { dialogPositionByFrame = weak() },
+		runtime = {
+			pendingScheduledTaskAreaRefreshShouldAnnounce = false,
+			pendingDeferredNameplateQuestStateRefresh = false,
+			deferredNameplateQuestStateRefreshGeneration = 0,
+			nameplateFullRefreshGeneration = 0,
+			deferredWorkState = LibChev.NewWorkState(),
+		},
+	}
+	return state
 end
 
 function QuestTogether:EnsureRuntimeStateStore()
-	local state = self.runtimeStateStore
-	if type(state) ~= "table" then
-		state = {}
+	local state = rawget(self, "runtimeStateStore")
+	if not state then
+		state = self:NewRuntimeStateStore()
 		self.runtimeStateStore = state
 	end
-
-	if type(state.taskArea) ~= "table" then
-		state.taskArea = {}
-	end
-	if type(state.taskArea.worldByQuestID) ~= "table" then
-		state.taskArea.worldByQuestID = type(self.worldQuestAreaStateByQuestID) == "table"
-				and self.worldQuestAreaStateByQuestID
-			or {}
-	end
-	if type(state.taskArea.bonusByQuestID) ~= "table" then
-		state.taskArea.bonusByQuestID = type(self.bonusObjectiveAreaStateByQuestID) == "table"
-				and self.bonusObjectiveAreaStateByQuestID
-			or {}
-	end
-	if type(state.taskArea.resolvedByQuestID) ~= "table" then
-		state.taskArea.resolvedByQuestID = {}
-	end
-	if type(state.taskArea.resolutionOrder) ~= "table" then
-		state.taskArea.resolutionOrder = {}
-	end
-	if type(state.taskArea.generation) ~= "number" then
-		state.taskArea.generation = 0
-	end
-	if state.taskArea.pendingAnnounce ~= true then
-		state.taskArea.pendingAnnounce = false
-	end
-
-	if type(state.questSnapshot) ~= "table" then
-		state.questSnapshot = {}
-	end
-	if type(state.questSnapshot.byQuestID) ~= "table" then
-		state.questSnapshot.byQuestID = type(self.questSnapshotByQuestID) == "table" and self.questSnapshotByQuestID
-			or {}
-	end
-	if type(state.questSnapshot.order) ~= "table" then
-		state.questSnapshot.order = type(self.questSnapshotOrder) == "table" and self.questSnapshotOrder or {}
-	end
-	if type(state.questSnapshot.generation) ~= "number" then
-		state.questSnapshot.generation = 0
-	end
-
-	if type(state.nameplate) ~= "table" then
-		state.nameplate = {}
-	end
-	if type(state.nameplate.questStateByGuid) ~= "table" then
-		state.nameplate.questStateByGuid = type(self.nameplateQuestStateByGuid) == "table"
-				and self.nameplateQuestStateByGuid
-			or {}
-	end
-	if type(state.nameplate.completedByNpcID) ~= "table" then
-		state.nameplate.completedByNpcID = {}
-	end
-	if type(state.nameplate.questStateByUnitToken) ~= "table" then
-		state.nameplate.questStateByUnitToken = type(self.nameplateQuestStateByUnitToken) == "table"
-				and self.nameplateQuestStateByUnitToken
-			or {}
-	end
-	if type(state.nameplate.questGuidByUnitToken) ~= "table" then
-		state.nameplate.questGuidByUnitToken = type(self.nameplateQuestGuidByUnitToken) == "table"
-				and self.nameplateQuestGuidByUnitToken
-			or {}
-	end
-	if type(state.nameplate.textCache) ~= "table" then
-		state.nameplate.textCache = type(self.nameplateQuestTextCache) == "table" and self.nameplateQuestTextCache or {}
-	end
-	if type(state.nameplate.identityGenerationByUnitToken) ~= "table" then
-		state.nameplate.identityGenerationByUnitToken = {}
-	end
-	if type(state.nameplate.refreshGenerationByUnitToken) ~= "table" then
-		state.nameplate.refreshGenerationByUnitToken = type(self.nameplateRefreshGenerationByUnitToken) == "table"
-				and self.nameplateRefreshGenerationByUnitToken
-			or {}
-	end
-	if type(state.nameplate.refreshPendingByUnitToken) ~= "table" then
-		state.nameplate.refreshPendingByUnitToken = type(self.nameplateRefreshPendingByUnitToken) == "table"
-				and self.nameplateRefreshPendingByUnitToken
-			or {}
-	end
-	if type(state.nameplate.healthTintRefreshPendingByUnitToken) ~= "table" then
-		state.nameplate.healthTintRefreshPendingByUnitToken = type(self.nameplateHealthTintRefreshPendingByUnitToken)
-					== "table"
-				and self.nameplateHealthTintRefreshPendingByUnitToken
-			or {}
-	end
-	if type(state.nameplate.tooltipResolveRetryCountByUnitToken) ~= "table" then
-		state.nameplate.tooltipResolveRetryCountByUnitToken = type(self.nameplateTooltipResolveRetryCountByUnitToken)
-					== "table"
-				and self.nameplateTooltipResolveRetryCountByUnitToken
-			or {}
-	end
-	if type(state.nameplate.iconByUnitFrame) ~= "table" then
-		state.nameplate.iconByUnitFrame = EnsureWeakKeyTable(self.nameplateIconByUnitFrame)
-	end
-	if type(state.nameplate.healthOverlayByUnitFrame) ~= "table" then
-		state.nameplate.healthOverlayByUnitFrame = EnsureWeakKeyTable(self.nameplateHealthOverlayByUnitFrame)
-	end
-	if type(state.nameplate.bubbleByUnitFrame) ~= "table" then
-		state.nameplate.bubbleByUnitFrame = EnsureWeakKeyTable(self.nameplateBubbleByUnitFrame)
-	end
-	if type(state.nameplate.bubbleStateByFrame) ~= "table" then
-		state.nameplate.bubbleStateByFrame = EnsureWeakKeyTable(self.nameplateBubbleStateByFrame)
-	end
-
-	if type(state.personalBubble) ~= "table" then
-		state.personalBubble = {}
-	end
-	if type(state.personalBubble.dialogPositionByFrame) ~= "table" then
-		state.personalBubble.dialogPositionByFrame = EnsureWeakKeyTable(self.personalBubbleDialogPositionByFrame)
-	end
-
-	if type(state.runtime) ~= "table" then
-		state.runtime = {}
-	end
-	if state.runtime.pendingScheduledTaskAreaRefreshShouldAnnounce ~= true then
-		state.runtime.pendingScheduledTaskAreaRefreshShouldAnnounce = false
-	end
-	if state.runtime.pendingDeferredNameplateQuestStateRefresh ~= true then
-		state.runtime.pendingDeferredNameplateQuestStateRefresh = false
-	end
-	if type(state.runtime.deferredNameplateQuestStateRefreshGeneration) ~= "number" then
-		state.runtime.deferredNameplateQuestStateRefreshGeneration = 0
-	end
-	if type(state.runtime.nameplateFullRefreshGeneration) ~= "number" then
-		state.runtime.nameplateFullRefreshGeneration = 0
-	end
-	if type(state.runtime.deferredWorkState) ~= "table" then
-		state.runtime.deferredWorkState = type(self.deferredWorkState) == "table" and self.deferredWorkState or {}
-	end
-	if type(state.runtime.deferredWorkState.generations) ~= "table" then
-		state.runtime.deferredWorkState.generations = {}
-	end
-	if type(state.runtime.deferredWorkState.entries) ~= "table" then
-		state.runtime.deferredWorkState.entries = {}
-	end
-	if state.runtime.pendingWaypointIntent ~= nil and type(state.runtime.pendingWaypointIntent) ~= "table" then
-		state.runtime.pendingWaypointIntent = nil
-	end
-
-	BindRuntimeReferenceAliases(self, state)
 	return state
 end
 
@@ -268,15 +137,13 @@ function QuestTogether:ResetNameplateStateStore()
 	for _, owner in pairs(state.nameplate.workOwnersByUnitToken or {}) do
 		self:CancelRuntimeWorkOwner(owner)
 	end
-	self:CancelRuntimeWorkOwner(state.nameplate.startupWorkOwner)
-	state.nameplate.startupWorkOwner = nil
 	state.nameplate.workOwnersByUnitToken = {}
 	state.nameplate.identityGenerationByUnitToken = {}
 	state.nameplate.refreshGenerationByUnitToken = {}
 	wipe(state.nameplate.refreshPendingByUnitToken)
 	wipe(state.nameplate.healthTintRefreshPendingByUnitToken)
 	wipe(state.nameplate.tooltipResolveRetryCountByUnitToken)
-	BindRuntimeReferenceAliases(self, state)
+
 	return state.nameplate
 end
 
@@ -330,7 +197,7 @@ function QuestTogether:ResetRuntimeWorkStateStore()
 	runtimeState.deferredNameplateQuestStateRefreshGeneration = 0
 	runtimeState.nameplateFullRefreshGeneration = 0
 	runtimeState.deferredWorkState = LibChev.NewWorkState()
-	BindRuntimeReferenceAliases(self, self:EnsureRuntimeStateStore())
+
 	return runtimeState
 end
 

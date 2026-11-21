@@ -52,18 +52,7 @@ function QT:ConfigurePartyQuestChainPreview(preview)
 		"GetPlayerMapID", "GetCharacterQuestHistoryStatus", "GetQuestChainUnitInfo", "GetActiveTrackedQuestID",
 		"GetQuestDifficultyLevel", "GetQuestDifficultyColor", "GetQuestGroupRecommended",
 	}) do preview.API[key] = owner.API[key] end
-	for _, method in ipairs({
-		"NormalizeQuestID", "ReadCharacterQuestHistoryStatus", "AttachPartyQuestChains", "CancelPartyQuestChains",
-		"SetPartyQuestChainMetadataInterest", "SetPartyQuestChainSelection", "QueuePartyQuestChainRefresh",
-		"OpenPartyQuestChain", "TogglePartyQuestChain", "ClosePartyQuestChain", "TogglePartyQuestChainGroup",
-		"ExpandPartyQuestChain", "ResolvePartyQuestChainRowID", "GetPartyQuestChainDisplayTitle",
-		"GetPartyQuestChainStatus", "DescribePartyQuestChainRequirements", "AppendPartyQuestChainSection",
-		"DecoratePartyQuestChainRows", "GetPartyQuestChainActions", "GetPartyQuestChainDiagnostics",
-		"RevalidateQuestChainProvider", "CancelQuestChainProvider", "GetQuestChainProviderCapability",
-		"SetQuestChainMetadataInterest", "RequestQuestChainMetadata", "GetQuestChainQuestInfo",
-		"GetQuestChainStarterLocations", "OnQuestChainDataEvent", "GetQuestChainGraph", "EvaluateQuestChainRequirements",
-		"PreparePartyQuestShareRequirements", "RefreshPartyQuestShareRequirements",
-	}) do preview[method] = self[method] end
+
 	local openChain, closeChain = preview.OpenPartyQuestChain, preview.ClosePartyQuestChain
 	function preview:OpenPartyQuestChain(id, origin)
 		local opened = openChain(self, id, origin)

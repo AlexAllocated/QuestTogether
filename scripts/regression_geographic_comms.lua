@@ -1834,7 +1834,7 @@ QT:RegisterTest(
 	"party background refresh reacquires an ignored then unignored snapshot before reusing revisions",
 	function()
 		local a, b, _, advance = ObjectiveRevisionNetwork(true)
-		a.runtimeStateStore = {}
+		a.runtimeStateStore = nil
 		a.API.IsWorldMapVisible = function()
 			return false
 		end

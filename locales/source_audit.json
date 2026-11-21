@@ -49,7 +49,43 @@
       "YELL",
       "You don't have to turn on every bell and whistle. QuestTogether lets you use player maps and party quest comparisons while keeping chat logs, bubbles, and celebrations quiet."
     ],
+    "AnnouncementBubbles.lua": [
+      "ARTWORK",
+      "Alpha",
+      "BACKGROUND",
+      "BOTTOM",
+      "CENTER",
+      "Failed to create or resolve bubble frame",
+      "Failed to show bubble on host for unit=%s",
+      "Frame",
+      "LEFT",
+      "LOW",
+      "MIDDLE",
+      "TOP",
+      "playback_discard unit=%s reason=restricted",
+      "playback_start unit=%s guid=%s event=%s duration=%.1f text=%s",
+      "show_suppressed reason=bubbles_disabled",
+      "show_suppressed unit=%s reason=restricted",
+      "show_suppressed unit=player reason=own_bubble_visibility"
+    ],
+    "AnnouncementPresentation.lua": [
+      "Complete",
+      "Completed",
+      "In Progress",
+      "Not Started",
+      "Objectives Complete",
+      "PRIEST",
+      "Ready to Turn In",
+      "Recurringactivequesticon",
+      "Recurringavailablequesticon",
+      "Unknown",
+      "Version",
+      "Wrapperactivequesticon",
+      "Wrapperavailablequesticon",
+      "Yes"
+    ],
     "Audio.lua": [
+      "Audio",
       "Enabled",
       "SFX",
       "Sound",
@@ -60,6 +96,29 @@
     ],
     "AutoThanksNative.lua": [
       "HELPFUL"
+    ],
+    "ChatActions.lua": [
+      "CHATLINK"
+    ],
+    "ChatLog.lua": [
+      "Adopted existing QuestTogether chat window id=%s on login",
+      "Applied main chat font size=%s to QuestTogether chat frame id=%s",
+      "Closed QuestTogether chat window id=%s",
+      "Created QuestTogether chat window id=%s",
+      "Failed to close QuestTogether chat window id=%s",
+      "Ignoring QuestTogether chat window close because a visible replacement exists id=%s",
+      "Installed chat window hooks",
+      "QuestTogether chat window was closed; reverting chat log destination to main chat window",
+      "Reactivated existing QuestTogether chat window id=%s",
+      "Separate QuestTogether chat window unavailable; falling back to main chat",
+      "Tab",
+      "|cff33ff99QuestTogether|r: "
+    ],
+    "Commands.lua": [
+      "/qt resetlayout - ",
+      "announcement ",
+      "devLogAllAnnouncements = ",
+      "dump "
     ],
     "Comms.lua": [
       " event=",
@@ -213,75 +272,11 @@
       "request response"
     ],
     "Core.lua": [
-      "...(%d more)",
-      "/qt resetlayout - ",
-      "ACCEPTED",
       "ALL",
-      "Addon loading is unavailable.",
-      "Adopted existing QuestTogether chat window id=%s on login",
-      "Applied main chat font size=%s to QuestTogether chat frame id=%s",
-      "BUSY",
-      "CENTER",
-      "CHANNEL",
-      "CHATLINK",
-      "CLASS",
-      "Closed QuestTogether chat window id=%s",
-      "Complete",
-      "Completed",
-      "Created QuestTogether chat window id=%s",
-      "DEAD",
       "DEBUG",
-      "DECLINED",
-      "EXPANSION",
-      "Failed to close QuestTogether chat window id=%s",
-      "Frame",
-      "INVALID",
-      "Ignoring QuestTogether chat window close because a visible replacement exists id=%s",
-      "In Progress",
-      "Installed chat window hooks",
-      "LOADING",
-      "Left",
-      "Main Chat Window",
-      "Not Started",
-      "ONQUEST",
-      "Objectives Complete",
-      "PARTY",
-      "PREREQUISITE",
-      "PRIEST",
-      "Party & Nearby Players",
-      "Party Only",
-      "Prefix",
-      "QuestTogether %.1f, %.1f",
-      "QuestTogether and its test companion must be the same version.",
-      "QuestTogether chat window was closed; reverting chat log destination to main chat window",
-      "RACE",
-      "Reactivated existing QuestTogether chat window id=%s",
-      "Ready to Turn In",
-      "Recurringactivequesticon",
-      "Recurringavailablequesticon",
-      "Right",
-      "SAY",
-      "SUCCESS",
-      "Separate Chat Window",
-      "Separate QuestTogether chat window unavailable; falling back to main chat",
-      "Skipping unavailable runtime event=%s",
-      "Tab",
-      "Top",
-      "UNKNOWN",
-      "UNKNOWNOBJECT",
-      "Unknown",
-      "Version",
-      "Wrapperactivequesticon",
-      "Wrapperavailablequesticon",
-      "YELL",
-      "Yes",
-      "announcement ",
-      "devLogAllAnnouncements = ",
-      "dump ",
-      "invalid quest line",
-      "invalid quest lines",
-      "libchev must load before Core.lua",
-      "|cff33ff99QuestTogether|r: "
+      "duplicate native adapter: ",
+      "duplicate native domain: ",
+      "libchev must load before Core.lua"
     ],
     "Debug.lua": [
       "ALL",
@@ -336,7 +331,6 @@
       "PARTY",
       "RAID",
       "WHISPER",
-      "chat visibility",
       "private directories"
     ],
     "GamepadActions.lua": [
@@ -364,6 +358,7 @@
     "GamepadIntegration.lua": [
       "; reload required",
       "After",
+      "Combat",
       "DOWN",
       "Finalize",
       "Frame",
@@ -419,6 +414,10 @@
       "UI restrictions cleared",
       "invalid work mode",
       "work_failed class=%s key=%s reason=%s error=%s"
+    ],
+    "Lifecycle.lua": [
+      "Frame",
+      "Skipping unavailable runtime event=%s"
     ],
     "LocationPins.lua": [
       "ADD",
@@ -505,42 +504,67 @@
       "TOPLEFT",
       "TOPRIGHT"
     ],
-    "Nameplates.lua": [
+    "NameplateAccess.lua": [
+      "ARTWORK",
+      "QuestTogether: "
+    ],
+    "NameplateDecorations.lua": [
       "ADD",
       "ARTWORK",
       "Alpha",
       "BACKGROUND",
-      "BORDER",
       "BOTTOM",
       "BOTTOMLEFT",
       "BOTTOMRIGHT",
       "CENTER",
-      "Creature",
-      "Failed to create or resolve bubble frame",
-      "Failed to show bubble on host for unit=%s",
       "Frame",
-      "HIGH",
       "LEFT",
       "LOW",
-      "MIDDLE",
-      "OVERLAY",
       "QT player presence",
-      "QuestTogether: ",
       "REPEAT",
       "RIGHT",
       "TOP",
       "TOPLEFT",
-      "TOPRIGHT",
+      "TOPRIGHT"
+    ],
+    "NameplateQuests.lua": [
+      "Creature",
       "Vehicle",
-      "playback_complete unit=%s event=%s",
-      "playback_discard unit=%s reason=restricted",
-      "playback_start unit=%s guid=%s event=%s duration=%.1f text=%s",
-      "playback_stop unit=%s event=%s reason=%s",
-      "resolver_unresolved unit=%s reason=%s retry=%s",
-      "show_suppressed reason=bubbles_disabled",
-      "show_suppressed unit=%s reason=restricted",
-      "show_suppressed unit=player reason=own_bubble_visibility",
+      "resolver_unresolved unit=%s reason=%s retry=%s"
+    ],
+    "Nameplates.lua": [
+      "Frame",
       "visual_cleanup deferred until restrictions end"
+    ],
+    "NativeChat.lua": [
+      "CHANNEL",
+      "Frame",
+      "PARTY",
+      "SAY",
+      "YELL"
+    ],
+    "NativeQuests.lua": [
+      "ACCEPTED",
+      "BUSY",
+      "CLASS",
+      "DEAD",
+      "DECLINED",
+      "EXPANSION",
+      "INVALID",
+      "LOADING",
+      "ONQUEST",
+      "PREREQUISITE",
+      "RACE",
+      "SUCCESS",
+      "UNKNOWN",
+      "UNKNOWNOBJECT",
+      "invalid quest line",
+      "invalid quest lines"
+    ],
+    "NativeUI.lua": [
+      "Addon loading is unavailable.",
+      "QuestTogether and its test companion must be the same version.",
+      "Version"
     ],
     "NearbyStreams.lua": [
       "QTCI",
@@ -657,6 +681,24 @@
     ],
     "PeerState.lua": [
       "QTPR"
+    ],
+    "PersonalBubbles.lua": [
+      "ARTWORK",
+      "BACKGROUND",
+      "BORDER",
+      "BOTTOMRIGHT",
+      "CENTER",
+      "Frame",
+      "HIGH",
+      "LEFT",
+      "LOW",
+      "MIDDLE",
+      "OVERLAY",
+      "RIGHT",
+      "TOPLEFT",
+      "TOPRIGHT",
+      "playback_complete unit=%s event=%s",
+      "playback_stop unit=%s event=%s reason=%s"
     ],
     "PingCommunication.lua": [
       "DREPORT",
@@ -859,6 +901,11 @@
       "Unknown",
       "Update QuestTogether for objective details."
     ],
+    "QuestComparePresenter.lua": [
+      "duplicate PQL method: ",
+      "missing PQL service: ",
+      "presenter requires owned data"
+    ],
     "QuestComparePreview.lua": [
       "A Debt to the Innkeeper",
       "A Favor for the Herbalist",
@@ -1059,6 +1106,9 @@
       "Show",
       "TOPLEFT"
     ],
+    "QuestTracking.lua": [
+      "Unknown"
+    ],
     "RecentCompanions.lua": [
       "BOTTOMLEFT",
       "BOTTOMRIGHT",
@@ -1108,9 +1158,30 @@
       "Frame"
     ],
     "Settings.lua": [
-      "Applied active profile state reason=%s character=%s profile=%s",
       "Character",
-      "Unknown",
+      "Unknown"
+    ],
+    "SettingsCatalog.lua": [
+      "ALL",
+      "CENTER",
+      "Left",
+      "Main Chat Window",
+      "Party & Nearby Players",
+      "Party Only",
+      "Prefix",
+      "Right",
+      "Separate Chat Window",
+      "Top",
+      "duplicate setting: ",
+      "setting label missing: ",
+      "setting requires a default: ",
+      "setting tooltip missing: ",
+      "unknown setting: "
+    ],
+    "SettingsEffects.lua": [
+      "Applied active profile state reason=%s character=%s profile=%s",
+      "chat visibility",
+      "missing settings effect: ",
       "party compare profile replacement"
     ],
     "TaskArea.lua": [
@@ -1156,6 +1227,9 @@
       "RIGHT",
       "TOPLEFT",
       "TOPRIGHT"
+    ],
+    "WaypointActions.lua": [
+      "QuestTogether %.1f, %.1f"
     ],
     "Welcome.lua": [
       "Frame"

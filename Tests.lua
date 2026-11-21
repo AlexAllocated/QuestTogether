@@ -296,6 +296,7 @@ local function WithIsolatedState(testFn)
 		original[key] = value
 	end
 	local sharedTables = {
+		PartyQuestPresentation = true, NativeAccess = true, NativeAdapters = true, NativeQuestValues = true, NameplateServices = true, SettingDefinitions = true,
 		LibChev = true,
 		Ed25519 = true,
 		tests = true,
@@ -443,24 +444,6 @@ local function WithIsolatedState(testFn)
 			"locationPinState",
 			"chatLogPlayerTooltipState",
 			"playerLocationsFrame",
-			"worldQuestAreaStateByQuestID",
-			"bonusObjectiveAreaStateByQuestID",
-			"questSnapshotByQuestID",
-			"questSnapshotOrder",
-			"nameplateQuestTextCache",
-			"nameplateQuestStateByGuid",
-			"nameplateQuestStateByUnitToken",
-			"nameplateQuestGuidByUnitToken",
-			"nameplateIconByUnitFrame",
-			"nameplateHealthOverlayByUnitFrame",
-			"nameplateBubbleByUnitFrame",
-			"nameplateBubbleStateByFrame",
-			"nameplateRefreshPendingByUnitToken",
-			"nameplateRefreshGenerationByUnitToken",
-			"nameplateHealthTintRefreshPendingByUnitToken",
-			"nameplateTooltipResolveRetryCountByUnitToken",
-			"personalBubbleDialogPositionByFrame",
-			"deferredWorkState",
 			"diagnosticLogSequence",
 			"diagnosticDroppedLogLines",
 			"diagnosticErrorCount",
@@ -1126,13 +1109,13 @@ QuestTogether:RegisterTest("isolated tests preserve live stores frames callbacks
 	}
 	local liveDB, liveProfile = QuestTogether.db, QuestTogether.db.profile
 	local liveRuntime = QuestTogether.runtimeStateStore
-	local liveCache = QuestTogether.nameplateQuestStateByGuid
+	local liveCache = QuestTogether:GetNameplateStateStore().questStateByGuid
 	local liveQueue = { "pending response" }
 	local savedVariables = _G.QuestTogetherDB
 	liveCache.sentinel = true
 	QuestTogether.eventFrame, QuestTogether.nameplateEventFrame = sentinelFrame, sentinelFrame
 	QuestTogether.mapWorkWakeFrame, QuestTogether.mapWorkWakeState = sentinelFrame, liveRuntime
-	QuestTogether.nameplateIconByUnitFrame[{}] = sentinelFrame
+	QuestTogether:GetNameplateStateStore().iconByUnitFrame[{}] = sentinelFrame
 	QuestTogether.questCompareResponseQueue = liveQueue
 	local liveMethod = QuestTogether.Print
 	local fixtureReachedEnd = false
@@ -1159,7 +1142,7 @@ QuestTogether:RegisterTest("isolated tests preserve live stores frames callbacks
 	AssertEquals(QuestTogether.db, liveDB)
 	AssertEquals(QuestTogether.db.profile, liveProfile)
 	AssertEquals(QuestTogether.runtimeStateStore, liveRuntime)
-	AssertEquals(QuestTogether.nameplateQuestStateByGuid, liveCache)
+	AssertEquals(QuestTogether:GetNameplateStateStore().questStateByGuid, liveCache)
 	AssertEquals(liveCache.sentinel, true)
 	AssertEquals(QuestTogether.eventFrame, sentinelFrame)
 	AssertEquals(QuestTogether.nameplateEventFrame, sentinelFrame)
@@ -2770,7 +2753,7 @@ QuestTogether:RegisterTest("tooltip quest detection uses isolated tooltip line s
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
 	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
 		or "QuestObjective"
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
 		return true
@@ -2820,7 +2803,7 @@ QuestTogether:RegisterTest("tooltip quest detection uses isolated tooltip line s
 end)
 
 QuestTogether:RegisterTest("tooltip quest detection recognizes fallback-style progress lines", function()
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
 		return true
@@ -2885,7 +2868,7 @@ QuestTogether:RegisterTest(
 				end
 			end,
 		})
-		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 		local tooltipLines = QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData({
 			lines = {
 				{ type = titleLineType, leftText = "Tracking the Trail" },
@@ -2902,7 +2885,7 @@ QuestTogether:RegisterTest(
 QuestTogether:RegisterTest(
 	"tooltip quest detection blocks live scans while map-sensitive runtime gate is active",
 	function()
-		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 		QuestTogether.API = CreateApiWithOverrides({
 			IsWorldMapVisible = function()
 				return true
@@ -2948,7 +2931,7 @@ QuestTogether:RegisterTest(
 
 QuestTogether:RegisterTest("tooltip quest detection skips hidden and Questie sources during combat", function()
 	local hiddenScanCount, structuredScanCount, questieScanCount = 0, 0, 0
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 	QuestTogether.API = CreateApiWithOverrides({
 		InCombatLockdown = function()
 			return true
@@ -3002,10 +2985,10 @@ end)
 QuestTogether:RegisterTest(
 	"tooltip quest detection reuses cached state while runtime gate blocks live scans",
 	function()
-		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
-		QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-12345-0000000000"] = true
-		QuestTogether.nameplateQuestStateByUnitToken["nameplate1"] = true
-		QuestTogether.nameplateQuestGuidByUnitToken["nameplate1"] = "Creature-0-0-0-0-12345-0000000000"
+		QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
+		QuestTogether:GetNameplateStateStore().questStateByGuid["Creature-0-0-0-0-12345-0000000000"] = true
+		QuestTogether:GetNameplateStateStore().questStateByUnitToken["nameplate1"] = true
+		QuestTogether:GetNameplateStateStore().questGuidByUnitToken["nameplate1"] = "Creature-0-0-0-0-12345-0000000000"
 
 		WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
 			return true
@@ -3044,7 +3027,7 @@ QuestTogether:RegisterTest(
 QuestTogether:RegisterTest(
 	"tooltip quest detection skips live scans while runtime gate blocks them without cache",
 	function()
-		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 		WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
 			return true
@@ -3092,7 +3075,7 @@ QuestTogether:RegisterTest("nameplate quest detection cache is keyed by guid and
 	local firstUnitFrame = {}
 	local secondUnitFrame = {}
 
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 	QuestTogether.isEnabled = true
 
 	WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
@@ -3126,9 +3109,9 @@ QuestTogether:RegisterTest("nameplate quest detection cache is keyed by guid and
 				AssertTrue(hasResolvedSecond)
 				AssertTrue(isQuestObjectiveSecond)
 				AssertEquals(scanCalls, 1)
-				AssertEquals(QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-12345-0000000000"], true)
+				AssertEquals(QuestTogether:GetNameplateStateStore().questStateByGuid["Creature-0-0-0-0-12345-0000000000"], true)
 				AssertEquals(
-					QuestTogether.nameplateQuestGuidByUnitToken["nameplate2"],
+					QuestTogether:GetNameplateStateStore().questGuidByUnitToken["nameplate2"],
 					"Creature-0-0-0-0-12345-0000000000"
 				)
 			end)
@@ -3211,7 +3194,7 @@ QuestTogether:RegisterTest(
 
 		AssertEquals(scheduledReason, "RefreshNameplateIcon")
 		AssertEquals(scheduledDelay, 0.2)
-		AssertEquals(QuestTogether.nameplateTooltipResolveRetryCountByUnitToken["nameplate1"], 1)
+		AssertEquals(QuestTogether:GetNameplateStateStore().tooltipResolveRetryCountByUnitToken["nameplate1"], 1)
 	end
 )
 
@@ -3219,10 +3202,10 @@ QuestTogether:RegisterTest(
 	"tooltip quest detection reuses cached results while map-sensitive runtime gate blocks rescanning",
 	function()
 		local structuredScanCount = 0
-		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
-		QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-12345-0000000000"] = true
-		QuestTogether.nameplateQuestStateByUnitToken["nameplate1"] = true
-		QuestTogether.nameplateQuestGuidByUnitToken["nameplate1"] = "Creature-0-0-0-0-12345-0000000000"
+		QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
+		QuestTogether:GetNameplateStateStore().questStateByGuid["Creature-0-0-0-0-12345-0000000000"] = true
+		QuestTogether:GetNameplateStateStore().questStateByUnitToken["nameplate1"] = true
+		QuestTogether:GetNameplateStateStore().questGuidByUnitToken["nameplate1"] = "Creature-0-0-0-0-12345-0000000000"
 		QuestTogether.API = CreateApiWithOverrides({
 			IsWorldMapVisible = function()
 				return true
@@ -3264,7 +3247,7 @@ QuestTogether:RegisterTest(
 QuestTogether:RegisterTest("uncached tooltip evaluation retries after unresolved structured data", function()
 	local structuredScanCount = 0
 	local hiddenScanCount = 0
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
 		return true
@@ -3321,7 +3304,7 @@ QuestTogether:RegisterTest(
 	function()
 		local progress = "1/8 Digested Object"
 		local reads = 0
-		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 		QuestTogether.API = CreateApiWithOverrides({
 			UnitExists = function(token)
 				return token == "nameplate1"
@@ -3386,7 +3369,7 @@ QuestTogether:RegisterTest(
 QuestTogether:RegisterTest(
 	"tooltip quest detection can resolve live scans without a guid when unit tooltip sources succeed",
 	function()
-		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 		QuestTogether.isEnabled = true
 
 		WithPatchedMethod(QuestTogether, "IsNameplateAugmentationBlockedInCurrentContext", function()
@@ -3415,7 +3398,7 @@ QuestTogether:RegisterTest(
 					AssertTrue(hasResolved)
 					AssertTrue(isQuestObjective)
 					AssertEquals(resolvedGuid, nil)
-					AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate1"], nil)
+					AssertEquals(QuestTogether:GetNameplateStateStore().questGuidByUnitToken["nameplate1"], nil)
 				end)
 			end)
 		end)
@@ -3515,7 +3498,7 @@ QuestTogether:RegisterTest(
 				{ type = objectiveLineType, leftText = "0/35 Gnarlidin Trophies" },
 			},
 		}
-		QuestTogether.nameplateQuestTextCache["Gnarlidin Trophies"] = true
+		QuestTogether:GetNameplateStateStore().textCache["Gnarlidin Trophies"] = true
 		QuestTogether.API = CreateApiWithOverrides({
 			IsWorldMapVisible = function()
 				return mapVisible
@@ -3627,7 +3610,7 @@ QuestTogether:RegisterTest("structured-tooltip clients allow Blizzard tooltip sc
 			error("unit-token structured tooltip should win before hyperlink fallback")
 		end,
 	})
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function(_, unitToken)
 		AssertEquals(unitToken, "nameplate1")
@@ -3675,7 +3658,7 @@ QuestTogether:RegisterTest("structured-tooltip clients fall back from unit paylo
 			}
 		end,
 	})
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function(_, unitToken)
 		AssertEquals(unitToken, "nameplate1")
@@ -3691,7 +3674,7 @@ end)
 
 QuestTogether:RegisterTest("tooltip quest detection prefers Questie lines before Blizzard tooltip APIs", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	WithPatchedMethod(QuestTogether, "DoesNameplateUnitExist", function()
 		return true
@@ -3780,9 +3763,9 @@ QuestTogether:RegisterTest(
 			end
 		)
 
-		AssertTrue(QuestTogether.nameplateQuestTextCache["Log Quest"])
-		AssertEquals(QuestTogether.nameplateQuestTextCache["Tracked Quest"], nil)
-		AssertEquals(QuestTogether.nameplateQuestTextCache["Bonus Objective"], nil)
+		AssertTrue(QuestTogether:GetNameplateStateStore().textCache["Log Quest"])
+		AssertEquals(QuestTogether:GetNameplateStateStore().textCache["Tracked Quest"], nil)
+		AssertEquals(QuestTogether:GetNameplateStateStore().textCache["Bonus Objective"], nil)
 	end
 )
 
@@ -3806,7 +3789,7 @@ QuestTogether:RegisterTest("nameplate quest text cache includes hidden quest log
 
 	QuestTogether:RebuildNameplateQuestTextCache()
 
-	AssertTrue(QuestTogether.nameplateQuestTextCache["Hidden Quest"])
+	AssertTrue(QuestTogether:GetNameplateStateStore().textCache["Hidden Quest"])
 end)
 
 QuestTogether:RegisterTest("nameplate quest text cache includes live unfinished objective texts", function()
@@ -3848,9 +3831,9 @@ QuestTogether:RegisterTest("nameplate quest text cache includes live unfinished 
 
 	QuestTogether:RebuildNameplateQuestTextCache()
 
-	AssertTrue(QuestTogether.nameplateQuestTextCache["QT Live Objective Cache Test"])
-	AssertTrue(QuestTogether.nameplateQuestTextCache["QT unfinished objective sentinel"])
-	AssertEquals(QuestTogether.nameplateQuestTextCache["QT finished objective sentinel"], nil)
+	AssertTrue(QuestTogether:GetNameplateStateStore().textCache["QT Live Objective Cache Test"])
+	AssertTrue(QuestTogether:GetNameplateStateStore().textCache["QT unfinished objective sentinel"])
+	AssertEquals(QuestTogether:GetNameplateStateStore().textCache["QT finished objective sentinel"], nil)
 end)
 
 QuestTogether:RegisterTest("nameplate quest text cache normalizes live progressbar objective texts", function()
@@ -3893,13 +3876,13 @@ QuestTogether:RegisterTest("nameplate quest text cache normalizes live progressb
 
 	QuestTogether:RebuildNameplateQuestTextCache()
 
-	AssertTrue(QuestTogether.nameplateQuestTextCache["Step Into the Life"])
-	AssertTrue(QuestTogether.nameplateQuestTextCache["28% Emerald Dreamway cleared"])
-	AssertTrue(QuestTogether.nameplateQuestTextCache["Emerald Dreamway cleared"])
+	AssertTrue(QuestTogether:GetNameplateStateStore().textCache["Step Into the Life"])
+	AssertTrue(QuestTogether:GetNameplateStateStore().textCache["28% Emerald Dreamway cleared"])
+	AssertTrue(QuestTogether:GetNameplateStateStore().textCache["Emerald Dreamway cleared"])
 end)
 
 QuestTogether:RegisterTest("nameplate quest text cache stays empty in instances", function()
-	QuestTogether.nameplateQuestTextCache["Stale Quest"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Stale Quest"] = true
 	QuestTogether.API = CreateApiWithOverrides({
 		IsInInstance = function()
 			return true
@@ -3911,7 +3894,7 @@ QuestTogether:RegisterTest("nameplate quest text cache stays empty in instances"
 
 	QuestTogether:RebuildNameplateQuestTextCache()
 
-	AssertEquals(QuestTogether.nameplateQuestTextCache["Stale Quest"], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().textCache["Stale Quest"], nil)
 end)
 
 QuestTogether:RegisterTest("nameplate quest text cache includes active tracked objective texts", function()
@@ -3932,15 +3915,15 @@ QuestTogether:RegisterTest("nameplate quest text cache includes active tracked o
 
 	QuestTogether:RebuildNameplateQuestTextCache()
 
-	AssertTrue(QuestTogether.nameplateQuestTextCache["Old War Grudge"])
-	AssertTrue(QuestTogether.nameplateQuestTextCache["In War Mode obtain Hardin Steellock's Head"])
+	AssertTrue(QuestTogether:GetNameplateStateStore().textCache["Old War Grudge"])
+	AssertTrue(QuestTogether:GetNameplateStateStore().textCache["In War Mode obtain Hardin Steellock's Head"])
 end)
 
 QuestTogether:RegisterTest("structured tooltip extraction surfaces args text when leftText is missing", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
 	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
 		or "QuestObjective"
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	local tooltipLines = QuestTogether:ExtractQuestObjectiveTooltipLinesFromTooltipData({
 		lines = {
@@ -3976,7 +3959,7 @@ QuestTogether:RegisterTest("structured tooltip extraction surfaces tooltip args 
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
 	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
 		or "QuestObjective"
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	local tooltipData = {
 		lines = {
@@ -4020,8 +4003,8 @@ QuestTogether:RegisterTest("announcement refresh discards stopped addon-owned pl
 	local host = { UnitFrame = unitFrame }
 	QuestTogether.isEnabled = true
 	QuestTogether.announcementBubbleScreenHostFrame = host
-	QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
-	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+	QuestTogether:GetNameplateStateStore().bubbleByUnitFrame[unitFrame] = bubble
+	QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble] = {
 		unitToken = "player",
 		text = "Quest Completed: Widgets",
 		eventType = "QUEST_COMPLETED",
@@ -4037,7 +4020,7 @@ QuestTogether:RegisterTest("announcement refresh discards stopped addon-owned pl
 	end)
 	AssertTrue(hidden)
 	AssertEquals(shows, 0)
-	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble], nil)
 	AssertEquals(bubble.qtCurrentText, nil)
 	AssertEquals(bubble.qtHostFrame, nil)
 end)
@@ -4050,7 +4033,7 @@ QuestTogether:RegisterTest(
 			or "QuestObjective"
 		local playerLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestPlayer
 			or "QuestPlayer"
-		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 		local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
 			{
@@ -4078,7 +4061,7 @@ QuestTogether:RegisterTest(
 QuestTogether:RegisterTest(
 	"tooltip objective evaluation accepts normalized string line types inside matched quest blocks",
 	function()
-		QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+		QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 		local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
 			{
@@ -4104,7 +4087,7 @@ QuestTogether:RegisterTest("tooltip objective evaluation ignores complete-only o
 	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
 		or "QuestObjective"
 	local playerLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestPlayer or "QuestPlayer"
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
 		{
@@ -4130,7 +4113,7 @@ end)
 
 QuestTogether:RegisterTest("tooltip objective evaluation ignores quest-title-only lines", function()
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
 		{
@@ -4158,7 +4141,7 @@ end)
 QuestTogether:RegisterTest("tooltip objective evaluation accepts standalone tracked objective lines", function()
 	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
 		or "QuestObjective"
-	QuestTogether.nameplateQuestTextCache["In War Mode obtain Hardin Steellock's Head"] = true
+	QuestTogether:GetNameplateStateStore().textCache["In War Mode obtain Hardin Steellock's Head"] = true
 
 	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
 		{
@@ -4175,7 +4158,7 @@ QuestTogether:RegisterTest(
 	function()
 		local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
 			or "QuestObjective"
-		QuestTogether.nameplateQuestTextCache["In War Mode obtain Hardin Steellock's Head"] = true
+		QuestTogether:GetNameplateStateStore().textCache["In War Mode obtain Hardin Steellock's Head"] = true
 
 		local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
 			{
@@ -4192,7 +4175,7 @@ QuestTogether:RegisterTest("tooltip objective evaluation ignores unmatched quest
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
 	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
 		or "QuestObjective"
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
 		{
@@ -4212,7 +4195,7 @@ QuestTogether:RegisterTest("tooltip objective evaluation stops at threat marker"
 	local titleLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
 	local objectiveLineType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective
 		or "QuestObjective"
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	local hasObjective = QuestTogether:EvaluateTooltipQuestObjectiveLines({
 		{
@@ -4244,7 +4227,7 @@ QuestTogether:RegisterTest("tooltip objective evaluation stops when tooltip line
 			error("secret line should not be indexed")
 		end,
 	})
-	QuestTogether.nameplateQuestTextCache["Tracking the Trail"] = true
+	QuestTogether:GetNameplateStateStore().textCache["Tracking the Trail"] = true
 
 	WithPatchedMethod(QuestTogether, "IsSecretValue", function(_, value)
 		return value == secretLine
@@ -4266,7 +4249,7 @@ QuestTogether:RegisterTest("tooltip objective evaluation stops when tooltip line
 end)
 
 QuestTogether:RegisterTest("tooltip quest scan guid does not fall back to stale token cache state", function()
-	QuestTogether.nameplateQuestGuidByUnitToken.nameplate1 = "Creature-0-0-0-0-11111-0000000000"
+	QuestTogether:GetNameplateStateStore().questGuidByUnitToken.nameplate1 = "Creature-0-0-0-0-11111-0000000000"
 
 	WithPatchedMethod(QuestTogether, "GetNameplateUnitGuid", function()
 		return nil
@@ -6164,7 +6147,7 @@ QuestTogether:RegisterTest("nameplate health tint helpers use overlays without t
 
 	AssertEquals(#createdTextures, 2)
 
-	local overlay = QuestTogether.nameplateHealthOverlayByUnitFrame[unitFrame]
+	local overlay = QuestTogether:GetNameplateStateStore().healthOverlayByUnitFrame[unitFrame]
 	AssertTrue(overlay ~= nil)
 	AssertEquals(overlay.FillTexture, createdTextures[1])
 	AssertEquals(overlay.Highlight, createdTextures[2])
@@ -6186,7 +6169,7 @@ QuestTogether:RegisterTest("nameplate health tint helpers use overlays without t
 	QuestTogether:RestoreNameplateHealthColor(unitFrame)
 
 	AssertEquals(setColorCalls, 0)
-	AssertEquals(QuestTogether.nameplateHealthOverlayByUnitFrame[unitFrame], overlay)
+	AssertEquals(QuestTogether:GetNameplateStateStore().healthOverlayByUnitFrame[unitFrame], overlay)
 	AssertFalse(overlay.FillTexture.shown)
 	AssertFalse(overlay.Highlight.shown)
 end)
@@ -6321,11 +6304,11 @@ QuestTogether:RegisterTest("combat nameplate remove clears cached quest state", 
 		UnitFrame = unitFrame,
 	}
 
-	QuestTogether.nameplateQuestStateByUnitToken["nameplate13"] = true
-	QuestTogether.nameplateQuestGuidByUnitToken["nameplate13"] = "Creature-0-0-0-0-131313-0000000000"
-	QuestTogether.nameplateRefreshPendingByUnitToken["nameplate13"] = true
-	QuestTogether.nameplateRefreshGenerationByUnitToken["nameplate13"] = 7
-	QuestTogether.nameplateHealthTintRefreshPendingByUnitToken["nameplate13"] = true
+	QuestTogether:GetNameplateStateStore().questStateByUnitToken["nameplate13"] = true
+	QuestTogether:GetNameplateStateStore().questGuidByUnitToken["nameplate13"] = "Creature-0-0-0-0-131313-0000000000"
+	QuestTogether:GetNameplateStateStore().refreshPendingByUnitToken["nameplate13"] = true
+	QuestTogether:GetNameplateStateStore().refreshGenerationByUnitToken["nameplate13"] = 7
+	QuestTogether:GetNameplateStateStore().healthTintRefreshPendingByUnitToken["nameplate13"] = true
 	QuestTogether.API = CreateApiWithOverrides({
 		InCombatLockdown = function()
 			return true
@@ -6347,11 +6330,11 @@ QuestTogether:RegisterTest("combat nameplate remove clears cached quest state", 
 	end)
 
 	AssertEquals(hiddenFrame, namePlateFrameBase)
-	AssertEquals(QuestTogether.nameplateQuestStateByUnitToken["nameplate13"], nil)
-	AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate13"], nil)
-	AssertEquals(QuestTogether.nameplateRefreshPendingByUnitToken["nameplate13"], nil)
-	AssertEquals(QuestTogether.nameplateRefreshGenerationByUnitToken["nameplate13"], 8)
-	AssertEquals(QuestTogether.nameplateHealthTintRefreshPendingByUnitToken["nameplate13"], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().questStateByUnitToken["nameplate13"], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().questGuidByUnitToken["nameplate13"], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().refreshPendingByUnitToken["nameplate13"], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().refreshGenerationByUnitToken["nameplate13"], 8)
+	AssertEquals(QuestTogether:GetNameplateStateStore().healthTintRefreshPendingByUnitToken["nameplate13"], nil)
 end)
 
 QuestTogether:RegisterTest(
@@ -6376,9 +6359,9 @@ QuestTogether:RegisterTest(
 		}
 
 		QuestTogether.isEnabled = true
-		QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-11111-0000000000"] = true
-		QuestTogether.nameplateQuestStateByUnitToken["nameplate9"] = true
-		QuestTogether.nameplateQuestGuidByUnitToken["nameplate9"] = "Creature-0-0-0-0-11111-0000000000"
+		QuestTogether:GetNameplateStateStore().questStateByGuid["Creature-0-0-0-0-11111-0000000000"] = true
+		QuestTogether:GetNameplateStateStore().questStateByUnitToken["nameplate9"] = true
+		QuestTogether:GetNameplateStateStore().questGuidByUnitToken["nameplate9"] = "Creature-0-0-0-0-11111-0000000000"
 		QuestTogether.API = CreateApiWithOverrides({
 			GetNamePlateForUnit = function(unitToken)
 				AssertEquals(unitToken, "nameplate9")
@@ -6461,9 +6444,9 @@ QuestTogether:RegisterTest(
 		}
 
 		QuestTogether.isEnabled = true
-		QuestTogether.nameplateQuestStateByGuid["Creature-0-0-0-0-11111-0000000000"] = true
-		QuestTogether.nameplateQuestStateByUnitToken["nameplate10"] = true
-		QuestTogether.nameplateQuestGuidByUnitToken["nameplate10"] = "Creature-0-0-0-0-11111-0000000000"
+		QuestTogether:GetNameplateStateStore().questStateByGuid["Creature-0-0-0-0-11111-0000000000"] = true
+		QuestTogether:GetNameplateStateStore().questStateByUnitToken["nameplate10"] = true
+		QuestTogether:GetNameplateStateStore().questGuidByUnitToken["nameplate10"] = "Creature-0-0-0-0-11111-0000000000"
 		QuestTogether.API = CreateApiWithOverrides({
 			GetNamePlateForUnit = function(unitToken)
 				AssertEquals(unitToken, "nameplate10")
@@ -6522,8 +6505,8 @@ QuestTogether:RegisterTest(
 
 		AssertTrue(liveObjectiveChecks > 0, "a changed GUID must trigger a fresh objective read")
 		AssertEquals(restoredUnitFrame, unitFrame)
-		AssertEquals(QuestTogether.nameplateQuestStateByUnitToken["nameplate10"], false)
-		AssertEquals(QuestTogether.nameplateQuestGuidByUnitToken["nameplate10"], "Creature-0-0-0-0-22222-0000000000")
+		AssertEquals(QuestTogether:GetNameplateStateStore().questStateByUnitToken["nameplate10"], false)
+		AssertEquals(QuestTogether:GetNameplateStateStore().questGuidByUnitToken["nameplate10"], "Creature-0-0-0-0-22222-0000000000")
 	end
 )
 
@@ -7696,8 +7679,8 @@ QuestTogether:RegisterTest(
 		}
 
 		QuestTogether.announcementBubbleScreenHostFrame = screenHostFrame
-		QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
-		QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+		QuestTogether:GetNameplateStateStore().bubbleByUnitFrame[unitFrame] = bubble
+		QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble] = {
 			text = "80% Locations Photographed",
 			eventType = "QUEST_PROGRESS",
 			unitToken = "player",
@@ -7746,8 +7729,8 @@ QuestTogether:RegisterTest("restricted bubble refresh clears side-table state wi
 			error("restricted refresh must not hide the visual")
 		end,
 	}
-	QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
-	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+	QuestTogether:GetNameplateStateStore().bubbleByUnitFrame[unitFrame] = bubble
+	QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble] = {
 		text = "2/3 Gather Apples",
 		eventType = "QUEST_PROGRESS",
 		unitToken = "nameplate1",
@@ -7758,7 +7741,7 @@ QuestTogether:RegisterTest("restricted bubble refresh clears side-table state wi
 		return true
 	end, function()
 		QuestTogether:RefreshActiveAnnouncementBubbles()
-		local quiescedState = QuestTogether.nameplateBubbleStateByFrame[bubble]
+		local quiescedState = QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble]
 		AssertTrue(quiescedState ~= nil)
 		AssertEquals(quiescedState.unitToken, "nameplate1")
 		AssertEquals(quiescedState.text, nil)
@@ -7768,7 +7751,7 @@ QuestTogether:RegisterTest("restricted bubble refresh clears side-table state wi
 		AssertFalse(QuestTogether:CompleteAnnouncementBubblePlayback(bubble))
 	end)
 
-	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble], nil)
 	AssertEquals(restrictedCalls, 0, "restricted visuals must not be accessed even through pcall")
 end)
 
@@ -7787,8 +7770,8 @@ QuestTogether:RegisterTest("hide announcement bubble clears stored bubble state"
 		UnitFrame = unitFrame,
 	}
 
-	QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
-	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+	QuestTogether:GetNameplateStateStore().bubbleByUnitFrame[unitFrame] = bubble
+	QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble] = {
 		text = "80% Locations Photographed",
 		eventType = "QUEST_PROGRESS",
 		unitToken = "player",
@@ -7796,7 +7779,7 @@ QuestTogether:RegisterTest("hide announcement bubble clears stored bubble state"
 
 	QuestTogether:HideAnnouncementBubble(hostFrame)
 
-	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble], nil)
 end)
 
 QuestTogether:RegisterTest("completed announcement bubble playback clears stored bubble state", function()
@@ -7812,15 +7795,15 @@ QuestTogether:RegisterTest("completed announcement bubble playback clears stored
 			hidden = true
 		end,
 	}
-	QuestTogether.nameplateBubbleByUnitFrame[unitFrame] = bubble
-	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+	QuestTogether:GetNameplateStateStore().bubbleByUnitFrame[unitFrame] = bubble
+	QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble] = {
 		text = "2/3 Gather Apples",
 		eventType = "QUEST_PROGRESS",
 		unitToken = "nameplate1",
 	}
 
 	AssertTrue(QuestTogether:CompleteAnnouncementBubblePlayback(bubble))
-	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble], nil)
 	AssertEquals(alpha, 0)
 	AssertTrue(hidden)
 
@@ -7851,7 +7834,7 @@ QuestTogether:RegisterTest("completed protected bubble playback avoids visual mu
 			error("restricted protected bubble must not hide")
 		end,
 	}
-	QuestTogether.nameplateBubbleStateByFrame[bubble] = {
+	QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble] = {
 		text = "2/3 Gather Apples",
 		eventType = "QUEST_PROGRESS",
 		unitToken = "nameplate1",
@@ -7863,7 +7846,7 @@ QuestTogether:RegisterTest("completed protected bubble playback avoids visual mu
 		AssertFalse(QuestTogether:CompleteAnnouncementBubblePlayback(bubble))
 	end)
 
-	AssertEquals(QuestTogether.nameplateBubbleStateByFrame[bubble], nil)
+	AssertEquals(QuestTogether:GetNameplateStateStore().bubbleStateByFrame[bubble], nil)
 	AssertEquals(restrictedCalls, 0, "restricted visuals must not be accessed even through pcall")
 end)
 

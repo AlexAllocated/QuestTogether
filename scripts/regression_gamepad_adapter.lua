@@ -251,8 +251,8 @@ local function newHarness(options)
 	env.issecretvalue = function()
 		return false
 	end
-	env.canaccessvalue = function()
-		return true
+	env.canaccessvalue = function(value)
+		return not (h.hideFalse and value == false)
 	end
 	env.issecurevariable = function()
 		return true
@@ -261,8 +261,10 @@ local function newHarness(options)
 		return h.combat
 	end
 	env.GetBuildInfo = function()
+		if options.brokenBuildInfo then error("unavailable diagnostics") end
 		return options.version or "1.60.1", options.build or "70888"
 	end
+	if options.missingBuildInfo then env.GetBuildInfo = false end
 	env.Enum = { AddOnRestrictionType = { Combat = 1, Encounter = 2 }, AddOnRestrictionState = { Inactive = 0, Activating = 1, Active = 2 } }
 	env.C_RestrictedActions = {
 		IsAddOnRestrictionActive = function()
@@ -694,6 +696,8 @@ local function newHarness(options)
 		chunk()
 	end
 	h.env = env
+	h:load("NativeAccess.lua")
+	h:load("ClientDiagnostics.lua")
 	h:load("OwnedUI.lua")
 	h:load("WindowController.lua")
 	h:load()
@@ -752,13 +756,13 @@ newHarness = function(options)
 		h.env.SmartNavigationSecureHelper[name] = forbiddenHelperCall
 	end
 	if options and options.missingNativeMethod then h.nav.GetCurrentButton = nil end
+	if options and options.missingRestrictionQuery then h.env.C_RestrictedActions.IsAddOnRestrictionActive = nil end
 	if options and options.insecureNativeWrapper then
 		h.env.issecurevariable = function(_, name) return name ~= "FrameHidden" end
 	end
 	h.qt:InitializeGamepadIntegration()
 	h:flushAll()
-	local expectedAvailable = not options or ((not options.version or options.version == "1.60.1")
-		and not options.missingNativeMethod and not options.insecureNativeWrapper)
+	local expectedAvailable = not options or (not options.missingNativeMethod and not options.insecureNativeWrapper and not options.missingRestrictionQuery)
 	assert(
 		h.qt:GetGamepadIntegrationStatus().available
 			== expectedAvailable,
@@ -941,31 +945,36 @@ do
 	local writes = #h.calls
 	assert(not h.qt:PresentGamepadWindow(frame, "user"))
 	assert(#h.calls == writes and h.qt:GetGamepadIntegrationStatus().enabled == false)
-	for _, client in ipairs({ { "12.1.0", "99999" }, { "1.60.2", "99999" }, { "1.15.9", "70939" } }) do
-		local unsupported = newHarness({ version = client[1], build = client[2] })
-		local status = unsupported.qt:GetGamepadIntegrationStatus()
-		assert(status.clientVersion == client[1] and status.clientBuild == client[2])
-		assert(not status.supportedClient and status.unavailableReason == "unsupported_client")
-		assert(not status.failed and not status.reloadRequired and status.registered == 0)
-		local before = #unsupported.frames
-		unsupported.qt:InitializeGamepadIntegration()
-		assert(#unsupported.frames == before and unsupported.apiCounts.registrations == 0)
-		local f = unsupported.env.CreateFrame("Frame", "AdapterUnsupported", unsupported.env.UIParent)
-		local hide = f.Hide
-		unsupported.qt:ConfigureGamepadWindow(f, { role = "unsupported" })
-		assert(f.Hide == hide and not f.SmartNavigationCloseHandler)
-		assert(not unsupported.qt:PresentGamepadWindow(f, "user") and #unsupported.calls == 0)
+	for _, version in ipairs({ "12.1.0", "1.60.2", "1.15.9", "99.0.0" }) do
+		local compatible = newHarness({ version = version, build = "99999" })
+		local status = compatible.qt:GetGamepadIntegrationStatus()
+		assert(status.clientVersion == version and status.available and status.unavailableReason == "none")
+		local f = panel(compatible, "VersionIndependent")
+		present(compatible, f)
+		assert(compatible.qt:HideOwnedUI(f))
 	end
-	print(
-		"PASS: saved disable is respected at initialization; unsupported clients install no hooks/listeners/native calls"
-	)
+	print("PASS: saved disable is respected; native contracts work regardless of version diagnostics")
+end
+
+do
+	local missing = newHarness({ missingRestrictionQuery = true })
+	local status = missing.qt:GetGamepadIntegrationStatus()
+	assert(not status.available and status.unavailableReason == "native_missing_functions")
+	assert(status.dismissalRestricted and #missing.calls == 0)
+	local h = newHarness()
+	local root = panel(h, "RestrictionQueryFailure")
+	h.env.C_RestrictedActions.IsAddOnRestrictionActive = function() error("unavailable query") end
+	local writes = #h.calls
+	assert(not h.qt:PresentGamepadWindow(root, "user"))
+	assert(h.qt:GetGamepadIntegrationStatus().dismissalRestricted and #h.calls == writes)
+	print("PASS: missing or failing native restriction queries never crash ordinary UI or admit native writes")
 end
 
 do
 	for _, build in ipairs({ "70888", "70938", "70959", "70939", "99999", 99999 }) do
 		local supported = newHarness({ build = build })
 		local ready = supported.qt:GetGamepadIntegrationStatus()
-		assert(ready.clientVersion == "1.60.1" and ready.clientBuild == tostring(build) and ready.supportedClient)
+		assert(ready.clientVersion == "1.60.1" and ready.clientBuild == tostring(build))
 		assert(ready.available and ready.unavailableReason == "none")
 		local launcherAttempts = 0
 		function supported.qt:IsDefaultGamepadLauncherPending() return launcherAttempts == 0 end
@@ -981,7 +990,7 @@ do
 			insecureNativeWrapper = "native_security_wrapper_unavailable" }) do
 			local h = newHarness({ build = build, [option] = true })
 			local status = h.qt:GetGamepadIntegrationStatus()
-			assert(status.clientVersion == "1.60.1" and status.clientBuild == tostring(build) and status.supportedClient)
+			assert(status.clientVersion == "1.60.1" and status.clientBuild == tostring(build))
 			assert(not status.available and status.unavailableReason == reason, option)
 			assert(not status.failed and not status.reloadRequired and status.registered == 0)
 			assert(#h.calls == 0 and h.apiCounts.registrations == 0 and h.apiCounts.footers == 0)
@@ -989,8 +998,14 @@ do
 	end
 	local h = newHarness({ version = string.rep("9", 4096) })
 	local status = h.qt:GetGamepadIntegrationStatus()
-	assert(status.clientVersion == "unknown" and status.unavailableReason == "unsupported_client")
-	assert(#h.calls == 0 and h.apiCounts.registrations == 0)
+	assert(status.clientVersion == "unknown" and status.available)
+	assert(h.apiCounts.registrations > 0)
+	for _, option in ipairs({ "brokenBuildInfo", "missingBuildInfo" }) do
+		local compatible = newHarness({ [option] = true })
+		local observed = compatible.qt:GetGamepadIntegrationStatus()
+		assert(observed.available and observed.clientVersion == "unknown")
+	end
+
 	local diagnosticOnly = newHarness({ build = string.rep("9", 4096) })
 	local diagnosticStatus = diagnosticOnly.qt:GetGamepadIntegrationStatus()
 	assert(diagnosticStatus.clientBuild == "unknown" and diagnosticStatus.available,
@@ -1067,7 +1082,7 @@ do
 	local unused = h.env.CreateFrame("Button", nil, native)
 	writes = #h.calls
 	assert(h.qt:PrepareGamepadControlHide(unused) and #h.calls == writes)
-	local u = newHarness({ version = "1.60.2" })
+	local u = newHarness({ missingNativeMethod = true })
 	local mouse = panel(u, "Mouse")
 	local child = u.env.CreateFrame("Button", nil, mouse)
 	assert(u.qt:PrepareGamepadControlHide(child) and #u.calls == 0)
@@ -1106,9 +1121,9 @@ do
 		assert(not h.qt:PrepareGamepadControlHide(fresh), "Unproven hidden state accepted")
 	end
 	fresh.IsVisible = function() return false end
-	h.env.canaccessvalue = function(value) return value ~= false end
+	h.hideFalse = true
 	assert(not h.qt:PrepareGamepadControlHide(fresh), "Inaccessible hidden state accepted")
-	h.env.canaccessvalue = function() return true end
+	h.hideFalse = false
 	h.combat = true
 	assert(not h.qt:PrepareGamepadControlHide(fresh), "Invisible control bypassed restrictions")
 	h.combat = false
@@ -1501,7 +1516,7 @@ for _, version in ipairs({ "1.60.1", "12.1.0" }) do
 		local observer = assert(h.qt.windowCombatObserver)
 		h.qt:ConfigureWindowController(frame)
 		assert(h.qt.windowCombatObserver == observer, "Window observer duplicated")
-		if version == "1.60.1" then assert(h.qt:PresentGamepadWindow(frame, "user")) end
+		assert(h.qt:PresentGamepadWindow(frame, "user"))
 		-- Feature runtime events are not registered on this harness. Only the
 		-- window-lifetime observer supplies cross-client disabled-addon cleanup.
 		h.combat, h.activating = true, true

@@ -34,28 +34,25 @@ PYTHON_CHECKS = (
     ("test_note_data_evidence.py",), ("test_discord_changelog.py",),
     ("test_package.py",), ("check_architecture.py",),
     ("check_live_test_numeric.py",), ("test_live_test_numeric.py",),
-    ("test_validate_release.py",), ("test_release.py",), ("test_deploy.py",),
+    ("test_validate_release.py",), ("test_architecture.py",), ("test_release.py",), ("test_deploy.py",),
     ("test_curseforge_upload.py",),
 )
 LOCALES = ("enGB", "deDE", "frFR", "esES", "esMX", "ptBR", "ruRU", "itIT", "koKR", "zhCN", "zhTW")
 CLIENTS = ("retail", "forever", "era", "tbc", "mists", "titan")
 LUA_CHECKS = ("test.lua", "test_routine_selection.lua", "test_loader.lua", "regression_gamepad_adapter.lua",
               "regression_gamepad_launcher.lua", "regression_party_map_native.lua", "settings_smoke.lua")
-PRESENTATION = {
-    "Options.lua", "PresetWindow.lua", "ReleaseNotesWindow.lua", "Hints.lua",
-    "QuestCompareWindow.lua", "QuestComparePreview.lua", "QuestCompareChainPreview.lua",
-    "QuestCompareFilters.lua", "QuestCompareGamepad.lua", "QuestCompareInteraction.lua",
-    "QuestCompareChains.lua", "WindowLayout.lua", "WindowTheme.lua", "OwnedUI.lua",
-    "MapOverlayPool.lua", "PartyWaypointPins.lua", "PlayerTooltipPresenter.lua",
-    "ReleaseNotes.lua", "ReleaseNotesHistory.lua", "LocalizedReleaseNotes.lua", "Locales.lua",
-}
+from architecture_domains import PRESENTATION, SHARED_RUNTIME
+
 FULL_SCOPE = {"stress": True, "tools": True, "base": None, "reason": "full validation requested"}
 
 
 def changed_scope(paths):
     scope = {"stress": False, "tools": False}
     for name in paths:
-        if name in PRESENTATION or name.endswith(".md"):
+        if name in SHARED_RUNTIME:
+            scope.update(stress=True, tools=True)
+            continue
+        elif name in PRESENTATION or name.endswith(".md"):
             continue
         if name.startswith(("locales/", "release_notes/", "changelogs/")) and name.endswith((".json", ".md")):
             continue
@@ -63,7 +60,7 @@ def changed_scope(paths):
             continue
         if name.startswith("Media/") and name.endswith((".svg", ".tga", ".png", ".ogg", ".json", ".txt")):
             continue
-        if name in {"scripts/validate_release.py", "scripts/test_validate_release.py"}:
+        if name in {"scripts/validate_release.py", "scripts/test_validate_release.py", "scripts/architecture_domains.py", "scripts/check_architecture.py"}:
             scope.update(stress=True, tools=True)
         elif name.startswith("scripts/") and name.endswith((".py", ".sh")):
             scope["tools"] = True

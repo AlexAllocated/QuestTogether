@@ -7,15 +7,8 @@ local state = {
 	contexts = setmetatable({}, { __mode = "k" }),
 }
 
-local function Accessible(value)
-	return QT:CanAccessValue(value)
-end
-local function Read(object, key)
-	if not Accessible(object) or (type(object) ~= "table" and type(object) ~= "userdata") then return nil end
-	if type(object) == "table" and not QT:CanAccessTable(object) then return nil end
-	local ok, value = pcall(function() return object[key] end)
-	if ok and Accessible(value) then return value end
-end
+local Access = QT.NativeAccess
+local Accessible, Read, Trusted = Access.Value, Access.Read, Access.Trusted
 local function Frame(object, shown)
 	return Accessible(object) and QT:CanAccessForeignFrame(object, shown) and object or nil
 end
@@ -24,26 +17,12 @@ local function Method(object, name, ...)
 	if type(method) ~= "function" then return false end
 	return pcall(method, object, ...)
 end
-local function Trusted(object, name)
-	if not Accessible(object) or (type(object) ~= "table" and type(object) ~= "userdata") then return nil end
-	if type(object) == "table" and not QT:CanAccessTable(object) then return nil end
-	if not Accessible(issecurevariable) or type(issecurevariable) ~= "function" then return nil end
-	local ok, secure = pcall(issecurevariable, object, name)
-	if not ok or not Accessible(secure) or secure ~= true then return nil end
-	local value = Read(object, name)
-	return type(value) == "function" and value or nil
-end
 local function Restricted()
 	return QT:IsRuntimeRestricted() or QT:IsWorkBlocked("foreign_frame_mutation")
 end
 local function Supported()
-	if state.supported ~= nil then return state.supported end
-	local buildInfo = Trusted(_G, "GetBuildInfo")
-	if not buildInfo then return false end
-	local ok, version = pcall(buildInfo)
-	-- Native provider and secure-delegate checks below govern compatibility.
-	state.supported = ok and Accessible(version) and version == "1.60.1"
-	return state.supported
+	return Trusted(_G, "issecurevariable") ~= nil
+		and Trusted(Read(_G, "UnitPositionFrameUpdateSecureMixin"), "SetAppearanceField") ~= nil
 end
 local function Setter(pin)
 	if not Frame(pin) or Trusted(_G, "issecurevariable") ~= issecurevariable then return nil end
@@ -159,7 +138,7 @@ function QT:GetPartyMapNativeContext()
 end
 
 function QT:SetPartyMapNativeVisibility(context, showParty, showRaid)
-	if self ~= QT or self.isRunningTests or not state.supported
+	if self ~= QT or self.isRunningTests or not Supported()
 		or type(context) ~= "table" or type(showParty) ~= "boolean" or type(showRaid) ~= "boolean" then
 		return false
 	end
@@ -221,5 +200,5 @@ function QT:IsPartyMapNativeContextCurrent(context)
 end
 
 function QT:GetPartyMapNativeStatus()
-	return { supported = state.supported == true, failed = state.failed == true, reason = state.reason, stage = state.stage }
+	return { supported = Supported(), failed = state.failed == true, reason = state.reason, stage = state.stage }
 end

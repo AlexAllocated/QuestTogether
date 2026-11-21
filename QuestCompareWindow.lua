@@ -1,5 +1,6 @@
 local L = _G.QuestTogether.Translate
 local QuestTogether = _G.QuestTogether
+local Presenter = {}
 local VISIBLE_ROWS, ROW_HEIGHT = 11, 42
 local MEMBER_ROW_HEIGHT, OBJECTIVE_ROW_HEIGHT = 24, 26
 local DETAIL_BOTTOM_PADDING = 10
@@ -759,7 +760,7 @@ local function CompareHeight(frame)
 	return height
 end
 
-function QuestTogether:CapturePartyQuestScrollAnchor(rowID, visibleOnly)
+function Presenter:CapturePartyQuestScrollAnchor(rowID, visibleOnly)
 	local frame, session = rawget(self, "partyQuestCompareWindow"), rawget(self, "partyQuestCompareSession")
 	if not frame or not session or frame.displaySession ~= session then return end
 	local pixels, y, anchor = session.scrollPixels or 0, 0
@@ -863,7 +864,7 @@ end
 
 -- Keyboard and native directional navigation use this same logical geometry;
 -- the ScrollFrame itself contains only the currently materialized row slice.
-function QuestTogether:ScrollPartyQuestCompareToRow(frame, rowID)
+function Presenter:ScrollPartyQuestCompareToRow(frame, rowID)
 	local session = self.partyQuestCompareSession
 	if not session or frame.displaySession ~= session or self:IsWorkBlocked("foreign_frame_mutation") then return false end
 	if self.ResolvePartyQuestChainRowID then rowID = self:ResolvePartyQuestChainRowID(rowID) end
@@ -881,11 +882,11 @@ function QuestTogether:ScrollPartyQuestCompareToRow(frame, rowID)
 	return false
 end
 
-function QuestTogether:ScrollPartyQuestCompareToQuest(frame, questID)
+function Presenter:ScrollPartyQuestCompareToQuest(frame, questID)
 	return self:ScrollPartyQuestCompareToRow(frame, questID)
 end
 
-function QuestTogether:RevealPartyQuestGamepadControl(frame, identity)
+function Presenter:RevealPartyQuestGamepadControl(frame, identity)
 	if not identity or self:IsWorkBlocked("foreign_frame_mutation") then return end
 	local left, width
 	if identity.player then
@@ -1148,7 +1149,7 @@ local function StopCompareScroll(frame)
 	if QuestTogether.LibChev.CanMutateOwnedRegion(frame) then frame:SetScript("OnUpdate", nil) end
 end
 
-function QuestTogether:SetPartyQuestKeyboardNavigation(frame, active)
+function Presenter:SetPartyQuestKeyboardNavigation(frame, active)
 	local session = self.partyQuestCompareSession
 	if active and (not session or frame.displaySession ~= session
 		or (self.IsPartyQuestGamepadInputOwned and self:IsPartyQuestGamepadInputOwned())
@@ -1178,7 +1179,7 @@ function QuestTogether:SetPartyQuestKeyboardNavigation(frame, active)
 	return true
 end
 
-function QuestTogether:PopulatePartyQuestContextMenu(frame, selected, root)
+function Presenter:PopulatePartyQuestContextMenu(frame, selected, root)
 	local session, questID = self.partyQuestCompareSession, selected and selected.questId
 	local profile, rowID = self.db and self.db.profile, RowID(selected)
 	if not session or frame.displaySession ~= session or not rowID or self:IsWorkBlocked("foreign_frame_mutation")
@@ -1247,7 +1248,7 @@ function QuestTogether:PopulatePartyQuestContextMenu(frame, selected, root)
 	return true
 end
 
-function QuestTogether:ShowPartyQuestKeyboardMenu(frame, selected)
+function Presenter:ShowPartyQuestKeyboardMenu(frame, selected)
 	local session, rowID = self.partyQuestCompareSession, RowID(selected)
 	if not session or frame.displaySession ~= session or not rowID then return false end
 	self:SetPartyQuestKeyboardNavigation(frame, false)
@@ -1263,7 +1264,7 @@ function QuestTogether:ShowPartyQuestKeyboardMenu(frame, selected)
 	end)
 end
 
-function QuestTogether:PopulatePartyQuestPlayerMenu(frame, session, name, root)
+function Presenter:PopulatePartyQuestPlayerMenu(frame, session, name, root)
 	local profile = self.db and self.db.profile
 	local function Current()
 		return self.partyQuestCompareSession == session and frame.displaySession == session
@@ -1291,7 +1292,7 @@ function QuestTogether:PopulatePartyQuestPlayerMenu(frame, session, name, root)
 	return true
 end
 
-function QuestTogether:RequestPartyQuestKeyboardFocus(frame)
+function Presenter:RequestPartyQuestKeyboardFocus(frame)
 	if not self.partyQuestCompareSession or self:IsWorkBlocked("foreign_frame_mutation")
 		or (self.IsPartyQuestGamepadInputOwned and self:IsPartyQuestGamepadInputOwned())
 		or not QuestTogether.LibChev.CanMutateOwnedRegion(frame) or not frame:IsVisible() then return end
@@ -1302,7 +1303,7 @@ function QuestTogether:RequestPartyQuestKeyboardFocus(frame)
 	frame.keyboardInput:Show()
 end
 
-function QuestTogether:ConfigurePartyQuestKeyboardNavigation(frame)
+function Presenter:ConfigurePartyQuestKeyboardNavigation(frame)
 	-- Only this child captures navigation keys. Hiding an ordinary owned frame
 	-- retires input during combat without changing a restricted input attribute.
 	local input = self:CreateOwnedWindowFrame("Frame", nil, frame)
@@ -1463,7 +1464,7 @@ local function WheelCompare(self, frame, delta)
 	end)
 end
 
-function QuestTogether:CreatePartyQuestCompareWindow()
+function Presenter:CreatePartyQuestCompareWindow()
 	if self.partyQuestCompareWindow then
 		return self.partyQuestCompareWindow
 	end
@@ -1961,7 +1962,7 @@ function QuestTogether:QueuePartyQuestTitleRefresh(rows)
 	end
 end
 
-function QuestTogether:RenderPartyQuestCompare()
+function Presenter:RenderPartyQuestCompare()
 	local frame, session = self.partyQuestCompareWindow, self.partyQuestCompareSession
 	if not frame or not session or self:IsWorkBlocked("foreign_frame_mutation") then
 		return
@@ -2692,3 +2693,5 @@ function QuestTogether:RenderPartyChatReminder(request)
 	self:PlayPromptAttentionAudio(frame, request, request.preview)
 	return frame
 end
+
+_G.QuestTogether:RegisterPartyQuestPresentation(Presenter)

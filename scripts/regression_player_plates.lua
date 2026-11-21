@@ -945,7 +945,7 @@ QT:RegisterTest("all QT communications identify players before or after their fr
 						QT.nameplateRegisteredEvents.NAME_PLATE_UNIT_ADDED = true
 						if alreadyVisible then
 							QT:OnNameplateAdded("nameplate1")
-							Equal(QT.nameplateIconByUnitFrame[s.frame], nil)
+							Equal(QT:GetNameplateStateStore().iconByUnitFrame[s.frame], nil)
 						end
 						ReceiveRecord(QT, command, payload, s.name, "PARTY")
 						assert(QT:IsKnownQTPlayer(s.name), command .. " proves the sender is running QT")
@@ -959,7 +959,7 @@ QT:RegisterTest("all QT communications identify players before or after their fr
 							QT:PruneQTPlayerPresence(true)
 							QT:OnNameplateAdded("nameplate1")
 						end
-						local icon = QT.nameplateIconByUnitFrame[s.frame]
+						local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 						assert(icon and icon.shown, command)
 						Equal(icon.qtIconKind, "player")
 						Equal(QT.qtPlayerIconStateByFrame[icon].name, s.name)
@@ -1068,7 +1068,7 @@ QT:RegisterTest("actual departure withdrawals never restore logos in either nati
 				assert(sender:BroadcastPlayerLocation())
 				assert(sender:SetOption("lookingForQuestPartners", true))
 				QT:RefreshNameplateIcon(s.plate)
-				local icon = QT.nameplateIconByUnitFrame[s.frame]
+				local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 				assert(icon.shown and QT:IsPlayerLookingForQuestPartners(s.name))
 				sender.queue = {}
 				-- Run the real lifecycle and the shared BYE sender. Only
@@ -1169,7 +1169,7 @@ QT:RegisterTest("QT player logo visibility is independent of quest icon settings
 	WithPlate(function(s)
 		QT.db.profile.nameplateQuestIconEnabled = false
 		QT:RefreshNameplateIcon(s.plate)
-		local icon = QT.nameplateIconByUnitFrame[s.frame]
+		local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 		assert(icon.shown)
 		Equal(icon.qtIconKind, "player")
 		Equal(s.questReads, 0)
@@ -1197,7 +1197,7 @@ QT:RegisterTest("QT player plates reject hostile hidden unknown ignored self and
 	}) do
 		WithPlate(function(s)
 			QT:RefreshNameplateIcon(s.plate)
-			local icon = QT.nameplateIconByUnitFrame[s.frame]
+			local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 			assert(icon.shown)
 			if reason == "enemy" then
 				s.friendly = false
@@ -1230,7 +1230,7 @@ end)
 QT:RegisterTest("QT player icons survive silence and ignore cleanup defers quarantined handles", function()
 	WithPlate(function(s)
 		QT:RefreshNameplateIcon(s.plate)
-		local icon = QT.nameplateIconByUnitFrame[s.frame]
+		local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 		icon.forbidden = true
 		s.ignored = s.name
 		QT:PruneQTPlayerPresence(true)
@@ -1257,7 +1257,7 @@ end)
 QT:RegisterTest("evicting a remembered QT player cleans their visible logo", function()
 	WithPlate(function(s)
 		QT:RefreshNameplateIcon(s.plate)
-		local icon = QT.nameplateIconByUnitFrame[s.frame]
+		local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 		assert(icon.shown)
 		for i = 1, 512 do
 			s.now = 100 + i
@@ -1272,7 +1272,7 @@ end)
 QT:RegisterTest("QT departure after silence cleans visible logos before periodic pruning", function()
 	WithPlate(function(s)
 		QT:RefreshNameplateIcon(s.plate)
-		local icon = QT.nameplateIconByUnitFrame[s.frame]
+		local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 		assert(icon.shown)
 		s.now = 165.01
 		ObserveState(QT, "HandleQTPlayerPresenceMessage", "QTPR", { active = false }, s.name)
@@ -1324,7 +1324,7 @@ QT:RegisterTest("departure after silence quarantines forbidden logos until safe 
 		WithPlate(function(s)
 			QT.recentCommMessageSignatures = {}
 			QT:RefreshNameplateIcon(s.plate)
-			local icon = QT.nameplateIconByUnitFrame[s.frame]
+			local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 			icon[guard], s.restricted, s.now = true, guard == "protected", 165.01
 			ObserveState(QT, "HandleQTPlayerPresenceMessage", "QTPR", { active = false }, s.name)
 			Equal(QT.qtPlayerPresenceState.peers[s.name], nil)
@@ -1342,7 +1342,7 @@ end)
 QT:RegisterTest("QT player icon recycling restores quest artwork and removal handles missing native lookup", function()
 	WithPlate(function(s)
 		QT:RefreshNameplateIcon(s.plate)
-		local icon = QT.nameplateIconByUnitFrame[s.frame]
+		local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 		s.player, s.guid = false, "Creature-0-0-0-0-123-0"
 		QT.db.profile.nameplateQuestIconEnabled = true
 		QT:RefreshNameplateIcon(s.plate)
@@ -1363,7 +1363,7 @@ end)
 QT:RegisterTest("QT player protected combat layout defers and stale quest callbacks retain player artwork", function()
 	WithPlate(function(s)
 		QT:RefreshNameplateIcon(s.plate)
-		local icon = QT.nameplateIconByUnitFrame[s.frame]
+		local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 		s.frame.protected, s.restricted = true, true
 		QT:RefreshNameplateIcon(s.plate)
 		Equal(QT:GetNameplateStateStore().pendingVisualCleanupByFrame[icon], "icon")
@@ -1406,7 +1406,7 @@ QT:RegisterTest("QT player additions defer all blocked work contexts and recover
 			Equal(s.creations, 0)
 			s.restriction = nil
 			QT:ADDON_RESTRICTION_STATE_CHANGED()
-			local icon = QT.nameplateIconByUnitFrame[s.frame]
+			local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 			assert(icon and icon.shown)
 			Equal(icon.qtIconKind, "player")
 			Equal(s.creations, 1)
@@ -1421,7 +1421,7 @@ QT:RegisterTest(
 	function()
 		WithPlate(function(s)
 			QT:OnNameplateAdded("nameplate1")
-			local icon = QT.nameplateIconByUnitFrame[s.frame]
+			local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 			assert(icon.shown)
 			s.restriction = "encounter"
 			QT:RefreshNameplateIcon(s.plate)
@@ -1443,7 +1443,7 @@ QT:RegisterTest("QT player additions still present unprotected icons during ordi
 		s.restricted, s.restriction = true, "combat"
 		Equal(QT:IsWorkBlocked("nameplate_refresh"), false)
 		QT:OnNameplateAdded("nameplate1")
-		assert(QT.nameplateIconByUnitFrame[s.frame].shown)
+		assert(QT:GetNameplateStateStore().iconByUnitFrame[s.frame].shown)
 		Equal(s.creations, 1)
 		Equal(s.frame.writes, 0)
 		Equal(s.plate.writes, 0)
@@ -1469,7 +1469,7 @@ QT:RegisterTest("QT player identity and queued health events recover without que
 			end,
 		}, function()
 			QT:HandleNameplateEvent("UNIT_NAME_UPDATE", "nameplate1")
-			local icon = QT.nameplateIconByUnitFrame[s.frame]
+			local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 			assert(icon.shown)
 			QT:ScheduleNameplateHealthTintRefresh("nameplate1")
 			assert(icon.shown)
@@ -1495,7 +1495,7 @@ QT:RegisterTest("QT player plates do not read forbidden hosts or mutate foreign 
 		Equal(reads, 0)
 		s.frame.forbidden = false
 		QT:RefreshNameplateIcon(s.plate)
-		local icon = QT.nameplateIconByUnitFrame[s.frame]
+		local icon = QT:GetNameplateStateStore().iconByUnitFrame[s.frame]
 		assert(icon.shown)
 		icon.Icon.forbidden = true
 		QT:RefreshNameplateIcon(s.plate)

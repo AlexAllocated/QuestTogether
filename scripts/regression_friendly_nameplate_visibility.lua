@@ -282,7 +282,7 @@ QT:RegisterTest("modern friendly visibility renders the logo and CVar events upd
 	local state = Fixture()
 	state.cvars[MODERN] = "1"
 	QT:HandleNameplateEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
-	local icon = QT.nameplateIconByUnitFrame[state.unitFrame]
+	local icon = QT:GetNameplateStateStore().iconByUnitFrame[state.unitFrame]
 	assert(icon and icon.shown)
 	Equal(icon.qtIconKind, "player")
 	Equal(state.creations, 1)
@@ -317,7 +317,7 @@ end)
 local function ShowLogo(state)
 	state.cvars[MODERN] = "1"
 	QT:RefreshNameplateIcon(state.plate)
-	local icon = QT.nameplateIconByUnitFrame[state.unitFrame]
+	local icon = QT:GetNameplateStateStore().iconByUnitFrame[state.unitFrame]
 	assert(icon and icon.shown)
 	return icon
 end

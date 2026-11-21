@@ -1320,6 +1320,41 @@ QT:RegisterTest("chain profile replacement retires work before effects and resum
 		local a = { isEnabled = true, db = { profile = {} }, partyQuestCompareSession = { targetName = "Friend-Realm" },
 			partyQuestCompareWindow = { IsShown = function() return true end } }
 		function a:GetOption() return nil end
+		-- Other presentation services are inert in this profile-order fixture.
+		for _, method in ipairs({
+			"AnnounceQuestPartnerSearch",
+			"ApplyAudioSettings",
+			"BroadcastQuestPartnerStatus",
+			"CancelDeveloperDiagnosticReplies",
+			"ClearPlayerLocationClusterExpansion",
+			"ClearPlayerMapSelection",
+			"InitializeAutoThanks",
+			"OnPlayerLocationOptionsChanged",
+			"QueuePartyNavigationUpdate",
+			"QueueQuestFocusRefresh",
+			"RefreshActiveAnnouncementBubbles",
+			"RefreshDataBroker",
+			"RefreshManagedWindowLayouts",
+			"RefreshMinimapButton",
+			"RefreshMinimapPartnerGlow",
+			"RefreshNameplateAugmentation",
+			"RefreshOptionsWindow",
+			"RefreshPartyRoster",
+			"RefreshPartyWaypointPins",
+			"RefreshPersonalBubbleAnchorVisualState",
+			"RefreshPersonalBubbleEditModeDialog",
+			"RefreshPlayerLocationPins",
+			"RefreshProfilesWindow",
+			"RefreshQuestTogetherMapControl",
+			"RefreshWindowThemes",
+			"ResetObjectiveAnnouncements",
+			"ResetPlayerPhases",
+			"SetGamepadIntegrationEnabled",
+			"UpdatePartyChatReminder",
+			"UpdatePlayerTooltipBadge",
+		}) do a[method] = function() end end
+		function a:ApplyFeaturePolicies() end
+		function a:IsAudioSetting() return false end
 		function a:CancelPartyQuestCompare() events[#events + 1] = "cancel"; self.partyQuestCompareSession = nil end
 		function a:InvalidateQuestCompareSnapshot() events[#events + 1] = "invalidate" end
 		function a:CloseQuestLogChatFrame() end

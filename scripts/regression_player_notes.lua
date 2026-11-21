@@ -4,7 +4,7 @@ local QT = _G.QuestTogether
 local NATIVE_LINE_HEIGHT = 14 + 1 / 6
 local function Fixture(global)
 	local a = setmetatable(
-		{ isEnabled = true, db = { global = global or {}, profile = {} }, region = "US", runtimeStateStore = {} },
+		{ isEnabled = true, db = { global = global or {}, profile = {} }, region = "US", runtimeStateStore = nil },
 		{ __index = QT }
 	)
 	a.API = {

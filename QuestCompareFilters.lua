@@ -1,4 +1,5 @@
 local QT = _G.QuestTogether
+local Presenter = {}
 local L = QT.Translate
 
 -- Lua 5.1's string.lower only folds ASCII. Cover the cased alphabets used by
@@ -64,7 +65,7 @@ function QT:IsPartyQuestCompareFilterValue(key, value)
 	return false
 end
 
-function QT:GetPartyQuestCompareFilters()
+function Presenter:GetPartyQuestCompareFilters()
 	local filters = { search = self.partyQuestCompareSession and self.partyQuestCompareSession.search or "" }
 	for _, group in ipairs(Groups()) do
 		local value = self:GetOption(group.option)
@@ -82,7 +83,7 @@ function QT:GetPartyQuestCompareFilters()
 	return filters
 end
 
-function QT:SetPartyQuestCompareFilter(key, value)
+function Presenter:SetPartyQuestCompareFilter(key, value)
 	local session = self.partyQuestCompareSession
 	if not session then
 		return
@@ -119,7 +120,7 @@ function QT:SetPartyQuestCompareFilter(key, value)
 	self:QueuePartyQuestCompareRender()
 end
 
-function QT:ResetPartyQuestCompareFilters()
+function Presenter:ResetPartyQuestCompareFilters()
 	for _, group in ipairs(Groups()) do
 		self:SetOption(group.option, "all")
 	end
@@ -127,7 +128,7 @@ function QT:ResetPartyQuestCompareFilters()
 	self:SetPartyQuestCompareFilter("search", "")
 end
 
-function QT:GetPartyQuestCompareFilterLabel()
+function Presenter:GetPartyQuestCompareFilterLabel()
 	local filters, labels = self:GetPartyQuestCompareFilters(), {}
 	for _, group in ipairs(Groups()) do
 		for _, choice in ipairs(group.choices) do
@@ -143,7 +144,7 @@ function QT:CreatePartyQuestFilterMenu(owner, generator)
 	return self.API.CreateContextMenu(owner, generator)
 end
 
-function QT:ShowPartyQuestCompareFilters(owner)
+function Presenter:ShowPartyQuestCompareFilters(owner)
 	local session = self.partyQuestCompareSession
 	if not session or self:IsWorkBlocked("foreign_frame_mutation") then
 		return false
@@ -194,7 +195,7 @@ function QT:ShowPartyQuestCompareFilters(owner)
 	end)
 end
 
-function QT:FilterPartyQuestCompareRows(rows)
+function Presenter:FilterPartyQuestCompareRows(rows)
 	local session, filters, result = self.partyQuestCompareSession, self:GetPartyQuestCompareFilters(), {}
 	local own = session.byName[session.playerName]
 	local search = Fold(filters.search):match("^%s*(.-)%s*$")
@@ -249,3 +250,5 @@ function QT:FilterPartyQuestCompareRows(rows)
 	session.totalQuests, session.unfilteredQuests = #rows, rows
 	return result
 end
+
+_G.QuestTogether:RegisterPartyQuestPresentation(Presenter)

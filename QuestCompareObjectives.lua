@@ -1,9 +1,10 @@
 local QT = _G.QuestTogether
+local Presenter = {}
 local L = QT.Translate
 
 -- Views subscribe to the shared detail cache. A partial detail reply cannot
 -- certify the complete ownership snapshot.
-function QT:CleanQuestCompareObjectiveText(value)
+function Presenter:CleanQuestCompareObjectiveText(value)
 	local text = self:SafeTrimString(value, "")
 	text = text:gsub("|H.-|h(.-)|h", "%1"):gsub("|[TA].-|[ta]", "")
 	return self:SanitizeAnnouncementText(
@@ -185,7 +186,7 @@ local function Progress(row, current, required)
 	return row.finished == true and L("Complete") or row.finished == false and L("In progress") or L("Unknown")
 end
 
-function QT:GetPartyQuestReadiness(quest)
+function Presenter:GetPartyQuestReadiness(quest)
 	local ready, completed, missing, absent, unknown, total = 0, 0, 0, 0, 0, #self.partyQuestCompareSession.members
 	for i, member in ipairs(self.partyQuestCompareSession.members) do
 		if member.state ~= "ready" then
@@ -225,7 +226,7 @@ function QT:GetPartyQuestReadiness(quest)
 	return text, unknown > 0 and "Unknown" or missing > 0 and "Missing" or absent > 0 and "Absent" or "Have"
 end
 
-function QT:AppendPartyQuestObjectiveRows(rows, member, questId)
+function Presenter:AppendPartyQuestObjectiveRows(rows, member, questId)
 	local detail, entry = member.objectiveDetails and member.objectiveDetails[questId], member.entries[questId]
 	local notice
 	if detail and detail.notice and detail.notice ~= "Not in log" then
@@ -298,7 +299,7 @@ function QT:AppendPartyQuestObjectiveRows(rows, member, questId)
 	end
 end
 
-function QT:BuildPartyQuestCompareDisplayRows(quests)
+function Presenter:BuildPartyQuestCompareDisplayRows(quests)
 	local session = self.partyQuestCompareSession
 	local function Append(rows, quest)
 		quest.rowId = quest.rowId or ("quest:" .. quest.questId)
@@ -320,3 +321,5 @@ function QT:BuildPartyQuestCompareDisplayRows(quests)
 	for _, quest in ipairs(quests) do Append(rows, quest) end
 	return rows
 end
+
+_G.QuestTogether:RegisterPartyQuestPresentation(Presenter)

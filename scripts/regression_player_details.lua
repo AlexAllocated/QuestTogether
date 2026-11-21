@@ -30,7 +30,7 @@ local function Peer(name, forever)
 		db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} },
 		out = {},
 		recentCommMessageSignatures = {},
-		runtimeStateStore = {},
+		runtimeStateStore = nil,
 		sent = {},
 	}, { __index = QT })
 	a.API = {}

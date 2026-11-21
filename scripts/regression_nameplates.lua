@@ -54,8 +54,8 @@ local function WithTapFixture(fn)
 	QT.isEnabled = true
 	QT.db.profile.nameplateQuestIconEnabled = true
 	QT.db.profile.nameplateQuestHealthColorEnabled = true
-	QT.nameplateIconByUnitFrame[unitFrame] = icon
-	QT.nameplateHealthOverlayByUnitFrame[unitFrame] = { FillTexture = fill, Highlight = highlight }
+	QT:GetNameplateStateStore().iconByUnitFrame[unitFrame] = icon
+	QT:GetNameplateStateStore().healthOverlayByUnitFrame[unitFrame] = { FillTexture = fill, Highlight = highlight }
 	QT:StoreResolvedNameplateQuestState("nameplate1", guid, true)
 	Patch({
 		API = {
@@ -88,7 +88,7 @@ local function WithTapFixture(fn)
 		end,
 	}, function()
 		fn(state)
-		Equal(QT.nameplateQuestStateByGuid[guid], true, "tap changes must preserve quest relevance")
+		Equal(QT:GetNameplateStateStore().questStateByGuid[guid], true, "tap changes must preserve quest relevance")
 	end)
 end
 
@@ -223,8 +223,8 @@ local function SeedBubble(unitToken, playing)
 		end,
 	}
 	local bubble = Bubble(playing)
-	QT.nameplateBubbleByUnitFrame[frame] = bubble
-	QT.nameplateBubbleStateByFrame[bubble] = {
+	QT:GetNameplateStateStore().bubbleByUnitFrame[frame] = bubble
+	QT:GetNameplateStateStore().bubbleStateByFrame[bubble] = {
 		unitToken = unitToken,
 		text = "80% Locations Photographed",
 		eventType = "QUEST_PROGRESS",
@@ -251,7 +251,7 @@ QT:RegisterTest("audit hide-own stops an active personal bubble during restricti
 	end)
 	Equal(bubble.hidden, true)
 	Equal(bubble.stops, 1)
-	Equal(QT.nameplateBubbleStateByFrame[bubble], nil)
+	Equal(QT:GetNameplateStateStore().bubbleStateByFrame[bubble], nil)
 end)
 
 QT:RegisterTest("audit stopped personal playback cannot be replayed by a refresh", function()
@@ -269,7 +269,7 @@ QT:RegisterTest("audit stopped personal playback cannot be replayed by a refresh
 	end)
 	Equal(shows, 0)
 	Equal(bubble.hidden, true)
-	Equal(QT.nameplateBubbleStateByFrame[bubble], nil)
+	Equal(QT:GetNameplateStateStore().bubbleStateByFrame[bubble], nil)
 end)
 
 QT:RegisterTest("audit recycled nameplate identity clears active playback", function()
@@ -288,12 +288,12 @@ QT:RegisterTest("audit recycled nameplate identity clears active playback", func
 		QT:RefreshActiveAnnouncementBubbles()
 	end)
 	Equal(bubble.hidden, true)
-	Equal(QT.nameplateBubbleStateByFrame[bubble], nil)
+	Equal(QT:GetNameplateStateStore().bubbleStateByFrame[bubble], nil)
 end)
 
 QT:RegisterTest("audit active nearby bubble honors a changed sender scope", function()
 	local bubble = SeedBubble("nameplate1", true)
-	QT.nameplateBubbleStateByFrame[bubble].senderName = "Friend-Realm"
+	QT:GetNameplateStateStore().bubbleStateByFrame[bubble].senderName = "Friend-Realm"
 	QT.db.profile.showProgressFor = "party_only"
 	Patch({
 		IsAnnouncementBubbleAugmentationBlockedInCurrentContext = function()
@@ -310,7 +310,7 @@ end)
 
 QT:RegisterTest("audit removed plate clears playback even after public lookup disappears", function()
 	local bubble = SeedBubble("nameplate1", true)
-	QT.nameplateRefreshGenerationByUnitToken.nameplate1 = 3
+	QT:GetNameplateStateStore().refreshGenerationByUnitToken.nameplate1 = 3
 	Patch({
 		API = {
 			GetNamePlateForUnit = function()
@@ -324,7 +324,7 @@ QT:RegisterTest("audit removed plate clears playback even after public lookup di
 		QT:OnNameplateRemoved("nameplate1")
 	end)
 	Equal(bubble.hidden, true)
-	Equal(QT.nameplateRefreshGenerationByUnitToken.nameplate1, 4)
+	Equal(QT:GetNameplateStateStore().refreshGenerationByUnitToken.nameplate1, 4)
 end)
 
 QT:RegisterTest("audit old scheduled plate update cannot match a reused unit generation", function()
@@ -361,7 +361,7 @@ QT:RegisterTest("audit quest icon cleanup does not cancel a player's announcemen
 	local bubble, host = SeedBubble("nameplate1", true)
 	QT:HideNameplateIcon(host)
 	Equal(bubble.stops, 0)
-	assert(QT.nameplateBubbleStateByFrame[bubble] ~= nil)
+	assert(QT:GetNameplateStateStore().bubbleStateByFrame[bubble] ~= nil)
 end)
 
 QT:RegisterTest("audit forbidden frame guid fallback is never inspected", function()
@@ -429,7 +429,7 @@ QT:RegisterTest("audit protected icon is not shown or restyled while restricted"
 		end,
 	}
 	local unit = {}
-	QT.nameplateIconByUnitFrame[unit] = icon
+	QT:GetNameplateStateStore().iconByUnitFrame[unit] = icon
 	Patch({
 		IsRuntimeRestricted = function()
 			return true
@@ -468,7 +468,7 @@ QT:RegisterTest("audit protected health overlay does not mutate during restricti
 		end,
 	}
 	local unit = { healthBar = healthBar }
-	QT.nameplateHealthOverlayByUnitFrame[unit] = { FillTexture = texture, Highlight = texture }
+	QT:GetNameplateStateStore().healthOverlayByUnitFrame[unit] = { FillTexture = texture, Highlight = texture }
 	Patch({
 		IsRuntimeRestricted = function()
 			return true
@@ -493,7 +493,7 @@ QT:RegisterTest("audit disabled cleanup hides cached offscreen visuals after res
 		end,
 	}
 	local unitFrame = {}
-	QT.nameplateIconByUnitFrame[unitFrame] = icon
+	QT:GetNameplateStateStore().iconByUnitFrame[unitFrame] = icon
 	local originalPending = QT.pendingNameplateVisualCleanup
 	Patch({
 		IsRuntimeRestricted = function()
@@ -585,7 +585,7 @@ local function WithRecycledBubble(fn)
 	state.oldBase, state.newBase, state.unitFrame, state.bubble = oldBase, newBase, unitFrame, bubble
 	state.Region = Region
 	state.clock = QT:CreateTestClock(0)
-	QT.nameplateBubbleByUnitFrame[unitFrame] = bubble
+	QT:GetNameplateStateStore().bubbleByUnitFrame[unitFrame] = bubble
 	QT.isEnabled = true
 	QT.db.profile.showChatBubbles = true
 	Patch({
@@ -639,7 +639,7 @@ QT:RegisterTest("only personal announcement bubbles clamp their measured bounds 
 			state.restricted, state.bubble.protected = false, false
 			Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Personal progress"), true)
 			Equal(state.bubble.clamped, true)
-			Equal(QT.nameplateBubbleStateByFrame[state.bubble].unitToken, "player")
+			Equal(QT:GetNameplateStateStore().bubbleStateByFrame[state.bubble].unitToken, "player")
 		end)
 	end)
 end)
@@ -650,7 +650,7 @@ QT:RegisterTest("bubble reuse does not report success when the client rejects th
 		Equal(QT:ShowAnnouncementBubbleOnNameplate(state.newBase, "Rejected parent"), false)
 		Equal(state.bubble:GetParent(), state.oldBase)
 		Equal(state.bubble:IsVisible(), false)
-		Equal(QT.nameplateBubbleStateByFrame[state.bubble], nil)
+		Equal(QT:GetNameplateStateStore().bubbleStateByFrame[state.bubble], nil)
 	end)
 end)
 
@@ -667,7 +667,7 @@ QT:RegisterTest("new bubble playback supersedes protected cleanup from the disab
 		Equal(QT.pendingNameplateVisualCleanup, false)
 		Equal(QT:RetryPendingNameplateVisualCleanup(), true)
 		Equal(state.bubble:IsVisible(), true)
-		Equal(QT.nameplateBubbleStateByFrame[state.bubble].text, "New lifetime announcement")
+		Equal(QT:GetNameplateStateStore().bubbleStateByFrame[state.bubble].text, "New lifetime announcement")
 	end)
 end)
 
@@ -688,7 +688,7 @@ QT:RegisterTest("combat removal stops mutable nearby playback before its base pl
 			Equal(state.playing, false)
 			Equal(state.bubble:IsShown(), false)
 			Equal(state.stops, 1)
-			Equal(QT.nameplateBubbleStateByFrame[state.bubble], nil)
+			Equal(QT:GetNameplateStateStore().bubbleStateByFrame[state.bubble], nil)
 			Equal(QT.pendingNameplateVisualCleanup, false)
 
 			-- Blizzard recycles base plates independently of their former UnitFrames.
@@ -716,7 +716,7 @@ QT:RegisterTest("removed bubble cleanup waits for protected and forbidden handle
 			QT.API.GetNamePlateForUnit = function() return nil end
 			local mutations, animationCalls = state.mutationAttempts, state.animationAttempts
 			QT:HandleNameplateEvent("NAME_PLATE_UNIT_REMOVED", "nameplate2")
-			Equal(QT.nameplateBubbleStateByFrame[state.bubble], nil)
+			Equal(QT:GetNameplateStateStore().bubbleStateByFrame[state.bubble], nil)
 			Equal(QT:GetNameplateStateStore().pendingVisualCleanupByFrame[state.bubble], "bubble")
 			Equal(QT.pendingNameplateVisualCleanup, true)
 			QT:HandleNameplateEvent("ADDON_RESTRICTION_STATE_CHANGED")
@@ -754,7 +754,7 @@ QT:RegisterTest("new playback supersedes a removed bubble's pending quarantine c
 		Equal(state.bubble:IsVisible(), true)
 		Equal(state.starts, 2)
 		Equal(state.stops, 1)
-		Equal(QT.nameplateBubbleStateByFrame[state.bubble].text, "Current progress")
+		Equal(QT:GetNameplateStateStore().bubbleStateByFrame[state.bubble].text, "Current progress")
 	end)
 end)
 
@@ -778,16 +778,16 @@ QT:RegisterTest("own bubble conditional group transitions discard only current p
 		isEnabled = true,
 		db = { profile = { showChatBubbles = true, ownChatBubbleMode = mode } },
 		API = { IsInAnyGroup = function() return grouped end },
-		nameplateBubbleStateByFrame = {
-			[own] = { unitToken = "player", text = "Old own progress" },
-			[remote] = { unitToken = "nameplate1", text = "Other player progress" },
-		},
 		stops = 0,
 	}, { __index = QT })
+	a:GetNameplateStateStore().bubbleStateByFrame = {
+			[own] = { unitToken = "player", text = "Old own progress" },
+			[remote] = { unitToken = "nameplate1", text = "Other player progress" },
+		}
 	function a:StopAndHideAnnouncementBubblePlayback(bubble)
 		Equal(bubble, own, "group visibility must leave other players alone")
 		self.stops = self.stops + 1
-		self.nameplateBubbleStateByFrame[bubble] = nil
+		self:GetNameplateStateStore().bubbleStateByFrame[bubble] = nil
 		bubble.hidden = true
 	end
 	function a:QueuePartyNavigationUpdate() end
@@ -801,13 +801,13 @@ QT:RegisterTest("own bubble conditional group transitions discard only current p
 	a:HandleGroupRosterChanged("GROUP_JOINED")
 	Equal(a.stops, 1)
 	Equal(own.hidden, true)
-	Equal(a.nameplateBubbleStateByFrame[own], nil)
-	Equal(a.nameplateBubbleStateByFrame[remote].text, "Other player progress")
+	Equal(a:GetNameplateStateStore().bubbleStateByFrame[own], nil)
+	Equal(a:GetNameplateStateStore().bubbleStateByFrame[remote].text, "Other player progress")
 	grouped = mode == "party"
 	a:HandleGroupRosterChanged("GROUP_ROSTER_UPDATE")
 	Equal(a.stops, 1)
 	Equal(a:ShouldShowOwnChatBubble(), true, "returning to the allowed group state permits only future messages")
-	Equal(a.nameplateBubbleStateByFrame[own], nil)
+	Equal(a:GetNameplateStateStore().bubbleStateByFrame[own], nil)
 	end
 end)
 

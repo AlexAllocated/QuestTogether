@@ -144,7 +144,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	local render = self.RenderPartyQuestCompare
 	-- No inheritance from live state. Only explicit read adapters and the native
 	-- quest setter cross the preview boundary; party traffic and saves stay private.
-	local preview = {
+	local preview = self:NewPartyQuestPresenter({
 		API = {
 			GetTime = function() return owner:GetPartyQuestCompareTime() end,
 			IsPartyQuestKeyboardInputBlocked = function(frame)
@@ -156,18 +156,7 @@ function QuestTogether:CreatePartyQuestComparePreview()
 		},
 		regionalNames = self:UsesRegionalPlayerNames(),
 		options = { compareHideOtherQuests = false },
-		GetScrollWindowTheme = self.GetScrollWindowTheme,
-		GetPartyQuestSnapshotLabel = self.GetPartyQuestSnapshotLabel,
-		BuildPartyQuestDiffRows = self.BuildPartyQuestDiffRows,
-		PreparePartyQuestPresentation = self.PreparePartyQuestPresentation,
-		BuildPartyQuestCompareDisplayRows = self.BuildPartyQuestCompareDisplayRows,
-		AppendPartyQuestObjectiveRows = self.AppendPartyQuestObjectiveRows,
-		NormalizeQuestObjectiveCounters = self.NormalizeQuestObjectiveCounters,
-		GetWindowClassColor = self.GetWindowClassColor,
-		HasPendingPartyQuestProgress = self.HasPendingPartyQuestProgress,
-		GetPartyQuestReadiness = self.GetPartyQuestReadiness,
-		CreatePartyQuestCompareWindow = self.CreatePartyQuestCompareWindow,
-	}
+	})
 	preview.API.GetQuestDifficultyLevel = function(id)
 		local quest = preview.questCatalog and preview.questCatalog[id]
 		if preview.liveQuestData and quest and not quest.mockIndex and owner.API.GetQuestDifficultyLevel then
@@ -190,71 +179,6 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	-- Presentation infrastructure is owned by this preview instance; only native
 	-- frame construction and settings reads are delegated to the live addon.
 	preview.windowControllers, preview.ownedUICleanupState = {}, nil
-	for _, method in ipairs({
-		"ConfigureWindowController",
-		"GetWindowController",
-		"DismissManagedWindow",
-		"StopWindowInteraction",
-		"RefreshManagedWindow",
-		"ConfigureRequestPrompt",
-		"CanMutateOwnedUI",
-		"CallOwnedUI",
-		"CreateOwnedUIFrame",
-		"CreateOwnedScrollBar",
-		"UpdateOwnedScrollBar",
-		"StopOwnedScrollBar",
-		"HideOwnedUI",
-		"QueueOwnedUICleanup",
-		"CancelOwnedUICleanup",
-		"GetOwnedUICleanupState",
-		"FlushOwnedUICleanup",
-		"GetOwnedUIParent",
-		"CreateOwnedWindowFrame",
-	}) do
-		preview[method] = self[method]
-	end
-	for _, method in ipairs({
-		"SafeTrimString",
-		"NormalizeQuestDisplayTitleText",
-		"CleanQuestCompareObjectiveText",
-		"SanitizeAnnouncementText",
-		"GetPartyQuestCompareFilters",
-		"SetPartyQuestCompareFilter",
-		"ResetPartyQuestCompareFilters",
-		"GetPartyQuestCompareFilterLabel",
-		"ShowPartyQuestCompareFilters",
-		"IsPartyQuestCompareBackgroundSynced",
-		"FilterPartyQuestCompareRows",
-		"GetPartyQuestCompareColumns",
-		"SetPartyQuestColumnCollapsed",
-		"RestorePartyQuestColumns",
-		"GetPartyQuestKeyboardTarget",
-		"GetPartyQuestRowIdentity",
-		"IsPartyQuestSelectableRow",
-		"GetPartyQuestRowControlRole",
-		"GetPartyQuestRowControls",
-		"SelectPartyQuestKeyboardRow",
-		"ActivatePartyQuestListRow",
-		"BackPartyQuestCompare",
-		"UpdatePartyQuestKeyboardPresentation",
-		"ScrollPartyQuestCompareToRow",
-		"RevealPartyQuestGamepadControl",
-		"ScrollPartyQuestCompareToQuest",
-		"PopulatePartyQuestContextMenu",
-		"PopulatePartyQuestPlayerMenu",
-		"CapturePartyQuestScrollAnchor",
-		"SetPartyQuestKeyboardNavigation",
-		"RequestPartyQuestKeyboardFocus",
-		"ConfigurePartyQuestKeyboardNavigation",
-		"ShowPartyQuestKeyboardMenu",
-		"GetPartyQuestAbsenceState",
-		"GetPartyQuestEligibilityStatus",
-		"GetPartyQuestCachedShareRequirements",
-		"GetPartyQuestMemberShareReadiness",
-		"GetPartyQuestShareReadiness",
-	}) do
-		preview[method] = self[method]
-	end
 	function preview:PopulateLocalQuests(session)
 		if
 			not owner.API

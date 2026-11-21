@@ -20,7 +20,11 @@ for _, cue in ipairs(definitions) do
 	settings[cue.enabledKey], settings[cue.volumeKey], settings[cue.soundKey] = cue.enabled == true, cue.volume, cue.sound
 	byKey[cue.key] = cue
 end
-for key, value in pairs(settings) do QT.DEFAULTS.profile[key] = value end
+for key, value in pairs(settings) do
+	QT:RegisterSetting(key, { default = value, validate = function(addon, candidate)
+		return addon:ValidateAudioSetting(key, candidate)
+	end, category = "Audio" })
+end
 
 function QT:GetAudioCueCatalog()
 	local labels = {

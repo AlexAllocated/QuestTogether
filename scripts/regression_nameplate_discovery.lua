@@ -170,9 +170,9 @@ local function WithPlate(fn)
 	QT.isEnabled = true
 	QT.db.profile.nameplateQuestIconEnabled = true
 	QT.db.profile.nameplateQuestHealthColorEnabled = true
-	QT.nameplateQuestTextCache["Wolf Hunt"] = true
-	QT.nameplateIconByUnitFrame[frame] = icon
-	QT.nameplateHealthOverlayByUnitFrame[frame] = { FillTexture = fill, Highlight = highlight }
+	QT:GetNameplateStateStore().textCache["Wolf Hunt"] = true
+	QT:GetNameplateStateStore().iconByUnitFrame[frame] = icon
+	QT:GetNameplateStateStore().healthOverlayByUnitFrame[frame] = { FillTexture = fill, Highlight = highlight }
 	local ok, err = pcall(fn, state)
 	for key in pairs(replacements) do QT[key] = originals[key] end
 	assert(ok, err)
@@ -234,7 +234,7 @@ local function WithInstanceQuestCache(fn)
 			QT:HandleNameplateEvent("QUEST_LOG_UPDATE")
 			state.drain()
 			Undecorated(state)
-			Equal(QT.nameplateQuestTextCache["Wolf Hunt"], nil)
+			Equal(QT:GetNameplateStateStore().textCache["Wolf Hunt"], nil)
 			fn(state)
 		end)
 		QT.EnsureAnnouncementChannelJoined = originalJoin
@@ -261,7 +261,7 @@ QT:RegisterTest("instance exit rebuilds quest evidence without an additional que
 		QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
 		state.drain()
 		Decorated(state)
-		Equal(QT.nameplateQuestTextCache["Wolf Hunt"], true)
+		Equal(QT:GetNameplateStateStore().textCache["Wolf Hunt"], true)
 		local tooltipReads = state.reads
 		local logReads = state.questLogReads
 		for _, event in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA", "PLAYER_ENTERING_WORLD" }) do
@@ -342,7 +342,7 @@ QT:RegisterTest("completed quest state survives spawn churn without a readable c
 		state.complete = true
 		QT:OnNameplateAdded("nameplate1")
 		state.drain()
-		Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+		Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], false)
 		QT:OnNameplateRemoved("nameplate1")
 		state.guid = "Creature-0-0-0-0-12345-0000000002"
 		state.tooltipReady = false
@@ -537,8 +537,8 @@ QT:RegisterTest("cached NPC direct adds defer existing and new visuals until eve
 			WithPlate(function(state)
 				QT:StoreResolvedNameplateQuestState("nameplate1", state.guid, true)
 				if createVisuals then
-					QT.nameplateIconByUnitFrame[state.frame] = nil
-					QT.nameplateHealthOverlayByUnitFrame[state.frame] = nil
+					QT:GetNameplateStateStore().iconByUnitFrame[state.frame] = nil
+					QT:GetNameplateStateStore().healthOverlayByUnitFrame[state.frame] = nil
 				else
 					-- Existing mutable visuals may still be visible when a restriction starts.
 					state.icon.shown, state.fill.shown, state.highlight.shown = true, true, true
@@ -581,7 +581,7 @@ for _, restriction in ipairs({ "map_visible", "encounter", "challenge", "pvp", "
 			state.tooltipData = { lines = { { type = "QuestTitle", leftText = "Wolf Hunt" } } }
 			QT:HandleNameplateEvent("NAME_PLATE_UNIT_ADDED", "nameplate1")
 			state.step() -- First resolver frame, before the restriction begins.
-			Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], false)
 			local reads = state.reads
 			Equal(reads > 0, true)
 			local retries = QT:GetNameplateTooltipResolveRetryCount("nameplate1")
@@ -636,8 +636,8 @@ QT:RegisterTest("restricted cached NPC presentation cannot revive removed recycl
 			Undecorated(state)
 			Equal(state.presentationMutations, 0, "stale pending presentation must never decorate")
 			if boundary == "recycled" then
-				Equal(QT.nameplateQuestStateByGuid[state.guid], false)
-				Equal(QT.nameplateQuestStateByGuid[oldGuid], true)
+				Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], false)
+				Equal(QT:GetNameplateStateStore().questStateByGuid[oldGuid], true)
 			else
 				Equal(state.reads, 0)
 			end
@@ -691,18 +691,18 @@ QT:RegisterTest("missing live guid never reuses a recycled combat frame identity
 	WithPlate(function(state)
 		local oldGuid = state.guid
 		state.frame.unitGUID = oldGuid
-		QT.nameplateQuestStateByGuid[oldGuid] = true
+		QT:GetNameplateStateStore().questStateByGuid[oldGuid] = true
 		state.guid = nil
 		Equal(QT:GetNameplateTooltipScanGuid("nameplate1", state.frame), nil)
 		QT:OnNameplateAdded("nameplate1")
 		state.drain()
 		Decorated(state)
 		assert(state.reads > 1 and state.reads <= 5, "missing guid must use bounded discovery retries")
-		Equal(QT.nameplateQuestGuidByUnitToken.nameplate1, nil)
+		Equal(QT:GetNameplateStateStore().questGuidByUnitToken.nameplate1, nil)
 		state.guid = "Creature-0-0-0-0-67890-0000000000"
 		QT:HandleNameplateEvent("PLAYER_TARGET_CHANGED")
 		state.drain()
-		Equal(QT.nameplateQuestGuidByUnitToken.nameplate1, state.guid)
+		Equal(QT:GetNameplateStateStore().questGuidByUnitToken.nameplate1, state.guid)
 		Decorated(state)
 	end)
 end)
@@ -797,7 +797,7 @@ QT:RegisterTest("combat release preserves the pending quest tooltip refresh dead
 			Equal(state.reads, reads, "the one-second quest-data delay must still apply")
 			state.advance(0.11)
 			Undecorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], false)
 		end)
 	end
 end)
@@ -811,7 +811,7 @@ QT:RegisterTest("completed objective updates an existing positive plate through 
 		state.complete = true
 		QT:HandleNameplateEvent("UNIT_QUEST_LOG_CHANGED", "player")
 		QT:HandleNameplateEvent("QUEST_LOG_UPDATE")
-		Equal(QT.nameplateQuestStateByGuid[state.guid], nil, "quest events must retire old GUID evidence immediately")
+		Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], nil, "quest events must retire old GUID evidence immediately")
 		state.advance(0.9)
 		Equal(state.reads, initialReads, "quest-data refresh must honor its delay")
 		state.advance(0.11)
@@ -831,7 +831,7 @@ QT:RegisterTest("quest event invalidation cannot reuse old positive evidence whe
 		QT:HandleNameplateEvent("QUEST_REMOVED", 123)
 		state.drain()
 		Undecorated(state)
-		Equal(QT.nameplateQuestStateByGuid[state.guid], nil)
+		Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], nil)
 	end)
 end)
 
@@ -857,8 +857,8 @@ end)
 
 QT:RegisterTest("first-time combat decoration creates an icon and textures under the current visible hierarchy", function()
 	WithPlate(function(state)
-		QT.nameplateIconByUnitFrame[state.frame] = nil
-		QT.nameplateHealthOverlayByUnitFrame[state.frame] = nil
+		QT:GetNameplateStateStore().iconByUnitFrame[state.frame] = nil
+		QT:GetNameplateStateStore().healthOverlayByUnitFrame[state.frame] = nil
 		QT:OnNameplateAdded("nameplate1")
 		state.drain()
 		Equal(state.creations, 1)
@@ -874,13 +874,13 @@ end)
 
 QT:RegisterTest("first-time decoration creates no children under protected combat frames", function()
 	WithPlate(function(state)
-		QT.nameplateIconByUnitFrame[state.frame] = nil
-		QT.nameplateHealthOverlayByUnitFrame[state.frame] = nil
+		QT:GetNameplateStateStore().iconByUnitFrame[state.frame] = nil
+		QT:GetNameplateStateStore().healthOverlayByUnitFrame[state.frame] = nil
 		state.protected = true
 		QT:OnNameplateAdded("nameplate1")
 		state.drain()
 		Equal(state.creations, 0)
-		Equal(QT.nameplateHealthOverlayByUnitFrame[state.frame], nil)
+		Equal(QT:GetNameplateStateStore().healthOverlayByUnitFrame[state.frame], nil)
 		state.combat = false
 		QT:HandleNameplateEvent("PLAYER_REGEN_ENABLED")
 		state.drain()
@@ -896,11 +896,11 @@ QT:RegisterTest("delayed quest refresh discards positives repopulated before new
 		QT:HandleNameplateEvent("UNIT_QUEST_LOG_CHANGED", "player")
 		QT:HandleNameplateEvent("UNIT_HEALTH", "nameplate1")
 		state.advance(0.1)
-		Equal(QT.nameplateQuestStateByGuid[state.guid], true, "intervening health refresh still saw the old tooltip")
+		Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], true, "intervening health refresh still saw the old tooltip")
 		state.complete = true
 		state.advance(1)
 		Undecorated(state)
-		Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+		Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], false)
 	end)
 end)
 
@@ -950,7 +950,7 @@ local function WithFallbackSources(fn)
 		}
 		local originals = {}
 		for key, value in pairs(replacements) do originals[key], QT[key] = QT[key], value end
-		QT.nameplateQuestTextCache["Known Quest"] = true
+		QT:GetNameplateStateStore().textCache["Known Quest"] = true
 		local ok, err = pcall(fn, state)
 		for key in pairs(replacements) do QT[key] = originals[key] end
 		assert(ok, err)
@@ -1017,7 +1017,7 @@ local function WithSharedObjectiveSource(source, fn)
 			objectives = { "Collect seals: 1/1", "Other goal: 0/1" },
 		}
 		QT:RebuildNameplateQuestTextCache()
-		Equal(QT.nameplateQuestTextCache["Defeat enemies"], true,
+		Equal(QT:GetNameplateStateStore().textCache["Defeat enemies"], true,
 			"use production objective normalization, not a title-only cache")
 		local function SetLines(lines)
 			if source == "generic structured" then
@@ -1041,7 +1041,7 @@ for _, provider in ipairs({ "generic structured", "hiddenLines", "questieLines" 
 			QT:OnNameplateAdded("nameplate1")
 			state.drain()
 			Undecorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], false)
 			Equal(QT:GetNameplateStateStore().completedByNpcID[12345], true,
 				"the readable owned objective is complete")
 			QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
@@ -1058,7 +1058,7 @@ for _, provider in ipairs({ "generic structured", "hiddenLines", "questieLines" 
 				QT:HandleNameplateEvent("UNIT_QUEST_LOG_CHANGED", "player")
 				state.drain()
 				Undecorated(state)
-				Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+				Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], false)
 				Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil,
 					"the unowned block cannot establish completion for other spawns")
 			end
@@ -1067,7 +1067,7 @@ for _, provider in ipairs({ "generic structured", "hiddenLines", "questieLines" 
 			QT:HandleNameplateEvent("UNIT_QUEST_LOG_CHANGED", "player")
 			state.drain()
 			Undecorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], nil,
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], nil,
 				"an unavailable boundary leaves ownership unresolved")
 			Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil)
 		end)
@@ -1081,7 +1081,7 @@ for _, provider in ipairs({ "generic structured", "hiddenLines", "questieLines" 
 			QT:OnNameplateAdded("nameplate1")
 			state.drain()
 			Decorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], true)
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], true)
 			Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil)
 			-- Snapshot-only quests must reopen a later block too. These are owned
 			-- records, as they would be after a successful quest-log rebuild.
@@ -1094,12 +1094,12 @@ for _, provider in ipairs({ "generic structured", "hiddenLines", "questieLines" 
 			QT:OnNameplateAdded("nameplate1")
 			state.drain()
 			Decorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], true)
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], true)
 			SetLines({ "Defeat enemies: 0/4" })
 			QT:HandleNameplateEvent("UNIT_QUEST_LOG_CHANGED", "player")
 			state.drain()
 			Decorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], true,
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], true,
 				"a genuinely titleless source still carries independent objective evidence")
 		end)
 	end)
@@ -1114,12 +1114,12 @@ for _, provider in ipairs({ "generic structured", "hiddenLines", "questieLines" 
 			QT:OnNameplateAdded("nameplate1")
 			state.drain()
 			Undecorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], nil, "missing ownership must not create a positive cache")
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], nil, "missing ownership must not create a positive cache")
 			SetLines({ state.inaccessibleValue, "Defeat enemies: 4/4" })
 			QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
 			state.drain()
 			Undecorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], nil)
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], nil)
 			Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil, "partial ownership cannot prove NPC completion")
 
 			QT.partyMembers = { ["Friend-Realm"] = { displayName = "Friend" } }
@@ -1128,7 +1128,7 @@ for _, provider in ipairs({ "generic structured", "hiddenLines", "questieLines" 
 			QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
 			state.drain()
 			Decorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], true, "a later readable owned party block may resolve")
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], true, "a later readable owned party block may resolve")
 
 			-- Raw unit headers cannot be identified as quest titles. Preserve the
 			-- existing readable-header and true titleless provider compatibility.
@@ -1151,7 +1151,7 @@ QT:RegisterTest("unavailable first structured rows retain ownership boundaries b
 	WithFallbackSources(function(state)
 		QT:GetPlayerTracker()[123] = { title = "Known Quest", objectives = { "Defeat enemies: 1/8" } }
 		QT:RebuildNameplateQuestTextCache()
-		Equal(QT.nameplateQuestTextCache["Defeat enemies"], true)
+		Equal(QT:GetNameplateStateStore().textCache["Defeat enemies"], true)
 		local unavailableReads = 0
 		state.inaccessibleValue = setmetatable({}, {
 			__index = function() unavailableReads = unavailableReads + 1; error("unavailable row indexed") end,
@@ -1169,7 +1169,7 @@ QT:RegisterTest("unavailable first structured rows retain ownership boundaries b
 			QT:OnNameplateAdded("nameplate1")
 			state.drain()
 			Undecorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], nil)
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], nil)
 			Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil)
 		end
 		state.tooltipData.lines[1] = { type = "UnitName", leftText = "Ordinary Creature" }
@@ -1307,14 +1307,14 @@ QT:RegisterTest("recycled frame hints cannot reuse another creature's cache befo
 		state.complete = true
 		QT:OnNameplateAdded("nameplate1")
 		Undecorated(state)
-		Equal(QT.nameplateQuestGuidByUnitToken.nameplate1, nil)
-		Equal(QT.nameplateQuestStateByGuid[previousGuid], true)
+		Equal(QT:GetNameplateStateStore().questGuidByUnitToken.nameplate1, nil)
+		Equal(QT:GetNameplateStateStore().questStateByGuid[previousGuid], true)
 		state.guid = "Creature-0-0-0-0-12345-0000000002"
 		state.drain()
 		Undecorated(state)
 		assert(state.reads > 0, "the readable current unit must be scanned")
-		Equal(QT.nameplateQuestGuidByUnitToken.nameplate1, state.guid)
-		Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+		Equal(QT:GetNameplateStateStore().questGuidByUnitToken.nameplate1, state.guid)
+		Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], false)
 	end)
 end)
 
@@ -1322,7 +1322,7 @@ QT:RegisterTest("explicit unowned quest titles cannot borrow another quest's nor
 	WithPlate(function()
 		QT:GetPlayerTracker()[123] = { title = "Known Quest", objectives = { "Defeat enemies: 1/8" } }
 		QT:RebuildNameplateQuestTextCache()
-		Equal(QT.nameplateQuestTextCache["Defeat enemies"], true)
+		Equal(QT:GetNameplateStateStore().textCache["Defeat enemies"], true)
 		local function Evaluate(lines)
 			return QT:EvaluateTooltipQuestObjectiveLines(QT:ExtractQuestObjectiveTooltipLinesFromTooltipData({ lines = lines }))
 		end
@@ -1348,7 +1348,7 @@ for _, provider in ipairs({ "unit", "hyperlink" }) do
 		WithFallbackSources(function(state)
 			QT:GetPlayerTracker()[123] = { title = "Known Quest", objectives = { "Defeat enemies: 1/8" } }
 			QT:RebuildNameplateQuestTextCache()
-			Equal(QT.nameplateQuestTextCache["Defeat enemies"], true)
+			Equal(QT:GetNameplateStateStore().textCache["Defeat enemies"], true)
 			state.inaccessibleValue = InaccessibleValue(state)
 			local titleType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestTitle or "QuestTitle"
 			local objectiveType = Enum and Enum.TooltipDataLineType and Enum.TooltipDataLineType.QuestObjective or "QuestObjective"
@@ -1367,7 +1367,7 @@ for _, provider in ipairs({ "unit", "hyperlink" }) do
 			QT:OnNameplateAdded("nameplate1")
 			state.drain()
 			Undecorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], nil, "an unreadable title cannot resolve shared objective ownership")
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], nil, "an unreadable title cannot resolve shared objective ownership")
 			Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil)
 			local reads = state.reads
 			state.tooltipData.lines[1] = { type = titleType, leftText = "Unowned Other Quest" }
@@ -1375,13 +1375,13 @@ for _, provider in ipairs({ "unit", "hyperlink" }) do
 			state.drain()
 			assert(state.reads > reads, "a repaired title must be read instead of reusing a false positive")
 			Undecorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], false)
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], false)
 			Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil)
 			state.tooltipData.lines[1].leftText = "Known Quest"
 			QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
 			state.drain()
 			Decorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], true, "readable owned title must recover through the real resolver")
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], true, "readable owned title must recover through the real resolver")
 		end)
 	end)
 end
@@ -1399,7 +1399,7 @@ QT:RegisterTest("unreadable typed title completion stays unresolved while later 
 		QT:OnNameplateAdded("nameplate1")
 		state.drain()
 		Undecorated(state)
-		Equal(QT.nameplateQuestStateByGuid[state.guid], nil, "partial data must not install a negative spawn cache")
+		Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], nil, "partial data must not install a negative spawn cache")
 		Equal(QT:TryGetCachedQuestObjectiveStateForGuid("Creature-0-0-0-0-12345-2"), false,
 			"an unreadable title must not mark other spawns of this NPC complete")
 		state.tooltipData.lines[3] = { type = "QuestTitle", leftText = "Known Quest" }
@@ -1409,7 +1409,7 @@ QT:RegisterTest("unreadable typed title completion stays unresolved while later 
 		QT:HandleNameplateEvent("UPDATE_MOUSEOVER_UNIT")
 		state.drain()
 		Decorated(state)
-		Equal(QT.nameplateQuestStateByGuid[state.guid], true)
+		Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], true)
 		Equal(QT:GetNameplateStateStore().completedByNpcID[12345], nil)
 	end)
 end)
@@ -1431,7 +1431,7 @@ QT:RegisterTest("titleless providers remain positive beside an independent unrea
 			QT:OnNameplateAdded("nameplate1")
 			state.drain()
 			Decorated(state)
-			Equal(QT.nameplateQuestStateByGuid[state.guid], true, source .. " lost independent titleless objective evidence")
+			Equal(QT:GetNameplateStateStore().questStateByGuid[state.guid], true, source .. " lost independent titleless objective evidence")
 			if source ~= "structured" then state[source] = {} end
 		end
 	end)
@@ -1481,13 +1481,13 @@ QT:RegisterTest("deferred disabled cleanup cannot hide current quest visuals aft
 			end,
 		}
 		local staleUnitFrame = {}
-		QT.nameplateIconByUnitFrame[staleUnitFrame] = staleIcon
+		QT:GetNameplateStateStore().iconByUnitFrame[staleUnitFrame] = staleIcon
 		QT.isEnabled = false
 		QT:DisableNameplateAugmentation()
 		Equal(QT.pendingNameplateVisualCleanup, true)
 		QT.isEnabled = true
 		QT:EnableNameplateAugmentation()
-		QT.nameplateQuestTextCache["Wolf Hunt"] = true
+		QT:GetNameplateStateStore().textCache["Wolf Hunt"] = true
 		QT:OnNameplateAdded("nameplate1")
 		state.drain()
 		Decorated(state)
@@ -1510,7 +1510,7 @@ QT:RegisterTest("reused icons and tints leave old cleanup while quarantined hand
 			end,
 		}
 		local staleUnitFrame = {}
-		QT.nameplateIconByUnitFrame[staleUnitFrame] = staleIcon
+		QT:GetNameplateStateStore().iconByUnitFrame[staleUnitFrame] = staleIcon
 		QT:OnNameplateAdded("nameplate1")
 		state.drain()
 		Decorated(state)

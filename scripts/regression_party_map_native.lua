@@ -5,6 +5,8 @@ local function Harness()
 	local h = { calls = {}, errors = {}, hooks = {}, tainted = {}, inaccessible = {}, restricted = false }
 	local env = setmetatable({}, { __index = _G })
 	env._G = env
+	env.canaccessvalue = function(value) return not h.inaccessible[value] end
+	env.canaccesstable = env.canaccessvalue
 	local q = {}; env.QuestTogether = q
 	function q:CanAccessValue(value) return not h.inaccessible[value] end
 	function q:CanAccessTable(value) return type(value) == "table" and not h.inaccessible[value] end
@@ -60,14 +62,26 @@ local function Harness()
 		assert(surface == "map")
 		return { parent = {}, mapID = 1455, width = 400, height = 300 }
 	end
+	for _, f in ipairs({ map, pin, canvas }) do
+		function f:IsShown() return self.shown end
+		function f:IsForbidden() return self.forbidden == true end
+	end
 	env.WorldMapFrame = map
 	h.qt, h.env, h.pin, h.map, h.provider = q, env, pin, map, provider
-	local file = root .. "/PartyMapNative.lua"
-	local chunk
-	if _VERSION == "Lua 5.1" then chunk = assert(loadfile(file)); setfenv(chunk, env)
-	else chunk = assert(loadfile(file, "t", env)) end
-	chunk()
+	for _, name in ipairs({ "NativeAccess.lua", "PartyMapNative.lua" }) do
+		local file = root .. "/" .. name
+		local chunk
+		if _VERSION == "Lua 5.1" then chunk = assert(loadfile(file)); setfenv(chunk, env)
+		else chunk = assert(loadfile(file, "t", env)) end
+		chunk()
+	end
 	return h
+end
+
+for _, version in ipairs({ "1.60.2", "12.1.0", "99.0.0", "" }) do
+	local h = Harness()
+	h.version = version
+	assert(h.qt:GetPartyMapNativeContext(), "version diagnostics must not gate native map support")
 end
 
 for _, build in ipairs({ "70888", 70888, "70938", 70938, "70959", 70959, "99999", 99999, "70939" }) do
@@ -81,10 +95,10 @@ end
 for _, info in ipairs({ { "1.15.9", "70939" }, { "1.60.2", "70938" }, { "12.0.0", "70938" } }) do
 	local h = Harness()
 	h.version, h.build = info[1], info[2]
-	assert(not h.qt:GetPartyMapNativeContext())
-	assert(#h.calls == 0 and #h.hooks == 0 and #h.errors == 0)
+	assert(h.qt:GetPartyMapNativeContext())
+	assert(#h.calls == 0 and #h.errors == 0)
 end
-print("PASS: compatible native capabilities accept arbitrary build identifiers; unsupported clients remain inert")
+print("PASS: compatible native capabilities accept arbitrary build identifiers; native capabilities are version-independent")
 
 do
 	local h = Harness()
@@ -144,10 +158,9 @@ do
 end
 print("PASS: restricted state permits only captured-policy restoration and refuses reassigned native pins")
 
-for _, scenario in ipairs({ "client", "raw", "tainted", "forbidden", "secret", "missing", "duplicate", "hidden", "size", "level", "live-tests" }) do
+for _, scenario in ipairs({ "raw", "tainted", "forbidden", "secret", "missing", "duplicate", "hidden", "size", "level", "live-tests" }) do
 	local h = Harness()
-	if scenario == "client" then h.version = "12.1.0"
-	elseif scenario == "raw" then h.pin.SetAppearanceField = h.env.UnitPositionFrameUpdateSecureMixin.SetAppearanceField
+	if scenario == "raw" then h.pin.SetAppearanceField = h.env.UnitPositionFrameUpdateSecureMixin.SetAppearanceField
 	elseif scenario == "tainted" then h.tainted[h.pin] = { SetAppearanceField = true }
 	elseif scenario == "forbidden" then h.pin.forbidden = true
 	elseif scenario == "secret" then h.inaccessible[h.provider.unitPinSizes] = true

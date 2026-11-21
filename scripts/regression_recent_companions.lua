@@ -2,7 +2,7 @@
 local QT = _G.QuestTogether
 local function Fixture(global)
 	local a = setmetatable({ isEnabled = true, now = 1700000000, realm = "Home Realm", namespace = "1:US:realm",
-		db = { global = global or {}, profile = {} }, partyMembers = {}, runtimeStateStore = {} }, { __index = QT })
+		db = { global = global or {}, profile = {} }, partyMembers = {}, runtimeStateStore = nil }, { __index = QT })
 	a.API = {
 		GetPlayerNotesNamespace = function() return a.namespace end,
 		GetRealmName = function() return a.realm end,

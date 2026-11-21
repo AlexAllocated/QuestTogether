@@ -144,8 +144,9 @@ The 17 changed files do not change QT's native navigation wrappers, gamepad
 action storage and binding helpers, or the group-map provider and secure
 unit-position delegate. The bag window changes affect its own navigation only.
 The previous build gate prevented new-character launcher installation and
-controller navigation entirely. Compatibility checks now cover arbitrary build
-numbers, including rejection of missing/insecure wrappers. Macro placement, controller
+controller navigation entirely. Compatibility checks cover arbitrary version and build strings, including missing
+build metadata, while still rejecting missing or insecure native wrappers. Client
+version, build and interface numbers are diagnostic information only. Macro placement, controller
 input and party-map behavior on this build still require live confirmation.
 
 On 2026-11-12, the tester confirmed that reloading after deleting the macro

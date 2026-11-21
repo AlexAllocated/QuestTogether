@@ -1,6 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- See LICENSING.md for scope and preserved third-party notices.
 local QT = _G.QuestTogether
+local Presenter = {}
 local L = QT.Translate
 local PAGE_SIZE = 80
 local HISTORY_LIFETIME = 60
@@ -63,7 +64,7 @@ local function HasRelatedQuests(graph, rootID)
 	return false
 end
 
-function QT:AttachPartyQuestChains(session, previous)
+function Presenter:AttachPartyQuestChains(session, previous)
 	local old = previous and previous.chains
 	local state = {
 		owner = {}, profile = self.db and self.db.profile, serial = old and old.serial or 0,
@@ -83,7 +84,7 @@ function QT:AttachPartyQuestChains(session, previous)
 	return state
 end
 
-function QT:CancelPartyQuestChains(session)
+function Presenter:CancelPartyQuestChains(session)
 	local state = session and session.chains
 	if not state then return end
 	state.retired = true
@@ -115,7 +116,7 @@ function QT:ResumePartyQuestChains()
 	return true
 end
 
-function QT:SetPartyQuestChainMetadataInterest(state, ids)
+function Presenter:SetPartyQuestChainMetadataInterest(state, ids)
 	local interested, changed = {}, false
 	for _, id in ipairs(ids or {}) do
 		interested[id] = true
@@ -146,7 +147,7 @@ local function RetireVisibleContext(addon, session)
 	addon:SetPartyQuestCompletionInterest(retained)
 end
 
-function QT:SetPartyQuestChainSelection(row)
+function Presenter:SetPartyQuestChainSelection(row)
 	local state = self.partyQuestCompareSession and self.partyQuestCompareSession.chains
 	if not state or not row or (row.kind ~= "chainStep" and not row.chainAnchor)
 		or row.chainInstanceId ~= "chain:" .. state.instance then return false end
@@ -157,7 +158,7 @@ function QT:SetPartyQuestChainSelection(row)
 	return true
 end
 
-function QT:QueuePartyQuestChainRefresh()
+function Presenter:QueuePartyQuestChainRefresh()
 	local session = self.partyQuestCompareSession
 	local state = session and session.chains
 	if not state or state.pending or not Current(self, session, state) then return end
@@ -302,7 +303,7 @@ end
 -- Only explicit provider relationships participate in preflight. Chain order
 -- does not establish prerequisites, and repeatability says nothing about an
 -- earlier completion of a prerequisite.
-function QT:PreparePartyQuestShareRequirements(member, questID, character, readLocal)
+function Presenter:PreparePartyQuestShareRequirements(member, questID, character, readLocal)
 	local snapshot, now = self.questChainProviderSnapshot, self:GetPartyQuestCompareTime()
 	local dependencies, evidence, histories = {}, {}, {}
 	for _, edge in ipairs(snapshot and snapshot.relations and snapshot.relations[questID] or {}) do
@@ -356,7 +357,7 @@ function QT:PreparePartyQuestShareRequirements(member, questID, character, readL
 	return result
 end
 
-function QT:RefreshPartyQuestShareRequirements(member, questID, readLocal)
+function Presenter:RefreshPartyQuestShareRequirements(member, questID, readLocal)
 	local session = self.partyQuestCompareSession
 	local state = session and session.chains
 	if not state or not Current(self, session, state) or session.byName[member.name] ~= member
@@ -553,7 +554,7 @@ function QT:PreparePartyQuestChains(session, state)
 	end, 0.05, "party compare chain render")
 end
 
-function QT:OpenPartyQuestChain(questID, originRowId)
+function Presenter:OpenPartyQuestChain(questID, originRowId)
 	local session = self.partyQuestCompareSession
 	local state = session and session.chains
 	questID = self:NormalizeQuestID(questID)
@@ -570,7 +571,7 @@ function QT:OpenPartyQuestChain(questID, originRowId)
 	return true
 end
 
-function QT:TogglePartyQuestChain(questID, originRowId)
+function Presenter:TogglePartyQuestChain(questID, originRowId)
 	local session = self.partyQuestCompareSession
 	local state = session and session.chains
 	questID = self:NormalizeQuestID(questID)
@@ -579,7 +580,7 @@ function QT:TogglePartyQuestChain(questID, originRowId)
 	return self:OpenPartyQuestChain(questID, originRowId)
 end
 
-function QT:ClosePartyQuestChain()
+function Presenter:ClosePartyQuestChain()
 	local session = self.partyQuestCompareSession
 	local state = session and session.chains
 	if not state or not state.rootQuestID then return false end
@@ -593,7 +594,7 @@ function QT:ClosePartyQuestChain()
 	return true, self:ResolvePartyQuestChainRowID(origin)
 end
 
-function QT:TogglePartyQuestChainGroup(groupID)
+function Presenter:TogglePartyQuestChainGroup(groupID)
 	local session = self.partyQuestCompareSession
 	local state = session and session.chains
 	groupID = state and Resolve(state, groupID)
@@ -608,7 +609,7 @@ function QT:TogglePartyQuestChainGroup(groupID)
 	return true
 end
 
-function QT:ExpandPartyQuestChain(direction)
+function Presenter:ExpandPartyQuestChain(direction)
 	local state = self.partyQuestCompareSession and self.partyQuestCompareSession.chains
 	if not state or not state.rootQuestID then return false end
 	state.limit = state.limit + PAGE_SIZE
@@ -618,7 +619,7 @@ function QT:ExpandPartyQuestChain(direction)
 	return true
 end
 
-function QT:ResolvePartyQuestChainRowID(rowID)
+function Presenter:ResolvePartyQuestChainRowID(rowID)
 	local state = self.partyQuestCompareSession and self.partyQuestCompareSession.chains
 	if state and type(rowID) == "string" then
 		local id = rowID:match("^chainGroup:(%d+)$")
@@ -627,7 +628,7 @@ function QT:ResolvePartyQuestChainRowID(rowID)
 	return rowID
 end
 
-function QT:GetPartyQuestChainDisplayTitle(id)
+function Presenter:GetPartyQuestChainDisplayTitle(id)
 	local session = self.partyQuestCompareSession
 	local state = session and session.chains
 	if not state then return L("Quest ") .. id, false end
@@ -646,7 +647,7 @@ function QT:GetPartyQuestChainDisplayTitle(id)
 	return title ~= "" and title or (L("Quest ") .. id), false
 end
 
-function QT:GetPartyQuestChainStatus(member, id)
+function Presenter:GetPartyQuestChainStatus(member, id)
 	local active = member.entries[id]
 	if active then return active.isComplete and "Ready" or "Have" end
 	local status = self:GetPartyQuestEligibilityStatus(member, id, self:GetPartyQuestAbsenceState(member, id))
@@ -716,7 +717,7 @@ local function RequirementColor(state, text, muted)
 	return "|c" .. color .. text .. "|r"
 end
 
-function QT:DescribePartyQuestChainRequirements(result, relationships, omitSummary)
+function Presenter:DescribePartyQuestChainRequirements(result, relationships, omitSummary)
 	result = result or { state = "unknown" }
 	local summary = result.permanentlyBlocked and L("No longer obtainable") or result.state == "met" and L("Known prerequisites met")
 		or result.state == "blocked" and L("Prerequisites not met") or L("Prerequisites unknown")
@@ -811,7 +812,7 @@ local function NeedsQuestRequirements(status)
 	return status ~= "Have" and status ~= "Ready" and status ~= "Completed"
 end
 
-function QT:AppendPartyQuestChainSection(rows, rootRows, anchor, append)
+function Presenter:AppendPartyQuestChainSection(rows, rootRows, anchor, append)
 	local session, state = self.partyQuestCompareSession, self.partyQuestCompareSession.chains
 	if not state.rootQuestID then return end
 	local graph = state.graphs[state.rootQuestID]
@@ -920,7 +921,7 @@ function QT:AppendPartyQuestChainSection(rows, rootRows, anchor, append)
 end
 
 -- Layout consumes only this prepared session snapshot. It neither reads the provider nor sends requests.
-function QT:DecoratePartyQuestChainRows(quests, append)
+function Presenter:DecoratePartyQuestChainRows(quests, append)
 	local session, rows = self.partyQuestCompareSession, {}
 	local state = session and session.chains
 	local function ScopeRows(first, groupID)
@@ -1018,7 +1019,7 @@ function QT:DecoratePartyQuestChainRows(quests, append)
 	return rows
 end
 
-function QT:GetPartyQuestChainActions(row, memberName)
+function Presenter:GetPartyQuestChainActions(row, memberName)
 	local session = self.partyQuestCompareSession
 	local state = session and session.chains
 	if not state or not row or not row.questId then return {} end
@@ -1093,7 +1094,7 @@ function QT:GetPartyQuestChainActions(row, memberName)
 	return actions
 end
 
-function QT:GetPartyQuestChainDiagnostics()
+function Presenter:GetPartyQuestChainDiagnostics()
 	local state = self.partyQuestCompareSession and self.partyQuestCompareSession.chains
 	local result = { active = state ~= nil and state.retired ~= true, open = state and state.rootQuestID ~= nil or false,
 		groups = 0, nodes = 0, contextInterests = 0, state = state and state.capability.state or "closed" }
@@ -1107,3 +1108,5 @@ function QT:GetPartyQuestChainDiagnostics()
 	result.partial, result.loading = graph and graph.partial == true or false, graph and graph.loading == true or false
 	return result
 end
+
+_G.QuestTogether:RegisterPartyQuestPresentation(Presenter)

@@ -42,3 +42,20 @@
 
 Use the active session for UI catalog wording as well. The optional UI translation
 API utility is separate paid tooling and is not part of the release-note workflow.
+
+## Runtime architecture
+
+- Never enable or disable a feature by comparing the WoW client version, build
+  number, or interface number. Use the actual required API capabilities and
+  security/ownership contract. Version/build values are diagnostics only.
+- Client-family distinctions are permitted where data or behavior actually
+  differs. Provider dataset validation and wire-protocol compatibility are not
+  client-version gates and must remain explicit.
+- Runtime state has one owner and is initialized once per instance. Getters
+  must not repair or migrate unrelated state. SavedVariables migrations belong
+  exclusively at profile/database boundaries.
+- Keep native access behind guarded adapters. Required QT dependencies must be
+  explicit; do not silently skip missing mandatory services.
+- Preserve the native security, cancellation, privacy and freshness contracts
+  when refactoring. Tests and previews own their state and must never inherit
+  live mutable state or replace Blizzard APIs in game.

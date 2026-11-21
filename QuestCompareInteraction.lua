@@ -1,9 +1,10 @@
 -- Presentation-only state: narrowing a column never changes the roster or
 -- the snapshots used to compare, share, or calculate party progress.
 local QT = _G.QuestTogether
+local Presenter = {}
 local FULL_WIDTH, COMPACT_WIDTH = 130, 64
 
-function QT:GetPartyQuestCompareColumns(session)
+function Presenter:GetPartyQuestCompareColumns(session)
 	local columns, retained, width = {}, {}, 0
 	for index, member in ipairs(session and session.members or {}) do
 		local collapsed = session.collapsedPlayers and session.collapsedPlayers[member.name] == true
@@ -16,7 +17,7 @@ function QT:GetPartyQuestCompareColumns(session)
 	return columns, width
 end
 
-function QT:SetPartyQuestColumnCollapsed(name, collapsed, expectedSession)
+function Presenter:SetPartyQuestColumnCollapsed(name, collapsed, expectedSession)
 	local session = self.partyQuestCompareSession
 	if not session or (expectedSession and session ~= expectedSession)
 		or self:IsWorkBlocked("foreign_frame_mutation") then return false end
@@ -31,7 +32,7 @@ function QT:SetPartyQuestColumnCollapsed(name, collapsed, expectedSession)
 	return true
 end
 
-function QT:RestorePartyQuestColumns(expectedSession)
+function Presenter:RestorePartyQuestColumns(expectedSession)
 	local session = self.partyQuestCompareSession
 	if not session or (expectedSession and session ~= expectedSession)
 		or self:IsWorkBlocked("foreign_frame_mutation") then return false end
@@ -44,21 +45,21 @@ end
 -- layout pass, including animated detail heights. No second geometry model.
 -- A quest can occur both in the active union and in an open chain. Physical
 -- pool slots and quest IDs cannot identify a selection across those instances.
-function QT:GetPartyQuestRowIdentity(row)
+function Presenter:GetPartyQuestRowIdentity(row)
 	if not row then return nil end
 	return row.rowId or (row.questId and "quest:" .. row.questId)
 end
 
-function QT:IsPartyQuestSelectableRow(row)
+function Presenter:IsPartyQuestSelectableRow(row)
 	return row and not row.chainClosing and (row.selectable == true or not row.kind) or false
 end
 
-function QT:GetPartyQuestRowControlRole(row)
+function Presenter:GetPartyQuestRowControlRole(row)
 	return row.kind == "chainGroup" and "group" or row.kind == "chainStep" and "step"
 		or row.kind == "chainMore" and "more" or "quest"
 end
 
-function QT:GetPartyQuestKeyboardTarget(rows, rowID, key, pageHeight)
+function Presenter:GetPartyQuestKeyboardTarget(rows, rowID, key, pageHeight)
 	if not rows or #rows == 0 then return nil end
 	if self.ResolvePartyQuestChainRowID then rowID = self:ResolvePartyQuestChainRowID(rowID) end
 	local index = 1
@@ -85,7 +86,7 @@ end
 
 -- The same ordered controls serve keyboard and native navigation. This reads
 -- only already-materialized UI; metadata work belongs to the session service.
-function QT:GetPartyQuestRowControls(frame, selected)
+function Presenter:GetPartyQuestRowControls(frame, selected)
 	local list, session = {}, frame.displaySession
 	for _, row in ipairs(frame.rows or {}) do
 		if row.session == session and row.data and row:IsVisible()
@@ -109,7 +110,7 @@ function QT:GetPartyQuestRowControls(frame, selected)
 	return list
 end
 
-function QT:SelectPartyQuestKeyboardRow(frame, selected, role, player)
+function Presenter:SelectPartyQuestKeyboardRow(frame, selected, role, player)
 	local session = self.partyQuestCompareSession
 	if not session or frame.displaySession ~= session then return false end
 	session.keyboardRowId, session.keyboardQuestId = self:GetPartyQuestRowIdentity(selected), selected and selected.questId
@@ -118,7 +119,7 @@ function QT:SelectPartyQuestKeyboardRow(frame, selected, role, player)
 	return true
 end
 
-function QT:ActivatePartyQuestListRow(frame, data)
+function Presenter:ActivatePartyQuestListRow(frame, data)
 	local session = self.partyQuestCompareSession
 	if not session or frame.displaySession ~= session or not self:IsPartyQuestSelectableRow(data)
 		or self:IsWorkBlocked("foreign_frame_mutation") then return false end
@@ -134,7 +135,7 @@ function QT:ActivatePartyQuestListRow(frame, data)
 	return true
 end
 
-function QT:BackPartyQuestCompare(frame, source)
+function Presenter:BackPartyQuestCompare(frame, source)
 	if self:IsWorkBlocked("foreign_frame_mutation") or frame.displaySession ~= self.partyQuestCompareSession then return false end
 	-- Owned context menus normally receive Back themselves; keep this ordering
 	-- when their owner dispatches a close during the same native input turn.
@@ -160,7 +161,7 @@ function QT:BackPartyQuestCompare(frame, source)
 	return true
 end
 
-function QT:UpdatePartyQuestKeyboardPresentation(frame)
+function Presenter:UpdatePartyQuestKeyboardPresentation(frame)
 	local session = self.partyQuestCompareSession
 	if not session or frame.displaySession ~= session or self:IsWorkBlocked("foreign_frame_mutation") then return end
 	local active = frame.keyboardSession == session
@@ -188,3 +189,5 @@ function QT:UpdatePartyQuestKeyboardPresentation(frame)
 		end
 	end
 end
+
+_G.QuestTogether:RegisterPartyQuestPresentation(Presenter)

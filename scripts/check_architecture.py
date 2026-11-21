@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Small ownership tripwires; behavioral regressions remain the primary gate."""
+"""Ownership, capability and composition contracts; behavior is checked separately."""
 from pathlib import Path
 import re
 
@@ -14,6 +14,20 @@ def check(root=ROOT, source_overrides=None):
     def only(pattern, owners, description):
         for name, text in sources.items():
             if name not in owners and re.search(pattern, text): errors.append(name + ": " + description)
+    only(r"\bGetBuildInfo\b", {"ClientDiagnostics.lua", "Diagnostics.lua"},
+         "client version/build reads are diagnostics only; gate on capabilities")
+    only(r"\b(?:clientVersion|clientBuild)\s*(?:==|~=|<=|>=|<|>)", {"ClientDiagnostics.lua", "Diagnostics.lua"},
+         "client version/build values must not gate runtime behavior")
+    only(r"\b(?:worldQuestAreaStateByQuestID|bonusObjectiveAreaStateByQuestID|nameplateQuestStateByGuid|nameplateQuestTextCache)\b",
+         set(), "transient state belongs to its domain store, not legacy aliases")
+    only(r"function (?:QT|QuestTogether):(?:EnsureRuntimeStateStore|NewRuntimeStateStore)\(", {"HotPathState.lua"},
+         "runtime state construction belongs to HotPathState")
+    only(r"function (?:QT|QuestTogether):(?:ValidateSetting|RegisterSetting|GetSettingDefinition)\(", {"SettingsCatalog.lua"},
+         "option definitions and validation belong to SettingsCatalog")
+    only(r"function (?:QT|QuestTogether):(?:ApplySettingsTransaction|ApplyFeaturePolicies)\(", {"SettingsEffects.lua"},
+         "ordered setting effects belong to SettingsEffects")
+    only(r"(?:PLATER_INITIAL|SchedulePlaterStartup|RegisterCommunicationPolicy|DidObjectiveProgressIncrease)", set(),
+         "retired timer and compatibility machinery must not return")
     only(r"\.API\.(?:IsWorldQuest|GetTaskQuestInfoByQuestID)\s*\(", {"QuestObservations.lua"},
          "native quest classification belongs to QuestObservations")
     only(r"\b[A-Za-z_]\w*\.API\.SendAddonMessage\b", {"Transport.lua"}, "native addon sends belong to Transport")
@@ -96,9 +110,19 @@ def check(root=ROOT, source_overrides=None):
                   ("PartyMapRoster.lua", "PartyMapPins.lua"),
                   ("PartyMapNative.lua", "PartyMapPins.lua"),
                   ("ObjectiveAnnouncements.lua", "EventHandlers.lua")])
+    from architecture_domains import PRESENTATION, SHARED_RUNTIME
+    for name in PRESENTATION | SHARED_RUNTIME:
+        if name not in toc: errors.append("validation domain names missing module: " + name)
+    if PRESENTATION & SHARED_RUNTIME: errors.append("conflicting validation domains")
+    order.extend([("Core.lua", "NativeAccess.lua"), ("NativeAccess.lua", "ClientDiagnostics.lua"),
+                  ("NativeAccess.lua", "NativeQuestValues.lua"), ("SettingsCatalog.lua", "Audio.lua"),
+                  ("HotPathState.lua", "NameplateAccess.lua"), ("NameplateAccess.lua", "NameplateQuests.lua"),
+                  ("NameplateAccess.lua", "PersonalBubbles.lua"), ("PersonalBubbles.lua", "AnnouncementBubbles.lua"),
+                  ("QuestComparePresenter.lua", "QuestCompareChains.lua")])
     for before, after in order:
         if before not in combined or after not in combined or combined.index(before) >= combined.index(after):
             errors.append(f"load {before} before {after}")
+    if toc[-1] != "Lifecycle.lua": errors.append("bootstrap must follow all service definitions")
     for name in sources:
         if name not in toc: errors.append("production module is not in the live manifest: " + name)
     for name in combined:

@@ -1,7 +1,7 @@
 -- Owned frame/store fixtures only. Never call or replace native controller APIs.
 local QT = _G.QuestTogether
 local function Fixture()
-    local a = setmetatable({ db = {profile = {}}, isEnabled = true, runtimeStateStore = {} }, {__index = QT})
+    local a = setmetatable({ db = {profile = {}}, isEnabled = true, runtimeStateStore = nil }, {__index = QT})
     a.API = {GetTime = function() return 100 end}
     a.parent = QT:CreateTestUIRegion(a)
     a.parent:SetSize(1280, 900)

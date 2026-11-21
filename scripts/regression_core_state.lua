@@ -8,7 +8,7 @@ local function Noop() end
 
 local function NewFixture()
 	local addon = setmetatable({
-		runtimeStateStore = {},
+		runtimeStateStore = nil,
 		tracker = {},
 		rows = { { questID = 12345, questLogIndex = 1, title = "Photo Quest" } },
 		snapshot = { byQuestID = {}, order = {}, generation = 0 },
@@ -143,7 +143,7 @@ end
 local function NewTaskClassificationFixture()
 	local clock = QT:CreateTestClock(100)
 	local addon = setmetatable({
-		runtimeStateStore = {},
+		runtimeStateStore = nil,
 		db = { global = {}, profile = {} },
 		isEnabled = true,
 		questsCompleted = {},
@@ -1546,6 +1546,45 @@ QT:RegisterTest("quest acquisition publishes classification and rows atomically 
 	end
 	assert(select(2, a:RebuildQuestSnapshotStore()))
 	assert(a:GetQuestClassification(12345).isWorldQuest == false)
+end)
+
+QT:RegisterTest("inherited addon instances own independent runtime lifetimes and retain cleanup handles", function()
+	local parent = setmetatable({}, { __index = QT })
+	local child = setmetatable({}, { __index = parent })
+	local first = parent:EnsureRuntimeStateStore()
+	first.nameplate.questStateByGuid.parent = true
+	first.runtime.pendingQuestLogScan = true
+	local second = child:EnsureRuntimeStateStore()
+	assert(first ~= second and first.nameplate ~= second.nameplate)
+	assert(second.nameplate.questStateByGuid.parent == nil)
+	assert(second.runtime.pendingQuestLogScan == nil)
+	local frame, region = {}, {}
+	second.nameplate.iconByUnitFrame[frame] = region
+	second.nameplate.questStateByGuid.child = true
+	local retired = second.runtime.deferredWorkState
+	child.StopMapWorkWakeup = Noop
+	child.CancelRuntimeWorkOwner = Noop
+	child:ResetRuntimeWorkStateStore()
+	child:ResetNameplateStateStore()
+	assert(child:EnsureRuntimeStateStore() == second)
+	assert(second.runtime.deferredWorkState ~= retired)
+	assert(second.nameplate.questStateByGuid.child == nil)
+	assert(second.nameplate.iconByUnitFrame[frame] == region, "safe teardown retains its visual handle")
+	assert(first.nameplate.questStateByGuid.parent and first.runtime.pendingQuestLogScan)
+end)
+
+QT:RegisterTest("PQL presenter instances cannot borrow live sessions or mutable caches", function()
+	local owner = setmetatable({ partyQuestCompareSession = { marker = true },
+		partyQuestCompareWindow = {}, questChainView = {} }, { __index = QT })
+	local first = owner:NewPartyQuestPresenter({ options = {} })
+	local second = owner:NewPartyQuestPresenter({ options = {} })
+	assert(first.partyQuestCompareSession == nil and first.partyQuestCompareWindow == nil)
+	assert(first.questChainView == nil and first.API == nil)
+	first.partyQuestCompareSession = { marker = "preview" }
+	first.options.preview = true
+	assert(second.partyQuestCompareSession == nil and second.options.preview == nil)
+	assert(owner.partyQuestCompareSession.marker == true)
+	assert(type(first.RenderPartyQuestCompare) == "function")
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_core_state.lua")

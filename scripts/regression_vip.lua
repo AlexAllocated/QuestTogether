@@ -332,7 +332,7 @@ QT:RegisterTest("VIP inbound work is bounded and stale verification cannot reviv
 end)
 
 QT:RegisterTest("VIP window offers contact claim and private activation with safe lifecycle", function()
-	local a = setmetatable({ isEnabled = true, db = { profile = {} }, runtimeStateStore = {},
+	local a = setmetatable({ isEnabled = true, db = { profile = {} }, runtimeStateStore = nil,
 		PLAYER_VIP_ICON_TEXTURE = QT.PLAYER_VIP_ICON_TEXTURE }, { __index = QT })
 	a.API = { GetTime = function() return 100 end, Random = function() return 123 end }
 	a.parent = QT:CreateTestUIRegion(a)

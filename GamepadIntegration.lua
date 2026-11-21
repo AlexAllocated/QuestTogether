@@ -5,50 +5,12 @@ local records, observers, owner = {}, {}, {}
 local state = { generation = 0, order = {}, events = {} }
 local Reconcile, Schedule, Notify, Retire
 
-local function Accessible(value)
-	return not (issecretvalue and issecretvalue(value)) and (not canaccessvalue or canaccessvalue(value))
-end
-local function Methods(object, names)
-	if not object or not Accessible(object) then
-		return false
-	end
-	for _, name in ipairs(names) do
-		if type(object[name]) ~= "function" then
-			return false
-		end
-	end
-	return true
-end
+local Access = QT.NativeAccess
+local Accessible, Methods = Access.Value, Access.Methods
 local function Manager()
-	return GamepadMode and GamepadMode.FrameControlsManager
-end
-local function BuildDiagnostic(value)
-	if not Accessible(value) then return "unknown" end
-	if type(value) == "number" then
-		if value ~= value or value < 0 or value > 999999999999 then return "unknown" end
-		value = tostring(value)
-	end
-	if type(value) ~= "string" or #value > 32 or not value:match("^%d[%d%.]*$") then return "unknown" end
-	return value
-end
-local function SupportedClient()
-	if state.supportedClient ~= nil then
-		return state.supportedClient
-	end
-	if type(GetBuildInfo) ~= "function" then
-		return false
-	end
-	local ok, version, build = pcall(GetBuildInfo)
-	if not ok then return false end
-	state.clientVersion, state.clientBuild = BuildDiagnostic(version), BuildDiagnostic(build)
-	-- Build numbers are diagnostic only; native capabilities govern compatibility.
-	state.supportedClient = Accessible(version) and version == "1.60.1"
-	return state.supportedClient
+	return Access.Read(GamepadMode, "FrameControlsManager")
 end
 local function AuthoredGeneration()
-	if not SupportedClient() then
-		return false, "unsupported_client"
-	end
 	if
 		not Methods(
 			SmartNavigationSecureHelper,
@@ -57,7 +19,7 @@ local function AuthoredGeneration()
 	then
 		return false, "native_missing_functions"
 	end
-	-- The client family, helper feature set and secure entrypoints bound
+	-- The helper feature set and secure entrypoints bound
 	-- support without requiring a patch for each client build. Never
 	-- call WrapFunction/SetSecureValue or write the helper's attributes ourselves.
 	if type(issecurevariable) ~= "function" then
@@ -138,24 +100,26 @@ local function Capable()
 	else state.unavailableReason = reason or "native_missing_functions" end
 	return state.capable
 end
+local function ReadCombatRestriction()
+	local query = Access.Read(C_RestrictedActions, "IsAddOnRestrictionActive")
+	local kind = Access.Read(Access.Read(Enum, "AddOnRestrictionType"), "Combat")
+	if type(query) ~= "function" or kind == nil then return nil end
+	local ok, active = pcall(query, kind)
+	if ok and Accessible(active) and type(active) == "boolean" then return active end
+end
 local function Restricted()
-	return QT:IsRuntimeRestricted()
-		or (InCombatLockdown and InCombatLockdown())
-		or (
-			C_RestrictedActions
-			and Enum
-			and Enum.AddOnRestrictionType
-			and C_RestrictedActions.IsAddOnRestrictionActive(Enum.AddOnRestrictionType.Combat)
-		)
+	if QT:IsRuntimeRestricted() then return true end
+	local lockdown = Access.Read(_G, "InCombatLockdown")
+	if type(lockdown) ~= "function" then return true end
+	local ok, active = pcall(lockdown)
+	if not ok or not Accessible(active) or active ~= false then return true end
+	return ReadCombatRestriction() ~= false
 end
 -- Dismissal only removes existing owned presentation. Ordinary combat lockdown
 -- does not itself forbid the native wrapper, but an active addon restriction
 -- does. Never use this narrower policy for registration or quest actions.
 local function DismissRestricted()
-	if not Methods(C_RestrictedActions, { "IsAddOnRestrictionActive" })
-		or not Enum or not Enum.AddOnRestrictionType then return true end
-	local ok, active = pcall(C_RestrictedActions.IsAddOnRestrictionActive, Enum.AddOnRestrictionType.Combat)
-	if not ok or not Accessible(active) or active ~= false then return true end
+	if ReadCombatRestriction() ~= false then return true end
 	if type(QT.IsRuntimeRestrictionTypeActive) ~= "function" then return true end
 	for kind in pairs(QT.runtimeRestrictionTypes or { combat = true, encounter = true, challenge = true, pvp = true, map = true }) do
 		if QT:IsRuntimeRestrictionTypeActive(kind) then
@@ -1138,7 +1102,7 @@ function QT:DismissGamepadWindowsForCombat()
 	Reconcile()
 end
 local function Attach()
-	if state.attached or state.failed or Restricted() or not Capable() then
+	if state.attached or state.failed or not Capable() or Restricted() then
 		return
 	end
 	state.attached, state.monitoring = true, true
@@ -1211,9 +1175,6 @@ function QT:InitializeGamepadIntegration()
 	end
 	if state.enabled == nil then
 		state.enabled = type(self.GetOption) ~= "function" or self:GetOption("nativeGamepadNavigation") ~= false
-	end
-	if not SupportedClient() then
-		return false
 	end
 	if not state.listener then
 		local listener = CreateFrame("Frame")
@@ -1288,12 +1249,12 @@ function QT:GetGamepadIntegrationStatus()
 	if self ~= QT or rawget(QT, "isRunningTests") == true then
 		return false
 	end
+	local clientVersion, clientBuild = QT:GetClientBuildDiagnostics()
 	local available = Capable() and true or false
 	local result = {
 		available = available,
-		clientVersion = state.clientVersion or "unknown",
-		clientBuild = state.clientBuild or "unknown",
-		supportedClient = SupportedClient() == true,
+		clientVersion = clientVersion,
+		clientBuild = clientBuild,
 		unavailableReason = available and "none" or state.unavailableReason or "native_missing_functions",
 		dismissalRestricted = DismissRestricted(),
 		worldReady = state.worldReady == true,

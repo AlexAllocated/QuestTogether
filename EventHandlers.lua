@@ -195,26 +195,6 @@ function QuestTogether:GetObjectiveProgressIdentity(objectiveText)
 	return identity
 end
 
-function QuestTogether:DidObjectiveProgressIncrease(oldText, oldValue, newText, newValue)
-	local oldIdentity = self:GetObjectiveProgressIdentity(oldText)
-	local newIdentity = self:GetObjectiveProgressIdentity(newText)
-	if not oldIdentity or not newIdentity or oldIdentity ~= newIdentity then
-		return false
-	end
-
-	local previousValue = QuestTogether:SafeToNumber(oldValue)
-	if previousValue == nil then
-		previousValue = ParseObjectiveProgressFromText(oldText)
-	end
-
-	local currentValue = ResolveObjectiveProgressValue(newText, newValue)
-	if previousValue == nil or currentValue == nil then
-		return false
-	end
-
-	return currentValue > previousValue
-end
-
 function QuestTogether:UpdateTrackedObjectiveProgress(questData, objectiveIndex, objectiveText, currentValue, questId)
 	questData.objectives = questData.objectives or {}
 	questData.objectiveValues = questData.objectiveValues or {}
@@ -376,10 +356,6 @@ function QuestTogether:HandleQuestCompleted(questTitle, questId, extraData, capt
 	end
 
 	self:PlayLocalCompletionEmote(completionEmote)
-end
-
-function QuestTogether:HandleQuestRemoved(questTitle)
-	self:PublishAnnouncementEvent("QUEST_REMOVED", L("Quest Removed: ") .. SafeText(questTitle, L("Unknown")))
 end
 
 function QuestTogether:ShouldPublishObjectiveProgress(currentValue)

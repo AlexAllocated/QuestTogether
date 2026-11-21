@@ -60,54 +60,54 @@ end
 local settingGroups = {
 	{ title = L("Groups & Sharing"), entries = {
 		{ "questTrackerMode", L("Party Objective Tracker") },
-		{ "showTrackerFocusIndicators", L("Show party focus indicators on the quest tracker") },
-		{ "automaticLeaderFocus", L("Automatically follow the party leader's quest focus") },
-		{ "allowIncomingShareRequests", L("Allow incoming QT quest-share requests") },
-		{ "autoAcceptPartyShareRequests", L("Always allow party share requests") },
-		{ "lookingForQuestPartners", L("Looking for Questing Partners") },
-		{ "autoInviteWhileLFG", L("Automatically invite others while looking for partners") },
-		{ "autoInviteFriends", L("Automatically invite friends who request to join") },
+		{ "showTrackerFocusIndicators" },
+		{ "automaticLeaderFocus" },
+		{ "allowIncomingShareRequests" },
+		{ "autoAcceptPartyShareRequests" },
+		{ "lookingForQuestPartners" },
+		{ "autoInviteWhileLFG" },
+		{ "autoInviteFriends" },
 	} },
 	{ title = L("Maps & nameplates"), entries = {
 		{ "showPlayerLocations", L("Show player markers") },
-		{ "showWorldMapData", L("Show QT world-map overlays") },
-		{ "showPartyWaypoints", L("Show party waypoints") },
+		{ "showWorldMapData" },
+		{ "showPartyWaypoints" },
 		{ "nameplatePlayerIconEnabled", L("QuestTogether Player Icon") },
 		{ "nameplateQuestIconEnabled", L("Quest Objective Icon") },
-		{ "nameplateQuestHealthColorEnabled", L("Quest Objective Health Color") },
+		{ "nameplateQuestHealthColorEnabled" },
 		{ "playerTooltipIdentifierMode", L("QuestTogether tooltip") },
 	} },
 	{ title = L("Launchers"), entries = {
-		{ "showMinimapButton", L("Show minimap icon") },
-		{ "showWorldMapButton", L("Show the QT world-map button") },
-		{ "showDataBrokerLauncher", L("Show the Data Broker launcher") },
-		{ "automaticGamepadLauncher", L("Automatically add the PQL controller shortcut") },
+		{ "showMinimapButton" },
+		{ "showWorldMapButton" },
+		{ "showDataBrokerLauncher" },
+		{ "automaticGamepadLauncher" },
 	} },
 	{ title = L("Chat & notifications"), entries = {
-		{ "showChatLogs", L("Show Chat Logs") },
-		{ "showQTChat", L("Show QuestTogether Chat") },
-		{ "showChatBubbles", L("Show Chat Bubbles") },
+		{ "showChatLogs" },
+		{ "showQTChat" },
+		{ "showChatBubbles" },
 		{ "ownChatBubbleMode", L("My chat bubble") },
-		{ "announceToNonQTParty", L("Also send announcements to party chat if any party members are not running QuestTogether") },
-		{ "hidePartyChatReminder", L("Hide party-chat reminders") },
-		{ "showStartupTips", L("Show tips on login") },
-		{ "showAutomaticReleaseNotes", L("Show patch notes automatically") },
-		{ "showUpdateNotifications", L("Show update notifications") },
+		{ "announceToNonQTParty" },
+		{ "hidePartyChatReminder" },
+		{ "showStartupTips" },
+		{ "showAutomaticReleaseNotes" },
+		{ "showUpdateNotifications" },
 	} },
 	{ title = L("Sounds & emotes"), entries = {
-		{ "audioEnabled", L("Enable QT sounds") },
-		{ "autoThankBuffs", L("Automatically thank players for buffs") },
-		{ "emoteOnQuestCompletion", L("Emote On Quest Completion") },
-		{ "emoteOnNearbyPlayerQuestCompletion", L("Emote On Nearby Player Quest Completion") },
-		{ "emoteOnLevelUp", L("Emote On Level Up") },
-		{ "emoteOnNearbyPlayerLevelUp", L("Emote On Nearby Player Level Up") },
+		{ "audioEnabled" },
+		{ "autoThankBuffs" },
+		{ "emoteOnQuestCompletion" },
+		{ "emoteOnNearbyPlayerQuestCompletion" },
+		{ "emoteOnLevelUp" },
+		{ "emoteOnNearbyPlayerLevelUp" },
 	} },
 	{ title = L("Sharing & privacy"), entries = {
 		{ "sharingAudience", L("Sharing audience") },
-		{ "sharePartyFocus", L("Share my focused quest") },
-		{ "sharePartyWaypoint", L("Share my waypoint") },
-		{ "sharePlayerLocation", L("Share my location on the map and minimap") },
-		{ "shareDeveloperDiagnostics", L("Share diagnostic data with the developer") },
+		{ "sharePartyFocus" },
+		{ "sharePartyWaypoint" },
+		{ "sharePlayerLocation" },
+		{ "shareDeveloperDiagnostics" },
 	} },
 }
 function QT:GetPresetSettingDetails(id)
@@ -127,7 +127,7 @@ function QT:GetPresetSettingDetails(id)
 			elseif key == "questTrackerMode" then
 				for _, option in ipairs(self:GetQuestTrackerModeOptions()) do if option.value == value then text = option.text; break end end
 			end
-			result.entries[#result.entries + 1] = { key = key, label = entry[2], value = value, text = text or L("Unknown") }
+			result.entries[#result.entries + 1] = { key = key, label = self:GetSettingDefinition(key).label or entry[2], value = value, text = text or L("Unknown") }
 		end
 		groups[#groups + 1] = result
 	end

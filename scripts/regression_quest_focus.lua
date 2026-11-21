@@ -10,7 +10,7 @@ local function Fixture()
 		sent = {},
 		now = 10,
 		focus = 42,
-		runtimeStateStore = {},
+		runtimeStateStore = nil,
 	}, { __index = QT })
 	a.API = {
 		IsInGroup = function() return #a.partyMemberOrder > 1 end,

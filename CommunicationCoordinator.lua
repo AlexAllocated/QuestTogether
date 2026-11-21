@@ -14,7 +14,6 @@ local STATE_HANDLERS = {
 	QTCI = "HandlePlayerCapabilityMetadata",
 	QTHI = "HandlePlayerDetailsIdentity",
 }
-local policies = {}
 local ExpireRequest
 local function Now(a)
 	return a:SafeToNumber(a.API.GetTime()) or 0
@@ -79,9 +78,7 @@ function QT:NextCommunicationSequence()
 	s.sequence = s.sequence + 1
 	return s.sequence
 end
-function QT:RegisterCommunicationPolicy(operation, policy)
-	policies[operation] = policy
-end
+
 function QT:GetCommunicationMetrics()
 	local s = rawget(self, "communicationState")
 	if not s then
@@ -452,13 +449,13 @@ function QT:SubmitCommunication(operation, record, routes, options)
 		descriptor.flow = options.flow or key
 		descriptor.key = options.key and (key .. ":" .. options.key) or nil
 		descriptor.publishesLocation = options.publishesLocation == true or SubmitsLocation(operation, data)
-		local policy = policies[operation]
+
 		descriptor.publicationCurrent = function()
 			return Current(self, s)
 				and self:IsCommunicationRouteCurrent(route, fingerprint)
 				and (not descriptor.publishesLocation or self:CanPublishPlayerLocation())
 				and Predicate(self, options.publicationCurrent)
-				and (not policy or not policy.canSend or policy.canSend(self, data, route, options))
+
 		end
 		descriptor.isCurrent = function()
 			if not Current(self, s) or not self:IsCommunicationRouteCurrent(route, fingerprint) then
