@@ -4,18 +4,12 @@
 
 ## 10.1.2
 
-Mit dem Controller weiter auf Abenteuerreise!
+Kompatibilitätskorrektur für die kürzlichen Gefährten auf Forever.
 
-### Controller-Kompatibilität
+### Kürzliche Gefährten
 
-- Ein kompatibles Update von WoW Forever schaltet die Controller-Unterstützung von QT nicht mehr allein wegen einer neuen Buildnummer ab. Die nötigen API- und Sicherheitsprüfungen bleiben erhalten.
-- Die bisherige Buildprüfung konnte bei neuen Charakteren die Einrichtung der PQL-Controller-Verknüpfung verhindern. Nach dem Neuladen kann QT sie bei aktivierter automatischer Einrichtung auf den freien Platz LT + RT + Steuerkreuz oben auf Aktionsseite 1 legen. Vorhandene Makros und eigene Belegungen bleiben erhalten.
-- Auch die Gruppenmarkierungen auf der Weltkarte benötigen keine exakt passende Buildnummer mehr, solange der Client die erforderlichen Schnittstellen unterstützt.
-
-### Freie Sicht im Kampf
-
-- Sobald ein Kampf beginnt, schließen sich QT-Fenster und ihre Menüs automatisch. So bleibt die Sicht frei und die Controller-Steuerung geht zurück ans Spiel.
-- Das gilt auch für das Debug-Protokoll und Diagnoseberichte – selbst wenn QuestTogether in den eigenen Einstellungen deaktiviert ist.
+- Wenn Forever keinen Realmnamen zurückgibt, werden die kürzlichen Gefährten jetzt trotzdem geladen und neue Gruppenmitglieder gespeichert.
+- Der bisherige Verlauf bleibt erhalten und wird für deine Charaktere derselben Region zusammengeführt. Pro Spieler zählt der neueste Eintrag. Der Verlauf bleibt privat und speichert weiterhin bis zu 100 Spieler für 90 Tage. Auf Retail und Classic bleibt er nach Realm getrennt.
 
 ## 10.1.1
 

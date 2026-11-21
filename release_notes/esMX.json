@@ -1,22 +1,14 @@
 {
-  "source_sha256": "e4843d03637bd0822e4921984175988f83c2d8e51bf4bd452d669eac238a04dd",
+  "source_sha256": "c27caffbe2ad4ab70b992de7acac479f2b24d169bff5a6721de6833fcf599af0",
   "notes": {
     "version": "10.1.2",
-    "welcome": "¡Sigue tus aventuras con el control!",
+    "welcome": "Una corrección para tus compañeros recientes en Forever.",
     "sections": [
       {
-        "title": "Compatibilidad con controles",
+        "title": "Compañeros recientes",
         "items": [
-          "Una actualización compatible de WoW Forever ya no desactiva el soporte de control de QT solo porque cambió el número de compilación. Las verificaciones de API y seguridad siguen activas.",
-          "Corregimos la verificación que impedía agregar el acceso al PQL con control en personajes nuevos. Después de recargar la interfaz, QT puede agregarlo al espacio libre LT + RT + arriba en la cruceta de la página de acciones 1, si la instalación automática está habilitada. Las macros existentes y las asignaciones personalizadas se conservan.",
-          "Los marcadores de grupo de QT en el mapa del mundo también aceptan compilaciones compatibles sin requerir una coincidencia exacta del número."
-        ]
-      },
-      {
-        "title": "A combatir sin estorbos",
-        "items": [
-          "Al entrar en combate, las ventanas y los menús de QT se cierran solos para despejar la pantalla y devolverle al juego la entrada del control.",
-          "Esto también incluye el registro de depuración y los reportes de diagnóstico, aunque QuestTogether esté desactivado en su configuración."
+          "La lista de compañeros recientes ahora puede cargar y guardar jugadores aunque Forever no proporcione un nombre de reino.",
+          "Conservamos tu historial y lo unimos para tus personajes de la misma región, usando el registro más reciente de cada jugador. Sigue siendo privado y mantiene los límites de 100 jugadores y 90 días. En Retail y Classic, cada reino conserva su historial separado."
         ]
       }
     ]
