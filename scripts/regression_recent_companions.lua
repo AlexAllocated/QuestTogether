@@ -77,10 +77,82 @@ QT:RegisterTest("recent companion history is account wide private and client rea
 	assert(#other:GetRecentCompanions() == 0)
 	other.realm, other.namespace = a.realm, "2:US:realm"
 	assert(#other:GetRecentCompanions() == 0)
-	a.regional = true
+	a.regional, a.namespace = true, "1:US:regional"
 	a.partyMembers = { ["Alice Windrunner"] = { classFile = "MAGE" } }
 	a:RecordRecentCompanions()
 	assert(a:GetRecentCompanions()[1].name == "Alice Windrunner")
+end)
+
+QT:RegisterTest("Forever blank realms preserve recent history across reloads and region changes", function()
+	local a = Fixture()
+	a.regional, a.namespace, a.realm = true, "42:US:regional", ""
+	a.API.GetRealmName = function() error("Forever history must not query a realm") end
+	a.partyMembers = { ["Alice Windrunner"] = { classFile = "DRUID" } }
+	assert(a:RecordRecentCompanions())
+	assert(a:GetRecentCompanions()[1].name == "Alice Windrunner")
+	assert(a.db.global.recentCompanions["42:US:regional"])
+	local b = Fixture(a.db.global)
+	b.regional, b.namespace, b.realm = true, a.namespace, nil
+	assert(b:GetRecentCompanions()[1].name == "Alice Windrunner")
+	b.namespace = "42:EU:regional"
+	assert(#b:GetRecentCompanions() == 0)
+	b.namespace = "43:US:regional"
+	assert(#b:GetRecentCompanions() == 0)
+	b.namespace = a.namespace
+	assert(#b:GetRecentCompanions() == 1)
+	assert(b:RemoveRecentCompanion("Alice Windrunner"))
+	assert(#a:GetRecentCompanions() == 0)
+end)
+
+QT:RegisterTest("Forever merges old realm histories without losing latest records or reviving cleared history", function()
+	local a = Fixture()
+	a.regional, a.namespace, a.realm = true, "42:US:regional", ""
+	local ns, now = a.namespace, a.now
+	local stores = {
+		[ns] = { ["Alice Windrunner"] = { lastGrouped = now - 2, classFile = "DRUID" } },
+		[ns .. ":OldRealm"] = {
+			["Alice Windrunner"] = { lastGrouped = now - 3, classFile = "PRIEST" },
+			["Bob-Surname"] = { lastGrouped = now - 1, classFile = "MAGE" },
+			["Corrupt Record"] = false,
+			["Expired Record"] = { lastGrouped = now - 91 * 86400 },
+		},
+		[ns .. ":AnotherRealm"] = {
+			["Alice Windrunner"] = { lastGrouped = now, classFile = "WARRIOR" },
+			["Bob Surname"] = { lastGrouped = now + 9999, classFile = "DRUID" },
+		},
+		["42:EU:regional:OldRealm"] = { sentinel = true },
+		["1:US:realm:OldRealm"] = { sentinel = true },
+	}
+	a.db.global.recentCompanions = stores
+	local rows = a:GetRecentCompanions()
+	assert(#rows == 2 and rows[1].name == "Alice Windrunner" and rows[1].classFile == "WARRIOR")
+	assert(rows[2].name == "Bob Surname" and rows[2].classFile == "MAGE")
+	assert(not stores[ns .. ":OldRealm"] and not stores[ns .. ":AnotherRealm"])
+	assert(stores["42:EU:regional:OldRealm"].sentinel and stores["1:US:realm:OldRealm"].sentinel)
+	assert(a:ClearRecentCompanions())
+	local b = Fixture(a.db.global)
+	b.regional, b.namespace, b.realm = true, ns, "Different Realm"
+	assert(#b:GetRecentCompanions() == 0, "reload resurrected removed legacy history")
+	-- Replacing SavedVariables must not reuse a migration marker for another store.
+	b.db.global = { recentCompanions = { [ns .. ":OldRealm"] = {
+		["New Friend"] = { lastGrouped = now, classFile = "PRIEST" },
+	} } }
+	assert(b:GetRecentCompanions()[1].name == "New Friend")
+end)
+
+QT:RegisterTest("Forever history migration preserves retention bounds while ordinary clients require a realm", function()
+	local a = Fixture()
+	a.regional, a.namespace, a.realm = true, "42:US:regional", nil
+	local legacy = {}
+	for i = 1, 105 do legacy["Player Surname" .. i] = { lastGrouped = a.now - i } end
+	a.db.global.recentCompanions = { [a.namespace .. ":OldRealm"] = legacy }
+	local rows = a:GetRecentCompanions()
+	assert(#rows == 100 and rows[1].lastGrouped == a.now - 1 and rows[100].lastGrouped == a.now - 100)
+	local b = Fixture()
+	b.realm = ""
+	b.partyMembers = { ["Alice-HomeRealm"] = {} }
+	assert(not b:RecordRecentCompanions() and #b:GetRecentCompanions() == 0)
+	assert(not b.db.global.recentCompanions, "blank realm created an ambiguous ordinary-client bucket")
 end)
 
 QT:RegisterTest("recent companion history bounds retention repairs corrupt entries and limits count", function()

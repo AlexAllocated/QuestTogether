@@ -12,25 +12,10 @@ end
 local function Namespace(addon)
 	local key = addon.API.GetPlayerNotesNamespace and addon.API.GetPlayerNotesNamespace()
 	key = addon:SafeTrimString(key, "")
+	if key == "" then return nil end
+	if addon:UsesRegionalPlayerNames() then return key end
 	local realm = addon:SafeStripWhitespace(addon.API.GetRealmName and addon.API.GetRealmName(), "")
-	return key ~= "" and realm ~= "" and key .. ":" .. realm or nil
-end
-
-local function Store(addon, create)
-	local db = rawget(addon, "db")
-	local global = db and db.global
-	if type(global) ~= "table" then return nil end
-	local namespace = Namespace(addon)
-	if not namespace then return nil end
-	if type(global.recentCompanions) ~= "table" then
-		if not create then return nil end
-		global.recentCompanions = {}
-	end
-	if type(global.recentCompanions[namespace]) ~= "table" then
-		if not create then return nil end
-		global.recentCompanions[namespace] = {}
-	end
-	return global.recentCompanions[namespace]
+	return realm ~= "" and key .. ":" .. realm or nil
 end
 
 local function Class(addon, value)
@@ -58,6 +43,60 @@ local function Rows(addon, store, now)
 		rows[index] = nil
 	end
 	return rows
+end
+
+-- Forever identities are regional, not tied to the internal realm/shard.
+-- Merge the old realm buckets once per store and retain the newest observation.
+local function MigrateRegionalHistory(addon, stores, namespace)
+	if not addon:UsesRegionalPlayerNames() then return end
+	if rawget(addon, "recentCompanionMigrationStore") == stores
+		and rawget(addon, "recentCompanionMigrationNamespace") == namespace then return end
+	local now = Now(addon)
+	if not now then return end
+	local keys, merged = {}, {}
+	local prefix = namespace .. ":"
+	for key in pairs(stores) do
+		if type(key) == "string" and key:sub(1, #prefix) == prefix then keys[#keys + 1] = key end
+	end
+	table.sort(keys)
+	-- Prefer the current bucket on equal timestamps. Sorted legacy keys make
+	-- ties independent of Lua's table iteration order.
+	table.insert(keys, 1, namespace)
+	for _, key in ipairs(keys) do
+		local source = stores[key]
+		if type(source) == "table" then
+			for name, record in pairs(source) do
+				local identity = addon:GetPlayerNoteIdentity(name)
+				local stamp = type(record) == "table" and addon:SafeToNumber(record.lastGrouped)
+				if identity and stamp and stamp > 0 and stamp <= now + 300 and now - stamp <= RETENTION
+					and (not merged[identity] or stamp > merged[identity].lastGrouped) then
+					merged[identity] = { lastGrouped = stamp, classFile = Class(addon, record.classFile) }
+				end
+			end
+		end
+	end
+	Rows(addon, merged, now)
+	stores[namespace] = merged
+	for index = 2, #keys do stores[keys[index]] = nil end
+	addon.recentCompanionMigrationStore, addon.recentCompanionMigrationNamespace = stores, namespace
+end
+
+local function Store(addon, create)
+	local db = rawget(addon, "db")
+	local global = db and db.global
+	if type(global) ~= "table" then return nil end
+	local namespace = Namespace(addon)
+	if not namespace then return nil end
+	if type(global.recentCompanions) ~= "table" then
+		if not create then return nil end
+		global.recentCompanions = {}
+	end
+	MigrateRegionalHistory(addon, global.recentCompanions, namespace)
+	if type(global.recentCompanions[namespace]) ~= "table" then
+		if not create then return nil end
+		global.recentCompanions[namespace] = {}
+	end
+	return global.recentCompanions[namespace]
 end
 
 function QT:GetRecentCompanions()
@@ -215,7 +254,9 @@ local function Create(addon)
 	frame.hint = Label(frame)
 	frame.hint:SetPoint("TOPLEFT", frame.contentInset, -frame.contentTop)
 	frame.hint:SetWidth(frame.contentWidth)
-	frame.hint:SetText(L("People you grouped with. Private across your characters on this realm; never shared. Keeps the latest 100 for 90 days."))
+	frame.hint:SetText(addon:UsesRegionalPlayerNames()
+		and L("People you grouped with. Private across your characters in this region; never shared. Keeps the latest 100 for 90 days.")
+		or L("People you grouped with. Private across your characters on this realm; never shared. Keeps the latest 100 for 90 days."))
 	frame.list = New("Frame")
 	frame.list:SetPoint("TOPLEFT", frame.hint, "BOTTOMLEFT", 0, -12)
 	frame.list:SetSize(frame.contentWidth - 24, ROWS * ROW_HEIGHT)

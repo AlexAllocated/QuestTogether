@@ -1739,6 +1739,24 @@ QuestTogether:RegisterTest("Forever roster unit announcements and ping metadata 
 	Equal(addon:GetPlayerFullName(), "Anakin Ofthesea")
 end)
 
+QuestTogether:RegisterTest("Forever empty realm keeps profile anchors roster and protocol identities unchanged", function()
+	local addon = NewRegionalNameFixture()
+	for _, blank in ipairs({ "", "   " }) do
+		addon.API.GetRealmName = function() return blank end
+		Equal(addon:GetCurrentCharacterKey(), "Anakin-Ofthesea")
+		Equal(addon:GetPersonalBubbleAnchorKey(), "Anakin-Ofthesea")
+		Equal(addon:GetPlayerFullName(), "Anakin Ofthesea")
+		Equal(addon:NormalizeMemberName("Anakin-Othername"), "Anakin Othername")
+		addon:RefreshPartyRoster()
+		Equal(addon:IsGroupedSender("Anakin Othername"), true)
+		Equal(addon:GetPlayerPingMetadata().senderName, "Anakin Ofthesea")
+		Equal(addon:GetPlayerPingMetadata().realmName, "")
+	end
+	addon.API.GetRealmName = function() error("Forever identity must not query a realm") end
+	Equal(addon:GetCurrentCharacterKey(), "Anakin-Ofthesea")
+	Equal(addon:GetPlayerPingMetadata().senderName, "Anakin Ofthesea")
+end)
+
 QuestTogether:RegisterTest("Forever unavailable surname profile fallback never invents a realm", function()
 	local unexpectedCalls = 0
 	local addon = NewRegionalNameFixture()

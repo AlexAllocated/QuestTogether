@@ -200,7 +200,7 @@ private `.local` notes are historical context, not the source of truth.
 
 - Recent companions are recorded only from the sanitized current group roster,
   including non-QT members. The private `db.global.recentCompanions` store is
-  scoped by client, region, naming model and realm; it retains at most 100 entries
+  scoped by client, region and naming model, plus realm on non-regional clients; it retains at most 100 entries
   for 90 days. Leaving a group stamps the previous roster before replacement.
   Departure stamps require the exact roster observed in this enabled world
   lifetime; re-entry reads the native roster again, never renewing a stale one.
