@@ -128,34 +128,54 @@ QT:RegisterTest("party sync prepares all five clients before either quest view o
 	Equal(Detail(viewer, remote.name, 1), retained, "closing PQL cannot discard the shared data")
 end, { offline = true })
 
-QT:RegisterTest("family party sync recovers a rejected child reply before or after its first fragment", function()
-	for _, failedPart in ipairs({ 1, 2 }) do
-		local net, peers = Party(3, 12, { fps = 5, seed = 73 })
-		local parent, otherParent, child = peers[1], peers[2], peers[3]
-		for key, value in pairs(child:GetPresetValues("kid")) do child.db.profile[key] = value end
-		local rejected, requestID, retries = false, nil, 0
-		net.sendRule = function(packet, _, sender)
-			local frame = sender:DecodeCommFrame(packet.wire)
-			if sender == child and frame.operation == "QCRS" and parent:GetPendingQuestCompare(frame.requestId)
-				and not rejected and frame.part == failedPart then
-				assert(frame.total > 1)
-				rejected, requestID = true, frame.requestId
-				return 7
+QT:RegisterTest("family party sync recovers interrupted replies on parent and child clients", function()
+	for _, viewerIndex in ipairs({ 1, 3 }) do
+		for _, failedPart in ipairs({ 1, 2 }) do
+			local net, peers = Party(3, 12, { fps = 5, seed = 73 })
+			local child, viewer = peers[3], peers[viewerIndex]
+			local remote = peers[viewerIndex == 1 and 3 or 1]
+			for key, value in pairs(child:GetPresetValues("kid")) do child.db.profile[key] = value end
+			local rejected, requestID, retries = false, nil, 0
+			net.sendRule = function(packet, _, sender)
+				local frame = sender:DecodeCommFrame(packet.wire)
+				if sender == remote and frame.operation == "QCRS" and viewer:GetPendingQuestCompare(frame.requestId)
+					and not rejected and frame.part == failedPart then
+					assert(frame.total > 1)
+					rejected, requestID = true, frame.requestId
+					return 7
+				end
+				if sender == viewer and frame.operation == "QCMP" and frame.requestId == requestID then
+					retries = retries + 1
+				end
+				return 0
 			end
-			if sender == parent and frame.operation == "QCMP" and frame.requestId == requestID then
-				retries = retries + 1
+			if viewer == child then
+				-- Kid mode hides automatic presentation, but manually opening PQL
+				-- must still receive the parents' data and recover interrupted reads.
+				assert(child:RefreshPartyQuestCompare(nil, nil, true))
 			end
-			return 0
+			Await(net, 70, function()
+				for _, observer in ipairs(peers) do
+					for _, source in ipairs(peers) do
+						if observer ~= source then
+							local member = observer:GetPartyQuestSyncMember(source.name)
+							if not member or member.state ~= "ready" then return false end
+						end
+					end
+				end
+				return rejected
+			end, "all three clients must receive party logs after a transient reply failure")
+			assert(retries > 0 and retries <= 2, "recovery must retain the bounded request retry budget")
+			assert(not viewer:GetPendingQuestCompare(requestID))
+			local member = viewer:GetPartyQuestSyncMember(remote.name)
+			assert(member.entries[12])
+			assert(child:GetOption("sharingAudience") == "party")
+			if viewer == child then
+				assert(child.partyQuestCompareSession.byName[remote.name] == member and member.state == "ready")
+			else
+				assert(not child.partyQuestCompareSession)
+			end
 		end
-		Await(net, 70, function()
-			local first = parent:GetPartyQuestSyncMember(child.name)
-			local second = otherParent:GetPartyQuestSyncMember(child.name)
-			return rejected and first and first.state == "ready" and second and second.state == "ready"
-		end, "both parents must receive the child's log after a transient reply failure")
-		assert(retries > 0 and retries <= 2, "recovery must retain the bounded request retry budget")
-		assert(not parent:GetPendingQuestCompare(requestID))
-		assert(parent:GetPartyQuestSyncMember(child.name).entries[12])
-		assert(child:GetOption("sharingAudience") == "party" and not child.partyQuestCompareSession)
 	end
 end, { offline = true })
 
