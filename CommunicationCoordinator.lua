@@ -963,6 +963,9 @@ local function DispatchOperation(self, frame, data, sender, context)
 	if operation == "QSHR" then
 		return self:HandlePartyQuestShareMessage(data, sender, context.distribution)
 	end
+	if operation == "QFSG" then
+		return self:HandlePartyFocusSuggestion(data, sender, context)
+	end
 	return false
 end
 function QT:DispatchCommRecord(frame, data, sender, context)

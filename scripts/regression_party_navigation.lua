@@ -84,8 +84,9 @@ local function Fixture(name)
 	function a:IsWorkBlocked()
 		return self.blocked == true
 	end
-	function a:ShowPartyFocusChangeDialog(name, callback, _, _, cancel)
+	function a:ShowPartyFocusChangeDialog(name, callback, _, _, cancel, suggest, automatic)
 		self.confirmName, self.confirmAction, self.cancelAction = name, callback, cancel
+		self.suggestAction, self.automaticDialog = suggest, automatic
 		self.dialogCount = (self.dialogCount or 0) + 1
 		return true
 	end
@@ -205,11 +206,13 @@ local function AutomaticPair()
 	a:Tick()
 	return a, b
 end
-QT:RegisterTest("automatic leader focus rejects replacements and restores native focus without a dialog", function()
+QT:RegisterTest("automatic leader focus offers a choice without allowing local replacement", function()
 	local a, b = AutomaticPair()
 	Equal(a:GetPartyQuestFollowTarget(), b.name)
 	Equal(a.native.questID, 1)
-	assert(not a:RequestPartyQuestFocus(a.name, 2))
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	assert(a.automaticDialog)
+	a.cancelAction()
 	Equal(a.native.questID, 1)
 	assert(not a:StopPartyQuestFollow() and a.explanation)
 	Equal(a:GetPartyQuestFollowTarget(), b.name)
@@ -217,7 +220,8 @@ QT:RegisterTest("automatic leader focus rejects replacements and restores native
 	a:OnPartyNavigationTrackingChanged()
 	a:Tick()
 	Equal(a.native.questID, 1)
-	Equal(a.dialogCount, nil)
+	Equal(a.dialogCount, 2)
+	a.cancelAction()
 	assert(not a:OpenPingWaypoint(37, 40, 50))
 	a.options.automaticLeaderFocus = false
 	a:ReconcileAutomaticLeaderFocus()
@@ -225,6 +229,82 @@ QT:RegisterTest("automatic leader focus rejects replacements and restores native
 	assert(a:RequestPartyQuestFocus(a.name, 2))
 	Equal(a.native.questID, 2)
 end)
+QT:RegisterTest("focus suggestions preserve following and revalidate delayed sends and received consent", function()
+	for _, automatic in ipairs({ false, true }) do
+		local a, b
+		if automatic then a, b = AutomaticPair() else a, b = Pair(); assert(a:FollowPartyQuestFocus(b.name)) end
+		a.db, b.db = { profile = {} }, { profile = {} }
+		a.partyNavigationState.peers[b.name].focusSuggestions = true
+		b.options.allowFocusSuggestions = true
+		b.partyNavigationState.peers[a.name].following = b.name
+		function a:Emit(operation, data, routes, options)
+			Equal(operation, "QFSG"); Equal(routes[1].target, b.name)
+			self.suggestion = { data = data, options = options }
+			return true
+		end
+		function a:Print(text) self.notice = text end
+		function b:ShowPartyFocusSuggestionDialog(name, id, accept, current)
+			Equal(name, a.name); Equal(id, 2)
+			self.acceptSuggestion, self.suggestionCurrent = accept, current
+			return true
+		end
+		assert(a:RequestPartyQuestFocus(a.name, 2))
+		assert(a.suggestAction and a.suggestAction())
+		Equal(a:GetPartyQuestFollowTarget(), b.name); Equal(a.native.questID, 1)
+		assert(a.suggestion.options.isCurrent())
+		assert(b:HandlePartyFocusSuggestion(a.suggestion.data, a.name, { distribution = "WHISPER" }))
+		Equal(b.native.questID, 1)
+		assert(b.acceptSuggestion()); Equal(b.native.questID, 2)
+		assert(not b:HandlePartyFocusSuggestion(a.suggestion.data, a.name, { distribution = "WHISPER" }))
+		a.partyNavigationState.peers[b.name].focusSuggestions = false
+		assert(not a.suggestion.options.isCurrent() and not a:CanSuggestPartyFocus(b.name, 2))
+	end
+end)
+
+QT:RegisterTest("focus suggestions reject disabled strangers expired consent and lost quests", function()
+	for _, reason in ipairs({ "disabled", "departed", "expired", "quest", "profile", "restricted", "preview" }) do
+		local a, b = Pair()
+		b.db = { profile = {} }; b.options.allowFocusSuggestions = true
+		b.partyNavigationState.peers[a.name].following = b.name
+		function b:ShowPartyFocusSuggestionDialog(_, _, accept, current)
+			self.acceptSuggestion, self.suggestionCurrent = accept, current; return true
+		end
+		assert(b:HandlePartyFocusSuggestion({ targetName = b.name, questID = 2 }, a.name, { distribution = "WHISPER" }))
+		if reason == "disabled" then b.options.allowFocusSuggestions = false
+		elseif reason == "departed" then b:Roster(b.name)
+		elseif reason == "expired" then b.time = b.time + 31
+		elseif reason == "quest" then b.owned[2] = nil
+		elseif reason == "profile" then b.db.profile = {}
+		elseif reason == "restricted" then b.blocked = true
+		elseif reason == "preview" then b.nativePartyFocusOwner = {} end
+		assert(not b.suggestionCurrent() and not b.acceptSuggestion())
+		Equal(b.native.questID, 1)
+	end
+end)
+
+QT:RegisterTest("automatic following continues while a suggestion choice is open", function()
+	local a, b = AutomaticPair()
+	a.partyNavigationState.peers[b.name].focusSuggestions = true
+	assert(a:RequestPartyQuestFocus(a.name, 2))
+	local cancel = a.cancelAction
+	a.owned[3], b.owned[3], b.native.questID = 3, 3, 3
+	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+	Equal(a.native.questID, 3)
+	Equal(a:GetPartyQuestFollowTarget(), b.name)
+	assert(cancel())
+	Equal(a.native.questID, 3)
+end)
+
+QT:RegisterTest("automatic focus restoration makes one native attempt after a rejected selection", function()
+	local a = AutomaticPair()
+	a.native.questID, a.reject = 2, true
+	a:OnPartyNavigationTrackingChanged(); a:Tick()
+	local attempts = #a.writes
+	assert(attempts > 0)
+	for _ = 1, 5 do a:Tick() end
+	Equal(#a.writes, attempts)
+end)
+
 QT:RegisterTest("automatic leader focus allows unavailable manual selection and resumes only a usable leader", function()
 	local a, b = AutomaticPair()
 	a.disconnected = true; a:Tick()
@@ -242,6 +322,43 @@ QT:RegisterTest("automatic leader focus allows unavailable manual selection and 
 	b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
 	Equal(a.native.questID, 1)
 	Equal(a.dialogCount, nil)
+end)
+
+QT:RegisterTest("follow survives turn-in fallback before and after the peer focus update", function()
+	for _, packetFirst in ipairs({ false, true }) do
+		local a, b = Pair()
+		assert(a:FollowPartyQuestFocus(b.name))
+		b.owned[1] = nil -- Native tracking still points at the removed quest.
+		b:QueuePartyNavigationUpdate(); b:Tick()
+		Equal(b.wire[#b.wire].data.questID, 0)
+		if packetFirst then assert(b:Deliver(a)) end
+		a.native.questID = 2; a:OnPartyNavigationTrackingChanged()
+		a:Tick()
+		local oldAccept = a.confirmAction
+		if not packetFirst then assert(b:Deliver(a)) end
+		Equal(a:GetPartyQuestFollowTarget(), b.name)
+		Equal(a:GetPartyFocusController().choice, nil)
+		if oldAccept then assert(not oldAccept()) end
+		Equal(a:GetPartyQuestFollowTarget(), b.name)
+		b.native.questID = 2; b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+		Equal(a.native.questID, 2); Equal(a:GetPartyQuestFollowTarget(), b.name)
+		-- A genuinely manual change after the transition still asks.
+		a.owned[3], a.native.questID = 3, 3
+		a:OnPartyNavigationTrackingChanged(); a:Tick()
+		assert(a:GetPartyFocusController().choice)
+	end
+end)
+
+QT:RegisterTest("following does not mistake fallback after the local quest disappears for a manual override", function()
+	local a, b = Pair()
+	assert(a:FollowPartyQuestFocus(b.name))
+	-- The previous quest left the local log before native fallback and peer update.
+	a.owned[1] = nil
+	a.native.questID = 2; a:OnPartyNavigationTrackingChanged()
+	b.native.questID = 2; b:QueuePartyNavigationUpdate(); b:Tick(); b:Deliver(a)
+	a:Tick()
+	Equal(a.dialogCount, nil)
+	Equal(a.native.questID, 2); Equal(a:GetPartyQuestFollowTarget(), b.name)
 end)
 QT:RegisterTest("automatic leader focus retires old leaders and respects self leadership raids and cycles", function()
 	local a, b = AutomaticPair()
@@ -1365,7 +1482,7 @@ QT:RegisterTest("unshared focus survives reload and resumes when the friend focu
 	Equal(restored.noticeCount, nil)
 	-- The friend catches up to another quest we already own. Apply only once
 	-- native navigation is allowed, without another follow action or packet.
-	restored.owned[3] = 3
+	restored.owned[3], b.owned[3] = 3, 3
 	restored.blocked = true
 	b.native.questID = 3
 	b:QueuePartyNavigationUpdate()

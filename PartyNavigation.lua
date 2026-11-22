@@ -160,6 +160,10 @@ function QT:GetPartyFocusController()
 	controller = self:CreatePartyFocusController({
 		automaticTarget = function() return a:GetAutomaticLeaderFocusTarget() end,
 		explainAutomatic = function() a:ExplainAutomaticLeaderFocus() end,
+		dismissChange = function()
+			local frame = rawget(a, "partyFocusChangeDialog")
+			if frame then a:DismissManagedWindow(frame, "replace") end
+		end,
 		dismissChoices = function()
 			a:CancelPartyQuestFocusFollowRequest()
 			local frame = rawget(a, "partyFocusChangeDialog")
@@ -239,8 +243,10 @@ function QT:GetPartyFocusController()
 		save = function(name)
 			a:SavePartyQuestFollow(name)
 		end,
-		confirm = function(name, callback, cancel)
-			return a:ShowPartyFocusChangeDialog(name, callback, nil, nil, cancel)
+		canSuggest = function(name, id) return a:CanSuggestPartyFocus(name, id) end,
+		suggest = function(name, id) return a:SuggestPartyFocus(name, id) end,
+		confirm = function(name, callback, cancel, suggest, automatic)
+			return a:ShowPartyFocusChangeDialog(name, callback, nil, nil, cancel, suggest, automatic)
 		end,
 		changed = function()
 			Changed(a)
@@ -350,6 +356,9 @@ function QT:SamplePartyNavigation()
 	end
 	local state = self:GetPartyNavigationState()
 	local qid = self:GetOption("sharePartyFocus") == true and native.questID or -1
+	-- Supertracking may briefly retain a quest after it leaves the log. Do not
+	-- advertise that stale destination to followers while native UI settles.
+	if qid > 0 and self.API.IsOnQuest(qid) == false then qid = 0 end
 	local map = self:GetOption("sharePartyWaypoint") == true and native.mapID or -1
 	local title = ""
 	if qid > 0 then
@@ -383,6 +392,7 @@ function QT:SendPartyNavigationSnapshot(p, hello, routes, direct, completion)
 		y = p.y or 0,
 		following = p.following or "",
 		hello = hello == true,
+		focusSuggestions = self:GetOption("allowFocusSuggestions") == true,
 	}
 	return self:Publish("QTN2", record, routes, {
 		owner = state,
@@ -471,6 +481,7 @@ function QT:HandlePartyNavigationMessage(data, sender, context)
 		x = x,
 		y = y,
 		following = following,
+		focusSuggestions = data.focusSuggestions == true,
 	}
 	if not self:CommitPeerObservation(observation, record, true) then
 		return false
@@ -495,6 +506,7 @@ function QT:ReconcilePartyQuestFollow()
 	return self:GetPartyFocusController():Reconcile()
 end
 function QT:UpdatePartyNavigation()
+	self:UpdatePartyFocusSuggestion()
 	local s = self:GetPartyNavigationState()
 	local route, now = self:GetPartyNavigationRoute(), Now(self)
 	local fingerprint = (route or "") .. ":" .. self:GetPartyRosterFingerprint()
@@ -614,6 +626,65 @@ function QT:IsPartyQuestFocusFollower(name)
 end
 function QT:RequestPartyQuestFocus(name, questID)
 	return self:GetPartyFocusController():Request(name, questID)
+end
+
+function QT:CanSuggestPartyFocus(name, questID)
+	local peer = self:GetPartyNavigationPeer(name)
+	return self.isEnabled and not self.isLoggingOut and not self:IsRuntimeRestricted()
+		and not rawget(self, "nativePartyFocusOwner") and self:GetPartyQuestFollowTarget() == name
+		and Number(self, questID, 1, 1000000000) ~= nil and self.API.IsOnQuest(questID) == true
+		and peer ~= nil and peer.focusSuggestions == true and peer.questID ~= questID
+end
+
+function QT:SuggestPartyFocus(name, questID)
+	if not self:CanSuggestPartyFocus(name, questID) then return false end
+	local state, now, profile = self:GetPartyNavigationState(), Now(self), self.db.profile
+	if state.suggestedAt and now - state.suggestedAt < 5 then return false end
+	state.suggestedAt = now
+	local _, token = self:GetPartyQuestFollowTarget()
+	local function Current()
+		local target, currentToken = self:GetPartyQuestFollowTarget()
+		return rawget(self, "partyNavigationState") == state and self.db.profile == profile
+			and target == name and token == currentToken and self:CanSuggestPartyFocus(name, questID)
+	end
+	return self:Emit("QFSG", { targetName = name, questID = questID },
+		{ { distribution = "WHISPER", target = name, requiresGroup = true } }, {
+			owner = state, expires = now + 15, isCurrent = Current,
+			onComplete = function(sent)
+				if Current() then self:Print(sent and L("Quest focus suggestion sent.") or L("Unable to send quest focus suggestion.")) end
+			end,
+		})
+end
+
+function QT:HandlePartyFocusSuggestion(data, sender, context)
+	local id, name = Number(self, data.questID, 1, 1000000000), Name(self, sender)
+	if not id or not name or not context or context.distribution ~= "WHISPER"
+		or Name(self, data.targetName) ~= self:GetPlayerFullName() then return false end
+	local state, profile, now = self:GetPartyNavigationState(), self.db.profile, Now(self)
+	local function Current()
+		local peer = self:GetPartyNavigationPeer(name)
+		return self.isEnabled and not self.isLoggingOut and rawget(self, "partyNavigationState") == state
+			and self.db.profile == profile and Now(self) >= now and Now(self) - now < 30
+			and not self:IsWorkBlocked("foreign_frame_mutation") and not self:IsRuntimeRestricted()
+			and not rawget(self, "nativePartyFocusOwner") and self:GetOption("allowFocusSuggestions") == true
+			and peer ~= nil and peer.following == self:GetPlayerFullName()
+			and self.API.IsOnQuest(id) == true and self.API.GetActiveTrackedQuestID() ~= id
+	end
+	if not Current() or (state.suggestionAt and now - state.suggestionAt < 5) then return false end
+	local frame = rawget(self, "partyFocusSuggestionDialog")
+	if frame and frame:IsShown() then return false end
+	state.suggestionAt = now
+	return self:ShowPartyFocusSuggestionDialog(name, id, function()
+		if not Current() then return false end
+		return self:RequestPartyQuestFocus(self:GetPlayerFullName(), id)
+	end, Current)
+end
+
+function QT:UpdatePartyFocusSuggestion()
+	local frame = rawget(self, "partyFocusSuggestionDialog")
+	if frame and frame:IsShown() and frame.suggestionCurrent and not frame.suggestionCurrent() then
+		self:DismissManagedWindow(frame)
+	end
 end
 function QT:SelectPartyQuestFocus(name, questID)
 	return self:GetPartyFocusController():Select(name, questID)

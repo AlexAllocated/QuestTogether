@@ -116,7 +116,11 @@ Add("QTN2", "state", "control", {
 	F("hello", B),
 	F("following", S, 120),
 	F("title", S, 1024),
+	F("focusSuggestions", B),
 }, { groupOnly = true })
+Add("QFSG", "event", "control", {
+	F("targetName", S, 120, true), F("questID", N, nil, true),
+}, { groupOnly = true, lifetime = 15, maxBytes = 256 })
 Add("STATE", "state", "active", { F("records", "topics", 16, true) }, { maxBytes = 8192 })
 Add("BYE", "state", "control", { F("reason", S, 24), F("records", "topics", 16) }, { maxBytes = 1024 })
 

@@ -158,7 +158,8 @@ local function CreateFocusDialog(self, key, title, confirmLabel, remember)
 		self:ConfigureWindowController(frame, {
 			dismiss = function()
 				local cancel = frame.cancelAction
-				frame.confirmAction, frame.cancelAction, frame.focusChoice = nil, nil, nil
+				frame.confirmAction, frame.cancelAction, frame.suggestAction, frame.focusChoice = nil, nil, nil, nil
+				frame.suggestionCurrent = nil
 				if cancel then cancel() end
 			end,
 		})
@@ -229,7 +230,7 @@ local function SetFocusDialogChoice(self, frame, callback, cancel)
 	if frame.focusChoice ~= choice then return false end
 	frame.confirmAction, frame.cancelAction = callback, cancel
 	frame.focusChoiceScripts = frame.focusChoiceScripts or {}
-	for _, control in ipairs({frame.confirm, frame.cancel, frame.close}) do
+	for _, control in ipairs({frame.confirm, frame.cancel, frame.close, frame.suggest}) do
 		local original = frame.focusChoiceScripts[control] or control:GetScript("OnClick")
 		frame.focusChoiceScripts[control] = original
 		control:SetScript("OnClick", function(...)
@@ -241,13 +242,41 @@ end
 
 -- The warning is also used by the isolated compare controller. Preview callbacks
 -- can only change that controller, never the live party navigation model.
-function QuestTogether:ShowPartyFocusChangeDialog(name, callback, preview, liveNavigation, cancel)
+function QuestTogether:ShowPartyFocusChangeDialog(name, callback, preview, liveNavigation, cancel, suggest, automatic)
 	if self:IsWorkBlocked("foreign_frame_mutation") then return false end
 	local key = preview and "partyFocusChangePreview" or "partyFocusChangeDialog"
 	local frame = CreateFocusDialog(self, key, L("Stop following quest focus?"), L("Change focus"))
+	if not frame then return false end
+	if not frame.suggest then
+		frame.suggest = self:CreateOwnedWindowFrame("Button", nil, frame, "UIPanelButtonTemplate")
+		frame.suggest:SetSize(frame.contentWidth, 26)
+		frame.suggest:SetPoint("BOTTOMLEFT", frame.contentInset, frame.contentBottom + 36)
+		frame.suggest:SetText(L("Suggest focus"))
+		frame.suggest:SetScript("OnClick", function()
+			if self:IsWorkBlocked("foreign_frame_mutation") then return end
+			local action = frame.suggestAction
+			frame.confirmAction, frame.cancelAction, frame.suggestAction, frame.focusChoice = nil, nil, nil, nil
+			self:DismissManagedWindow(frame)
+			local status = self:GetGamepadIntegrationStatus()
+			if action and not frame:IsShown() and not (status and status.failed) then action() end
+		end)
+		self:GuardGamepadWindowActions(frame, { frame.suggest })
+		local layout = frame.LayoutManagedWindow
+		frame.LayoutManagedWindow = function()
+			layout()
+			if frame.suggest:IsShown() then frame:SetHeight(frame:GetHeight() + 36); self:FitScrollDialog(frame) end
+		end
+	end
 	if not SetFocusDialogChoice(self, frame, callback, cancel) then return false end
+	frame.suggestAction = suggest
+	frame.title:SetText(automatic and L("Quest focus suggestion") or L("Stop following quest focus?"))
+	frame.suggest:SetShown(suggest ~= nil)
+	frame.confirm:SetShown(not automatic)
 	frame.message:SetText(
-		string.format(L("Changing focus will stop following %s. Continue?"), name)
+		(automatic and not suggest and L("The other player is not accepting focus suggestions.")
+			or string.format(automatic and L("You are automatically following %s. Suggest this quest to them instead?")
+			or L("Changing focus will stop following %s. Continue?"), name))
+			.. (suggest and ("\n\n" .. L("Suggest focus asks them to change quests and keeps you following.")) or "")
 			.. (
 				preview
 					and ("\n\n" .. (liveNavigation and L("Preview - quest focus changes affect your navigation.") or L(
@@ -271,6 +300,22 @@ function QuestTogether:ShowPartyFocusFollowDialog(name, callback, cancel)
 	if not SetFocusDialogChoice(self, frame, callback, cancel) then return false end
 	frame.remember:SetChecked(false)
 	frame.message:SetText(string.format(L("Follow %s's selected quests automatically when they are in your quest log. If you do not share their selected quest, following will wait for a shared quest."), name))
+	frame:LayoutManagedWindow()
+	self:ApplyScrollDialogTheme(frame)
+	frame:Show()
+	frame:Raise()
+	if self:PresentGamepadWindow(frame, "user") then self:RefreshGamepadNavigation(frame, frame.cancel) end
+	self:PlayPromptAttentionAudio(frame, frame.focusChoice)
+	return true
+end
+
+function QuestTogether:ShowPartyFocusSuggestionDialog(name, questID, callback, current)
+	if self:IsWorkBlocked("foreign_frame_mutation") then return false end
+	local frame = CreateFocusDialog(self, "partyFocusSuggestionDialog", L("Quest focus suggestion"), L("Change focus"))
+	if not SetFocusDialogChoice(self, frame, callback) then return false end
+	frame.suggestionCurrent = current
+	local title = self:GetLocalizedQuestTitle(questID) or self:GetQuestTitle(questID) or tostring(questID)
+	frame.message:SetText(string.format(L("%s suggests focusing on:\n%s\nQuest ID: %d\n\nChange your quest focus?"), name, title, questID))
 	frame:LayoutManagedWindow()
 	self:ApplyScrollDialogTheme(frame)
 	frame:Show()

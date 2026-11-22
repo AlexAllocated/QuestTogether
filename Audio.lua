@@ -48,7 +48,7 @@ function QT:GetAudioSoundOptions()
 	return {
 		{ value = "scroll", text = L("Parchment") },
 		{ value = "spellbook", text = L("Arcane shimmer") },
-		{ value = "selection", text = L("Focus chime") },
+		{ value = "selection", text = L("Native focus click") },
 		{ value = "chime", text = L("Gentle bell") },
 		{ value = "progress", text = L("Soft pluck") },
 		{ value = "completion", text = L("Quest flourish") },
@@ -86,6 +86,12 @@ QT.API.SupportsAudioVolume = function() return type(PlaySoundFile) == "function"
 QT.API.PlayAudioFile = function(path)
 	if QT.isRunningTests or type(PlaySoundFile) ~= "function" then return false end
 	return PlaySoundFile(path, "SFX")
+end
+QT.API.PlayFocusClick = function()
+	if QT.isRunningTests or type(PlaySound) ~= "function" or type(SOUNDKIT) ~= "table" then return false end
+	local kit = SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON
+	if type(kit) ~= "number" then return false end
+	return PlaySound(kit, "SFX", false, true)
 end
 QT.API.StopAudioFile = function(handle)
 	if QT.isRunningTests or type(StopSound) ~= "function" then return false end
@@ -168,10 +174,12 @@ local function Play(a, key, identity, preview)
 		state.counters.suppressed = (state.counters.suppressed or 0) + 1
 		return false
 	end
+	local sound = a:GetAudioSound(key)
 	local play = a.API and a.API.PlayAudioFile
+	if sound == "selection" then play = a.API and a.API.PlayFocusClick end
 	if type(play) ~= "function" then return false end
 	a:StopQTAudio()
-	local path = "Interface\\AddOns\\QuestTogether\\Media\\Audio\\" .. a:GetAudioSound(key) .. "\\" .. string.format("%03d", level) .. ".ogg"
+	local path = sound ~= "selection" and ("Interface\\AddOns\\QuestTogether\\Media\\Audio\\" .. sound .. "\\" .. string.format("%03d", level) .. ".ogg") or nil
 	local ok, accepted, handle = pcall(play, path)
 	if not ok or not a:CanAccessValue(accepted) or accepted ~= true then
 		state.counters.failed = (state.counters.failed or 0) + 1

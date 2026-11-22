@@ -362,7 +362,6 @@
   "Finished comparing quests": "Comparação de missões concluída",
   "Focus a quest to show your party's objective progress here.": "Selecione uma missão ativa para ver aqui o progresso dos objetivos do grupo.",
   "Focus and Hover": "Foco e cursor",
-  "Focus chime": "Toque de foco",
   "Focus data expired": "Dados de foco expirados",
   "Focus not shared or unavailable": "Foco não compartilhado ou indisponível",
   "Focus quest": "Focar missão",
@@ -1222,5 +1221,17 @@
   "Use Stop following in PQL or its key binding to end manual following. If automatic leader-follow is governing your focus, turn off that setting first.": "Use Parar de acompanhar no registro do grupo ou seu atalho para encerrar o acompanhamento manual. Se o acompanhamento automático do líder controlar o foco, desative essa opção primeiro.",
   "Waypoint navigation that replaces manually followed quest focus asks for confirmation. Automatic leader-follow blocks that replacement while the leader's focus is usable.": "Navegar até um ponto que substitua o foco acompanhado manualmente pede confirmação. O acompanhamento automático do líder bloqueia essa troca enquanto o foco dele estiver utilizável.",
   "Install and enable QuestieDB for WoW Forever in your addon manager, then restart WoW. QuestTogether's other features work without it.": "Instale e ative o QuestieDB para WoW Forever no seu gerenciador de addons e reinicie o WoW. Os outros recursos do QuestTogether funcionam sem ele.",
-  "Quest chains need QuestieDB": "As sequências de missões precisam do QuestieDB"
+  "Quest chains need QuestieDB": "As sequências de missões precisam do QuestieDB",
+  "%s suggests focusing on:\n%s\nQuest ID: %d\n\nChange your quest focus?": "%s sugere focar em:\n%s\nID da missão: %d\n\nMudar o foco da missão?",
+  "Allow quest focus suggestions": "Permitir sugestões de foco de missão",
+  "Let party members following your quest focus suggest a different quest. You choose whether to change focus. Turning this off closes pending suggestions.": "Integrantes do grupo que seguem seu foco podem sugerir outra missão. Você decide se quer mudar o foco. Desativar esta opção fecha as sugestões pendentes.",
+  "Native focus click": "Clique de foco do WoW",
+  "Native focus click uses WoW's Sound Effects volume. QT volume sliders mute it at zero; other values do not change its loudness.": "O clique de foco usa o volume dos efeitos sonoros do WoW. Os controles de volume do QT o silenciam em zero; outros valores não alteram seu volume.",
+  "Quest focus suggestion": "Sugestão de foco de missão",
+  "Quest focus suggestion sent.": "Sugestão de foco de missão enviada.",
+  "Suggest focus": "Sugerir foco",
+  "Suggest focus asks them to change quests and keeps you following.": "Sugerir foco pede que a pessoa mude de missão, e você continua seguindo o foco dela.",
+  "Unable to send quest focus suggestion.": "Não foi possível enviar a sugestão de foco de missão.",
+  "You are automatically following %s. Suggest this quest to them instead?": "Você segue automaticamente o foco de %s. Quer sugerir esta missão no lugar?",
+  "The other player is not accepting focus suggestions.": "O outro jogador não está aceitando sugestões de foco de missão."
 }

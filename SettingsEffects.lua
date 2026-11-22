@@ -70,6 +70,9 @@ function QT:ApplyFeaturePolicies(changed, all)
 			self:FinishPartyQuestShare(request, "declined")
 		end
 	end
+	if Has("allowFocusSuggestions") then
+		self:UpdatePartyFocusSuggestion()
+	end
 end
 
 local function Invoke(addon, method, ...)
@@ -132,7 +135,7 @@ function QuestTogether:ApplySettingsTransaction(changed, context)
 	if all then
 		Invoke(self, "RefreshPartyRoster")
 	end
-	if (not all or self.isEnabled) and Has("sharePartyFocus", "sharePartyWaypoint", "showPartyWaypoints") then
+	if (not all or self.isEnabled) and Has("sharePartyFocus", "sharePartyWaypoint", "showPartyWaypoints", "allowFocusSuggestions") then
 		Invoke(self, "QueuePartyNavigationUpdate")
 	end
 	if Has("experimentalLayerDetection", "sharePlayerLocation") then

@@ -53,6 +53,30 @@ QT:RegisterTest("asynchronous offline mesh whispers preserve ordinary feedback a
 	end
 end, { offline = true })
 
+QT:RegisterTest("focus suggestions traverse private party transport without public delivery", function()
+	local net = QT:CreateTestNetwork({ fps = 20 })
+	local settings = { group = "suggestions", distribution = "PARTY" }
+	local a, b = net:AddPeer("Follower-Realm", settings), net:AddPeer("Leader-Realm", settings)
+	local outsider = net:AddPeer("Outside-Realm", {})
+	local received = 0
+	function b:HandlePartyFocusSuggestion(data, sender, context)
+		Equal(sender, "Follower-Realm"); Equal(data.questID, 42)
+		Equal(data.targetName, "Leader-Realm"); Equal(context.distribution, "WHISPER")
+		received = received + 1; return true
+	end
+	net:StartPeer(a); net:StartPeer(b); net:StartPeer(outsider)
+	assert(a:Emit("QFSG", { targetName = "Leader-Realm", questID = 42 }, {
+		{ distribution = "WHISPER", target = "Leader-Realm", requiresGroup = true },
+	}))
+	net:Advance(2)
+	Equal(received, 1)
+	outsider:Emit("QFSG", { targetName = "Leader-Realm", questID = 42 }, {
+		{ distribution = "WHISPER", target = "Leader-Realm" },
+	})
+	net:Advance(2)
+	Equal(received, 1)
+end, { offline = true })
+
 QT:RegisterTest("party quest snapshots repair over native group and targeted private routes", function()
 	for _, mode in ipairs({ "PARTY", "RAID", "INSTANCE_CHAT", "private" }) do
 		local net = QT:CreateTestNetwork({ fps = 20 })

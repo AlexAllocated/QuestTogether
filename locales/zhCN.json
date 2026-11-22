@@ -362,7 +362,6 @@
   "Finished comparing quests": "任务对比完成",
   "Focus a quest to show your party's objective progress here.": "选择一个当前任务，在此查看队伍的目标进度。",
   "Focus and Hover": "聚焦和悬停",
-  "Focus chime": "聚焦铃音",
   "Focus data expired": "焦点数据已过期",
   "Focus not shared or unavailable": "焦点未共享或不可用",
   "Focus quest": "设为追踪任务",
@@ -1222,5 +1221,17 @@
   "Use Stop following in PQL or its key binding to end manual following. If automatic leader-follow is governing your focus, turn off that setting first.": "通过队伍任务日志的停止跟随或对应快捷键可结束手动跟随。如果自动跟随队长正在管理焦点，请先关闭该设置。",
   "Waypoint navigation that replaces manually followed quest focus asks for confirmation. Automatic leader-follow blocks that replacement while the leader's focus is usable.": "前往路标若要取代手动跟随的任务焦点，需要确认。队长焦点可用时，自动跟随队长会阻止这种替换。",
   "Install and enable QuestieDB for WoW Forever in your addon manager, then restart WoW. QuestTogether's other features work without it.": "请在插件管理器中安装并启用 WoW Forever 版 QuestieDB，然后重启 WoW。没有 QuestieDB 也可以使用 QuestTogether 的其他功能。",
-  "Quest chains need QuestieDB": "任务链需要 QuestieDB"
+  "Quest chains need QuestieDB": "任务链需要 QuestieDB",
+  "%s suggests focusing on:\n%s\nQuest ID: %d\n\nChange your quest focus?": "%s 建议关注以下任务：\n%s\n任务 ID：%d\n\n要更改关注任务吗？",
+  "Allow quest focus suggestions": "允许关注任务建议",
+  "Let party members following your quest focus suggest a different quest. You choose whether to change focus. Turning this off closes pending suggestions.": "跟随你关注任务的队友可以建议其他任务。是否更改由你决定。关闭此选项会关闭待处理的建议窗口。",
+  "Native focus click": "原生任务选择音",
+  "Native focus click uses WoW's Sound Effects volume. QT volume sliders mute it at zero; other values do not change its loudness.": "原生任务选择音使用 WoW 的音效音量。QT 音量设为零时会将其静音；其他数值不会改变此声音的大小。",
+  "Quest focus suggestion": "关注任务建议",
+  "Quest focus suggestion sent.": "已发送关注任务建议。",
+  "Suggest focus": "建议关注任务",
+  "Suggest focus asks them to change quests and keeps you following.": "建议关注任务会请求对方更改任务，你仍会继续跟随。",
+  "Unable to send quest focus suggestion.": "无法发送关注任务建议。",
+  "You are automatically following %s. Suggest this quest to them instead?": "你正在自动跟随 %s 的关注任务。要向对方建议此任务吗？",
+  "The other player is not accepting focus suggestions.": "对方目前不接受关注任务建议。"
 }

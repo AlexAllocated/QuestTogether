@@ -19,6 +19,10 @@ local function Fixture()
 			if a.fail then return false end
 			return true, #a.plays
 		end,
+		PlayFocusClick = function()
+			a.plays[#a.plays + 1] = "native-focus-click"
+			return not a.fail, #a.plays
+		end,
 		StopAudioFile = function(handle) a.stops[#a.stops + 1] = handle end,
 	}
 	a:InitializeQTAudio()
@@ -62,7 +66,7 @@ QT:RegisterTest("audio playback uses owned gain files and never emits sound at z
 	Ends(a.plays[1], "\\chime\\030.ogg")
 	a.now = 12
 	assert(a:PlayAudioCue("focus", 42))
-	Ends(a.plays[2], "\\selection\\020.ogg")
+	Equal(a.plays[2], "native-focus-click")
 	Equal(a.stops[1], 1, "only the previous QT handle is stopped")
 	a.db.profile.audioVolume = 0
 	a.now = 14
@@ -70,7 +74,7 @@ QT:RegisterTest("audio playback uses owned gain files and never emits sound at z
 	Equal(#a.plays, 2)
 	a.db.profile.audioVolume, a.db.profile.audioFocusVolume = 5, 5
 	assert(a:PlayAudioCue("focus", 44))
-	Ends(a.plays[3], "\\selection\\001.ogg")
+	Equal(a.plays[3], "native-focus-click")
 	a.now = 16
 	a.db.profile.audioVolume, a.db.profile.audioFocusVolume = 100, 100
 	a.db.profile.audioFocusSound = "spellbook"
@@ -134,6 +138,7 @@ QT:RegisterTest("audio mute profile disable logout and unavailable playback do n
 	a.isLoggingOut = false
 	a:InitializeQTAudio()
 	a.API.PlayAudioFile = nil
+	a.API.PlayFocusClick = nil
 	Equal(a:PlayAudioCue("focus", 45), false)
 end)
 

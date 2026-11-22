@@ -1,6 +1,21 @@
 -- Settings transactions use private services and never touch live frames.
 local QT = _G.QuestTogether
 
+QT:RegisterTest("focus suggestions preserve existing prompt opt-outs only at profile migration", function()
+	local disabled = { allowIncomingShareRequests = false }
+	QT:MigrateFocusSuggestionOption(disabled)
+	assert(disabled.allowFocusSuggestions == false)
+	disabled.allowFocusSuggestions = true
+	QT:MigrateFocusSuggestionOption(disabled)
+	assert(disabled.allowFocusSuggestions == true)
+	local normal = { allowIncomingShareRequests = true }
+	QT:MigrateFocusSuggestionOption(normal)
+	assert(normal.allowFocusSuggestions == nil)
+	local a = setmetatable({db = { profiles = { Child = { allowIncomingShareRequests = false } } }}, {__index = QT})
+	assert(a:EnsureProfileStorage())
+	assert(a.db.profiles.Child.allowFocusSuggestions == false)
+end)
+
 QT:RegisterTest("preset bundles preserve unrelated preferences and kid emotes", function()
 	local a = setmetatable({ db = { profile = QT:DeepCopy(QT.DEFAULTS.profile), global = {} } }, { __index = QT })
 	function a:IsRuntimeRestricted() return false end

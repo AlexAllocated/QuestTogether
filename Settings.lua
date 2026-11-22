@@ -101,6 +101,15 @@ function QuestTogether:MigrateOwnChatBubbleMode(profile)
 	profile.hideMyOwnChatBubbles = nil
 end
 
+function QuestTogether:MigrateFocusSuggestionOption(profile)
+	if type(profile) == "table" and profile.allowFocusSuggestions == nil
+		and profile.allowIncomingShareRequests == false then
+		-- Preserve an existing opt-out from unsolicited party prompts. This runs
+		-- before defaults; a later explicit choice is independent of sharing.
+		profile.allowFocusSuggestions = false
+	end
+end
+
 function QuestTogether:GetOwnChatBubbleMode()
 	local mode = self:GetOption("ownChatBubbleMode")
 	return self:IsOwnChatBubbleMode(mode) and mode or "always"
@@ -132,9 +141,11 @@ function QuestTogether:EnsureProfileStorage()
 	for _, profile in pairs(self.db.profiles) do
 		self:MigratePlayerLocationOptions(profile)
 		self:MigrateOwnChatBubbleMode(profile)
+		self:MigrateFocusSuggestionOption(profile)
 	end
 	self:MigratePlayerLocationOptions(self.db.profile)
 	self:MigrateOwnChatBubbleMode(self.db.profile)
+	self:MigrateFocusSuggestionOption(self.db.profile)
 
 	return true
 end
@@ -176,6 +187,7 @@ function QuestTogether:EnsureProfile(profileKey, sourceProfile)
 	end
 	self:MigratePlayerLocationOptions(self.db.profiles[normalizedKey])
 	self:MigrateOwnChatBubbleMode(self.db.profiles[normalizedKey])
+	self:MigrateFocusSuggestionOption(self.db.profiles[normalizedKey])
 	self:ApplyDefaults(self.db.profiles[normalizedKey], self.DEFAULTS.profile)
 	return normalizedKey, self.db.profiles[normalizedKey]
 end
@@ -231,6 +243,7 @@ function QuestTogether:CreateProfile(profileKey, sourceProfileKey)
 	self.db.profiles[normalizedKey] = self:DeepCopy(sourceProfile or self.DEFAULTS.profile)
 	self:MigratePlayerLocationOptions(self.db.profiles[normalizedKey])
 	self:MigrateOwnChatBubbleMode(self.db.profiles[normalizedKey])
+	self:MigrateFocusSuggestionOption(self.db.profiles[normalizedKey])
 	self:ApplyDefaults(self.db.profiles[normalizedKey], self.DEFAULTS.profile)
 	return true
 end
@@ -254,6 +267,7 @@ function QuestTogether:CopyProfileIntoActiveProfile(sourceProfileKey)
 	self.db.profiles[self.activeProfileKey] = self:DeepCopy(self.db.profiles[sourceKey])
 	self:MigratePlayerLocationOptions(self.db.profiles[self.activeProfileKey])
 	self:MigrateOwnChatBubbleMode(self.db.profiles[self.activeProfileKey])
+	self:MigrateFocusSuggestionOption(self.db.profiles[self.activeProfileKey])
 	self:ApplyDefaults(self.db.profiles[self.activeProfileKey], self.DEFAULTS.profile)
 	self.db.profile = self.db.profiles[self.activeProfileKey]
 	self:ApplyActiveProfileState("copy")
@@ -376,6 +390,7 @@ function QuestTogether:NormalizeSettingsProfile()
 	profile.showQuestFocusWindow = nil
 	self:MigratePlayerLocationOptions(profile)
 	self:MigrateOwnChatBubbleMode(profile)
+	self:MigrateFocusSuggestionOption(profile)
 	for key, default in pairs(self.DEFAULTS.profile) do
 		local value = self:ValidateSetting(key, profile[key])
 		profile[key] = value

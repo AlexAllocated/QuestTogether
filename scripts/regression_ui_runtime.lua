@@ -109,7 +109,9 @@ QT:RegisterTest("welcome preset details browse without applying and scroll throu
 		assert(frame.scrollMaximum > initial and #card.detailRows > 39)
 		local count = 0
 		for _, row in ipairs(card.detailRows) do if row.key then count = count + 1 end end
-		assert(count == 39)
+		local expected = 0
+		for _ in pairs(a:GetPresetValues(card.id)) do expected = expected + 1 end
+		assert(count == expected)
 		local top = frame.scrollOffset
 		key(frame, "PAGEDOWN"); assert(frame.scrollOffset > top)
 		frame.scroll:SetVerticalScroll(frame.scrollMaximum)
@@ -412,6 +414,27 @@ QT:RegisterTest("focus dialogs cancel each retired choice once and never cancel 
 	end)
 	assert(a:ShowPartyFocusChangeDialog("Replaced-Realm", function() end) == false)
 	assert(a.partyFocusChangeDialog.confirmAction == successor, "retirement must not overwrite a reentrant successor")
+end)
+
+QT:RegisterTest("focus suggestion buttons retain choice identity and automatic mode hides local override", function()
+	local a = Fixture()
+	local suggested, changed, cancelled = 0, 0, 0
+	local function Show(automatic)
+		assert(a:ShowPartyFocusChangeDialog("Friend-Realm", function() changed = changed + 1 end,
+			false, false, function() cancelled = cancelled + 1 end,
+			function() suggested = suggested + 1 end, automatic))
+	end
+	Show(false)
+	local frame = a.partyFocusChangeDialog
+	assert(frame.confirm:IsShown() and frame.suggest:IsShown())
+	local stale = frame.suggest:GetScript("OnClick")
+	Show(true)
+	assert(not frame.confirm:IsShown() and frame.suggest:IsShown())
+	stale(); assert(suggested == 0)
+	frame.suggest:GetScript("OnClick")()
+	assert(suggested == 1 and changed == 0 and cancelled == 1 and not frame:IsShown())
+	Show(false); frame.cancel:GetScript("OnClick")()
+	assert(cancelled == 2 and suggested == 1)
 end)
 
 local function FocusFollowFixture()

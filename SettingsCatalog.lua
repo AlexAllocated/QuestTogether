@@ -397,6 +397,7 @@ local defaults = {
 	showTrackerFocusIndicators = true,
 	automaticGamepadLauncher = true,
 	allowIncomingShareRequests = true,
+	allowFocusSuggestions = true,
 	sharingAudience = "normal",
 	automaticLeaderFocus = false,
 }
@@ -515,6 +516,11 @@ presentation = {
 		tooltip = L(
 			"Allow QT prompts asking you to share a quest. Disabled requests are declined; ordinary WoW quest sharing is unchanged."
 		),
+		category = "InitializeGroupsWindow",
+	},
+	allowFocusSuggestions = {
+		label = L("Allow quest focus suggestions"),
+		tooltip = L("Let party members following your quest focus suggest a different quest. You choose whether to change focus. Turning this off closes pending suggestions."),
 		category = "InitializeGroupsWindow",
 	},
 	autoAcceptPartyShareRequests = {

@@ -2211,6 +2211,7 @@ function QuestTogether:InitializeGroupsWindow(parentCategory)
 	ui:Check("autoInviteFriends")
 	ui:Text(L("Quest Sharing"), true)
 	ui:Check("allowIncomingShareRequests")
+	ui:Check("allowFocusSuggestions")
 	ui:Check("autoAcceptPartyShareRequests")
 	self.groupsFrame, self.groupsControls = frame, ui
 	frame:SetScript("OnShow", function() self:RefreshGroupsWindow() end)
@@ -2380,7 +2381,7 @@ function QuestTogether:InitializeAudioWindow(parentCategory)
 		function(value) self:SetOption("audioInterval", value) end)
 	ui.unavailable = Text(L("QuestTogether sounds are unavailable in this client."))
 	ui.previewHint = Text(L("Preview plays the selected sound even if that event is disabled. It respects QT's master sound switch, volume and combat mute setting."))
-	ui.gameHint = Text(L("QT cues also follow WoW's Sound Effects volume and mute settings. Other interface sounds and emote audio remain controlled by WoW."))
+	ui.gameHint = Text(L("QT cues also follow WoW's Sound Effects volume and mute settings. Other interface sounds and emote audio remain controlled by WoW.") .. "\n" .. L("Native focus click uses WoW's Sound Effects volume. QT volume sliders mute it at zero; other values do not change its loudness."))
 	for _, entry in ipairs(self:GetAudioCueCatalog()) do
 		local cue = entry
 		local row = { cue = cue }

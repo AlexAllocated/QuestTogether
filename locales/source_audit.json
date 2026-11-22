@@ -189,6 +189,7 @@
       "QCMP",
       "QCOB",
       "QCRS",
+      "QFSG",
       "QJON",
       "QJST",
       "QPGM",
@@ -248,6 +249,7 @@
       "PONG",
       "QCMP",
       "QCRS",
+      "QFSG",
       "QJON",
       "QPGM",
       "QPGR",
@@ -649,7 +651,9 @@
     ],
     "PartyNavigation.lua": [
       "PARTY",
+      "QFSG",
       "QUEST",
+      "WHISPER",
       "party_focus event=%s questID=%d"
     ],
     "PartyQuestProgress.lua": [

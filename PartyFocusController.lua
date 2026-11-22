@@ -177,13 +177,21 @@ function Controller:Apply()
 		self:Stop(true)
 		return
 	end
+	local peer = a.peer(s.following)
+	-- Native fallback tracking can arrive before a turn-in or the next party
+	-- snapshot. A prompt about replacing a retired destination is no longer valid.
+	if self.choice and self.choice.nativeOverride and peer
+		and (peer.questID <= 0 or a.owns(s.expectedQuest) == false) then
+		self.choice = nil
+		s.checkExternal, s.attempt = nil, nil
+		if a.dismissChange then a.dismissChange() end
+	end
 	-- Native selection already changed before its tracking event reached us.
 	-- Keep that choice visible while the user decides whether to stop following.
-	if self.choice then
+	if self.choice and not self.choice.automatic then
 		if s.checkExternal then self:ObserveNative() end
 		return
 	end
-	local peer = a.peer(s.following)
 	if not peer or peer.questID < 0 then
 		s.waiting, s.attempt = true, nil
 		local status = peer and L("Focus not shared or unavailable") or L("Waiting for quest focus")
@@ -204,7 +212,7 @@ function Controller:Apply()
 	end
 	if s.checkExternal then
 		self:ObserveNative()
-		if not s.following or s.checkExternal or self.choice then
+		if not s.following or s.checkExternal or (self.choice and not self.choice.automatic) then
 			return
 		end
 	end
@@ -285,13 +293,6 @@ function Controller:ObserveNative()
 		return nil
 	end
 	local s = a.state()
-	if self:IsActive() and self:IsAutomaticLocked() then
-		self.choice, self.acceptances = nil, nil
-		s.checkExternal, s.resuming = nil, nil
-		local peer = a.peer(s.following)
-		if peer and native.questID ~= peer.questID then s.attempt = nil end
-		return native
-	end
 	if self:IsActive() then
 		if s.following and self.observedQuestID ~= native.questID then
 			self.observedQuestID = native.questID
@@ -315,6 +316,19 @@ function Controller:ObserveNative()
 			return native
 		end
 		local choice = self.choice
+		if self:IsAutomaticLocked() then
+			local peer = a.peer(s.following)
+			if peer and native.questID ~= peer.questID then
+				if s.checkExternal and now and self.trackingStartedAt
+					and now - self.trackingStartedAt < TRACKING_SETTLE_SECONDS then return nil end
+				if s.checkExternal then s.attempt = nil end
+				if (not choice or choice.questID ~= native.questID) and s.checkExternal and native.questID > 0 and not a.blocked() then
+					self:Request(a.ownName(), native.questID, true)
+				end
+			end
+			s.checkExternal, s.resuming = nil, nil
+			return native
+		end
 		if choice and choice.nativeOverride and native.questID >= 0 then
 			if native.questID == choice.questID then
 				s.checkExternal = nil
@@ -345,7 +359,8 @@ function Controller:ObserveNative()
 				local previous = a.questID(s.expectedQuest)
 				local peer = a.peer(s.following)
 				local shared = peer and peer.questID > 0 and a.owns(peer.questID) == true
-				if s.waiting or not shared or not previous or (previous > 0 and a.owns(previous) ~= true) then
+				if s.waiting or not shared or not previous
+					or (previous > 0 and a.owns(previous) ~= true) then
 					-- Native auto-selection on acceptance/turn-in can arrive before
 					-- Apply sees the updated quest log. No valid sync is being
 					-- overridden: retain follow intent and adopt this local baseline.
@@ -405,16 +420,22 @@ function Controller:Select(name, questID)
 end
 function Controller:Request(name, questID, nativeOverride)
 	self:ReconcileAutomatic()
-	if self:IsAutomaticLocked() then return false end
 	local a = self.adapter
+	questID = a.questID(questID)
+	if not questID then return false end
 	if not self:IsActive() or a.blocked() then
 		return false
 	end
 	self.acceptances = nil
 	self:Trace(nativeOverride and "native_choice" or "explicit_choice", questID)
 	local following, token = self:GetTarget()
+	local automatic = self:IsAutomaticLocked()
+	if automatic then
+		local peer = a.peer(following)
+		if peer and peer.questID == questID then return true end
+	end
 	local state = a.peek()
-	local choice = { questID = questID, nativeOverride = nativeOverride == true }
+	local choice = { questID = questID, nativeOverride = nativeOverride == true, automatic = automatic }
 	self.choice = choice
 	if following and following ~= name then
 		local function Retire()
@@ -440,6 +461,12 @@ function Controller:Request(name, questID, nativeOverride)
 			self:Apply()
 			return true
 		end
+		local function Suggest()
+			if not Current() or not a.suggest then Retire(); return false end
+			local sent = a.suggest(following, questID)
+			Cancel()
+			return sent
+		end
 		local opened = a.confirm(following, function()
 			if not Current() then Retire(); return false end
 			local selected = self:Select(name, questID)
@@ -447,7 +474,7 @@ function Controller:Request(name, questID, nativeOverride)
 			-- is open. Its closing must not leave periodic following suspended.
 			if not selected then Cancel() end
 			return selected
-		end, Cancel)
+		end, Cancel, a.canSuggest and a.canSuggest(following, questID) and Suggest or nil, automatic)
 		if not opened and self.choice == choice then self.choice = nil end
 		return opened
 	end

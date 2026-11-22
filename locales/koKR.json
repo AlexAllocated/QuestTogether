@@ -362,7 +362,6 @@
   "Finished comparing quests": "퀘스트 비교 완료",
   "Focus a quest to show your party's objective progress here.": "활성 퀘스트를 선택하면 여기에 파티의 목표 진행 상황이 표시됩니다.",
   "Focus and Hover": "집중 및 마우스 오버",
-  "Focus chime": "집중 종소리",
   "Focus data expired": "집중 정보 만료됨",
   "Focus not shared or unavailable": "집중 퀘스트가 공유되지 않거나 이용 불가",
   "Focus quest": "집중 퀘스트로 설정",
@@ -1222,5 +1221,17 @@
   "Use Stop following in PQL or its key binding to end manual following. If automatic leader-follow is governing your focus, turn off that setting first.": "수동 따라가기는 파티 퀘스트 목록의 중단 기능이나 지정 단축키로 끝낼 수 있습니다. 파티장 자동 따라가기가 집중 퀘스트를 관리 중이면 먼저 해당 설정을 끄세요.",
   "Waypoint navigation that replaces manually followed quest focus asks for confirmation. Automatic leader-follow blocks that replacement while the leader's focus is usable.": "수동으로 따라가는 집중 퀘스트를 경유지 탐색으로 바꾸려면 확인이 필요합니다. 파티장 자동 따라가기에서는 파티장의 집중 퀘스트가 유효한 동안 이 변경을 막습니다.",
   "Install and enable QuestieDB for WoW Forever in your addon manager, then restart WoW. QuestTogether's other features work without it.": "애드온 관리 프로그램에서 WoW Forever용 QuestieDB를 설치하고 활성화한 다음 WoW를 다시 시작하세요. QuestieDB 없이도 QuestTogether의 다른 기능은 사용할 수 있습니다.",
-  "Quest chains need QuestieDB": "퀘스트 연계에는 QuestieDB가 필요합니다"
+  "Quest chains need QuestieDB": "퀘스트 연계에는 QuestieDB가 필요합니다",
+  "%s suggests focusing on:\n%s\nQuest ID: %d\n\nChange your quest focus?": "%s 님이 다음 퀘스트를 추천합니다:\n%s\n퀘스트 ID: %d\n\n집중 퀘스트를 변경할까요?",
+  "Allow quest focus suggestions": "집중 퀘스트 추천 허용",
+  "Let party members following your quest focus suggest a different quest. You choose whether to change focus. Turning this off closes pending suggestions.": "내 집중 퀘스트를 따라가는 파티원이 다른 퀘스트를 추천할 수 있습니다. 변경 여부는 직접 결정합니다. 이 옵션을 끄면 대기 중인 추천 창이 닫힙니다.",
+  "Native focus click": "WoW 기본 선택 클릭음",
+  "Native focus click uses WoW's Sound Effects volume. QT volume sliders mute it at zero; other values do not change its loudness.": "기본 선택 클릭음은 WoW의 효과음 음량을 사용합니다. QT 음량을 0으로 설정하면 음소거되며, 다른 값은 이 소리의 크기를 바꾸지 않습니다.",
+  "Quest focus suggestion": "집중 퀘스트 추천",
+  "Quest focus suggestion sent.": "집중 퀘스트 추천을 보냈습니다.",
+  "Suggest focus": "퀘스트 추천",
+  "Suggest focus asks them to change quests and keeps you following.": "퀘스트 추천은 상대방에게 퀘스트 변경을 제안하며, 따라가기는 유지됩니다.",
+  "Unable to send quest focus suggestion.": "집중 퀘스트 추천을 보내지 못했습니다.",
+  "You are automatically following %s. Suggest this quest to them instead?": "%s 님의 집중 퀘스트를 자동으로 따라가고 있습니다. 대신 이 퀘스트를 추천할까요?",
+  "The other player is not accepting focus suggestions.": "상대방이 집중 퀘스트 추천을 받지 않습니다."
 }

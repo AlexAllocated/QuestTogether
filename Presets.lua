@@ -21,7 +21,7 @@ local log = {
 	showWorldMapButton = false, showDataBrokerLauncher = false,
 	nameplateQuestIconEnabled = false, nameplatePlayerIconEnabled = false,
 	nameplateQuestHealthColorEnabled = false, playerTooltipIdentifierMode = "hidden",
-	questTrackerMode = "hidden", showTrackerFocusIndicators = false, allowIncomingShareRequests = false,
+	questTrackerMode = "hidden", showTrackerFocusIndicators = false, allowIncomingShareRequests = false, allowFocusSuggestions = false,
 }
 local kid = {
 	showMinimapButton = false, automaticGamepadLauncher = false, sharingAudience = "party",
@@ -63,6 +63,7 @@ local settingGroups = {
 		{ "showTrackerFocusIndicators" },
 		{ "automaticLeaderFocus" },
 		{ "allowIncomingShareRequests" },
+		{ "allowFocusSuggestions" },
 		{ "autoAcceptPartyShareRequests" },
 		{ "lookingForQuestPartners" },
 		{ "autoInviteWhileLFG" },
