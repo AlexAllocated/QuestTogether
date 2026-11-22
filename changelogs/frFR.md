@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.5
+## 10.1.6
 
 Proposez la prochaine quête à votre compagnon, retrouvez le clic de sélection de WoW et continuez à le suivre après avoir rendu des quêtes.
 
@@ -19,6 +19,24 @@ Proposez la prochaine quête à votre compagnon, retrouvez le clic de sélection
 ### Continuer après avoir rendu une quête
 
 - Les quêtes sorties du journal ne sont plus partagées comme un ancien choix actif. Les confirmations devenues inutiles pour interrompre le suivi lors de ces transitions sont écartées. Le suivi reste prêt pour la prochaine quête commune.
+
+## 10.1.5
+
+Une synchronisation des quêtes plus fiable et des changements de configuration plus fluides.
+
+### Quêtes du groupe
+
+- QT peut désormais relancer la récupération d’une liste de quêtes lorsque la réponse se perd ou que son transfert s’interrompt. Ces situations pouvaient laisser un membre du groupe en chargement pendant plusieurs minutes. Le correctif fonctionne aussi bien sur le client des parents que sur celui des enfants, y compris en mode enfant.
+
+### Réglages et cartes
+
+- Changer le filtre des joueurs visibles sur les cartes ne relance plus inutilement les abonnements à votre position et ne renvoie plus votre position ni votre statut de recherche de partenaires.
+- L’application d’un préréglage ou le changement de profil évite désormais les actualisations répétées des marqueurs, du bouton de carte et du lanceur Data Broker.
+
+### Compatibilité et maintenance
+
+- Les intégrations natives vérifient les fonctions et les protections réellement disponibles dans le jeu, sans exiger une version précise du client.
+- La gestion des états internes a été regroupée et le code redondant ou inutilisé supprimé. Vos réglages existants sont conservés.
 
 ## 10.1.4
 

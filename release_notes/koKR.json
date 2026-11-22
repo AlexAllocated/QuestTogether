@@ -1,7 +1,7 @@
 {
   "source_sha256": "d84505defef27125f5bd810dc002d11af35f15a6571c7836ebc4dc1223614be6",
   "notes": {
-    "version": "10.1.5",
+    "version": "10.1.6",
     "welcome": "동료에게 다음 퀘스트를 추천하고, 익숙한 WoW 클릭음을 들으며, 퀘스트를 반납한 뒤에도 계속 따라가세요.",
     "sections": [
       {

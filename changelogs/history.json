@@ -3,6 +3,294 @@
   "releases": [
     {
       "enUS": {
+        "version": "10.1.5",
+        "welcome": "More reliable party quest syncing, smoother settings changes and cleaner compatibility handling.",
+        "sections": [
+          {
+            "title": "Party quest syncing",
+            "items": [
+              "Fixed recovery when a quest-list reply is lost or stops partway through, which could leave a party member showing Loading for several minutes. This covers both parents receiving a child’s quests and children receiving their parents’ quests, including Kid mode."
+            ]
+          },
+          {
+            "title": "Settings and maps",
+            "items": [
+              "Changing which players appear on your maps no longer unnecessarily restarts outgoing location subscriptions or rebroadcasts your location and partner status.",
+              "Applying presets or switching profiles now avoids repeated refreshes of map pins, the map button and the Data Broker launcher."
+            ]
+          },
+          {
+            "title": "Compatibility and maintenance",
+            "items": [
+              "Native integrations now check the functions and safety support available in the game instead of requiring a particular client version.",
+              "Consolidated internal state handling and removed duplicate and unused code. Your existing settings are preserved."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "10.1.5",
+        "welcome": "Zuverlässigerer Questabgleich in der Gruppe, weniger doppelte Aktualisierungen und überarbeitete Kompatibilitätsprüfungen.",
+        "sections": [
+          {
+            "title": "Questabgleich in der Gruppe",
+            "items": [
+              "Geht eine Antwort mit der Questliste verloren oder bricht die Übertragung ab, kann QT sie jetzt erneut anfordern. Dadurch werden Fälle behoben, in denen ein Gruppenmitglied minutenlang als ladend angezeigt wurde. Das gilt in beide Richtungen zwischen Eltern und Kindern, auch im Kindermodus."
+            ]
+          },
+          {
+            "title": "Einstellungen und Karten",
+            "items": [
+              "Der Filter für Spieler auf den Karten startet ausgehende Standortabonnements nicht mehr unnötig neu und sendet Standort und Partnersuchstatus nicht mehr erneut.",
+              "Beim Anwenden einer Voreinstellung oder Wechseln des Profils werden Kartenmarkierungen, Kartenschaltfläche und Data-Broker-Starter nicht mehr mehrfach aktualisiert."
+            ]
+          },
+          {
+            "title": "Kompatibilität und Wartung",
+            "items": [
+              "Native Integrationen prüfen die tatsächlich verfügbaren Funktionen und Sicherheitsmechanismen des Spiels, statt eine bestimmte Clientversion vorauszusetzen.",
+              "Interne Zustandsverwaltung wurde zusammengeführt, doppelter und ungenutzter Code entfernt. Bestehende Einstellungen bleiben erhalten."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "10.1.5",
+        "welcome": "Une synchronisation des quêtes plus fiable et des changements de configuration plus fluides.",
+        "sections": [
+          {
+            "title": "Quêtes du groupe",
+            "items": [
+              "QT peut désormais relancer la récupération d’une liste de quêtes lorsque la réponse se perd ou que son transfert s’interrompt. Ces situations pouvaient laisser un membre du groupe en chargement pendant plusieurs minutes. Le correctif fonctionne aussi bien sur le client des parents que sur celui des enfants, y compris en mode enfant."
+            ]
+          },
+          {
+            "title": "Réglages et cartes",
+            "items": [
+              "Changer le filtre des joueurs visibles sur les cartes ne relance plus inutilement les abonnements à votre position et ne renvoie plus votre position ni votre statut de recherche de partenaires.",
+              "L’application d’un préréglage ou le changement de profil évite désormais les actualisations répétées des marqueurs, du bouton de carte et du lanceur Data Broker."
+            ]
+          },
+          {
+            "title": "Compatibilité et maintenance",
+            "items": [
+              "Les intégrations natives vérifient les fonctions et les protections réellement disponibles dans le jeu, sans exiger une version précise du client.",
+              "La gestion des états internes a été regroupée et le code redondant ou inutilisé supprimé. Vos réglages existants sont conservés."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "10.1.5",
+        "welcome": "Sincronización de misiones más fiable, menos actualizaciones repetidas y mejoras de compatibilidad.",
+        "sections": [
+          {
+            "title": "Misiones del grupo",
+            "items": [
+              "QT vuelve a solicitar la lista de misiones si la respuesta se pierde o la transferencia se interrumpe. Se corrigen así casos en los que un miembro del grupo aparecía cargando durante varios minutos. Funciona tanto cuando los padres reciben las misiones de sus hijos como a la inversa, también con el modo infantil."
+            ]
+          },
+          {
+            "title": "Ajustes y mapas",
+            "items": [
+              "Cambiar qué jugadores aparecen en los mapas ya no reinicia innecesariamente las suscripciones a tu ubicación ni vuelve a transmitir tu ubicación y tu estado de búsqueda de compañeros.",
+              "Al aplicar una configuración predefinida o cambiar de perfil, se evitan actualizaciones repetidas de los marcadores, el botón del mapa y el acceso de Data Broker."
+            ]
+          },
+          {
+            "title": "Compatibilidad y mantenimiento",
+            "items": [
+              "Las integraciones nativas comprueban las funciones y medidas de seguridad disponibles en el juego en lugar de exigir una versión concreta del cliente.",
+              "Se ha unificado la gestión del estado interno y eliminado código duplicado o sin uso. Se conservan tus ajustes actuales."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "10.1.5",
+        "welcome": "Mejor recuperación de las misiones del grupo y cambios de configuración más fluidos.",
+        "sections": [
+          {
+            "title": "Sincronización del grupo",
+            "items": [
+              "Si se pierde una respuesta con la lista de misiones o la transferencia se corta, QT puede volver a pedirla. Esto corrige situaciones en las que un integrante seguía apareciendo como cargando durante varios minutos. La recuperación funciona del lado de los padres y del de los hijos, incluso con el modo infantil."
+            ]
+          },
+          {
+            "title": "Configuración y mapas",
+            "items": [
+              "El filtro de jugadores visibles en los mapas ya no reinicia sin necesidad las suscripciones a tu ubicación ni vuelve a enviar tu ubicación y tu estado de búsqueda de compañeros.",
+              "Aplicar una configuración predefinida o cambiar de perfil ya no provoca actualizaciones repetidas de los marcadores, el botón del mapa y el acceso de Data Broker."
+            ]
+          },
+          {
+            "title": "Compatibilidad y mantenimiento",
+            "items": [
+              "Las integraciones nativas ahora revisan las funciones y protecciones que ofrece el juego, en vez de depender de una versión específica del cliente.",
+              "Se reorganizó la gestión de los estados internos y se retiró código duplicado o sin uso. Tu configuración actual se conserva."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "10.1.5",
+        "welcome": "Sincronização de missões mais confiável e ajustes com menos atualizações desnecessárias.",
+        "sections": [
+          {
+            "title": "Missões do grupo",
+            "items": [
+              "QT agora consegue solicitar novamente uma lista de missões quando a resposta se perde ou a transferência é interrompida. Isso corrige casos em que um integrante aparecia carregando por vários minutos. A recuperação vale tanto para os pais recebendo as missões dos filhos quanto para os filhos recebendo as dos pais, inclusive no modo infantil."
+            ]
+          },
+          {
+            "title": "Configurações e mapas",
+            "items": [
+              "Mudar quais jogadores aparecem nos mapas não reinicia mais desnecessariamente as assinaturas da sua localização nem retransmite sua localização e seu status de busca por parceiros.",
+              "Aplicar uma configuração predefinida ou trocar de perfil evita atualizações repetidas dos marcadores, do botão do mapa e do atalho do Data Broker."
+            ]
+          },
+          {
+            "title": "Compatibilidade e manutenção",
+            "items": [
+              "As integrações nativas passam a verificar os recursos e as proteções disponíveis no jogo, em vez de exigir uma versão específica do cliente.",
+              "A gestão dos estados internos foi unificada, com remoção de código duplicado e sem uso. Suas configurações atuais são preservadas."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "10.1.5",
+        "welcome": "Более надёжная синхронизация заданий и меньше лишних обновлений при смене настроек.",
+        "sections": [
+          {
+            "title": "Задания группы",
+            "items": [
+              "QT теперь повторно запрашивает список заданий, если ответ потерялся или передача прервалась. Это исправляет случаи, когда участник группы несколько минут отображался со статусом загрузки. Восстановление работает в обе стороны: и у родителей, получающих задания ребёнка, и у ребёнка, получающего задания родителей, в том числе в детском режиме."
+            ]
+          },
+          {
+            "title": "Настройки и карты",
+            "items": [
+              "Смена фильтра игроков на картах больше не перезапускает без необходимости подписки на вашу позицию и не отправляет повторно позицию и статус поиска напарников.",
+              "При применении набора настроек или смене профиля убраны повторные обновления меток, кнопки на карте и элемента запуска Data Broker."
+            ]
+          },
+          {
+            "title": "Совместимость и обслуживание",
+            "items": [
+              "Интеграции с интерфейсом игры проверяют доступные функции и защитные механизмы, а не требуют конкретную версию клиента.",
+              "Упорядочено управление внутренним состоянием, удалён дублирующийся и неиспользуемый код. Ваши настройки сохраняются."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "10.1.5",
+        "welcome": "Sincronizzazione delle missioni più affidabile e aggiornamenti delle impostazioni più efficienti.",
+        "sections": [
+          {
+            "title": "Missioni del gruppo",
+            "items": [
+              "QT può richiedere nuovamente un elenco di missioni quando la risposta va persa o il trasferimento si interrompe. Questo risolve casi in cui un membro restava in caricamento per diversi minuti. Il recupero funziona sia sul client dei genitori sia su quello dei figli, anche con la modalità bambini."
+            ]
+          },
+          {
+            "title": "Impostazioni e mappe",
+            "items": [
+              "Cambiare il filtro dei giocatori visibili sulle mappe non riavvia più inutilmente gli abbonamenti alla tua posizione e non ritrasmette la posizione o lo stato di ricerca di compagni.",
+              "Applicare una configurazione predefinita o cambiare profilo evita aggiornamenti ripetuti degli indicatori, del pulsante della mappa e del collegamento Data Broker."
+            ]
+          },
+          {
+            "title": "Compatibilità e manutenzione",
+            "items": [
+              "Le integrazioni native verificano le funzioni e le protezioni disponibili nel gioco, senza richiedere una specifica versione del client.",
+              "La gestione dello stato interno è stata riunificata e il codice duplicato o inutilizzato rimosso. Le impostazioni esistenti vengono conservate."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "10.1.5",
+        "welcome": "파티 퀘스트 동기화의 복구 기능과 설정 변경 시의 처리 방식을 개선했습니다.",
+        "sections": [
+          {
+            "title": "파티 퀘스트 동기화",
+            "items": [
+              "퀘스트 목록 응답이 유실되거나 전송 도중 끊기면 다시 요청할 수 있도록 수정했습니다. 이 문제로 파티원이 몇 분 동안 불러오는 중으로 표시되던 경우가 해결됩니다. 부모가 자녀의 퀘스트를 받는 경우와 자녀가 부모의 퀘스트를 받는 경우 모두에 적용되며, 어린이 모드에서도 작동합니다."
+            ]
+          },
+          {
+            "title": "설정과 지도",
+            "items": [
+              "지도에 표시할 플레이어를 변경해도 다른 플레이어에게 보내는 위치 정보의 구독을 불필요하게 다시 시작하거나 위치 및 동료 찾기 상태를 재전송하지 않습니다.",
+              "프리셋 적용이나 프로필 변경 시 지도 표시, 지도 버튼, Data Broker 실행 버튼이 중복 갱신되지 않도록 정리했습니다."
+            ]
+          },
+          {
+            "title": "호환성과 유지 관리",
+            "items": [
+              "게임 자체 기능과 연동할 때 특정 클라이언트 버전을 요구하는 대신 실제로 사용할 수 있는 기능과 보안 지원을 확인합니다.",
+              "내부 상태 관리 구조를 정리하고 중복되거나 사용하지 않는 코드를 제거했습니다. 기존 설정은 유지됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "10.1.5",
+        "welcome": "改进队伍任务同步的恢复机制，减少设置变更时的重复刷新。",
+        "sections": [
+          {
+            "title": "队伍任务同步",
+            "items": [
+              "任务列表回复丢失或传输中断时，QT 现在能够重新请求数据，修复了队员可能连续几分钟显示为加载中的情况。无论是家长接收孩子的任务，还是孩子接收家长的任务，都适用此修复，包括儿童模式。"
+            ]
+          },
+          {
+            "title": "设置与地图",
+            "items": [
+              "更改地图上显示哪些玩家时，不再无谓地重启向其他玩家提供位置的订阅，也不会重新广播你的位置和寻找伙伴状态。",
+              "应用预设或切换配置时，避免重复刷新地图标记、地图按钮和 Data Broker 启动器。"
+            ]
+          },
+          {
+            "title": "兼容性与维护",
+            "items": [
+              "原生界面集成改为检查游戏实际提供的功能及安全支持，不再要求特定客户端版本。",
+              "整合内部状态管理，移除重复及未使用的代码。已有设置保持不变。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "10.1.5",
+        "welcome": "改善隊伍任務同步的復原機制，減少變更設定時的重複更新。",
+        "sections": [
+          {
+            "title": "隊伍任務同步",
+            "items": [
+              "任務清單回覆遺失或傳輸中斷時，QT 現在能重新要求資料，修正隊員可能持續數分鐘顯示載入中的情況。家長接收孩子的任務，以及孩子接收家長的任務，都適用這項修正，也包含兒童模式。"
+            ]
+          },
+          {
+            "title": "設定與地圖",
+            "items": [
+              "變更地圖要顯示哪些玩家時，不再無謂地重新建立向其他玩家提供位置的訂閱，也不會再次廣播你的位置與尋找夥伴狀態。",
+              "套用預設或切換設定檔時，避免重複更新地圖標記、地圖按鈕及 Data Broker 啟動器。"
+            ]
+          },
+          {
+            "title": "相容性與維護",
+            "items": [
+              "原生介面整合會檢查遊戲實際提供的功能與安全支援，不再要求特定的用戶端版本。",
+              "整合內部狀態管理，移除重複及未使用的程式碼。既有設定維持不變。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "10.1.4",
         "welcome": "Smoother quest updates in combat and more consistent tooltip placement.",
         "sections": [

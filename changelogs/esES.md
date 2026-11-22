@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.5
+## 10.1.6
 
 Propón la próxima misión a tu compañero, recupera el clic de selección de WoW y sigue su enfoque con mayor continuidad al entregar misiones.
 
@@ -19,6 +19,24 @@ Propón la próxima misión a tu compañero, recupera el clic de selección de W
 ### Sigue a tu compañero tras las entregas
 
 - Se ha corregido el envío de misiones ya retiradas del registro como enfoque activo y se descartan las confirmaciones obsoletas para dejar de seguir durante esas transiciones. El seguimiento continúa, listo para la siguiente misión compartida.
+
+## 10.1.5
+
+Sincronización de misiones más fiable, menos actualizaciones repetidas y mejoras de compatibilidad.
+
+### Misiones del grupo
+
+- QT vuelve a solicitar la lista de misiones si la respuesta se pierde o la transferencia se interrumpe. Se corrigen así casos en los que un miembro del grupo aparecía cargando durante varios minutos. Funciona tanto cuando los padres reciben las misiones de sus hijos como a la inversa, también con el modo infantil.
+
+### Ajustes y mapas
+
+- Cambiar qué jugadores aparecen en los mapas ya no reinicia innecesariamente las suscripciones a tu ubicación ni vuelve a transmitir tu ubicación y tu estado de búsqueda de compañeros.
+- Al aplicar una configuración predefinida o cambiar de perfil, se evitan actualizaciones repetidas de los marcadores, el botón del mapa y el acceso de Data Broker.
+
+### Compatibilidad y mantenimiento
+
+- Las integraciones nativas comprueban las funciones y medidas de seguridad disponibles en el juego en lugar de exigir una versión concreta del cliente.
+- Se ha unificado la gestión del estado interno y eliminado código duplicado o sin uso. Se conservan tus ajustes actuales.
 
 ## 10.1.4
 

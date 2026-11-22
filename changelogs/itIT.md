@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.5
+## 10.1.6
 
 Proponi la prossima missione al tuo compagno, ritrova il clic di WoW e continua a seguirne le scelte dopo le consegne.
 
@@ -19,6 +19,24 @@ Proponi la prossima missione al tuo compagno, ritrova il clic di WoW e continua 
 ### Continuare dopo le consegne
 
 - Le missioni uscite dal diario non vengono più condivise come vecchia selezione attiva. Sono inoltre eliminate le conferme ormai superate per interrompere il seguito durante queste transizioni. Il seguito rimane attivo per la prossima missione comune.
+
+## 10.1.5
+
+Sincronizzazione delle missioni più affidabile e aggiornamenti delle impostazioni più efficienti.
+
+### Missioni del gruppo
+
+- QT può richiedere nuovamente un elenco di missioni quando la risposta va persa o il trasferimento si interrompe. Questo risolve casi in cui un membro restava in caricamento per diversi minuti. Il recupero funziona sia sul client dei genitori sia su quello dei figli, anche con la modalità bambini.
+
+### Impostazioni e mappe
+
+- Cambiare il filtro dei giocatori visibili sulle mappe non riavvia più inutilmente gli abbonamenti alla tua posizione e non ritrasmette la posizione o lo stato di ricerca di compagni.
+- Applicare una configurazione predefinita o cambiare profilo evita aggiornamenti ripetuti degli indicatori, del pulsante della mappa e del collegamento Data Broker.
+
+### Compatibilità e manutenzione
+
+- Le integrazioni native verificano le funzioni e le protezioni disponibili nel gioco, senza richiedere una specifica versione del client.
+- La gestione dello stato interno è stata riunificata e il codice duplicato o inutilizzato rimosso. Le impostazioni esistenti vengono conservate.
 
 ## 10.1.4
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.5
+## 10.1.6
 
 Schlagt gemeinsam die nächste Quest vor, hört den vertrauten Auswahlklick und folgt nach Questabgaben zuverlässiger weiter.
 
@@ -19,6 +19,24 @@ Schlagt gemeinsam die nächste Quest vor, hört den vertrauten Auswahlklick und 
 ### Nach der Abgabe weiter folgen
 
 - Entfernte Quests werden nicht mehr als veralteter Fokus geteilt. Überholte Rückfragen zum Beenden des Folgens bei Questabgaben werden verworfen. Das Folgen bleibt für die nächste gemeinsame Quest aktiv.
+
+## 10.1.5
+
+Zuverlässigerer Questabgleich in der Gruppe, weniger doppelte Aktualisierungen und überarbeitete Kompatibilitätsprüfungen.
+
+### Questabgleich in der Gruppe
+
+- Geht eine Antwort mit der Questliste verloren oder bricht die Übertragung ab, kann QT sie jetzt erneut anfordern. Dadurch werden Fälle behoben, in denen ein Gruppenmitglied minutenlang als ladend angezeigt wurde. Das gilt in beide Richtungen zwischen Eltern und Kindern, auch im Kindermodus.
+
+### Einstellungen und Karten
+
+- Der Filter für Spieler auf den Karten startet ausgehende Standortabonnements nicht mehr unnötig neu und sendet Standort und Partnersuchstatus nicht mehr erneut.
+- Beim Anwenden einer Voreinstellung oder Wechseln des Profils werden Kartenmarkierungen, Kartenschaltfläche und Data-Broker-Starter nicht mehr mehrfach aktualisiert.
+
+### Kompatibilität und Wartung
+
+- Native Integrationen prüfen die tatsächlich verfügbaren Funktionen und Sicherheitsmechanismen des Spiels, statt eine bestimmte Clientversion vorauszusetzen.
+- Interne Zustandsverwaltung wurde zusammengeführt, doppelter und ungenutzter Code entfernt. Bestehende Einstellungen bleiben erhalten.
 
 ## 10.1.4
 

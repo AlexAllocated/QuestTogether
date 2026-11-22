@@ -1,7 +1,7 @@
 {
   "source_sha256": "d84505defef27125f5bd810dc002d11af35f15a6571c7836ebc4dc1223614be6",
   "notes": {
-    "version": "10.1.5",
+    "version": "10.1.6",
     "welcome": "向队友建议下一个任务，听到熟悉的 WoW 点击音，并在交任务后顺畅地继续跟随。",
     "sections": [
       {

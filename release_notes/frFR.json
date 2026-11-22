@@ -1,7 +1,7 @@
 {
   "source_sha256": "d84505defef27125f5bd810dc002d11af35f15a6571c7836ebc4dc1223614be6",
   "notes": {
-    "version": "10.1.5",
+    "version": "10.1.6",
     "welcome": "Proposez la prochaine quête à votre compagnon, retrouvez le clic de sélection de WoW et continuez à le suivre après avoir rendu des quêtes.",
     "sections": [
       {

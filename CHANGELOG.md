@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 10.1.5
+## 10.1.6
 
 A new way to suggest your party’s next quest, a familiar focus click, and smoother following after turn-ins.
 
@@ -21,6 +21,24 @@ A new way to suggest your party’s next quest, a familiar focus click, and smoo
 ### Keep following after turn-ins
 
 - Fixed stale focused quests being shared after leaving the log and outdated break-follow prompts during turn-in transitions. Following stays active, ready for the next shared quest.
+
+## 10.1.5
+
+More reliable party quest syncing, smoother settings changes and cleaner compatibility handling.
+
+### Party quest syncing
+
+- Fixed recovery when a quest-list reply is lost or stops partway through, which could leave a party member showing Loading for several minutes. This covers both parents receiving a child’s quests and children receiving their parents’ quests, including Kid mode.
+
+### Settings and maps
+
+- Changing which players appear on your maps no longer unnecessarily restarts outgoing location subscriptions or rebroadcasts your location and partner status.
+- Applying presets or switching profiles now avoids repeated refreshes of map pins, the map button and the Data Broker launcher.
+
+### Compatibility and maintenance
+
+- Native integrations now check the functions and safety support available in the game instead of requiring a particular client version.
+- Consolidated internal state handling and removed duplicate and unused code. Your existing settings are preserved.
 
 ## 10.1.4
 

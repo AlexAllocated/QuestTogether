@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "10.1.5",
+	version = "10.1.6",
 	welcome = "A new way to suggest your party’s next quest, a familiar focus click, and smoother following after turn-ins.",
 	sections = {
 		{
