@@ -4,16 +4,21 @@
 
 ## 10.1.4
 
-Aggiornamenti delle missioni durante il combattimento e suggerimenti posizionati meglio.
+Sincronizzazione delle missioni più affidabile e aggiornamenti delle impostazioni più efficienti.
 
-### Annunci delle missioni in combattimento
+### Missioni del gruppo
 
-- Gli annunci di avanzamento e di missione pronta per la consegna possono ora comparire durante i combattimenti ordinari per le missioni già tracciate. Restano valide le tue impostazioni degli annunci.
-- Quando i dati non sono leggibili o sono attive altre restrizioni, QT attende un aggiornamento sicuro. Gli annunci mostrati in combattimento non vengono ripetuti al termine.
+- QT può richiedere nuovamente un elenco di missioni quando la risposta va persa o il trasferimento si interrompe. Questo risolve casi in cui un membro restava in caricamento per diversi minuti. Il recupero funziona sia sul client dei genitori sia su quello dei figli, anche con la modalità bambini.
 
-### Posizione del tracciamento obiettivi del gruppo
+### Impostazioni e mappe
 
-- Quando QT nasconde il suggerimento nativo della missione, il tracciamento obiettivi del gruppo agganciato ne mantiene la posizione, invece di tornare accanto al tracciamento di Blizzard. Segue anche gli spostamenti e i cambi di scala della riga della missione sotto il cursore.
+- Cambiare il filtro dei giocatori visibili sulle mappe non riavvia più inutilmente gli abbonamenti alla tua posizione e non ritrasmette la posizione o lo stato di ricerca di compagni.
+- Applicare una configurazione predefinita o cambiare profilo evita aggiornamenti ripetuti degli indicatori, del pulsante della mappa e del collegamento Data Broker.
+
+### Compatibilità e manutenzione
+
+- Le integrazioni native verificano le funzioni e le protezioni disponibili nel gioco, senza richiedere una specifica versione del client.
+- La gestione dello stato interno è stata riunificata e il codice duplicato o inutilizzato rimosso. Le impostazioni esistenti vengono conservate.
 
 ## 10.1.3
 

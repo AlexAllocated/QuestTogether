@@ -4,16 +4,21 @@
 
 ## 10.1.4
 
-Des nouvelles de vos quêtes pendant le combat et des infobulles mieux placées.
+Une synchronisation des quêtes plus fiable et des changements de configuration plus fluides.
 
-### Annonces de quête en combat
+### Quêtes du groupe
 
-- Pour les quêtes déjà suivies, les annonces de progression et de quête prête à être rendue peuvent désormais apparaître pendant les combats ordinaires. Vos réglages d’annonce restent appliqués.
-- QT attend toujours une mise à jour sûre si les données sont illisibles ou si une autre restriction est active. Les annonces affichées en combat ne sont pas répétées à sa fin.
+- QT peut désormais relancer la récupération d’une liste de quêtes lorsque la réponse se perd ou que son transfert s’interrompt. Ces situations pouvaient laisser un membre du groupe en chargement pendant plusieurs minutes. Le correctif fonctionne aussi bien sur le client des parents que sur celui des enfants, y compris en mode enfant.
 
-### Position du suivi des objectifs du groupe
+### Réglages et cartes
 
-- Lorsque QT masque l’infobulle de quête native, le suivi des objectifs du groupe ancré conserve désormais sa position au lieu de revenir à côté du suivi de Blizzard. Il suit aussi les déplacements et les changements d’échelle de la ligne de quête survolée.
+- Changer le filtre des joueurs visibles sur les cartes ne relance plus inutilement les abonnements à votre position et ne renvoie plus votre position ni votre statut de recherche de partenaires.
+- L’application d’un préréglage ou le changement de profil évite désormais les actualisations répétées des marqueurs, du bouton de carte et du lanceur Data Broker.
+
+### Compatibilité et maintenance
+
+- Les intégrations natives vérifient les fonctions et les protections réellement disponibles dans le jeu, sans exiger une version précise du client.
+- La gestion des états internes a été regroupée et le code redondant ou inutilisé supprimé. Vos réglages existants sont conservés.
 
 ## 10.1.3
 

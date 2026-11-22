@@ -1,20 +1,27 @@
 {
-  "source_sha256": "aec7533eb24575f7c9127cf3105da96cde292bf063176f83f65ca8f6c86a45f8",
+  "source_sha256": "aa0d2800701073d4381e52deef02898bbea29c369d2bfcf1414f47e5002ce0a2",
   "notes": {
     "version": "10.1.4",
-    "welcome": "Questmeldungen kommen im Kampf früher an, und die Tooltip-Position bleibt verlässlich.",
+    "welcome": "Zuverlässigerer Questabgleich in der Gruppe, weniger doppelte Aktualisierungen und überarbeitete Kompatibilitätsprüfungen.",
     "sections": [
       {
-        "title": "Questmeldungen im Kampf",
+        "title": "Questabgleich in der Gruppe",
         "items": [
-          "Fortschritt und Abgabebereitschaft bereits verfolgter Quests können jetzt auch während gewöhnlicher Kämpfe gemeldet werden. Eure Einstellungen für Ankündigungen gelten weiterhin.",
-          "Sind Questdaten nicht lesbar oder andere Einschränkungen aktiv, wartet QT weiterhin auf eine sichere Aktualisierung. Im Kampf ausgegebene Meldungen werden danach nicht erneut angezeigt."
+          "Geht eine Antwort mit der Questliste verloren oder bricht die Übertragung ab, kann QT sie jetzt erneut anfordern. Dadurch werden Fälle behoben, in denen ein Gruppenmitglied minutenlang als ladend angezeigt wurde. Das gilt in beide Richtungen zwischen Eltern und Kindern, auch im Kindermodus."
         ]
       },
       {
-        "title": "Position der Gruppen-Zielverfolgung",
+        "title": "Einstellungen und Karten",
         "items": [
-          "Blendet QT den normalen Quest-Tooltip aus, bleibt die angedockte Gruppen-Zielverfolgung jetzt an dessen Position, statt neben Blizzards Zielverfolgung zurückzuspringen. Auch Verschiebungen und Skalierungsänderungen der Questzeile unter dem Mauszeiger werden berücksichtigt."
+          "Der Filter für Spieler auf den Karten startet ausgehende Standortabonnements nicht mehr unnötig neu und sendet Standort und Partnersuchstatus nicht mehr erneut.",
+          "Beim Anwenden einer Voreinstellung oder Wechseln des Profils werden Kartenmarkierungen, Kartenschaltfläche und Data-Broker-Starter nicht mehr mehrfach aktualisiert."
+        ]
+      },
+      {
+        "title": "Kompatibilität und Wartung",
+        "items": [
+          "Native Integrationen prüfen die tatsächlich verfügbaren Funktionen und Sicherheitsmechanismen des Spiels, statt eine bestimmte Clientversion vorauszusetzen.",
+          "Interne Zustandsverwaltung wurde zusammengeführt, doppelter und ungenutzter Code entfernt. Bestehende Einstellungen bleiben erhalten."
         ]
       }
     ]

@@ -4,16 +4,21 @@
 
 ## 10.1.4
 
-Avisos de misión durante el combate y ventanas de información mejor ubicadas.
+Mejor recuperación de las misiones del grupo y cambios de configuración más fluidos.
 
-### Progreso de misiones en combate
+### Sincronización del grupo
 
-- Ahora puedes recibir avisos de progreso y de misiones listas para entregar durante combates normales, siempre que ya estés siguiendo esas misiones. Se respetan tus ajustes de avisos.
-- Cuando los datos no se pueden leer o existen otras restricciones activas, QT espera una actualización segura. Los avisos enviados en combate no vuelven a aparecer cuando termina.
+- Si se pierde una respuesta con la lista de misiones o la transferencia se corta, QT puede volver a pedirla. Esto corrige situaciones en las que un integrante seguía apareciendo como cargando durante varios minutos. La recuperación funciona del lado de los padres y del de los hijos, incluso con el modo infantil.
 
-### Posición del seguimiento de objetivos del grupo
+### Configuración y mapas
 
-- Si QT oculta la información emergente nativa de una misión, el seguimiento de objetivos del grupo acoplado permanece en ese lugar, en vez de regresar junto al seguimiento de Blizzard. También acompaña los movimientos y cambios de escala de la fila de misión sobre la que está el cursor.
+- El filtro de jugadores visibles en los mapas ya no reinicia sin necesidad las suscripciones a tu ubicación ni vuelve a enviar tu ubicación y tu estado de búsqueda de compañeros.
+- Aplicar una configuración predefinida o cambiar de perfil ya no provoca actualizaciones repetidas de los marcadores, el botón del mapa y el acceso de Data Broker.
+
+### Compatibilidad y mantenimiento
+
+- Las integraciones nativas ahora revisan las funciones y protecciones que ofrece el juego, en vez de depender de una versión específica del cliente.
+- Se reorganizó la gestión de los estados internos y se retiró código duplicado o sin uso. Tu configuración actual se conserva.
 
 ## 10.1.3
 

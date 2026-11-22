@@ -4,16 +4,21 @@
 
 ## 10.1.4
 
-Questmeldungen kommen im Kampf früher an, und die Tooltip-Position bleibt verlässlich.
+Zuverlässigerer Questabgleich in der Gruppe, weniger doppelte Aktualisierungen und überarbeitete Kompatibilitätsprüfungen.
 
-### Questmeldungen im Kampf
+### Questabgleich in der Gruppe
 
-- Fortschritt und Abgabebereitschaft bereits verfolgter Quests können jetzt auch während gewöhnlicher Kämpfe gemeldet werden. Eure Einstellungen für Ankündigungen gelten weiterhin.
-- Sind Questdaten nicht lesbar oder andere Einschränkungen aktiv, wartet QT weiterhin auf eine sichere Aktualisierung. Im Kampf ausgegebene Meldungen werden danach nicht erneut angezeigt.
+- Geht eine Antwort mit der Questliste verloren oder bricht die Übertragung ab, kann QT sie jetzt erneut anfordern. Dadurch werden Fälle behoben, in denen ein Gruppenmitglied minutenlang als ladend angezeigt wurde. Das gilt in beide Richtungen zwischen Eltern und Kindern, auch im Kindermodus.
 
-### Position der Gruppen-Zielverfolgung
+### Einstellungen und Karten
 
-- Blendet QT den normalen Quest-Tooltip aus, bleibt die angedockte Gruppen-Zielverfolgung jetzt an dessen Position, statt neben Blizzards Zielverfolgung zurückzuspringen. Auch Verschiebungen und Skalierungsänderungen der Questzeile unter dem Mauszeiger werden berücksichtigt.
+- Der Filter für Spieler auf den Karten startet ausgehende Standortabonnements nicht mehr unnötig neu und sendet Standort und Partnersuchstatus nicht mehr erneut.
+- Beim Anwenden einer Voreinstellung oder Wechseln des Profils werden Kartenmarkierungen, Kartenschaltfläche und Data-Broker-Starter nicht mehr mehrfach aktualisiert.
+
+### Kompatibilität und Wartung
+
+- Native Integrationen prüfen die tatsächlich verfügbaren Funktionen und Sicherheitsmechanismen des Spiels, statt eine bestimmte Clientversion vorauszusetzen.
+- Interne Zustandsverwaltung wurde zusammengeführt, doppelter und ungenutzter Code entfernt. Bestehende Einstellungen bleiben erhalten.
 
 ## 10.1.3
 
