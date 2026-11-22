@@ -1,27 +1,27 @@
 {
-  "source_sha256": "aa0d2800701073d4381e52deef02898bbea29c369d2bfcf1414f47e5002ce0a2",
+  "source_sha256": "d84505defef27125f5bd810dc002d11af35f15a6571c7836ebc4dc1223614be6",
   "notes": {
     "version": "10.1.5",
-    "welcome": "Mejor recuperación de las misiones del grupo y cambios de configuración más fluidos.",
+    "welcome": "Sugiere la próxima misión a tu compañero, disfruta del clic conocido de WoW y sigue su enfoque sin tropiezos al entregar misiones.",
     "sections": [
       {
-        "title": "Sincronización del grupo",
+        "title": "Sugiere la próxima misión",
         "items": [
-          "Si se pierde una respuesta con la lista de misiones o la transferencia se corta, QT puede volver a pedirla. Esto corrige situaciones en las que un integrante seguía apareciendo como cargando durante varios minutos. La recuperación funciona del lado de los padres y del de los hijos, incluso con el modo infantil."
+          "Si estás siguiendo el enfoque de otro jugador, selecciona otra misión y elige Sugerir enfoque. El seguimiento sigue activo, y esa persona puede aceptar el cambio si tiene la misión en su registro. Ambos necesitan esta actualización.",
+          "El seguimiento manual mantiene Cancelar y Cambiar enfoque. Si sigues automáticamente al líder, puedes cancelar o sugerir un enfoque, pero no reemplazarlo localmente.",
+          "Permitir sugerencias de misión enfocada está en los ajustes de grupo y uso compartido. Los preajustes Solo registro de misiones y Pequeño aventurero desactivan las sugerencias recibidas. La actualización también respeta si ya habías desactivado las solicitudes de compartir misiones de QT."
         ]
       },
       {
-        "title": "Configuración y mapas",
+        "title": "El clic de selección de WoW",
         "items": [
-          "El filtro de jugadores visibles en los mapas ya no reinicia sin necesidad las suscripciones a tu ubicación ni vuelve a enviar tu ubicación y tu estado de búsqueda de compañeros.",
-          "Aplicar una configuración predefinida o cambiar de perfil ya no provoca actualizaciones repetidas de los marcadores, el botón del mapa y el acceso de Data Broker."
+          "Los cambios automáticos de enfoque usan por defecto el clic de selección de misiones del juego. Su volumen depende de los efectos de sonido de WoW. Poner cualquiera de los dos controles de volumen de QT en cero lo silencia; los demás sonidos seleccionados siguen igual."
         ]
       },
       {
-        "title": "Compatibilidad y mantenimiento",
+        "title": "Continúa siguiendo tras las entregas",
         "items": [
-          "Las integraciones nativas ahora revisan las funciones y protecciones que ofrece el juego, en vez de depender de una versión específica del cliente.",
-          "Se reorganizó la gestión de los estados internos y se retiró código duplicado o sin uso. Tu configuración actual se conserva."
+          "Las misiones que salieron del registro ya no se comparten como un enfoque desactualizado. También se descartan las confirmaciones obsoletas para interrumpir el seguimiento durante esas transiciones. El seguimiento permanece activo para la próxima misión compartida."
         ]
       }
     ]

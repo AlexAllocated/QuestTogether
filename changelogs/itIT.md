@@ -4,21 +4,21 @@
 
 ## 10.1.5
 
-Sincronizzazione delle missioni più affidabile e aggiornamenti delle impostazioni più efficienti.
+Proponi la prossima missione al tuo compagno, ritrova il clic di WoW e continua a seguirne le scelte dopo le consegne.
 
-### Missioni del gruppo
+### Proponi la prossima missione
 
-- QT può richiedere nuovamente un elenco di missioni quando la risposta va persa o il trasferimento si interrompe. Questo risolve casi in cui un membro restava in caricamento per diversi minuti. Il recupero funziona sia sul client dei genitori sia su quello dei figli, anche con la modalità bambini.
+- Mentre segui la missione in evidenza di un altro giocatore, selezionane una diversa e scegli Suggerisci missione. Continuerai a seguirlo; se ha quella missione nel diario, potrà approvare il cambio. Entrambi i giocatori devono installare questo aggiornamento.
+- Il seguito manuale mantiene Annulla e il cambio della missione in evidenza. Quando segui automaticamente il capogruppo puoi annullare o suggerire una missione, ma non sostituire localmente la sua scelta.
+- Consenti suggerimenti per la missione in evidenza si trova nelle impostazioni di gruppo e condivisione. Solo registro missioni e Piccolo compagno disattivano i suggerimenti ricevuti. L’aggiornamento rispetta anche la precedente disattivazione delle richieste QT di condivisione delle missioni.
 
-### Impostazioni e mappe
+### Il clic di selezione del gioco
 
-- Cambiare il filtro dei giocatori visibili sulle mappe non riavvia più inutilmente gli abbonamenti alla tua posizione e non ritrasmette la posizione o lo stato di ricerca di compagni.
-- Applicare una configurazione predefinita o cambiare profilo evita aggiornamenti ripetuti degli indicatori, del pulsante della mappa e del collegamento Data Broker.
+- Per i cambi automatici della missione in evidenza, il suono predefinito è ora il clic di selezione di WoW. Il volume segue gli effetti sonori del gioco; portare a zero uno dei due controlli del volume QT lo silenzia comunque. Gli altri suoni scelti restano invariati.
 
-### Compatibilità e manutenzione
+### Continuare dopo le consegne
 
-- Le integrazioni native verificano le funzioni e le protezioni disponibili nel gioco, senza richiedere una specifica versione del client.
-- La gestione dello stato interno è stata riunificata e il codice duplicato o inutilizzato rimosso. Le impostazioni esistenti vengono conservate.
+- Le missioni uscite dal diario non vengono più condivise come vecchia selezione attiva. Sono inoltre eliminate le conferme ormai superate per interrompere il seguito durante queste transizioni. Il seguito rimane attivo per la prossima missione comune.
 
 ## 10.1.4
 

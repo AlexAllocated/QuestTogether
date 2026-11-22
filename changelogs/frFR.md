@@ -4,21 +4,21 @@
 
 ## 10.1.5
 
-Une synchronisation des quêtes plus fiable et des changements de configuration plus fluides.
+Proposez la prochaine quête à votre compagnon, retrouvez le clic de sélection de WoW et continuez à le suivre après avoir rendu des quêtes.
 
-### Quêtes du groupe
+### Proposer la prochaine quête
 
-- QT peut désormais relancer la récupération d’une liste de quêtes lorsque la réponse se perd ou que son transfert s’interrompt. Ces situations pouvaient laisser un membre du groupe en chargement pendant plusieurs minutes. Le correctif fonctionne aussi bien sur le client des parents que sur celui des enfants, y compris en mode enfant.
+- Pendant que vous suivez le choix de quête d’un joueur, sélectionnez une autre quête puis Suggérer une quête. Le suivi reste actif. Si cette quête figure dans son journal, il peut accepter votre proposition. Les deux joueurs doivent installer cette mise à jour.
+- Le suivi manuel conserve Annuler et le changement de quête. Avec le suivi automatique du chef de groupe, vous pouvez annuler ou suggérer une quête, mais pas imposer un autre choix localement.
+- L’option Autoriser les suggestions de quête suivie se trouve dans les réglages de groupe et de partage. Les préréglages Juste le journal et Petit compagnon désactivent les suggestions reçues. La mise à jour respecte également le refus existant des demandes de partage QT.
 
-### Réglages et cartes
+### Le clic familier de WoW
 
-- Changer le filtre des joueurs visibles sur les cartes ne relance plus inutilement les abonnements à votre position et ne renvoie plus votre position ni votre statut de recherche de partenaires.
-- L’application d’un préréglage ou le changement de profil évite désormais les actualisations répétées des marqueurs, du bouton de carte et du lanceur Data Broker.
+- Les changements automatiques de quête utilisent désormais, par défaut, le clic de sélection de quête de WoW. Son volume dépend des effets sonores du jeu. Mettre l’un des deux réglages de volume QT à zéro le coupe toujours. Les autres sons sélectionnés restent inchangés.
 
-### Compatibilité et maintenance
+### Continuer après avoir rendu une quête
 
-- Les intégrations natives vérifient les fonctions et les protections réellement disponibles dans le jeu, sans exiger une version précise du client.
-- La gestion des états internes a été regroupée et le code redondant ou inutilisé supprimé. Vos réglages existants sont conservés.
+- Les quêtes sorties du journal ne sont plus partagées comme un ancien choix actif. Les confirmations devenues inutiles pour interrompre le suivi lors de ces transitions sont écartées. Le suivi reste prêt pour la prochaine quête commune.
 
 ## 10.1.4
 

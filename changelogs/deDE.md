@@ -4,21 +4,21 @@
 
 ## 10.1.5
 
-Zuverlässigerer Questabgleich in der Gruppe, weniger doppelte Aktualisierungen und überarbeitete Kompatibilitätsprüfungen.
+Schlagt gemeinsam die nächste Quest vor, hört den vertrauten Auswahlklick und folgt nach Questabgaben zuverlässiger weiter.
 
-### Questabgleich in der Gruppe
+### Die nächste Quest vorschlagen
 
-- Geht eine Antwort mit der Questliste verloren oder bricht die Übertragung ab, kann QT sie jetzt erneut anfordern. Dadurch werden Fälle behoben, in denen ein Gruppenmitglied minutenlang als ladend angezeigt wurde. Das gilt in beide Richtungen zwischen Eltern und Kindern, auch im Kindermodus.
+- Wenn du dem Questfokus eines Mitspielers folgst, wähle eine andere Quest und nutze Fokus vorschlagen. Du folgst ihm weiterhin; er kann den Wechsel bestätigen, wenn er die Quest im Log hat. Beide Spieler benötigen dieses Update.
+- Beim manuellen Folgen bleiben Abbrechen und Fokus ändern verfügbar. Beim automatischen Folgen des Gruppenanführers kannst du abbrechen oder einen Fokus vorschlagen, den Fokus aber nicht selbst überschreiben.
+- Vorschläge zum Questfokus erlauben findest du unter Gruppen & Teilen. Die Voreinstellungen Nur das Questlog und Kleine Abenteurer deaktivieren eingehende Vorschläge. Beim Update bleibt auch deine bisherige Einstellung berücksichtigt, keine QT-Anfragen zum Teilen von Quests zu erhalten.
 
-### Einstellungen und Karten
+### Vertrauter Auswahlton
 
-- Der Filter für Spieler auf den Karten startet ausgehende Standortabonnements nicht mehr unnötig neu und sendet Standort und Partnersuchstatus nicht mehr erneut.
-- Beim Anwenden einer Voreinstellung oder Wechseln des Profils werden Kartenmarkierungen, Kartenschaltfläche und Data-Broker-Starter nicht mehr mehrfach aktualisiert.
+- Für automatische Fokuswechsel wird standardmäßig WoWs eigener Quest-Auswahlklick verwendet. Seine Lautstärke richtet sich nach den WoW-Soundeffekten. Steht einer der beiden QT-Lautstärkeregler auf null, bleibt er stumm. Andere ausgewählte Töne bleiben unverändert.
 
-### Kompatibilität und Wartung
+### Nach der Abgabe weiter folgen
 
-- Native Integrationen prüfen die tatsächlich verfügbaren Funktionen und Sicherheitsmechanismen des Spiels, statt eine bestimmte Clientversion vorauszusetzen.
-- Interne Zustandsverwaltung wurde zusammengeführt, doppelter und ungenutzter Code entfernt. Bestehende Einstellungen bleiben erhalten.
+- Entfernte Quests werden nicht mehr als veralteter Fokus geteilt. Überholte Rückfragen zum Beenden des Folgens bei Questabgaben werden verworfen. Das Folgen bleibt für die nächste gemeinsame Quest aktiv.
 
 ## 10.1.4
 

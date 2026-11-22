@@ -4,21 +4,21 @@
 
 ## 10.1.5
 
-Sincronização de missões mais confiável e ajustes com menos atualizações desnecessárias.
+Sugira a próxima missão ao seu companheiro, ouça o clique familiar do WoW e continue seguindo o foco após entregar missões.
 
-### Missões do grupo
+### Sugira a próxima missão
 
-- QT agora consegue solicitar novamente uma lista de missões quando a resposta se perde ou a transferência é interrompida. Isso corrige casos em que um integrante aparecia carregando por vários minutos. A recuperação vale tanto para os pais recebendo as missões dos filhos quanto para os filhos recebendo as dos pais, inclusive no modo infantil.
+- Ao seguir o foco de alguém, selecione outra missão e escolha Sugerir foco. Você continua seguindo a pessoa, que pode aprovar a mudança se tiver a missão no registro. Os dois jogadores precisam desta atualização.
+- No acompanhamento manual, Cancelar e Mudar foco continuam disponíveis. Ao seguir automaticamente o líder, você pode cancelar ou sugerir um foco, mas não substituir a escolha localmente.
+- Permitir sugestões de foco de missão fica nos ajustes de grupo e compartilhamento. Só o registro de missões e Pequeno companheiro desativam sugestões recebidas. A atualização também preserva a preferência de quem já desativou solicitações de compartilhamento de missões do QT.
 
-### Configurações e mapas
+### Um clique familiar
 
-- Mudar quais jogadores aparecem nos mapas não reinicia mais desnecessariamente as assinaturas da sua localização nem retransmite sua localização e seu status de busca por parceiros.
-- Aplicar uma configuração predefinida ou trocar de perfil evita atualizações repetidas dos marcadores, do botão do mapa e do atalho do Data Broker.
+- O som padrão para mudanças automáticas de foco agora é o clique de seleção de missões do WoW. O volume segue os efeitos sonoros do jogo. Zerar qualquer um dos dois controles de volume do QT ainda silencia o clique. Outros sons escolhidos não mudam.
 
-### Compatibilidade e manutenção
+### Continue seguindo após as entregas
 
-- As integrações nativas passam a verificar os recursos e as proteções disponíveis no jogo, em vez de exigir uma versão específica do cliente.
-- A gestão dos estados internos foi unificada, com remoção de código duplicado e sem uso. Suas configurações atuais são preservadas.
+- Missões que saíram do registro deixam de ser compartilhadas como foco antigo. Confirmações desatualizadas para parar de seguir durante essas transições também são descartadas. O acompanhamento continua ativo para a próxima missão em comum.
 
 ## 10.1.4
 

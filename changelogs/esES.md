@@ -4,21 +4,21 @@
 
 ## 10.1.5
 
-Sincronización de misiones más fiable, menos actualizaciones repetidas y mejoras de compatibilidad.
+Propón la próxima misión a tu compañero, recupera el clic de selección de WoW y sigue su enfoque con mayor continuidad al entregar misiones.
 
-### Misiones del grupo
+### Propón la próxima misión
 
-- QT vuelve a solicitar la lista de misiones si la respuesta se pierde o la transferencia se interrumpe. Se corrigen así casos en los que un miembro del grupo aparecía cargando durante varios minutos. Funciona tanto cuando los padres reciben las misiones de sus hijos como a la inversa, también con el modo infantil.
+- Mientras sigues el enfoque de otro jugador, selecciona otra misión y pulsa Sugerir enfoque. Seguirás a esa persona, que podrá aprobar el cambio si tiene la misión en su registro. Ambos jugadores necesitan esta actualización.
+- El seguimiento manual conserva Cancelar y Cambiar enfoque. Al seguir automáticamente al líder, puedes cancelar o sugerir un enfoque, pero no sustituirlo por una elección local.
+- Permitir sugerencias de misión enfocada está en los ajustes de grupo y uso compartido. Solo el registro y Pequeño compañero desactivan las sugerencias entrantes. Al actualizar también se respeta que ya hubieras desactivado las solicitudes de compartir misiones de QT.
 
-### Ajustes y mapas
+### Un clic conocido
 
-- Cambiar qué jugadores aparecen en los mapas ya no reinicia innecesariamente las suscripciones a tu ubicación ni vuelve a transmitir tu ubicación y tu estado de búsqueda de compañeros.
-- Al aplicar una configuración predefinida o cambiar de perfil, se evitan actualizaciones repetidas de los marcadores, el botón del mapa y el acceso de Data Broker.
+- El sonido predeterminado de los cambios automáticos de enfoque es ahora el clic de selección de misiones de WoW. Su volumen depende de los efectos de sonido del juego; poner cualquiera de los dos controles de volumen de QT a cero lo silencia. Los demás sonidos elegidos no cambian.
 
-### Compatibilidad y mantenimiento
+### Sigue a tu compañero tras las entregas
 
-- Las integraciones nativas comprueban las funciones y medidas de seguridad disponibles en el juego en lugar de exigir una versión concreta del cliente.
-- Se ha unificado la gestión del estado interno y eliminado código duplicado o sin uso. Se conservan tus ajustes actuales.
+- Se ha corregido el envío de misiones ya retiradas del registro como enfoque activo y se descartan las confirmaciones obsoletas para dejar de seguir durante esas transiciones. El seguimiento continúa, listo para la siguiente misión compartida.
 
 ## 10.1.4
 

@@ -6,21 +6,21 @@
 
 ## 10.1.5
 
-More reliable party quest syncing, smoother settings changes and cleaner compatibility handling.
+A new way to suggest your party’s next quest, a familiar focus click, and smoother following after turn-ins.
 
-### Party quest syncing
+### Suggest the next quest
 
-- Fixed recovery when a quest-list reply is lost or stops partway through, which could leave a party member showing Loading for several minutes. This covers both parents receiving a child’s quests and children receiving their parents’ quests, including Kid mode.
+- While following someone’s quest focus, select another quest and choose Suggest focus. Your follow stays active, and they can approve the change if the quest is in their log. Both players need this update.
+- Manual following still offers Cancel and Change focus. Automatic party-leader following offers Cancel or Suggest focus while keeping local overrides blocked.
+- Allow quest focus suggestions is in Groups & Sharing. Quest Log Only and Little Sidekick turn incoming suggestions off; existing opt-outs from QT share-request prompts are also respected when upgrading.
 
-### Settings and maps
+### A familiar focus sound
 
-- Changing which players appear on your maps no longer unnecessarily restarts outgoing location subscriptions or rebroadcasts your location and partner status.
-- Applying presets or switching profiles now avoids repeated refreshes of map pins, the map button and the Data Broker launcher.
+- The default automatic focus-change sound now uses WoW’s own quest-selection click. Its loudness follows WoW’s Sound Effects volume; setting either QT volume slider to zero still mutes it. Other selected sounds are unchanged.
 
-### Compatibility and maintenance
+### Keep following after turn-ins
 
-- Native integrations now check the functions and safety support available in the game instead of requiring a particular client version.
-- Consolidated internal state handling and removed duplicate and unused code. Your existing settings are preserved.
+- Fixed stale focused quests being shared after leaving the log and outdated break-follow prompts during turn-in transitions. Following stays active, ready for the next shared quest.
 
 ## 10.1.4
 
