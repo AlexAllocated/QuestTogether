@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "10.1.4",
+	version = "10.1.5",
 	welcome = "More reliable party quest syncing, smoother settings changes and cleaner compatibility handling.",
 	sections = {
 		{

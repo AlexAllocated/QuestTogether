@@ -3,6 +3,217 @@
   "releases": [
     {
       "enUS": {
+        "version": "10.1.4",
+        "welcome": "Smoother quest updates in combat and more consistent tooltip placement.",
+        "sections": [
+          {
+            "title": "Quest updates during combat",
+            "items": [
+              "Progress and ready-to-turn-in announcements for quests you are already tracking can now appear during ordinary combat, using your existing announcement settings.",
+              "Unreadable quest data and other active restrictions still wait for a safe update. Announcements made during combat are not repeated when combat ends."
+            ]
+          },
+          {
+            "title": "Party Objective Tracker placement",
+            "items": [
+              "When QT hides the native quest tooltip, the snapped Party Objective Tracker now keeps that tooltip’s position instead of jumping back beside Blizzard’s tracker. It also follows movement and scale changes of the hovered quest row."
+            ]
+          }
+        ]
+      },
+      "deDE": {
+        "version": "10.1.4",
+        "welcome": "Questmeldungen kommen im Kampf früher an, und die Tooltip-Position bleibt verlässlich.",
+        "sections": [
+          {
+            "title": "Questmeldungen im Kampf",
+            "items": [
+              "Fortschritt und Abgabebereitschaft bereits verfolgter Quests können jetzt auch während gewöhnlicher Kämpfe gemeldet werden. Eure Einstellungen für Ankündigungen gelten weiterhin.",
+              "Sind Questdaten nicht lesbar oder andere Einschränkungen aktiv, wartet QT weiterhin auf eine sichere Aktualisierung. Im Kampf ausgegebene Meldungen werden danach nicht erneut angezeigt."
+            ]
+          },
+          {
+            "title": "Position der Gruppen-Zielverfolgung",
+            "items": [
+              "Blendet QT den normalen Quest-Tooltip aus, bleibt die angedockte Gruppen-Zielverfolgung jetzt an dessen Position, statt neben Blizzards Zielverfolgung zurückzuspringen. Auch Verschiebungen und Skalierungsänderungen der Questzeile unter dem Mauszeiger werden berücksichtigt."
+            ]
+          }
+        ]
+      },
+      "frFR": {
+        "version": "10.1.4",
+        "welcome": "Des nouvelles de vos quêtes pendant le combat et des infobulles mieux placées.",
+        "sections": [
+          {
+            "title": "Annonces de quête en combat",
+            "items": [
+              "Pour les quêtes déjà suivies, les annonces de progression et de quête prête à être rendue peuvent désormais apparaître pendant les combats ordinaires. Vos réglages d’annonce restent appliqués.",
+              "QT attend toujours une mise à jour sûre si les données sont illisibles ou si une autre restriction est active. Les annonces affichées en combat ne sont pas répétées à sa fin."
+            ]
+          },
+          {
+            "title": "Position du suivi des objectifs du groupe",
+            "items": [
+              "Lorsque QT masque l’infobulle de quête native, le suivi des objectifs du groupe ancré conserve désormais sa position au lieu de revenir à côté du suivi de Blizzard. Il suit aussi les déplacements et les changements d’échelle de la ligne de quête survolée."
+            ]
+          }
+        ]
+      },
+      "esES": {
+        "version": "10.1.4",
+        "welcome": "Actualizaciones de misión durante el combate y una posición más estable para la información emergente.",
+        "sections": [
+          {
+            "title": "Avisos de misión en combate",
+            "items": [
+              "Los avisos de progreso y de misión lista para entregar de las misiones que ya sigues pueden mostrarse ahora durante los combates normales. Se mantienen tus ajustes de avisos.",
+              "Si los datos no se pueden leer o hay otras restricciones activas, QT espera a una actualización segura. Los avisos mostrados durante el combate no se repiten al terminar."
+            ]
+          },
+          {
+            "title": "Posición del seguimiento de objetivos del grupo",
+            "items": [
+              "Cuando QT oculta la información emergente nativa de una misión, el seguimiento de objetivos del grupo acoplado conserva esa posición en lugar de volver al lado del seguimiento de Blizzard. También se adapta al movimiento y a los cambios de escala de la fila de misión bajo el cursor."
+            ]
+          }
+        ]
+      },
+      "esMX": {
+        "version": "10.1.4",
+        "welcome": "Avisos de misión durante el combate y ventanas de información mejor ubicadas.",
+        "sections": [
+          {
+            "title": "Progreso de misiones en combate",
+            "items": [
+              "Ahora puedes recibir avisos de progreso y de misiones listas para entregar durante combates normales, siempre que ya estés siguiendo esas misiones. Se respetan tus ajustes de avisos.",
+              "Cuando los datos no se pueden leer o existen otras restricciones activas, QT espera una actualización segura. Los avisos enviados en combate no vuelven a aparecer cuando termina."
+            ]
+          },
+          {
+            "title": "Posición del seguimiento de objetivos del grupo",
+            "items": [
+              "Si QT oculta la información emergente nativa de una misión, el seguimiento de objetivos del grupo acoplado permanece en ese lugar, en vez de regresar junto al seguimiento de Blizzard. También acompaña los movimientos y cambios de escala de la fila de misión sobre la que está el cursor."
+            ]
+          }
+        ]
+      },
+      "ptBR": {
+        "version": "10.1.4",
+        "welcome": "Novidades das suas missões durante o combate e dicas de tela com posicionamento mais estável.",
+        "sections": [
+          {
+            "title": "Avisos de missão em combate",
+            "items": [
+              "Os avisos de progresso e de missão pronta para entrega das missões que você já acompanha agora podem aparecer durante combates comuns. Suas configurações de avisos continuam valendo.",
+              "Se os dados não puderem ser lidos ou houver outras restrições ativas, o QT aguarda uma atualização segura. Avisos exibidos em combate não se repetem quando ele termina."
+            ]
+          },
+          {
+            "title": "Posição do rastreador de objetivos do grupo",
+            "items": [
+              "Quando o QT oculta a dica de tela nativa da missão, o rastreador de objetivos do grupo encaixado mantém essa posição, em vez de voltar para o lado do rastreador da Blizzard. Ele também acompanha os movimentos e as mudanças de escala da linha da missão sob o cursor."
+            ]
+          }
+        ]
+      },
+      "ruRU": {
+        "version": "10.1.4",
+        "welcome": "Обновления заданий во время боя и более устойчивое положение подсказок.",
+        "sections": [
+          {
+            "title": "Оповещения о заданиях в бою",
+            "items": [
+              "Теперь во время обычного боя могут появляться оповещения о прогрессе и готовности к сдаче уже отслеживаемых заданий. Ваши настройки оповещений по-прежнему учитываются.",
+              "Если данные задания недоступны или действуют другие ограничения, QT ждёт безопасного обновления. Оповещения, показанные в бою, не повторяются после его окончания."
+            ]
+          },
+          {
+            "title": "Положение отслеживания целей группы",
+            "items": [
+              "Когда QT скрывает стандартную подсказку задания, закреплённая панель отслеживания целей группы остаётся на её месте, а не возвращается к панели Blizzard. Она также учитывает перемещение и изменение масштаба строки задания под указателем."
+            ]
+          }
+        ]
+      },
+      "itIT": {
+        "version": "10.1.4",
+        "welcome": "Aggiornamenti delle missioni durante il combattimento e suggerimenti posizionati meglio.",
+        "sections": [
+          {
+            "title": "Annunci delle missioni in combattimento",
+            "items": [
+              "Gli annunci di avanzamento e di missione pronta per la consegna possono ora comparire durante i combattimenti ordinari per le missioni già tracciate. Restano valide le tue impostazioni degli annunci.",
+              "Quando i dati non sono leggibili o sono attive altre restrizioni, QT attende un aggiornamento sicuro. Gli annunci mostrati in combattimento non vengono ripetuti al termine."
+            ]
+          },
+          {
+            "title": "Posizione del tracciamento obiettivi del gruppo",
+            "items": [
+              "Quando QT nasconde il suggerimento nativo della missione, il tracciamento obiettivi del gruppo agganciato ne mantiene la posizione, invece di tornare accanto al tracciamento di Blizzard. Segue anche gli spostamenti e i cambi di scala della riga della missione sotto il cursore."
+            ]
+          }
+        ]
+      },
+      "koKR": {
+        "version": "10.1.4",
+        "welcome": "전투 중 퀘스트 알림과 툴팁 배치를 개선했습니다.",
+        "sections": [
+          {
+            "title": "전투 중 퀘스트 알림",
+            "items": [
+              "이미 추적 중인 퀘스트의 진행 상황과 완료 보고 가능 알림을 이제 일반 전투 중에도 받을 수 있습니다. 기존 알림 설정은 그대로 적용됩니다.",
+              "퀘스트 데이터를 읽을 수 없거나 다른 제한이 적용 중이면 안전하게 갱신할 수 있을 때까지 기다립니다. 전투 중 표시한 알림은 전투가 끝나도 반복하지 않습니다."
+            ]
+          },
+          {
+            "title": "파티 목표 추적기 위치",
+            "items": [
+              "QT가 기본 퀘스트 툴팁을 숨겨도 고정된 파티 목표 추적기가 블리자드 추적기 옆으로 돌아가지 않고 해당 툴팁 위치를 유지합니다. 커서를 올린 퀘스트 행이 이동하거나 배율이 바뀌면 그에 맞춰 위치도 조정됩니다."
+            ]
+          }
+        ]
+      },
+      "zhCN": {
+        "version": "10.1.4",
+        "welcome": "战斗中的任务通知更及时，提示框位置也更稳定了。",
+        "sections": [
+          {
+            "title": "战斗中的任务通知",
+            "items": [
+              "对于已经追踪的任务，现在可以在普通战斗中显示进度及可交付通知，并继续遵循你的通知设置。",
+              "如果任务数据无法读取，或仍有其他限制生效，QT 会等待安全的更新时机。战斗中已显示的通知不会在脱战后重复出现。"
+            ]
+          },
+          {
+            "title": "小队目标追踪器的位置",
+            "items": [
+              "当 QT 隐藏游戏原生任务提示框时，已吸附的小队目标追踪器会保留该提示框的位置，不再跳回暴雪目标追踪器旁边。鼠标悬停的任务行发生移动或缩放时，它也会随之调整。"
+            ]
+          }
+        ]
+      },
+      "zhTW": {
+        "version": "10.1.4",
+        "welcome": "戰鬥中的任務通知更即時，提示框的位置也更穩定了。",
+        "sections": [
+          {
+            "title": "戰鬥中的任務通知",
+            "items": [
+              "已追蹤任務的進度與可回報通知，現在可以在一般戰鬥中顯示，並繼續套用你原本的通知設定。",
+              "若任務資料無法讀取，或仍有其他限制生效，QT 會等到可以安全更新時再處理。戰鬥中已顯示的通知不會在脫離戰鬥後重複出現。"
+            ]
+          },
+          {
+            "title": "隊伍目標追蹤器的位置",
+            "items": [
+              "當 QT 隱藏遊戲原生的任務提示框時，已吸附的隊伍目標追蹤器會維持在該提示框的位置，不再跳回暴雪目標追蹤器旁。滑鼠停留的任務列移動或縮放時，它也會跟著調整。"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "enUS": {
         "version": "10.1.3",
         "welcome": "A compatibility fix for Recent Companions on Forever.",
         "sections": [

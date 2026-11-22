@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.4
+## 10.1.5
 
 Zuverlässigerer Questabgleich in der Gruppe, weniger doppelte Aktualisierungen und überarbeitete Kompatibilitätsprüfungen.
 
@@ -19,6 +19,19 @@ Zuverlässigerer Questabgleich in der Gruppe, weniger doppelte Aktualisierungen 
 
 - Native Integrationen prüfen die tatsächlich verfügbaren Funktionen und Sicherheitsmechanismen des Spiels, statt eine bestimmte Clientversion vorauszusetzen.
 - Interne Zustandsverwaltung wurde zusammengeführt, doppelter und ungenutzter Code entfernt. Bestehende Einstellungen bleiben erhalten.
+
+## 10.1.4
+
+Questmeldungen kommen im Kampf früher an, und die Tooltip-Position bleibt verlässlich.
+
+### Questmeldungen im Kampf
+
+- Fortschritt und Abgabebereitschaft bereits verfolgter Quests können jetzt auch während gewöhnlicher Kämpfe gemeldet werden. Eure Einstellungen für Ankündigungen gelten weiterhin.
+- Sind Questdaten nicht lesbar oder andere Einschränkungen aktiv, wartet QT weiterhin auf eine sichere Aktualisierung. Im Kampf ausgegebene Meldungen werden danach nicht erneut angezeigt.
+
+### Position der Gruppen-Zielverfolgung
+
+- Blendet QT den normalen Quest-Tooltip aus, bleibt die angedockte Gruppen-Zielverfolgung jetzt an dessen Position, statt neben Blizzards Zielverfolgung zurückzuspringen. Auch Verschiebungen und Skalierungsänderungen der Questzeile unter dem Mauszeiger werden berücksichtigt.
 
 ## 10.1.3
 

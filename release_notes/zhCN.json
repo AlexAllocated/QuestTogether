@@ -1,7 +1,7 @@
 {
   "source_sha256": "aa0d2800701073d4381e52deef02898bbea29c369d2bfcf1414f47e5002ce0a2",
   "notes": {
-    "version": "10.1.4",
+    "version": "10.1.5",
     "welcome": "改进队伍任务同步的恢复机制，减少设置变更时的重复刷新。",
     "sections": [
       {
