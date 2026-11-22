@@ -128,6 +128,57 @@ QT:RegisterTest("party sync prepares all five clients before either quest view o
 	Equal(Detail(viewer, remote.name, 1), retained, "closing PQL cannot discard the shared data")
 end, { offline = true })
 
+QT:RegisterTest("family party sync recovers a rejected child reply before or after its first fragment", function()
+	for _, failedPart in ipairs({ 1, 2 }) do
+		local net, peers = Party(3, 12, { fps = 5, seed = 73 })
+		local parent, otherParent, child = peers[1], peers[2], peers[3]
+		for key, value in pairs(child:GetPresetValues("kid")) do child.db.profile[key] = value end
+		local rejected, requestID, retries = false, nil, 0
+		net.sendRule = function(packet, _, sender)
+			local frame = sender:DecodeCommFrame(packet.wire)
+			if sender == child and frame.operation == "QCRS" and parent:GetPendingQuestCompare(frame.requestId)
+				and not rejected and frame.part == failedPart then
+				assert(frame.total > 1)
+				rejected, requestID = true, frame.requestId
+				return 7
+			end
+			if sender == parent and frame.operation == "QCMP" and frame.requestId == requestID then
+				retries = retries + 1
+			end
+			return 0
+		end
+		Await(net, 70, function()
+			local first = parent:GetPartyQuestSyncMember(child.name)
+			local second = otherParent:GetPartyQuestSyncMember(child.name)
+			return rejected and first and first.state == "ready" and second and second.state == "ready"
+		end, "both parents must receive the child's log after a transient reply failure")
+		assert(retries > 0 and retries <= 2, "recovery must retain the bounded request retry budget")
+		assert(not parent:GetPendingQuestCompare(requestID))
+		assert(parent:GetPartyQuestSyncMember(child.name).entries[12])
+		assert(child:GetOption("sharingAudience") == "party" and not child.partyQuestCompareSession)
+	end
+end, { offline = true })
+
+QT:RegisterTest("silent party peers leave loading and automatically recover when replies resume", function()
+	local net, peers = Party(2, 1, { fps = 5, seed = 91 })
+	local viewer, remote = peers[1], peers[2]
+	local silent = true
+	net.deliveryRule = function(packet, receiver)
+		if silent and receiver == viewer and viewer:DecodeCommFrame(packet.wire).operation == "QCRS" then
+			return { drop = true }
+		end
+	end
+	Await(net, 190, function()
+		local member = viewer:GetPartyQuestSyncMember(remote.name)
+		return member and member.state == "timeout"
+	end, "a peer sending no reply must not leave the viewer in loading forever")
+	local member = viewer:GetPartyQuestSyncMember(remote.name)
+	assert(not member.requestId and not member.requesting)
+	Equal(viewer:GetPartyQuestSnapshotLabel(member), QT.Translate("No response"))
+	silent = false
+	Await(net, 45, function() return member.state == "ready" end, "restored communication must recover without reopening PQL")
+end, { offline = true })
+
 QT:RegisterTest("hidden party data accepts announcements and repairs a lost update periodically", function()
 	local net, peers = Party(2, 1)
 	local viewer, remote = peers[1], peers[2]

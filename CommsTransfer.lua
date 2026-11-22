@@ -533,10 +533,12 @@ function QT:ReceiveCommFragment(frame, body, sender, routeContext)
 	local key = Key(sender, frame)
 	local done = state.completed[key]
 	if done and now < done.expires then
-		if done.accepted and done.request and SameFrame(done.frame, frame) and self.ReplayCommResponses then
-			self:ReplayCommResponses(sender, frame.requestId)
-		end
-		return false
+		if not (done.accepted and done.request and SameFrame(done.frame, frame)) then return false end
+		local replayed = self:ReplayCommResponses(sender, frame.requestId)
+		if frame.operation ~= "QCMP" or replayed then return false end
+		-- The completed request can outlive a reply lost to a send failure.
+		-- Reassemble and validate a retried quest read when no reply survives.
+		state.completed[key] = nil
 	end
 	local valid, requestExpiry = Expected(self, frame, sender)
 	if not valid then

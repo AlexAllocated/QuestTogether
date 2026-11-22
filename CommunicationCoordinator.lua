@@ -1013,10 +1013,11 @@ function QT:DispatchCommRecord(frame, data, sender, context)
 	-- must be usable again after consent/session reset or verifier congestion.
 	if not spec.authenticatedEvent and Seen(s, key, Now(self), not isRequest) then
 		self:GetCommunicationMetrics().duplicates = self:GetCommunicationMetrics().duplicates + 1
-		if spec.semantic == "request" and not response then
-			self:ReplayCommResponses(sender, frame.requestId)
-		end
-		return true
+		local replayed = isRequest and self:ReplayCommResponses(sender, frame.requestId)
+		-- A failed send can retire the reply before the caller's retry arrives.
+		-- Quest reads may rebuild that missing snapshot; side-effecting requests
+		-- still use replay only. The quest handler coalesces work already queued.
+		if frame.operation ~= "QCMP" or replayed then return true end
 	end
 	data.senderName, data.requesterName = sender, sender
 	if frame.operation == "ERROR" then
@@ -1213,12 +1214,18 @@ function QT:UpdateCommunicationRuntime()
 				elseif now >= request.expires then
 					ExpireRequest(self, request, "expired")
 				elseif
+					-- Fragment repair cannot recover a reply the sender discarded.
+					-- Reuse the request's existing retry budget after progress stalls.
 					request.acceptedAt
-					and not request.responseProgress
 					and request.retries < 2
-					and now >= request.acceptedAt + ({ 5, 15 })[request.retries + 1]
+					and ((not request.responseProgress
+						and now >= request.acceptedAt + ({ 5, 15 })[request.retries + 1])
+						or (request.operation == "QCMP" and request.responseProgress
+							and now >= math.max(request.lastProgressAt or request.acceptedAt,
+								request.lastRetryAt or request.acceptedAt) + 30))
 				then
 					request.retries = request.retries + 1
+					request.lastRetryAt = now
 					self:SubmitCommunication(request.operation, request.record, request.routes, request.retryOptions)
 				end
 			end
