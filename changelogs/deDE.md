@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.6
+## 10.2.0
 
 Findet leichter gemeinsame Aufgaben: Das Gruppen-Questlog bietet jetzt Gebietsfilter und eine Sortierung nach Queststufe. Auch neu erbeutete Gegenstände, die eine Quest starten, können angekündigt werden.
 
@@ -22,6 +22,24 @@ Findet leichter gemeinsame Aufgaben: Das Gruppen-Questlog bietet jetzt Gebietsfi
 
 - Das lokale Entwickler-Symbol an der Minikarte wird nach Ladebildschirmen und bei verzögert verfügbarer Identität wieder korrekt aktualisiert.
 - Die Diagnose für automatische Dankesgesten enthält genauere Ergebnisse eines Versuchs, aber keine Empfängernamen. Das hilft bei der Fehlersuche und ist keine Zustellgarantie.
+
+## 10.1.6
+
+Schlagt gemeinsam die nächste Quest vor, hört den vertrauten Auswahlklick und folgt nach Questabgaben zuverlässiger weiter.
+
+### Die nächste Quest vorschlagen
+
+- Wenn du dem Questfokus eines Mitspielers folgst, wähle eine andere Quest und nutze Fokus vorschlagen. Du folgst ihm weiterhin; er kann den Wechsel bestätigen, wenn er die Quest im Log hat. Beide Spieler benötigen dieses Update.
+- Beim manuellen Folgen bleiben Abbrechen und Fokus ändern verfügbar. Beim automatischen Folgen des Gruppenanführers kannst du abbrechen oder einen Fokus vorschlagen, den Fokus aber nicht selbst überschreiben.
+- Vorschläge zum Questfokus erlauben findest du unter Gruppen & Teilen. Die Voreinstellungen Nur das Questlog und Kleine Abenteurer deaktivieren eingehende Vorschläge. Beim Update bleibt auch deine bisherige Einstellung berücksichtigt, keine QT-Anfragen zum Teilen von Quests zu erhalten.
+
+### Vertrauter Auswahlton
+
+- Für automatische Fokuswechsel wird standardmäßig WoWs eigener Quest-Auswahlklick verwendet. Seine Lautstärke richtet sich nach den WoW-Soundeffekten. Steht einer der beiden QT-Lautstärkeregler auf null, bleibt er stumm. Andere ausgewählte Töne bleiben unverändert.
+
+### Nach der Abgabe weiter folgen
+
+- Entfernte Quests werden nicht mehr als veralteter Fokus geteilt. Überholte Rückfragen zum Beenden des Folgens bei Questabgaben werden verworfen. Das Folgen bleibt für die nächste gemeinsame Quest aktiv.
 
 ## 10.1.5
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.6
+## 10.2.0
 
 Scegli più facilmente le missioni da affrontare insieme: il registro del gruppo ora offre filtri per zona e ordinamento per livello. QT può anche annunciare il bottino che avvia una missione.
 
@@ -22,6 +22,24 @@ Scegli più facilmente le missioni da affrontare insieme: il registro del gruppo
 
 - L’icona sviluppatore locale sulla minimappa torna ad aggiornarsi correttamente dopo i caricamenti o quando l’identità viene riconosciuta in ritardo.
 - La diagnostica dei ringraziamenti automatici descrive meglio gli esiti dei tentativi senza registrare i nomi dei destinatari. Aiuta a indagare sui ringraziamenti mancanti, ma non garantisce la visualizzazione dell’emote.
+
+## 10.1.6
+
+Proponi la prossima missione al tuo compagno, ritrova il clic di WoW e continua a seguirne le scelte dopo le consegne.
+
+### Proponi la prossima missione
+
+- Mentre segui la missione in evidenza di un altro giocatore, selezionane una diversa e scegli Suggerisci missione. Continuerai a seguirlo; se ha quella missione nel diario, potrà approvare il cambio. Entrambi i giocatori devono installare questo aggiornamento.
+- Il seguito manuale mantiene Annulla e il cambio della missione in evidenza. Quando segui automaticamente il capogruppo puoi annullare o suggerire una missione, ma non sostituire localmente la sua scelta.
+- Consenti suggerimenti per la missione in evidenza si trova nelle impostazioni di gruppo e condivisione. Solo registro missioni e Piccolo compagno disattivano i suggerimenti ricevuti. L’aggiornamento rispetta anche la precedente disattivazione delle richieste QT di condivisione delle missioni.
+
+### Il clic di selezione del gioco
+
+- Per i cambi automatici della missione in evidenza, il suono predefinito è ora il clic di selezione di WoW. Il volume segue gli effetti sonori del gioco; portare a zero uno dei due controlli del volume QT lo silenzia comunque. Gli altri suoni scelti restano invariati.
+
+### Continuare dopo le consegne
+
+- Le missioni uscite dal diario non vengono più condivise come vecchia selezione attiva. Sono inoltre eliminate le conferme ormai superate per interrompere il seguito durante queste transizioni. Il seguito rimane attivo per la prossima missione comune.
 
 ## 10.1.5
 

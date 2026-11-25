@@ -1,7 +1,7 @@
 {
   "source_sha256": "197e0844d973c6efd8a6f3e51324e28b5102524ee4f68ae6ffc5bc2739d1bcb2",
   "notes": {
-    "version": "10.1.6",
+    "version": "10.2.0",
     "welcome": "Encuentra más rápido qué hacer con tu grupo: el registro de misiones ahora permite filtrar por zona y ordenar por nivel. También puedes recibir avisos sobre botín que inicia misiones.",
     "sections": [
       {

@@ -1,7 +1,7 @@
 {
   "source_sha256": "197e0844d973c6efd8a6f3e51324e28b5102524ee4f68ae6ffc5bc2739d1bcb2",
   "notes": {
-    "version": "10.1.6",
+    "version": "10.2.0",
     "welcome": "隊伍任務日誌新增地區篩選與等級排序，更容易挑出接下來要一起完成的任務。QT 也能提醒你留意新拾取的任務起始物品。",
     "sections": [
       {

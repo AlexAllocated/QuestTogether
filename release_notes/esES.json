@@ -1,7 +1,7 @@
 {
   "source_sha256": "197e0844d973c6efd8a6f3e51324e28b5102524ee4f68ae6ffc5bc2739d1bcb2",
   "notes": {
-    "version": "10.1.6",
+    "version": "10.2.0",
     "welcome": "Organiza mejor las aventuras del grupo con filtros por zona y ordenación por nivel en el registro de misiones. QT también puede avisar de objetos recién obtenidos que inician misiones.",
     "sections": [
       {

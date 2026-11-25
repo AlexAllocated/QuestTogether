@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.6
+## 10.2.0
 
 Encuentra más rápido qué hacer con tu grupo: el registro de misiones ahora permite filtrar por zona y ordenar por nivel. También puedes recibir avisos sobre botín que inicia misiones.
 
@@ -22,6 +22,24 @@ Encuentra más rápido qué hacer con tu grupo: el registro de misiones ahora pe
 
 - Se corrigió el icono local de desarrollador del minimapa cuando la identidad llega tarde o se pierde visualmente después de una pantalla de carga.
 - El diagnóstico de agradecimientos automáticos ahora da más información sobre los intentos, sin guardar nombres de destinatarios. Sirve para investigar avisos que no aparecen; no garantiza que se muestre el gesto.
+
+## 10.1.6
+
+Sugiere la próxima misión a tu compañero, disfruta del clic conocido de WoW y sigue su enfoque sin tropiezos al entregar misiones.
+
+### Sugiere la próxima misión
+
+- Si estás siguiendo el enfoque de otro jugador, selecciona otra misión y elige Sugerir enfoque. El seguimiento sigue activo, y esa persona puede aceptar el cambio si tiene la misión en su registro. Ambos necesitan esta actualización.
+- El seguimiento manual mantiene Cancelar y Cambiar enfoque. Si sigues automáticamente al líder, puedes cancelar o sugerir un enfoque, pero no reemplazarlo localmente.
+- Permitir sugerencias de misión enfocada está en los ajustes de grupo y uso compartido. Los preajustes Solo registro de misiones y Pequeño aventurero desactivan las sugerencias recibidas. La actualización también respeta si ya habías desactivado las solicitudes de compartir misiones de QT.
+
+### El clic de selección de WoW
+
+- Los cambios automáticos de enfoque usan por defecto el clic de selección de misiones del juego. Su volumen depende de los efectos de sonido de WoW. Poner cualquiera de los dos controles de volumen de QT en cero lo silencia; los demás sonidos seleccionados siguen igual.
+
+### Continúa siguiendo tras las entregas
+
+- Las misiones que salieron del registro ya no se comparten como un enfoque desactualizado. También se descartan las confirmaciones obsoletas para interrumpir el seguimiento durante esas transiciones. El seguimiento permanece activo para la próxima misión compartida.
 
 ## 10.1.5
 

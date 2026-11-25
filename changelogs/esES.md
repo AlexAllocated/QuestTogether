@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.6
+## 10.2.0
 
 Organiza mejor las aventuras del grupo con filtros por zona y ordenación por nivel en el registro de misiones. QT también puede avisar de objetos recién obtenidos que inician misiones.
 
@@ -22,6 +22,24 @@ Organiza mejor las aventuras del grupo con filtros por zona y ordenación por ni
 
 - Se ha corregido la actualización del icono local de desarrollador del minimapa tras las pantallas de carga o cuando la identidad tarda en estar disponible.
 - El diagnóstico de agradecimientos automáticos ofrece más detalles sobre cada intento sin guardar nombres de destinatarios. Ayuda a investigar agradecimientos que no aparecen, pero no garantiza su entrega.
+
+## 10.1.6
+
+Propón la próxima misión a tu compañero, recupera el clic de selección de WoW y sigue su enfoque con mayor continuidad al entregar misiones.
+
+### Propón la próxima misión
+
+- Mientras sigues el enfoque de otro jugador, selecciona otra misión y pulsa Sugerir enfoque. Seguirás a esa persona, que podrá aprobar el cambio si tiene la misión en su registro. Ambos jugadores necesitan esta actualización.
+- El seguimiento manual conserva Cancelar y Cambiar enfoque. Al seguir automáticamente al líder, puedes cancelar o sugerir un enfoque, pero no sustituirlo por una elección local.
+- Permitir sugerencias de misión enfocada está en los ajustes de grupo y uso compartido. Solo el registro y Pequeño compañero desactivan las sugerencias entrantes. Al actualizar también se respeta que ya hubieras desactivado las solicitudes de compartir misiones de QT.
+
+### Un clic conocido
+
+- El sonido predeterminado de los cambios automáticos de enfoque es ahora el clic de selección de misiones de WoW. Su volumen depende de los efectos de sonido del juego; poner cualquiera de los dos controles de volumen de QT a cero lo silencia. Los demás sonidos elegidos no cambian.
+
+### Sigue a tu compañero tras las entregas
+
+- Se ha corregido el envío de misiones ya retiradas del registro como enfoque activo y se descartan las confirmaciones obsoletas para dejar de seguir durante esas transiciones. El seguimiento continúa, listo para la siguiente misión compartida.
 
 ## 10.1.5
 

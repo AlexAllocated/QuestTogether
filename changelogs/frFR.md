@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.1.6
+## 10.2.0
 
 Retrouvez plus facilement les quêtes à faire ensemble grâce aux filtres de zone et au tri par niveau. QT peut aussi signaler le butin qui permet de commencer une quête.
 
@@ -22,6 +22,24 @@ Retrouvez plus facilement les quêtes à faire ensemble grâce aux filtres de zo
 
 - L’icône de développeur sur votre minicarte se réactualise correctement après un chargement ou lorsque l’identité devient disponible tardivement.
 - Le diagnostic des remerciements automatiques détaille davantage le résultat d’une tentative, sans conserver le nom du destinataire. Cela facilite l’enquête sur les gestes manqués, sans garantir leur affichage.
+
+## 10.1.6
+
+Proposez la prochaine quête à votre compagnon, retrouvez le clic de sélection de WoW et continuez à le suivre après avoir rendu des quêtes.
+
+### Proposer la prochaine quête
+
+- Pendant que vous suivez le choix de quête d’un joueur, sélectionnez une autre quête puis Suggérer une quête. Le suivi reste actif. Si cette quête figure dans son journal, il peut accepter votre proposition. Les deux joueurs doivent installer cette mise à jour.
+- Le suivi manuel conserve Annuler et le changement de quête. Avec le suivi automatique du chef de groupe, vous pouvez annuler ou suggérer une quête, mais pas imposer un autre choix localement.
+- L’option Autoriser les suggestions de quête suivie se trouve dans les réglages de groupe et de partage. Les préréglages Juste le journal et Petit compagnon désactivent les suggestions reçues. La mise à jour respecte également le refus existant des demandes de partage QT.
+
+### Le clic familier de WoW
+
+- Les changements automatiques de quête utilisent désormais, par défaut, le clic de sélection de quête de WoW. Son volume dépend des effets sonores du jeu. Mettre l’un des deux réglages de volume QT à zéro le coupe toujours. Les autres sons sélectionnés restent inchangés.
+
+### Continuer après avoir rendu une quête
+
+- Les quêtes sorties du journal ne sont plus partagées comme un ancien choix actif. Les confirmations devenues inutiles pour interrompre le suivi lors de ces transitions sont écartées. Le suivi reste prêt pour la prochaine quête commune.
 
 ## 10.1.5
 

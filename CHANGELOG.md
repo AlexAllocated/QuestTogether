@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 10.1.6
+## 10.2.0
 
 Find your party’s next adventure more easily with area filters and level sorting in the Party Quest Log. QT can also announce newly looted items that start quests.
 
@@ -24,6 +24,24 @@ Find your party’s next adventure more easily with area filters and level sorti
 
 - Fixed local developer minimap artwork losing its identity after loading screens or when identity becomes available late.
 - Auto-thanks diagnostics now explain more about an attempted emote without recording recipient names. This improves investigation of missed thanks; it does not guarantee emote delivery.
+
+## 10.1.6
+
+A new way to suggest your party’s next quest, a familiar focus click, and smoother following after turn-ins.
+
+### Suggest the next quest
+
+- While following someone’s quest focus, select another quest and choose Suggest focus. Your follow stays active, and they can approve the change if the quest is in their log. Both players need this update.
+- Manual following still offers Cancel and Change focus. Automatic party-leader following offers Cancel or Suggest focus while keeping local overrides blocked.
+- Allow quest focus suggestions is in Groups & Sharing. Quest Log Only and Little Sidekick turn incoming suggestions off; existing opt-outs from QT share-request prompts are also respected when upgrading.
+
+### A familiar focus sound
+
+- The default automatic focus-change sound now uses WoW’s own quest-selection click. Its loudness follows WoW’s Sound Effects volume; setting either QT volume slider to zero still mutes it. Other selected sounds are unchanged.
+
+### Keep following after turn-ins
+
+- Fixed stale focused quests being shared after leaving the log and outdated break-follow prompts during turn-in transitions. Following stays active, ready for the next shared quest.
 
 ## 10.1.5
 

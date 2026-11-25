@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "10.1.6",
+	version = "10.2.0",
 	welcome = "Find your party’s next adventure more easily with area filters and level sorting in the Party Quest Log. QT can also announce newly looted items that start quests.",
 	sections = {
 		{
