@@ -819,6 +819,15 @@ QuestTogether:RegisterNativeAPI("quests", {
 
 		return questTitle
 	end,
+	GetQuestNextWaypointMapID = function(questID)
+		local id = QuestTogether:NormalizeQuestID(questID)
+		if not id or QuestTogether:IsWorkBlocked("quest_snapshot_refresh") then return nil end
+		local read = C_QuestLog and C_QuestLog.GetNextWaypoint
+		if not CanAccessForeignValue(read) or type(read) ~= "function" then return nil end
+		local ok, value = pcall(read, id)
+		local map = ok and QuestTogether:SafeToNumber(value)
+		return map and map > 0 and map <= 1000000 and map == math.floor(map) and map or nil
+	end,
 	GetQuestPOIsOnMap = function(mapID)
 		local numericMapID = QuestTogether and QuestTogether.SafeToNumber and QuestTogether:SafeToNumber(mapID) or nil
 		if not numericMapID or numericMapID <= 0 then

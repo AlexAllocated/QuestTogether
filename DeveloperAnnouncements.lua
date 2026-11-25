@@ -29,11 +29,13 @@ local function GlobalRoute(a)
 	return { { distribution = "MESH", scope = "global" } }
 end
 
-function QT:IsDeveloperAnnouncementReceiver()
-	return self.isEnabled
-		and not self.isLoggingOut
-		and rawget(self, "isLocalDeveloper") == true
+function QT:HasLocalDeveloperIdentity()
+	return rawget(self, "isLocalDeveloper") == true
 		and type(rawget(self, "SignDeveloperRequest")) == "function"
+end
+
+function QT:IsDeveloperAnnouncementReceiver()
+	return self.isEnabled and not self.isLoggingOut and self:HasLocalDeveloperIdentity()
 end
 
 function QT:IsVerifiedDeveloper(name)

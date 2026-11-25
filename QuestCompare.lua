@@ -566,6 +566,41 @@ function QuestTogether:PreparePartyQuestPresentation(session, ids, metadata)
 	local function Boolean(value)
 		if self:CanAccessValue(value) and type(value) == "boolean" then return value end
 	end
+	local mapCache = {}
+	local function Area(value)
+		local id = self:SafeToNumber(value)
+		if not id or id <= 0 or id > 1000000 or id ~= math.floor(id) then return end
+		if mapCache[id] ~= nil then return mapCache[id] or nil end
+		local original, seen, result = id, {}, nil
+		for _ = 1, 8 do
+			if seen[id] then break end
+			seen[id] = true
+			local info = Read(self.API.GetMapInfo, id)
+			if not self:CanAccessTable(info) or type(info) ~= "table" then break end
+			local kind = self:SafeToNumber(info.mapType)
+			if not kind or kind < 3 then break end -- World/continent are not quest areas.
+			local name = self:NormalizeQuestDisplayTitleText(info.name)
+			if name == "" then break end
+			result = { mapID = id, name = name }
+			if kind == 3 then break end
+			local parent = self:SafeToNumber(info.parentMapID)
+			if not parent or parent <= 0 or parent > 1000000 or parent ~= math.floor(parent) then break end
+			id = parent
+		end
+		mapCache[original] = result or false
+		return result
+	end
+	local current = Area(Read(self.API.GetBestMapForUnit, "player"))
+	local context = { mapID = current and current.mapID, name = current and current.name,
+		playerLevel = Level(Read(self.API.UnitLevel, "player")), areas = {} }
+	local active = {}
+	for _, member in ipairs(session.members or {}) do
+		for id in pairs(member.entries or {}) do active[id] = true end
+	end
+	local selected = self:GetOption("compareQuestArea")
+	local selectedID = type(selected) == "string" and selected:match("^map:(%d+)$")
+	local selectedArea = selectedID and Area(tonumber(selectedID))
+	if selectedArea then context.areas[selectedArea.mapID] = selectedArea.name end
 	for _, id in ipairs(ids or {}) do
 		local snapshot = self.GetQuestSnapshot and self:GetQuestSnapshot(id)
 		local info = metadata and metadata[id]
@@ -589,9 +624,14 @@ function QuestTogether:PreparePartyQuestPresentation(session, ids, metadata)
 			end
 			color = palette[level] or nil
 		end
-		presentation[id] = { questLevel = level, questDifficultyColor = color, questGroupRecommended = recommended }
+		local area = Area(info and info.questAreaMapID) or Area(Read(self.API.GetQuestNextWaypointMapID, id))
+		if area and active[id] then context.areas[area.mapID] = area.name end
+		presentation[id] = { questLevel = level, questDifficultyColor = color, questGroupRecommended = recommended,
+			questAreaMapID = area and area.mapID, questAreaName = area and area.name }
 	end
+	if self.partyQuestCompareSession ~= session then return end
 	session.questPresentation = presentation
+	session.questAreaContext = context
 end
 
 -- These readers consume only prepared snapshots. Missing history and a list of
@@ -755,6 +795,8 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		row.questLevel = presentation and presentation.questLevel
 		row.questGroupRecommended = presentation and presentation.questGroupRecommended
 		row.questDifficultyColor = presentation and presentation.questDifficultyColor
+		row.questAreaMapID = presentation and presentation.questAreaMapID
+		row.questAreaName = presentation and presentation.questAreaName
 		for i, member in ipairs(session.members) do
 			local quest = member.entries[id]
 			row.cells[i] = quest and (quest.isComplete and "Ready" or "Have")
@@ -800,15 +842,6 @@ function QuestTogether:BuildPartyQuestDiffRows()
 		end
 		rows[#rows + 1] = row
 	end
-	table.sort(rows, function(a, b)
-		if (a.missing > 0) ~= (b.missing > 0) then
-			return a.missing > 0
-		end
-		if a.title ~= b.title then
-			return a.title < b.title
-		end
-		return a.questId < b.questId
-	end)
 	return self:FilterPartyQuestCompareRows(rows)
 end
 

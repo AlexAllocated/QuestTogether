@@ -2351,6 +2351,24 @@ return rawRow end
 		assert(addon.API.GetQuestLogInfo(7).questID == 12345)
 		assert(addon.API.GetQuestLogInfo(7).isComplete == false)
 		do
+			local oldWaypoint, oldBlocked = C_QuestLog.GetNextWaypoint, addon.IsWorkBlocked
+			local value, reads = 101, 0
+			C_QuestLog.GetNextWaypoint = function(id) assert(id == 12345); reads = reads + 1; return value, 0.2, 0.3 end
+			assert(addon.API.GetQuestNextWaypointMapID(12345) == 101)
+			for _, invalid in ipairs({ secret, inaccessible, -1, 0, 0.5, math.huge, 1000001 }) do
+				value = invalid; assert(addon.API.GetQuestNextWaypointMapID(12345) == nil)
+			end
+			local before = reads
+			addon.IsWorkBlocked = function() return true end
+			assert(addon.API.GetQuestNextWaypointMapID(12345) == nil and reads == before)
+			addon.IsWorkBlocked = oldBlocked
+			C_QuestLog.GetNextWaypoint = function() error("unavailable") end
+			assert(addon.API.GetQuestNextWaypointMapID(12345) == nil)
+			C_QuestLog.GetNextWaypoint = nil
+			assert(addon.API.GetQuestNextWaypointMapID(12345) == nil)
+			C_QuestLog.GetNextWaypoint = oldWaypoint
+		end
+		do
 			local oldLevel, oldColor, oldRestricted = C_QuestLog.GetQuestDifficultyLevel, GetQuestDifficultyColor, addon.IsRuntimeRestricted
 			local level, color, reads = 23, { r = 1, g = 0.5, b = 0 }, 0
 			C_QuestLog.GetQuestDifficultyLevel = function(id) assert(id == 12345); reads = reads + 1; return level end

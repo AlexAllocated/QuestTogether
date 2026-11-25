@@ -1681,6 +1681,69 @@ QuestTogether:RegisterTest("party diff inherited visibility preserves sessions b
 	end
 end)
 
+QuestTogether:RegisterTest("quest area and level filters combine with party ownership and sort unknowns last", function()
+	local a = Fixture(nil, { Quest(1, "Zulu", true), Quest(2, "Alpha", true) })
+	a:RefreshPartyQuestCompare(); a:Advance(0)
+	Reply(a, "Friend-Realm", { Quest(2, "Alpha", true), Quest(3, "Beta", true), Quest(4, "Gamma", true) }, true)
+	local session = a.partyQuestCompareSession
+	session.questPresentation = {
+		[1] = { questLevel = 10, questAreaMapID = 101 }, [2] = { questLevel = 25, questAreaMapID = 102 },
+		[3] = { questLevel = 15, questAreaMapID = 101 }, [4] = {},
+	}
+	session.questAreaContext = { mapID = 101, name = "Forest", playerLevel = 20, areas = { [101] = "Forest", [102] = "Marsh" } }
+	local function IDs()
+		local result = {}; for _, row in ipairs(a:BuildPartyQuestDiffRows()) do result[#result + 1] = row.questId end
+		return table.concat(result, ",")
+	end
+	a:SetPartyQuestCompareFilter("area", "current"); Equal(IDs(), "3,1")
+	a:SetPartyQuestCompareFilter("ownership", "missing"); Equal(IDs(), "3"); Equal(session.totalQuests, 4)
+	a:ResetPartyQuestCompareFilters(); a:SetPartyQuestCompareFilter("area", "map:102"); Equal(IDs(), "2")
+	a:SetPartyQuestCompareFilter("area", "unknown"); Equal(IDs(), "4")
+	a:ResetPartyQuestCompareFilters(); a:SetPartyQuestCompareFilter("level", "below"); Equal(IDs(), "3,1")
+	a:SetPartyQuestCompareFilter("level", "above"); Equal(IDs(), "2")
+	a:SetPartyQuestCompareFilter("level", "unknown"); Equal(IDs(), "4")
+	a:ResetPartyQuestCompareFilters(); session.expandedQuestIds[1] = true
+	a:SetPartyQuestCompareFilter("sort", "low"); Equal(IDs(), "1,3,2,4"); Equal(session.expandedQuestIds[1], true)
+	a:SetPartyQuestCompareFilter("sort", "high"); Equal(IDs(), "2,3,1,4")
+	a:SetPartyQuestCompareFilter("sort", "title"); Equal(IDs(), "2,3,4,1")
+	a:ResetPartyQuestCompareFilters(); Equal(IDs(), "3,4,1,2")
+	Equal(a:IsPartyQuestCompareFilterValue("area", "map:101"), true)
+	Equal(a:IsPartyQuestCompareFilterValue("area", "map:00101"), false)
+	Equal(a:IsPartyQuestCompareFilterValue("area", "map:1000001"), false)
+	a.options.compareQuestArea = "map:101"; session.questAreaContext = nil
+	Equal(a:GetPartyQuestCompareFilters().area, "map:101")
+	local _, label = a:GetPartyQuestCompareFilterLabel(); assert(label:find("101", 1, true))
+end, { offline = true })
+
+QuestTogether:RegisterTest("quest area presentation resolves zones once and rendering consumes cached evidence", function()
+	local a = Fixture(nil, { Quest(1), Quest(2), Quest(3) })
+	a:RefreshPartyQuestCompare(); a:Advance(0)
+	local session, reads = a.partyQuestCompareSession, 0
+	a.API.UnitLevel = function() return 20 end
+	a.API.GetBestMapForUnit = function() return 110 end
+	a.API.GetMapInfo = function(id)
+		reads = reads + 1
+		return ({ [110] = { name = "Cave", mapType = 4, parentMapID = 101 },
+			[101] = { name = "Forest", mapType = 3 }, [102] = { name = "Marsh", mapType = 3 },
+			[1] = { name = "Continent", mapType = 2 } })[id]
+	end
+	a.API.GetQuestNextWaypointMapID = function(id) return id == 2 and 102 or 1 end
+	a:PreparePartyQuestPresentation(session, { 1, 2, 3, 99 }, { [1] = { questAreaMapID = 110 }, [99] = { questAreaMapID = 102 } })
+	Equal(session.questAreaContext.mapID, 101); Equal(session.questAreaContext.playerLevel, 20)
+	Equal(session.questPresentation[1].questAreaMapID, 101)
+	Equal(session.questPresentation[2].questAreaMapID, 102)
+	Equal(session.questPresentation[3].questAreaMapID, nil)
+	local before = reads
+	a.API.GetQuestNextWaypointMapID = function() error("render must not read native quest locations") end
+	a.API.GetMapInfo = function() error("render must not read native maps") end
+	a:BuildPartyQuestDiffRows(); a:GetPartyQuestCompareFilterLabel(); a:GetPartyQuestCompareFilters()
+	Equal(reads, before)
+	local published = session.questPresentation
+	a.partyQuestCompareSession = false
+	a:PreparePartyQuestPresentation(session, { 1 }, {})
+	Equal(session.questPresentation, published)
+end, { offline = true })
+
 -- Full preview lifecycle, animation, and rendering matrices run offline.
 QuestTogether:RegisterTest("party headers survive inherited visibility and retire hidden roster columns", function()
 	for _, kind in ipairs({ "live", "preview" }) do
@@ -3279,7 +3342,9 @@ QuestTogether:RegisterTest("quest log filter menu search reset and preview incom
 	Equal(frame.search:GetText(), "")
 	Equal(#p:BuildPartyQuestDiffRows(), 16)
 	Equal(frame.reset.enabled, false)
-	menu.items[6].click() -- Preview-only missing snapshot toggle.
+	for _, item in ipairs(menu.items) do
+		if item.label == "Preview incomplete data" then item.click() end
+	end
 	menu.items[2].items[5].click()
 	Equal(#p:BuildPartyQuestDiffRows(), 16)
 	Equal(p:GetPartyQuestCompareFilters().progress, "unknown")

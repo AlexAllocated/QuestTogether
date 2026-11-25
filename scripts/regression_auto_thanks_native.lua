@@ -259,4 +259,29 @@ QT:RegisterTest("auto thanks native requires a complete not ignored result befor
 	Equal(#h.emotes, 1)
 end, { offline = true })
 
+QT:RegisterTest("auto thanks native reports call outcomes without claiming delivery", function()
+	local h = Fixture()
+	local function Check(expectedAttempt, expectedOutcome)
+		local attempted, outcome = h.api.PerformAutoThanks("thank", "Friend-Realm")
+		Equal(attempted, expectedAttempt); Equal(outcome, expectedOutcome)
+	end
+	Check(true, "native_return_false")
+	h.native.PerformEmote = function() return true end
+	Check(true, "native_return_true")
+	h.native.PerformEmote = function() end
+	Check(true, "native_return_nil")
+	h.native.PerformEmote = function() return h.secret end
+	Check(true, "native_return_unreadable")
+	h.native.PerformEmote = function() error("private recipient information") end
+	Check(false, "native_error")
+	h.native.PerformEmote = nil
+	Check(false, "emote_api_unavailable")
+	h.native.IsOnIgnoredList = function() return nil end
+	Check(false, "ignore_check_unavailable")
+	h.native.IsOnIgnoredList = function() return true end
+	Check(false, "ignored")
+	h.options.autoThankBuffs = false
+	Check(false, "not_ready")
+end, { offline = true })
+
 _G.QuestTogether:RecordTestModule("scripts/regression_auto_thanks_native.lua")

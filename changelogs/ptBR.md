@@ -4,21 +4,24 @@
 
 ## 10.1.6
 
-Sugira a próxima missão ao seu companheiro, ouça o clique familiar do WoW e continue seguindo o foco após entregar missões.
+Ficou mais fácil escolher as próximas missões do grupo! Filtre por área, organize por nível e receba avisos de itens recém-saqueados que iniciam missões.
 
-### Sugira a próxima missão
+### Encontre as missões que interessam
 
-- Ao seguir o foco de alguém, selecione outra missão e escolha Sugerir foco. Você continua seguindo a pessoa, que pode aprovar a mudança se tiver a missão no registro. Os dois jogadores precisam desta atualização.
-- No acompanhamento manual, Cancelar e Mudar foco continuam disponíveis. Ao seguir automaticamente o líder, você pode cancelar ou sugerir um foco, mas não substituir a escolha localmente.
-- Permitir sugestões de foco de missão fica nos ajustes de grupo e compartilhamento. Só o registro de missões e Pequeno companheiro desativam sugestões recebidas. A atualização também preserva a preferência de quem já desativou solicitações de compartilhamento de missões do QT.
+- Abra /qt pql e escolha “Filtros”. Em “Área da missão”, selecione a área atual ou uma área conhecida e combine com “Missões que não tenho” para encontrar missões dos seus amigos que ainda faltam para você.
+- “Nível da missão” mostra missões do seu nível ou abaixo, acima dele ou com nível desconhecido. “Ordenar missões” permite ordenar por nível crescente, decrescente ou título. Níveis desconhecidos ficam no fim ao ordenar por nível.
+- As escolhas são salvas por perfil. “Redefinir” restaura o padrão, incluindo as missões faltantes primeiro. As etapas de sequências abertas mantêm a ordem de suas relações.
+- A área vem dos dados compatíveis do QuestieDB no Forever ou do próximo destino informado pela Blizzard. Isso não cobre todos os locais dos objetivos; sem dados, a área continua desconhecida.
 
-### Um clique familiar
+### De olho nos itens que iniciam missões
 
-- O som padrão para mudanças automáticas de foco agora é o clique de seleção de missões do WoW. O volume segue os efeitos sonoros do jogo. Zerar qualquer um dos dois controles de volume do QT ainda silencia o clique. Outros sons escolhidos não mudam.
+- QT pode anunciar itens recém-saqueados quando a Blizzard indica que iniciam uma missão disponível. A missão não é aceita automaticamente.
+- “Anunciar itens que iniciam missões” vem ativado em “O que Anunciar” e respeita suas preferências de anúncios. Mover itens entre bolsas ou entrar no jogo com itens que você já tinha não gera avisos.
 
-### Continue seguindo após as entregas
+### Correções e diagnóstico
 
-- Missões que saíram do registro deixam de ser compartilhadas como foco antigo. Confirmações desatualizadas para parar de seguir durante essas transições também são descartadas. O acompanhamento continua ativo para a próxima missão em comum.
+- Corrigida a atualização do ícone local de desenvolvedor no minimapa após telas de carregamento ou quando a identidade fica disponível com atraso.
+- O diagnóstico de agradecimentos automáticos agora detalha melhor o resultado das tentativas, sem registrar nomes dos destinatários. Isso ajuda a investigar agradecimentos ausentes, sem garantir a exibição do gesto.
 
 ## 10.1.5
 

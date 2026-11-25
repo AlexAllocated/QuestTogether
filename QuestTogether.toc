@@ -53,6 +53,8 @@ Commands.lua
 Audio.lua
 AutoThanks.lua
 AutoThanksNative.lua
+QuestStarterItems.lua
+QuestStarterItemsNative.lua
 Settings.lua
 SettingsEffects.lua
 FeatureOptions.lua

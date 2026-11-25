@@ -894,7 +894,7 @@ assert(placement.Dropdown.text == "Side", "placement dropdown follows the active
 print("Party Objective Tracker tooltip placement validates choices and refreshes across profiles")
 
 local audio = assert(QuestTogether.audioControls)
-assert(QuestTogether.audioCategory and #audio.rows == 8)
+assert(QuestTogether.audioCategory and #audio.rows == 9)
 local audioWasEnabled = QuestTogether.isEnabled
 QuestTogether.isEnabled = true
 local supportsAudioVolume, previewAudioCue = QuestTogether.SupportsAudioVolume, QuestTogether.PreviewAudioCue

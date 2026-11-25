@@ -28,6 +28,7 @@ QuestTogether.completionEmotes = {
 function QuestTogether:GetAnnouncementOptionKey(eventType)
 	local keysByType = {
 		QUEST_ACCEPTED = "announceAccepted",
+		QUEST_STARTER_FOUND = "announceQuestStarterItems",
 		LOOKING_FOR_QUEST_PARTNERS = "announceQuestPartners",
 		QUEST_COMPLETED = "announceCompleted",
 		QUEST_READY_TO_TURN_IN = "announceReadyToTurnIn",

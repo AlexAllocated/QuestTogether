@@ -4,21 +4,24 @@
 
 ## 10.1.6
 
-Propón la próxima misión a tu compañero, recupera el clic de selección de WoW y sigue su enfoque con mayor continuidad al entregar misiones.
+Organiza mejor las aventuras del grupo con filtros por zona y ordenación por nivel en el registro de misiones. QT también puede avisar de objetos recién obtenidos que inician misiones.
 
-### Propón la próxima misión
+### Encuentra las misiones adecuadas
 
-- Mientras sigues el enfoque de otro jugador, selecciona otra misión y pulsa Sugerir enfoque. Seguirás a esa persona, que podrá aprobar el cambio si tiene la misión en su registro. Ambos jugadores necesitan esta actualización.
-- El seguimiento manual conserva Cancelar y Cambiar enfoque. Al seguir automáticamente al líder, puedes cancelar o sugerir un enfoque, pero no sustituirlo por una elección local.
-- Permitir sugerencias de misión enfocada está en los ajustes de grupo y uso compartido. Solo el registro y Pequeño compañero desactivan las sugerencias entrantes. Al actualizar también se respeta que ya hubieras desactivado las solicitudes de compartir misiones de QT.
+- Abre /qt pql y entra en “Filtros”. En “Zona de la misión”, elige la zona actual o una conocida y combina la selección con “Misiones que no tengo” para encontrar misiones de tus amigos que te falten.
+- “Nivel de misión” permite filtrar misiones de tu nivel o inferior, de nivel superior o de nivel desconocido. En “Ordenar misiones” puedes ordenar por nivel ascendente, descendente o título. Los niveles desconocidos quedan al final al ordenar por nivel.
+- Las preferencias se guardan por perfil. “Restablecer” restaura los valores predeterminados, incluida la prioridad de las misiones que faltan. Los pasos de las cadenas desplegadas conservan su orden de relaciones.
+- La zona se obtiene de QuestieDB compatible en Forever o del siguiente destino de Blizzard. No abarca todas las ubicaciones de los objetivos; si faltan datos, se indica que la zona es desconocida.
 
-### Un clic conocido
+### Objetos que dan pie a una misión
 
-- El sonido predeterminado de los cambios automáticos de enfoque es ahora el clic de selección de misiones de WoW. Su volumen depende de los efectos de sonido del juego; poner cualquiera de los dos controles de volumen de QT a cero lo silencia. Los demás sonidos elegidos no cambian.
+- QT puede anunciar objetos recién obtenidos como botín cuando Blizzard los identifica como inicio de una misión disponible. No acepta la misión por ti.
+- “Anunciar objetos que inician misiones” está activado de forma predeterminada en “Qué anunciar” y respeta tus preferencias de anuncios. Mover objetos entre bolsas o conectarte con objetos que ya tenías no lo activa.
 
-### Sigue a tu compañero tras las entregas
+### Correcciones y diagnóstico
 
-- Se ha corregido el envío de misiones ya retiradas del registro como enfoque activo y se descartan las confirmaciones obsoletas para dejar de seguir durante esas transiciones. El seguimiento continúa, listo para la siguiente misión compartida.
+- Se ha corregido la actualización del icono local de desarrollador del minimapa tras las pantallas de carga o cuando la identidad tarda en estar disponible.
+- El diagnóstico de agradecimientos automáticos ofrece más detalles sobre cada intento sin guardar nombres de destinatarios. Ayuda a investigar agradecimientos que no aparecen, pero no garantiza su entrega.
 
 ## 10.1.5
 

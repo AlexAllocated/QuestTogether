@@ -403,8 +403,9 @@ function QuestTogether:StartMinimapButtonDrag(button)
 end
 
 function QuestTogether:GetMinimapIdentityTexture()
+	-- Local identity survives loading screens even while communication is paused.
+	if self.isEnabled and self:HasLocalDeveloperIdentity() then return DEVELOPER_ICON end
 	local name = self:GetPlayerFullName()
-	if self:IsVerifiedDeveloper(name) then return DEVELOPER_ICON end
 	return self:IsVerifiedVIP(name) and VIP_ICON or ICON
 end
 
@@ -546,25 +547,26 @@ function QuestTogether:RefreshMinimapButton()
 end
 
 function QuestTogether:InitializeMinimapLauncher()
-	local anchor = self:GetMinimapAnchor()
-	if
-		not self.hasLoggedIn
-		or not self:CanAccessValue(anchor)
-		or (type(anchor) ~= "table" and type(anchor) ~= "userdata")
-	then
-		return
-	end
+	if not self.hasLoggedIn then return end
 	local events = rawget(self, "minimapLauncherFrame")
 	if not events then
 		events = self:CreateMinimapUIFrame("Frame")
 		self.minimapLauncherFrame = events
-		events:SetScript("OnEvent", function()
+		events:SetScript("OnEvent", function(_, event, unit)
+			if event == "UNIT_NAME_UPDATE" or event == "ADDON_LOADED" then
+				if event ~= "UNIT_NAME_UPDATE" or (self:CanAccessValue(unit) and unit == "player") then
+					self:RefreshMinimapIdentityIcon()
+				end
+				return
+			end
 			self:RefreshMinimapButton()
 			self:RefreshDataBroker()
 		end)
 		-- The launcher stays available when runtime quest announcements are off.
 		-- These events also retry deferred visibility/position changes safely.
 		for _, event in ipairs({
+			"ADDON_LOADED",
+			"UNIT_NAME_UPDATE",
 			"PLAYER_ENTERING_WORLD",
 			"PLAYER_REGEN_ENABLED",
 			"ADDON_RESTRICTION_STATE_CHANGED",

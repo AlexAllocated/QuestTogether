@@ -906,16 +906,19 @@ end
 
 function QuestTogether:ZONE_CHANGED()
 	self.playerPhaseState = nil
+	self:QueuePartyQuestChainRefresh()
 	self:ScheduleTaskAreaRefresh(true, 0)
 end
 
 function QuestTogether:ZONE_CHANGED_INDOORS()
 	self.playerPhaseState = nil
+	self:QueuePartyQuestChainRefresh()
 	self:ScheduleTaskAreaRefresh(true, 0)
 end
 
 function QuestTogether:ZONE_CHANGED_NEW_AREA()
 	self.playerPhaseState = nil
+	self:QueuePartyQuestChainRefresh()
 	self:ScheduleTaskAreaRefresh(true, 0)
 end
 

@@ -17,6 +17,7 @@ private `.local` notes are historical context, not the source of truth.
 | RuntimeCoordinator | The enabled addon's periodic lifetime and feature tick order | Individual feature caches or wire codecs |
 | Audio | Cue catalog, per-profile sound preferences, bounded suppression and QT-owned playback handles | Shared game sound settings, other addons' sounds or a delayed notification queue |
 | AutoThanks / AutoThanksNative | Readable local buff observations, bounded gratitude delay/cooldowns and directed native emotes | Network-triggered reactions, target selection, combat-log access or foreign aura storage |
+| QuestStarterItems / QuestStarterItemsNative | Explicit self-loot observations, bounded bag-data retries and native quest-starter classification | Inventory-change announcements, quest acceptance or a maintained item database |
 | DataBroker | Optional toolbar launcher registration, copied display fields and click routing | A bundled library, display-owned frames or another minimap button |
 | HotPathRuntime | Explicit timing, work classes, owner cancellation and restriction gates | Quest or presentation policy |
 | QuestObservations | Quest-log acquisition, confirmed classifications, complete snapshot publication | Area entry/exit history or announcements |

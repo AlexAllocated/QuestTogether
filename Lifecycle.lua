@@ -9,6 +9,7 @@ local LibChev = QuestTogether.LibChev
 -- The runtime event list that should only be registered while the addon is enabled.
 QuestTogether.runtimeEvents = {
 	"UNIT_AURA",
+	"CHAT_MSG_LOOT",
 	"CHAT_MSG_ADDON",
 	"CHAT_MSG_CHANNEL_NOTICE",
 	"CHAT_MSG_SYSTEM",
@@ -112,8 +113,9 @@ function QuestTogether:Enable()
 	self.isEnabled = true
 	self:InitializeQTAudio()
 	self:InitializeAutoThanks()
+	self:ResetQuestStarterItems()
 	self:RefreshAudioWindow()
-	self:RefreshDataBroker()
+	self:RefreshMinimapIdentityIcon()
 	self:ResumeCommsWorldSession()
 	self:RefreshMinimapPartnerGlow()
 	self:ResetQuestEventState()
@@ -155,6 +157,7 @@ function QuestTogether:Disable()
 	self.db.profile.enabled = false
 	self:ResetQTAudio()
 	self:ResetAutoThanks()
+	self:ResetQuestStarterItems()
 	self.pendingQuestScanAnnouncement = nil
 
 	if not self.isEnabled then
@@ -173,7 +176,7 @@ function QuestTogether:Disable()
 	self:ResetRuntimeCoordinator()
 	self.isEnabled = false
 	self:RefreshAudioWindow()
-	self:RefreshDataBroker()
+	self:RefreshMinimapIdentityIcon()
 	self:RefreshMinimapPartnerGlow()
 	self:ResetQuestEventState()
 	self:ResetTaskAreaStateStore()
@@ -269,11 +272,14 @@ end
 function QuestTogether:PLAYER_ENTERING_WORLD()
 	self:ResetPlayerPhases()
 	self.isLoggingOut = false
+	-- The launcher's independent world event may run before this handler.
+	self:RefreshMinimapIdentityIcon()
 	self:ResumeAnnouncementChannelJoins()
 	if not self.isEnabled then
 		return
 	end
 	self:InitializeAutoThanks()
+	self:ResetQuestStarterItems()
 	if not rawget(self, "audioState") then
 		self:InitializeQTAudio()
 	end
@@ -293,6 +299,7 @@ end
 function QuestTogether:PLAYER_LEAVING_WORLD()
 	self:SuspendAnnouncementChannelJoins()
 	self:ResetAutoThanks()
+	self:ResetQuestStarterItems()
 	if self.RetirePartyQuestChains then
 		self:RetirePartyQuestChains()
 	end
@@ -312,6 +319,7 @@ end
 
 function QuestTogether:PLAYER_LOGOUT()
 	self:ResetAutoThanks()
+	self:ResetQuestStarterItems()
 	if self.RetirePartyQuestChains then
 		self:RetirePartyQuestChains()
 	end

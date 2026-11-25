@@ -9,6 +9,7 @@ QuestTogether.DEFAULTS = {
 	profile = {
 		enabled = true,
 		announceAccepted = true,
+		announceQuestStarterItems = true,
 		announceCompleted = true,
 		announceReadyToTurnIn = true,
 		announceRemoved = true,
@@ -56,6 +57,9 @@ QuestTogether.DEFAULTS = {
 		compareQuestOwnership = "all",
 		compareQuestProgress = "all",
 		compareQuestAction = "all",
+		compareQuestArea = "all",
+		compareQuestLevel = "all",
+		compareQuestSort = "all",
 		compareGroupByChain = false,
 		compareHideFutureQuestNames = true,
 		autoAcceptPartyShareRequests = false,
@@ -345,6 +349,9 @@ for key, group in pairs({
 	compareQuestOwnership = "ownership",
 	compareQuestProgress = "progress",
 	compareQuestAction = "action",
+	compareQuestArea = "area",
+	compareQuestLevel = "level",
+	compareQuestSort = "sort",
 }) do
 	local filterGroup = group
 	validators[key] = function(a, v)

@@ -337,6 +337,9 @@ function QuestTogether:GetBonusObjectiveAnnouncementIconInfo(eventType, questId)
 end
 
 function QuestTogether:GetAnnouncementIconInfo(eventType, questId)
+	if eventType == "QUEST_STARTER_FOUND" then
+		return self:GetQuestStateAnnouncementIconInfo("QUEST_ACCEPTED", questId)
+	end
 	if eventType == "QT_CHAT" then
 		return "Interface\\AddOns\\QuestTogether\\Media\\ChatBubbleIcon", "texture"
 	end

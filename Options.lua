@@ -1670,7 +1670,7 @@ function QuestTogether:InitializeAnnouncementsWindow(parentCategory)
 	frame.name = L("What to Announce")
 	frame.parent = "QuestTogether"
 
-	local _, content = CreateScrollablePanelContent(frame, 900)
+	local _, content = CreateScrollablePanelContent(frame, 928)
 
 	local title = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", content, "TOPLEFT", 16, -16)
@@ -1693,33 +1693,36 @@ function QuestTogether:InitializeAnnouncementsWindow(parentCategory)
 	local announceRemoved = AnnouncementCheckbox(content, "announceRemoved", L("Announce Quest Removal"), L("Show an announcement when a player abandons or removes a quest."), 32, -404)
 	local announceProgress = AnnouncementCheckbox(content, "announceProgress", L("Announce Quest Progress"), L("Show updates as players make progress on quest objectives, such as collecting items or defeating enemies."), 32, -432)
 
-	CreateAnnouncementGroupHeader(content, L("World Quests"), "world", 16, -478, 620)
-	local announceWorldQuestAreaEnter =
-		AnnouncementCheckbox(content, "announceWorldQuestAreaEnter", L("Announce Area Enter"), L("Show an announcement when a player enters a world quest area."), 32, -508)
-	local announceWorldQuestAreaLeave =
-		AnnouncementCheckbox(content, "announceWorldQuestAreaLeave", L("Announce Area Leave"), L("Show an announcement when a player leaves a world quest area."), 32, -536)
-	local announceWorldQuestProgress = AnnouncementCheckbox(content, "announceWorldQuestProgress", L("Announce Progress"), L("Show progress updates for world quest objectives."), 32, -564)
-	local announceWorldQuestCompleted =
-		AnnouncementCheckbox(content, "announceWorldQuestCompleted", L("Announce Completion"), L("Show an announcement when a player finishes a world quest."), 32, -592)
+	local announceQuestStarterItems = AnnouncementCheckbox(content, "announceQuestStarterItems", L("Announce Quest-Starting Items"), L("Announce newly looted items that Blizzard identifies as starting an available quest. Ordinary quest items, bag moves and items already owned at login do not trigger this."), 32, -460)
 
-	CreateAnnouncementGroupHeader(content, L("Bonus Objectives"), "bonus", 16, -638, 620)
+	CreateAnnouncementGroupHeader(content, L("World Quests"), "world", 16, -506, 620)
+	local announceWorldQuestAreaEnter =
+		AnnouncementCheckbox(content, "announceWorldQuestAreaEnter", L("Announce Area Enter"), L("Show an announcement when a player enters a world quest area."), 32, -536)
+	local announceWorldQuestAreaLeave =
+		AnnouncementCheckbox(content, "announceWorldQuestAreaLeave", L("Announce Area Leave"), L("Show an announcement when a player leaves a world quest area."), 32, -564)
+	local announceWorldQuestProgress = AnnouncementCheckbox(content, "announceWorldQuestProgress", L("Announce Progress"), L("Show progress updates for world quest objectives."), 32, -592)
+	local announceWorldQuestCompleted =
+		AnnouncementCheckbox(content, "announceWorldQuestCompleted", L("Announce Completion"), L("Show an announcement when a player finishes a world quest."), 32, -620)
+
+	CreateAnnouncementGroupHeader(content, L("Bonus Objectives"), "bonus", 16, -666, 620)
 	local announceBonusObjectiveAreaEnter =
-		AnnouncementCheckbox(content, "announceBonusObjectiveAreaEnter", L("Announce Area Enter"), L("Show an announcement when a player enters a bonus objective area."), 32, -668)
+		AnnouncementCheckbox(content, "announceBonusObjectiveAreaEnter", L("Announce Area Enter"), L("Show an announcement when a player enters a bonus objective area."), 32, -696)
 	local announceBonusObjectiveAreaLeave =
-		AnnouncementCheckbox(content, "announceBonusObjectiveAreaLeave", L("Announce Area Leave"), L("Show an announcement when a player leaves a bonus objective area."), 32, -696)
+		AnnouncementCheckbox(content, "announceBonusObjectiveAreaLeave", L("Announce Area Leave"), L("Show an announcement when a player leaves a bonus objective area."), 32, -724)
 	local announceBonusObjectiveProgress =
-		AnnouncementCheckbox(content, "announceBonusObjectiveProgress", L("Announce Progress"), L("Show progress updates for bonus objectives."), 32, -724)
+		AnnouncementCheckbox(content, "announceBonusObjectiveProgress", L("Announce Progress"), L("Show progress updates for bonus objectives."), 32, -752)
 	local announceBonusObjectiveCompleted =
-		AnnouncementCheckbox(content, "announceBonusObjectiveCompleted", L("Announce Completion"), L("Show an announcement when a player finishes a bonus objective."), 32, -752)
-	CreateAnnouncementGroupHeader(content, L("Finding Partners"), "quest", 16, -798, 620)
+		AnnouncementCheckbox(content, "announceBonusObjectiveCompleted", L("Announce Completion"), L("Show an announcement when a player finishes a bonus objective."), 32, -780)
+	CreateAnnouncementGroupHeader(content, L("Finding Partners"), "quest", 16, -826, 620)
 	local announceQuestPartners = AnnouncementCheckbox(content, "announceQuestPartners", L("Announce Looking for Questing Partners"),
-		L("Send and show announcements when players start looking for questing partners. Their status and glowing icons remain visible when this is off."), 32, -828)
+		L("Send and show announcements when players start looking for questing partners. Their status and glowing icons remain visible when this is off."), 32, -856)
 
 	self.announcementControls = {
 		announceQuestPartners = announceQuestPartners,
 		nearbyRangeSlider = nearbyRangeSlider,
 		showProgressForDropdown = showProgressForDropdown,
 		announceAccepted = announceAccepted,
+		announceQuestStarterItems = announceQuestStarterItems,
 		announceCompleted = announceCompleted,
 		announceReadyToTurnIn = announceReadyToTurnIn,
 		announceRemoved = announceRemoved,

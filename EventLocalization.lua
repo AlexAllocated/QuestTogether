@@ -53,12 +53,15 @@ function QT:DecodeAnnouncementFacts(value)
 	if not self:CanAccessValue(value) or type(value) ~= "string" or #value > 80 then
 		return nil
 	end
-	local locale, kind, index, current, required = value:match("^1:([a-zA-Z]+):([qcplos]):(%d*):(%d*):(%d*)$")
+	local locale, kind, index, current, required = value:match("^1:([a-zA-Z]+):([qcplosi]):(%d*):(%d*):(%d*)$")
 	if not locales[locale] then
 		return nil
 	end
 	local fact = { locale = locale, kind = kind }
-	if kind == "q" then
+	if kind == "i" then
+		fact.index = Integer(self, index, 1, 1000000000)
+		if not fact.index or current ~= "" or required ~= "" then return nil end
+	elseif kind == "q" then
 		if index ~= "" or current ~= "" or required ~= "" then
 			return nil
 		end
@@ -88,6 +91,10 @@ end
 
 function QT:BuildAnnouncementFacts(eventType, index, objectiveType, finished, current, required)
 	local kind = prefixes[eventType] and "q" or nil
+	if eventType == "QUEST_STARTER_FOUND" then
+		local id = Integer(self, index, 1, 1000000000)
+		return id and table.concat({ "1", self:GetEventLocale(), "i", id, "", "" }, ":") or nil
+	end
 	if eventType == "PLAYER_LEVEL_UP" or eventType == "SCAN_STATUS" then
 		local scan = eventType == "SCAN_STATUS"
 		kind, current, index, required = scan and "s" or "l", Integer(self, current, scan and 0 or 1, scan and 10000 or 1000), nil, nil
@@ -358,6 +365,18 @@ function QT:GetMonitoredQuestCountText(count)
 end
 
 function QT:LocalizeAnnouncementEvent(event)
+	if event.eventType == "QUEST_STARTER_FOUND" then
+		local facts = self:DecodeAnnouncementFacts(event.eventFacts)
+		if not facts or facts.kind ~= "i" then return event.text end
+		local prefix = "Quest-starting item found: "
+		local name = self.API.GetQuestStarterItemName(facts.index)
+		if not name then
+			local sourcePrefix = self.TranslateForLocale(prefix, facts.locale)
+			local text = self:SafeTrimString(event.text, "")
+			if text:sub(1, #sourcePrefix) == sourcePrefix then name = text:sub(#sourcePrefix + 1) end
+		end
+		return name and name ~= "" and (L("Quest-starting item found: ") .. name) or event.text
+	end
 	if event.eventType == "LOOKING_FOR_QUEST_PARTNERS" then
 		return L("Looking for questing partners") .. " :)"
 	end

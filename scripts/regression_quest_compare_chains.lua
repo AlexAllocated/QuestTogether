@@ -1348,6 +1348,7 @@ QT:RegisterTest("chain profile replacement retires work before effects and resum
 			"RefreshQuestTogetherMapControl",
 			"RefreshWindowThemes",
 			"ResetObjectiveAnnouncements",
+			"ResetQuestStarterItems",
 			"ResetPlayerPhases",
 			"SetGamepadIntegrationEnabled",
 			"UpdatePartyChatReminder",

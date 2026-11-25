@@ -6,21 +6,24 @@
 
 ## 10.1.6
 
-A new way to suggest your party’s next quest, a familiar focus click, and smoother following after turn-ins.
+Find your party’s next adventure more easily with area filters and level sorting in the Party Quest Log. QT can also announce newly looted items that start quests.
 
-### Suggest the next quest
+### Find the quests that matter
 
-- While following someone’s quest focus, select another quest and choose Suggest focus. Your follow stays active, and they can approve the change if the quest is in their log. Both players need this update.
-- Manual following still offers Cancel and Change focus. Automatic party-leader following offers Cancel or Suggest focus while keeping local overrides blocked.
-- Allow quest focus suggestions is in Groups & Sharing. Quest Log Only and Little Sidekick turn incoming suggestions off; existing opt-outs from QT share-request prompts are also respected when upgrading.
+- Open /qt pql and choose “Filters”. Under “Quest area”, select Current area or a known area, then combine it with “Quests I don't have” to find quests your friends have nearby.
+- Use “Quest level” to show quests at or below your level, above it, or with an unknown level. Under “Sort quests”, choose Lowest level first, highest level first, or quest title. Unknown levels stay last when sorting by level.
+- Your choices are remembered per profile. “Reset” restores the defaults, including missing quests first. Expanded chain steps keep their relationship order.
+- Area filtering uses a known quest zone from compatible QuestieDB on Forever, or Blizzard’s next destination. It does not cover every objective location; missing information remains unknown.
 
-### A familiar focus sound
+### Spot quest-starting loot
 
-- The default automatic focus-change sound now uses WoW’s own quest-selection click. Its loudness follows WoW’s Sound Effects volume; setting either QT volume slider to zero still mutes it. Other selected sounds are unchanged.
+- QT can now announce newly looted items that Blizzard identifies as starting an available quest. It does not accept the quest for you.
+- “Announce Quest-Starting Items” is on by default under “What to Announce” and respects your existing announcement preferences. Moving items between bags or logging in with old items does not trigger it.
 
-### Keep following after turn-ins
+### Small fixes and better diagnostics
 
-- Fixed stale focused quests being shared after leaving the log and outdated break-follow prompts during turn-in transitions. Following stays active, ready for the next shared quest.
+- Fixed local developer minimap artwork losing its identity after loading screens or when identity becomes available late.
+- Auto-thanks diagnostics now explain more about an attempted emote without recording recipient names. This improves investigation of missed thanks; it does not guarantee emote delivery.
 
 ## 10.1.5
 

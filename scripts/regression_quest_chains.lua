@@ -70,6 +70,16 @@ QT:RegisterTest("quest chain metadata retains quest difficulty level separately 
 	end)
 end, { offline = true })
 
+QT:RegisterTest("quest area metadata distinguishes geographic areas from quest categories", function()
+	WithProvider(Provider({ [1] = { name = "Area", zoneOrSort = 12 },
+		[2] = { name = "Category", zoneOrSort = -12 }, [3] = { name = "Unmapped", zoneOrSort = 123456 } }), function()
+		local a = Fixture(); a:Open(); a:Flush(); Metadata(a, { 1, 2, 3 })
+		Equal(a:GetQuestChainQuestInfo(1).questAreaMapID, 101)
+		Equal(a:GetQuestChainQuestInfo(2).questAreaMapID, nil)
+		Equal(a:GetQuestChainQuestInfo(3).questAreaMapID, nil)
+	end)
+end, { offline = true })
+
 QT:RegisterTest("quest chains reject missing wrong contract wrong flavor and recover late providers", function()
 	WithProvider(nil, function()
 		local a = Fixture(); a:Open(); Equal(a:GetQuestChainProviderCapability().reason, "provider_missing")

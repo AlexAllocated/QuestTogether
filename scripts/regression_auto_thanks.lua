@@ -308,6 +308,25 @@ QT:RegisterTest("auto thanks holds at most four different pending casters", func
 	Equal(accepted, 4)
 end)
 
+QT:RegisterTest("auto thanks retains bounded last attempt diagnostics without retrying failures", function()
+	for _, failure in ipairs({ "native_error", "ignore_check_unavailable", "exception" }) do
+		local addon = Ready()
+		addon.emoteChoice = 2
+		addon.API.PerformAutoThanks = function()
+			if failure == "exception" then error("private recipient information") end
+			return false, failure
+		end
+		addon:Scan(addon:Buff(1))
+		addon:Tick(2)
+		local s = addon.autoThanksState
+		Equal(s.attempts, 1); Equal(s.lastEmote, "bow"); Equal(s.lastAttempt, addon.time)
+		Equal(s.lastResult, failure == "exception" and "adapter_error" or failure)
+		Equal(next(s.pending), nil)
+		addon:Tick(20)
+		Equal(s.attempts, 1)
+	end
+end)
+
 QT:RegisterTest("auto thanks expires delayed work instead of thanking much later", function()
 	local addon = Ready()
 	addon:Scan(addon:Buff(1))

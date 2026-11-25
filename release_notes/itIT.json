@@ -1,27 +1,30 @@
 {
-  "source_sha256": "d84505defef27125f5bd810dc002d11af35f15a6571c7836ebc4dc1223614be6",
+  "source_sha256": "197e0844d973c6efd8a6f3e51324e28b5102524ee4f68ae6ffc5bc2739d1bcb2",
   "notes": {
     "version": "10.1.6",
-    "welcome": "Proponi la prossima missione al tuo compagno, ritrova il clic di WoW e continua a seguirne le scelte dopo le consegne.",
+    "welcome": "Scegli più facilmente le missioni da affrontare insieme: il registro del gruppo ora offre filtri per zona e ordinamento per livello. QT può anche annunciare il bottino che avvia una missione.",
     "sections": [
       {
-        "title": "Proponi la prossima missione",
+        "title": "Le missioni giuste al momento giusto",
         "items": [
-          "Mentre segui la missione in evidenza di un altro giocatore, selezionane una diversa e scegli Suggerisci missione. Continuerai a seguirlo; se ha quella missione nel diario, potrà approvare il cambio. Entrambi i giocatori devono installare questo aggiornamento.",
-          "Il seguito manuale mantiene Annulla e il cambio della missione in evidenza. Quando segui automaticamente il capogruppo puoi annullare o suggerire una missione, ma non sostituire localmente la sua scelta.",
-          "Consenti suggerimenti per la missione in evidenza si trova nelle impostazioni di gruppo e condivisione. Solo registro missioni e Piccolo compagno disattivano i suggerimenti ricevuti. L’aggiornamento rispetta anche la precedente disattivazione delle richieste QT di condivisione delle missioni."
+          "Apri /qt pql e scegli “Filtri”. In “Zona della missione”, seleziona la zona attuale o una zona nota e abbina “Missioni che non ho” per trovare le missioni dei tuoi amici che ti mancano.",
+          "“Livello della missione” filtra le missioni del tuo livello o inferiore, quelle superiori oppure quelle con livello sconosciuto. In “Ordina missioni” scegli livello crescente, decrescente o titolo. Nel riordino per livello, quelli sconosciuti restano in fondo.",
+          "Le scelte vengono salvate per profilo. “Reimposta” ripristina le impostazioni iniziali, con le missioni mancanti per prime. I passaggi delle catene aperte mantengono l’ordine delle loro relazioni.",
+          "La zona deriva dai dati compatibili di QuestieDB su Forever oppure dalla prossima destinazione di Blizzard. Non comprende tutti i luoghi degli obiettivi; senza dati attendibili rimane sconosciuta."
         ]
       },
       {
-        "title": "Il clic di selezione del gioco",
+        "title": "Bottino che avvia missioni",
         "items": [
-          "Per i cambi automatici della missione in evidenza, il suono predefinito è ora il clic di selezione di WoW. Il volume segue gli effetti sonori del gioco; portare a zero uno dei due controlli del volume QT lo silenzia comunque. Gli altri suoni scelti restano invariati."
+          "QT può annunciare gli oggetti appena raccolti come bottino quando Blizzard li identifica come inizio di una missione disponibile. Non accetta la missione al posto tuo.",
+          "“Annuncia gli oggetti che avviano missioni” è attivo per impostazione predefinita in “Cosa annunciare” e rispetta le preferenze degli annunci. Spostare oggetti tra borse o accedere con oggetti già posseduti non genera annunci."
         ]
       },
       {
-        "title": "Continuare dopo le consegne",
+        "title": "Correzioni e diagnostica",
         "items": [
-          "Le missioni uscite dal diario non vengono più condivise come vecchia selezione attiva. Sono inoltre eliminate le conferme ormai superate per interrompere il seguito durante queste transizioni. Il seguito rimane attivo per la prossima missione comune."
+          "L’icona sviluppatore locale sulla minimappa torna ad aggiornarsi correttamente dopo i caricamenti o quando l’identità viene riconosciuta in ritardo.",
+          "La diagnostica dei ringraziamenti automatici descrive meglio gli esiti dei tentativi senza registrare i nomi dei destinatari. Aiuta a indagare sui ringraziamenti mancanti, ma non garantisce la visualizzazione dell’emote."
         ]
       }
     ]

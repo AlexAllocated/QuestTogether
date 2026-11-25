@@ -250,9 +250,8 @@ local function Fixture()
 		assert(name == "Launcher-Realm")
 		return self.isEnabled and self.vipActive == true and self:IsVIPDisplayEnabled()
 	end
-	function addon:IsVerifiedDeveloper(name)
-		assert(name == "Launcher-Realm")
-		return self.isEnabled and self.developerActive == true
+	function addon:HasLocalDeveloperIdentity()
+		return self.developerActive == true
 	end
 	local anchor = Frame()
 	anchor.width, anchor.height, anchor.cx, anchor.cy, anchor.scale = 140, 140, 100, 200, 2
@@ -1162,6 +1161,95 @@ Register("minimap VIP logo follows activation cosmetics and restriction recovery
 	a.isEnabled = false
 	a:RefreshMinimapButton()
 	Equal(icon.texture, normal)
+end)
+
+Register("minimap developer identity does not depend on a readable character name", function()
+	local a = Fixture()
+	a.HasLocalDeveloperIdentity = QuestTogether.HasLocalDeveloperIdentity
+	a.isLocalDeveloper, a.isLoggingOut = true, false
+	a.SignDeveloperRequest = function() error("painting a local icon must not sign") end
+	function a:GetPlayerFullName() error("local developer icon must not query a name") end
+	a:InitializeMinimapLauncher()
+	Equal(a.minimapButton.qtLogoTexture.texture, "Interface\\AddOns\\QuestTogether\\Media\\MinimapDeveloperButton")
+end)
+
+Register("minimap identity refreshes after late companion load and defers restricted repaint", function()
+	local a = Fixture()
+	a.HasLocalDeveloperIdentity = QuestTogether.HasLocalDeveloperIdentity
+	a.isLocalDeveloper, a.isLoggingOut = false, false
+	a:InitializeMinimapLauncher()
+	local icon, normal = a.minimapButton.qtLogoTexture, a.minimapButton.qtLogoTexture.texture
+	local events, layouts = a.minimapLauncherFrame, a.minimapButton.layouts
+	assert(events.events.ADDON_LOADED and events.events.UNIT_NAME_UPDATE)
+	a.isLocalDeveloper = true
+	events.scripts.OnEvent(events, "ADDON_LOADED", "QuestTogetherDev")
+	Equal(icon.texture, normal) -- A marker without its signer is not active.
+	a.SignDeveloperRequest = function() error("painting a local icon must not sign") end
+	events.scripts.OnEvent(events, "UNIT_NAME_UPDATE", "party1")
+	Equal(icon.texture, normal)
+	a.blocked = true
+	events.scripts.OnEvent(events, "ADDON_LOADED", "QuestTogetherDev")
+	Equal(icon.texture, normal)
+	a.blocked = false
+	events.scripts.OnEvent(events, "PLAYER_REGEN_ENABLED")
+	Equal(icon.texture, "Interface\\AddOns\\QuestTogether\\Media\\MinimapDeveloperButton")
+	layouts = a.minimapButton.layouts
+	a.isLocalDeveloper = false
+	events.scripts.OnEvent(events, "UNIT_NAME_UPDATE", "player")
+	Equal(icon.texture, normal)
+	Equal(a.minimapButton.layouts, layouts) -- Identity-only events preserve dragging/layout.
+	a.isLocalDeveloper = true
+	events.scripts.OnEvent(events, "ADDON_LOADED", "QuestTogetherDev")
+	Equal(icon.texture, "Interface\\AddOns\\QuestTogether\\Media\\MinimapDeveloperButton")
+end)
+
+Register("minimap installs recovery events before its anchor becomes available", function()
+	local a = Fixture()
+	local anchor = a.anchor
+	a.anchor = nil
+	a:InitializeMinimapLauncher()
+	assert(a.minimapLauncherFrame and not rawget(a, "minimapButton"))
+	a.anchor, a.developerActive = anchor, true
+	a.minimapLauncherFrame.scripts.OnEvent(nil, "PLAYER_ENTERING_WORLD")
+	assert(a.minimapButton.shown)
+	Equal(a.minimapButton.qtLogoTexture.texture, "Interface\\AddOns\\QuestTogether\\Media\\MinimapDeveloperButton")
+end)
+
+Register("minimap developer identity survives both loading screen event orders", function()
+	for _, launcherFirst in ipairs({ true, false }) do
+		local a = Fixture()
+		a.HasLocalDeveloperIdentity = QuestTogether.HasLocalDeveloperIdentity
+		a.isLocalDeveloper, a.isLoggingOut = false, false
+		function a:RefreshDataBroker()
+			if not self.isLoggingOut then self.brokerTexture = self:GetMinimapIdentityTexture() end
+		end
+		a:InitializeMinimapLauncher()
+		local normal = a.minimapButton.qtLogoTexture.texture
+		a.isLocalDeveloper, a.isLoggingOut = true, true
+		a.SignDeveloperRequest = function() error("local presentation must not sign") end
+		assert(a:HasLocalDeveloperIdentity())
+		assert(not a:IsDeveloperAnnouncementReceiver(), "loading screens must still suspend communication")
+		-- Exercise the actual world-entry handler with unrelated services isolated.
+		for _, name in ipairs({ "ResetPlayerPhases", "ResumeAnnouncementChannelJoins", "InitializeAutoThanks",
+			"ResetQuestStarterItems", "RefreshPartyRoster", "ResumeCommsWorldSession", "ResumePartyQuestChains",
+			"SetRuntimeFlag", "RefreshTaskAreaStates", "EnsureMeshDirectoryJoined" }) do a[name] = function() end end
+		a.audioState = {}
+		local function LauncherEvent() a.minimapLauncherFrame.scripts.OnEvent(nil, "PLAYER_ENTERING_WORLD") end
+		if launcherFirst then LauncherEvent(); a:PLAYER_ENTERING_WORLD()
+		else a:PLAYER_ENTERING_WORLD(); LauncherEvent() end
+		local developer = "Interface\\AddOns\\QuestTogether\\Media\\MinimapDeveloperButton"
+		Equal(a.minimapButton.qtLogoTexture.texture, developer)
+		Equal(a.brokerTexture, developer)
+		assert(a:IsDeveloperAnnouncementReceiver())
+		-- A new transition preserves identity without preserving a revoked signer.
+		a.isLoggingOut = true
+		a:RefreshMinimapIdentityIcon()
+		Equal(a.minimapButton.qtLogoTexture.texture, developer)
+		a.SignDeveloperRequest = nil
+		a:RefreshMinimapIdentityIcon()
+		Equal(a.minimapButton.qtLogoTexture.texture, normal)
+		assert(not a:HasLocalDeveloperIdentity())
+	end
 end)
 
 _G.QuestTogether:RecordTestModule("scripts/regression_minimap.lua")

@@ -10,6 +10,7 @@ local definitions = {
 	{ key = "questTurnIn", enabled = true, sound = "scroll", volume = 50, cooldown = 3 },
 	{ key = "objectiveProgress", enabled = true, sound = "progress", volume = 30, cooldown = 5 },
 	{ key = "chat", enabled = true, sound = "chime", volume = 40, cooldown = 2 },
+	{ key = "questStarter", enabled = true, sound = "chime", volume = 40, cooldown = 3 },
 	{ key = "shareResult", enabled = true, sound = "scroll", volume = 40, cooldown = 2 },
 }
 local sounds = { scroll = true, spellbook = true, selection = true, chime = true, progress = true, completion = true }
@@ -35,6 +36,7 @@ function QT:GetAudioCueCatalog()
 		{ L("Party quest turn-ins"), L("A party member turns in a quest.") },
 		{ L("Party objective progress"), L("A party member makes progress on a quest objective.") },
 		{ L("Incoming QuestTogether chat"), L("A new QuestTogether chat message passes your display filters.") },
+		{ L("Party quest-starting items"), L("A party member loots an item that starts an available quest.") },
 		{ L("Quest sharing results"), L("A player accepts or declines a quest you shared, or the share cannot complete.") },
 	}
 	local result = {}
@@ -203,6 +205,7 @@ function QT:ObservePartyAnnouncementAudio(event, sender)
 	local cue = event.eventType == "QUEST_READY_TO_TURN_IN" and "questReady"
 		or event.eventType == "QUEST_COMPLETED" and "questTurnIn"
 		or event.eventType == "QUEST_PROGRESS" and "objectiveProgress"
+		or event.eventType == "QUEST_STARTER_FOUND" and "questStarter"
 	if not cue then return end
 	-- Delayed events can still repair party progress without announcing an old
 	-- milestone as if it just happened. Never queue a cue while time is unknown.

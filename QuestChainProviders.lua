@@ -12,7 +12,7 @@ local RELATION_FIELDS = {
 local META_FIELDS = {
 	"name", "startedBy", "requiredLevel", "requiredMaxLevel", "requiredRaces", "requiredClasses",
 	"requiredSkill", "requiredMinRep", "requiredMaxRep", "requiredSpell", "requiredSpecialization",
-	"requiredRanks", "requiredSourceItems", "questFlags", "specialFlags", "questLevel",
+	"requiredRanks", "requiredSourceItems", "questFlags", "specialFlags", "questLevel", "zoneOrSort",
 }
 local KINDS = {
 	preQuestGroup = { "prerequisite_all", "before", true },
@@ -347,6 +347,11 @@ local function ReadQuestieMetadata(addon, state, id)
 	local level = addon:SafeToNumber(info.questLevel)
 	info.questLevel = level and level > 0 and level <= 1000 and level == math.floor(level) and level or nil
 	info.name = nil
+	-- Positive values are AreaTable IDs; negative values are quest categories.
+	local area = ID(info.zoneOrSort)
+	local maps = area and ReadAreaMaps(state)
+	info.questAreaMapID = maps and ID(maps[area]) or nil
+	info.zoneOrSort = nil
 	info.locations, info.locationReason = ReadStarters(addon, state, info.startedBy)
 	return info
 end

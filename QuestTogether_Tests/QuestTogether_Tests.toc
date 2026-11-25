@@ -12,7 +12,7 @@
 ## LoadOnDemand: 1
 ## RequiredDeps: QuestTogether
 ## X-License: GPL-3.0-only
-## X-QT-TestModules: 73
+## X-QT-TestModules: 74
 
 ..\QuestTogether\scripts\test_bootstrap.lua
 ..\QuestTogether\Libs\libchev\SelfTests.lua
@@ -22,6 +22,7 @@
 ..\QuestTogether\scripts\regression_audio.lua
 ..\QuestTogether\scripts\regression_auto_thanks.lua
 ..\QuestTogether\scripts\regression_auto_thanks_native.lua
+..\QuestTogether\scripts\regression_quest_starter_items.lua
 ..\QuestTogether\scripts\regression_data_broker.lua
 ..\QuestTogether\scripts\regression_player_notes.lua
 ..\QuestTogether\scripts\regression_recent_companions.lua

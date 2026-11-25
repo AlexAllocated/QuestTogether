@@ -17,8 +17,8 @@ local function Fold(text)
 	return (text:lower():gsub(utf8, folded))
 end
 
-local function Groups()
-	return {
+local function Groups(addon)
+	local groups = {
 		{
 			key = "ownership",
 			option = "compareQuestOwnership",
@@ -53,11 +53,38 @@ local function Groups()
 				{ "request", L("Can request share") },
 			},
 		},
+		{ key = "area", option = "compareQuestArea", title = L("Quest area"), choices = {
+			{ "all", L("All areas") }, { "current", L("Current area") }, { "unknown", L("Unknown area") },
+		} },
+		{ key = "level", option = "compareQuestLevel", title = L("Quest level"), choices = {
+			{ "all", L("All levels") }, { "below", L("At or below my level") },
+			{ "above", L("Above my level") }, { "unknown", L("Unknown level") },
+		} },
+		{ key = "sort", option = "compareQuestSort", title = L("Sort quests"), choices = {
+			{ "all", L("Missing quests first") }, { "low", L("Lowest level first") },
+			{ "high", L("Highest level first") }, { "title", L("Quest title") },
+		} },
 	}
+	local session = addon and addon.partyQuestCompareSession
+	local context = session and session.questAreaContext or {}
+	local areas = {}
+	for id, name in pairs(context.areas or {}) do areas[#areas + 1] = { "map:" .. id, name } end
+	table.sort(areas, function(a, b) return a[2] == b[2] and a[1] < b[1] or a[2] < b[2] end)
+	for _, choice in ipairs(areas) do groups[4].choices[#groups[4].choices + 1] = choice end
+	return groups
+end
+
+local function IsMapFilter(value)
+	if type(value) == "string" then
+		local id = tonumber(value:match("^map:(%d+)$"))
+		if id and id > 0 and id <= 1000000 and value == "map:" .. id then return true end
+	end
+	return false
 end
 
 function QT:IsPartyQuestCompareFilterValue(key, value)
-	for _, group in ipairs(Groups()) do
+	if key == "area" and IsMapFilter(value) then return true end
+	for _, group in ipairs(Groups(self)) do
 		if group.key == key then
 			for _, choice in ipairs(group.choices) do if choice[1] == value then return true end end
 		end
@@ -67,9 +94,9 @@ end
 
 function Presenter:GetPartyQuestCompareFilters()
 	local filters = { search = self.partyQuestCompareSession and self.partyQuestCompareSession.search or "" }
-	for _, group in ipairs(Groups()) do
+	for _, group in ipairs(Groups(self)) do
 		local value = self:GetOption(group.option)
-		filters[group.key] = "all"
+		filters[group.key] = group.key == "area" and IsMapFilter(value) and value or "all"
 		for _, choice in ipairs(group.choices) do
 			if choice[1] == value then
 				filters[group.key] = value
@@ -91,7 +118,7 @@ function Presenter:SetPartyQuestCompareFilter(key, value)
 	if key == "search" then
 		session.search = value
 	else
-		for _, group in ipairs(Groups()) do
+		for _, group in ipairs(Groups(self)) do
 			if key == group.key then
 				for _, choice in ipairs(group.choices) do
 					if choice[1] == value then
@@ -113,15 +140,15 @@ function Presenter:SetPartyQuestCompareFilter(key, value)
 			frame.expansionAnimator:SetScript("OnUpdate", nil)
 		end
 	end
-	if self.CancelPartyQuestObjectiveRequests then
-		self:CancelPartyQuestObjectiveRequests(session)
+	if key ~= "sort" then
+		if self.CancelPartyQuestObjectiveRequests then self:CancelPartyQuestObjectiveRequests(session) end
+		session.expandedQuestIds = {}
 	end
-	session.expandedQuestIds = {}
 	self:QueuePartyQuestCompareRender()
 end
 
 function Presenter:ResetPartyQuestCompareFilters()
-	for _, group in ipairs(Groups()) do
+	for _, group in ipairs(Groups(self)) do
 		self:SetOption(group.option, "all")
 	end
 	self:SetOption("compareHideOtherQuests", false)
@@ -130,12 +157,19 @@ end
 
 function Presenter:GetPartyQuestCompareFilterLabel()
 	local filters, labels = self:GetPartyQuestCompareFilters(), {}
-	for _, group in ipairs(Groups()) do
+	for _, group in ipairs(Groups(self)) do
 		for _, choice in ipairs(group.choices) do
 			if choice[1] ~= "all" and filters[group.key] == choice[1] then
 				labels[#labels + 1] = choice[2]
 			end
 		end
+	end
+	local context = self.partyQuestCompareSession and self.partyQuestCompareSession.questAreaContext
+	if filters.area == "current" and context and context.name then
+		for i, label in ipairs(labels) do if label == L("Current area") then labels[i] = label .. ": " .. context.name end end
+	elseif filters.area:match("^map:") then
+		local id = tonumber(filters.area:match("%d+"))
+		if not context or not context.areas[id] then labels[#labels + 1] = L("Quest area") .. ": " .. id end
 	end
 	return #labels, table.concat(labels, " · ")
 end
@@ -150,7 +184,7 @@ function Presenter:ShowPartyQuestCompareFilters(owner)
 		return false
 	end
 	return self:CreatePartyQuestFilterMenu(owner, function(_, root)
-		for _, group in ipairs(Groups()) do
+		for _, group in ipairs(Groups(self)) do
 			local submenu = root:CreateButton(group.title)
 			for _, choice in ipairs(group.choices) do
 				local key, value = group.key, choice[1]
@@ -243,10 +277,31 @@ function Presenter:FilterPartyQuestCompareRows(rows)
 				end
 			end
 		end
-		if ownership and progress and action and matches then
+		local context = session.questAreaContext or {}
+		local area = filters.area == "all" or (filters.area == "unknown" and not row.questAreaMapID)
+			or (filters.area == "current" and context.mapID and row.questAreaMapID == context.mapID)
+			or (row.questAreaMapID and filters.area == "map:" .. row.questAreaMapID)
+		local level = filters.level == "all" or (filters.level == "unknown" and not row.questLevel)
+			or (row.questLevel and context.playerLevel and (
+				(filters.level == "below" and row.questLevel <= context.playerLevel)
+				or (filters.level == "above" and row.questLevel > context.playerLevel)))
+		if ownership and progress and action and matches and area and level then
 			result[#result + 1] = row
 		end
 	end
+	local function Less(a, b)
+		if filters.sort == "low" or filters.sort == "high" then
+			if (a.questLevel ~= nil) ~= (b.questLevel ~= nil) then return a.questLevel ~= nil end
+			if a.questLevel and a.questLevel ~= b.questLevel then
+				if filters.sort == "low" then return a.questLevel < b.questLevel end
+				return a.questLevel > b.questLevel
+			end
+		elseif filters.sort == "all" and (a.missing > 0) ~= (b.missing > 0) then return a.missing > 0 end
+		if a.title ~= b.title then return a.title < b.title end
+		return a.questId < b.questId
+	end
+	table.sort(rows, Less)
+	table.sort(result, Less)
 	session.totalQuests, session.unfilteredQuests = #rows, rows
 	return result
 end

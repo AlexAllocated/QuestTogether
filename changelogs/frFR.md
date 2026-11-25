@@ -4,21 +4,24 @@
 
 ## 10.1.6
 
-Proposez la prochaine quête à votre compagnon, retrouvez le clic de sélection de WoW et continuez à le suivre après avoir rendu des quêtes.
+Retrouvez plus facilement les quêtes à faire ensemble grâce aux filtres de zone et au tri par niveau. QT peut aussi signaler le butin qui permet de commencer une quête.
 
-### Proposer la prochaine quête
+### Choisir les bonnes quêtes
 
-- Pendant que vous suivez le choix de quête d’un joueur, sélectionnez une autre quête puis Suggérer une quête. Le suivi reste actif. Si cette quête figure dans son journal, il peut accepter votre proposition. Les deux joueurs doivent installer cette mise à jour.
-- Le suivi manuel conserve Annuler et le changement de quête. Avec le suivi automatique du chef de groupe, vous pouvez annuler ou suggérer une quête, mais pas imposer un autre choix localement.
-- L’option Autoriser les suggestions de quête suivie se trouve dans les réglages de groupe et de partage. Les préréglages Juste le journal et Petit compagnon désactivent les suggestions reçues. La mise à jour respecte également le refus existant des demandes de partage QT.
+- Ouvrez /qt pql, puis “Filtres”. Dans “Zone de quête”, choisissez la zone actuelle ou une zone connue et combinez ce filtre avec “Quêtes que je n’ai pas” pour repérer les quêtes de vos amis qui vous manquent.
+- “Niveau de quête” permet de garder les quêtes de votre niveau ou inférieur, celles de niveau supérieur, ou celles au niveau inconnu. “Trier les quêtes” propose le niveau croissant, décroissant ou le titre. Les niveaux inconnus restent en dernier lors du tri par niveau.
+- Ces choix sont enregistrés par profil. “Réinitialiser” rétablit les réglages par défaut, dont la priorité aux quêtes manquantes. Les étapes des suites ouvertes conservent leur ordre de progression.
+- La zone provient des données compatibles de QuestieDB sur Forever ou de la prochaine destination fournie par Blizzard. Elle ne représente pas tous les lieux des objectifs ; une information absente reste inconnue.
 
-### Le clic familier de WoW
+### Du butin qui ouvre une quête
 
-- Les changements automatiques de quête utilisent désormais, par défaut, le clic de sélection de quête de WoW. Son volume dépend des effets sonores du jeu. Mettre l’un des deux réglages de volume QT à zéro le coupe toujours. Les autres sons sélectionnés restent inchangés.
+- QT peut annoncer un objet fraîchement obtenu si Blizzard indique qu’il démarre une quête disponible. Aucune quête n’est acceptée automatiquement.
+- “Annoncer les objets lançant une quête” est activé par défaut dans “Quoi annoncer”, selon vos préférences d’annonce. Déplacer un objet entre les sacs ou se connecter avec un objet déjà possédé ne déclenche rien.
 
-### Continuer après avoir rendu une quête
+### Corrections et diagnostic
 
-- Les quêtes sorties du journal ne sont plus partagées comme un ancien choix actif. Les confirmations devenues inutiles pour interrompre le suivi lors de ces transitions sont écartées. Le suivi reste prêt pour la prochaine quête commune.
+- L’icône de développeur sur votre minicarte se réactualise correctement après un chargement ou lorsque l’identité devient disponible tardivement.
+- Le diagnostic des remerciements automatiques détaille davantage le résultat d’une tentative, sans conserver le nom du destinataire. Cela facilite l’enquête sur les gestes manqués, sans garantir leur affichage.
 
 ## 10.1.5
 

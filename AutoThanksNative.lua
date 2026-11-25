@@ -163,17 +163,24 @@ function QT:CreateAutoThanksNativeAdapter(native)
 		if currentName and (name == nil or name == currentName) then return currentName end
 	end
 	local function Perform(token, target)
-		if not Ready() or not Text(token, 16) or not GRATITUDE[token] or not Text(target, 128) then return false end
+		if not Ready() then return false, "not_ready" end
+		if not Text(token, 16) or not GRATITUDE[token] or not Text(target, 128) then return false, "invalid_arguments" end
 		-- A failed friend-list read is not evidence that the recipient is
 		-- allowed. Preserve the shared wrapper's semantics elsewhere.
 		local ok, ignored = Call(native.IsOnIgnoredList, target)
-		if not ok or not Accessible(ignored) or ignored ~= false then return false end
+		if not ok or not Accessible(ignored) or type(ignored) ~= "boolean" then return false, "ignore_check_unavailable" end
+		if ignored then return false, "ignored" end
 		local perform = native.PerformEmote
 		if not Function(perform) then perform = native.DoEmote end
+		if not Function(perform) then return false, "emote_api_unavailable" end
 		-- Native docs and the native chat parser disagree about the returned
 		-- boolean. Report only a nonthrowing attempt, never confirmed delivery.
-		ok = Call(perform, token:upper(), target)
-		return ok
+		local result
+		ok, result = Call(perform, token:upper(), target)
+		if not ok then return false, "native_error" end
+		if not Accessible(result) then return true, "native_return_unreadable" end
+		if type(result) == "boolean" then return true, result and "native_return_true" or "native_return_false" end
+		return true, result == nil and "native_return_nil" or "native_return_other"
 	end
 	return {
 		GetAutoThanksAuras = function()
@@ -185,8 +192,9 @@ function QT:CreateAutoThanksNativeAdapter(native)
 			return ok and target or nil
 		end,
 		PerformAutoThanks = function(token, target)
-			local ok, attempted = pcall(Perform, token, target)
-			return ok and attempted == true
+			local ok, attempted, outcome = pcall(Perform, token, target)
+			if not ok then return false, "adapter_error" end
+			return attempted == true, outcome
 		end,
 	}
 end

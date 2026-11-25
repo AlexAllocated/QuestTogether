@@ -263,5 +263,10 @@ function QT:UpdateAutoThanks()
 	-- are never retried as a burst of social actions.
 	s.nextAllowed, s.cooldowns[candidate.guid] = now + GLOBAL_COOLDOWN, now + CASTER_COOLDOWN
 	s.pending = {}
-	Call(self, "PerformAutoThanks", emote, target)
+	-- Retain only bounded outcome fields, never recipient identities or native
+	-- error text. A nonthrowing call is not proof of visible emote delivery.
+	s.attempts = math.min((s.attempts or 0) + 1, 1000000)
+	s.lastAttempt, s.lastEmote = now, emote
+	local ok, attempted, outcome = pcall(self.API.PerformAutoThanks, emote, target)
+	s.lastResult = ok and (Text(self, outcome, 64) or (attempted == true and "attempted" or "not_attempted")) or "adapter_error"
 end

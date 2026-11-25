@@ -642,6 +642,7 @@ local function NewEnabledOptionFixture(enabled)
 	addon.RefreshOptionsWindow = Noop
 	addon.ReconcileQuestLogChatDestination = Noop
 	addon.InitializeReleaseNotes = Noop
+	addon.InitializeMinimapLauncher = Noop
 	addon.visualsEnabled = addon.isEnabled
 	addon:RegisterBootstrapEvents()
 	if addon.isEnabled then

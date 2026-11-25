@@ -346,6 +346,7 @@ QT:RegisterTest("event facts round trip counters percentages completion and nati
 	local a = Fixture()
 	for _, row in ipairs({
 		{ "QUEST_ACCEPTED", nil, nil, nil, nil, nil, "q" },
+		{ "QUEST_STARTER_FOUND", 123, nil, nil, nil, nil, "i" },
 		{ "QUEST_PROGRESS", 2, "monster", false, 3, 8, "c" },
 		{ "WORLD_QUEST_PROGRESS", 1, "progressbar", false, 47, 900, "p" },
 		{ "BONUS_OBJECTIVE_PROGRESS", 3, "event", true, nil, nil, "o" },

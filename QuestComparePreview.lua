@@ -159,8 +159,18 @@ function QuestTogether:CreatePartyQuestComparePreview()
 	})
 	preview.API.GetQuestDifficultyLevel = function(id)
 		local quest = preview.questCatalog and preview.questCatalog[id]
+		if quest and quest.mockIndex then return 10 + quest.mockIndex end
 		if preview.liveQuestData and quest and not quest.mockIndex and owner.API.GetQuestDifficultyLevel then
 			return owner.API.GetQuestDifficultyLevel(id)
+		end
+	end
+	preview.API.UnitLevel = function() return owner.API.UnitLevel and owner.API.UnitLevel("player") end
+	preview.API.GetBestMapForUnit = function() return owner.API.GetBestMapForUnit and owner.API.GetBestMapForUnit("player") end
+	preview.API.GetMapInfo = function(id) return owner.API.GetMapInfo and owner.API.GetMapInfo(id) end
+	preview.API.GetQuestNextWaypointMapID = function(id)
+		local quest = preview.questCatalog and preview.questCatalog[id]
+		if preview.liveQuestData and quest and not quest.mockIndex and owner.API.GetQuestNextWaypointMapID then
+			return owner.API.GetQuestNextWaypointMapID(id)
 		end
 	end
 	preview.API.GetQuestDifficultyColor = function(level)
