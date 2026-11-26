@@ -3,7 +3,7 @@
 local QuestTogether = _G.QuestTogether
 
 QuestTogether.releaseNotes = {
-	version = "10.2.0",
+	version = "10.2.1",
 	welcome = "Keep your party’s progress in view during combat.",
 	sections = {
 		{

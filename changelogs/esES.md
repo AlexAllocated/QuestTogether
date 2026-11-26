@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.2.0
+## 10.2.1
 
 Sigue viendo el progreso de tu grupo durante el combate.
 
@@ -10,6 +10,27 @@ Sigue viendo el progreso de tu grupo durante el combate.
 
 - El seguimiento de objetivos del grupo permanece visible al entrar en combate y sigue mostrando las actualizaciones de progreso disponibles.
 - Al entrar en combate se detienen el arrastre, el cambio de tamaño y la edición. Las demás ventanas de QT siguen cerrándose automáticamente.
+
+## 10.2.0
+
+Organiza mejor las aventuras del grupo con filtros por zona y ordenación por nivel en el registro de misiones. QT también puede avisar de objetos recién obtenidos que inician misiones.
+
+### Encuentra las misiones adecuadas
+
+- Abre /qt pql y entra en “Filtros”. En “Zona de la misión”, elige la zona actual o una conocida y combina la selección con “Misiones que no tengo” para encontrar misiones de tus amigos que te falten.
+- “Nivel de misión” permite filtrar misiones de tu nivel o inferior, de nivel superior o de nivel desconocido. En “Ordenar misiones” puedes ordenar por nivel ascendente, descendente o título. Los niveles desconocidos quedan al final al ordenar por nivel.
+- Las preferencias se guardan por perfil. “Restablecer” restaura los valores predeterminados, incluida la prioridad de las misiones que faltan. Los pasos de las cadenas desplegadas conservan su orden de relaciones.
+- La zona se obtiene de QuestieDB compatible en Forever o del siguiente destino de Blizzard. No abarca todas las ubicaciones de los objetivos; si faltan datos, se indica que la zona es desconocida.
+
+### Objetos que dan pie a una misión
+
+- QT puede anunciar objetos recién obtenidos como botín cuando Blizzard los identifica como inicio de una misión disponible. No acepta la misión por ti.
+- “Anunciar objetos que inician misiones” está activado de forma predeterminada en “Qué anunciar” y respeta tus preferencias de anuncios. Mover objetos entre bolsas o conectarte con objetos que ya tenías no lo activa.
+
+### Correcciones y diagnóstico
+
+- Se ha corregido la actualización del icono local de desarrollador del minimapa tras las pantallas de carga o cuando la identidad tarda en estar disponible.
+- El diagnóstico de agradecimientos automáticos ofrece más detalles sobre cada intento sin guardar nombres de destinatarios. Ayuda a investigar agradecimientos que no aparecen, pero no garantiza su entrega.
 
 ## 10.1.6
 

@@ -2,7 +2,7 @@
 
 <!-- Generated from canonical release notes; do not edit by hand. -->
 
-## 10.2.0
+## 10.2.1
 
 Gardez un œil sur la progression du groupe pendant les combats.
 
@@ -10,6 +10,27 @@ Gardez un œil sur la progression du groupe pendant les combats.
 
 - Le suivi des objectifs du groupe reste désormais visible au début du combat et continue d’afficher les mises à jour de progression disponibles.
 - Le déplacement, le redimensionnement et les commandes de modification s’arrêtent en combat. Les autres fenêtres QT se ferment toujours automatiquement.
+
+## 10.2.0
+
+Retrouvez plus facilement les quêtes à faire ensemble grâce aux filtres de zone et au tri par niveau. QT peut aussi signaler le butin qui permet de commencer une quête.
+
+### Choisir les bonnes quêtes
+
+- Ouvrez /qt pql, puis “Filtres”. Dans “Zone de quête”, choisissez la zone actuelle ou une zone connue et combinez ce filtre avec “Quêtes que je n’ai pas” pour repérer les quêtes de vos amis qui vous manquent.
+- “Niveau de quête” permet de garder les quêtes de votre niveau ou inférieur, celles de niveau supérieur, ou celles au niveau inconnu. “Trier les quêtes” propose le niveau croissant, décroissant ou le titre. Les niveaux inconnus restent en dernier lors du tri par niveau.
+- Ces choix sont enregistrés par profil. “Réinitialiser” rétablit les réglages par défaut, dont la priorité aux quêtes manquantes. Les étapes des suites ouvertes conservent leur ordre de progression.
+- La zone provient des données compatibles de QuestieDB sur Forever ou de la prochaine destination fournie par Blizzard. Elle ne représente pas tous les lieux des objectifs ; une information absente reste inconnue.
+
+### Du butin qui ouvre une quête
+
+- QT peut annoncer un objet fraîchement obtenu si Blizzard indique qu’il démarre une quête disponible. Aucune quête n’est acceptée automatiquement.
+- “Annoncer les objets lançant une quête” est activé par défaut dans “Quoi annoncer”, selon vos préférences d’annonce. Déplacer un objet entre les sacs ou se connecter avec un objet déjà possédé ne déclenche rien.
+
+### Corrections et diagnostic
+
+- L’icône de développeur sur votre minicarte se réactualise correctement après un chargement ou lorsque l’identité devient disponible tardivement.
+- Le diagnostic des remerciements automatiques détaille davantage le résultat d’une tentative, sans conserver le nom du destinataire. Cela facilite l’enquête sur les gestes manqués, sans garantir leur affichage.
 
 ## 10.1.6
 

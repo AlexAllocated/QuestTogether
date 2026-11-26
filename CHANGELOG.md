@@ -4,7 +4,7 @@
 
 [Other languages](changelogs/README.md)
 
-## 10.2.0
+## 10.2.1
 
 Keep your party’s progress in view during combat.
 
@@ -12,6 +12,27 @@ Keep your party’s progress in view during combat.
 
 - The Party Objective Tracker now stays visible when combat begins and continues showing available progress updates.
 - Dragging, resizing and editing controls stop during combat. Other QT windows still close automatically.
+
+## 10.2.0
+
+Find your party’s next adventure more easily with area filters and level sorting in the Party Quest Log. QT can also announce newly looted items that start quests.
+
+### Find the quests that matter
+
+- Open /qt pql and choose “Filters”. Under “Quest area”, select Current area or a known area, then combine it with “Quests I don't have” to find quests your friends have nearby.
+- Use “Quest level” to show quests at or below your level, above it, or with an unknown level. Under “Sort quests”, choose Lowest level first, highest level first, or quest title. Unknown levels stay last when sorting by level.
+- Your choices are remembered per profile. “Reset” restores the defaults, including missing quests first. Expanded chain steps keep their relationship order.
+- Area filtering uses a known quest zone from compatible QuestieDB on Forever, or Blizzard’s next destination. It does not cover every objective location; missing information remains unknown.
+
+### Spot quest-starting loot
+
+- QT can now announce newly looted items that Blizzard identifies as starting an available quest. It does not accept the quest for you.
+- “Announce Quest-Starting Items” is on by default under “What to Announce” and respects your existing announcement preferences. Moving items between bags or logging in with old items does not trigger it.
+
+### Small fixes and better diagnostics
+
+- Fixed local developer minimap artwork losing its identity after loading screens or when identity becomes available late.
+- Auto-thanks diagnostics now explain more about an attempted emote without recording recipient names. This improves investigation of missed thanks; it does not guarantee emote delivery.
 
 ## 10.1.6
 
