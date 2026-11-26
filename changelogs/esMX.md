@@ -4,24 +4,12 @@
 
 ## 10.2.0
 
-Encuentra más rápido qué hacer con tu grupo: el registro de misiones ahora permite filtrar por zona y ordenar por nivel. También puedes recibir avisos sobre botín que inicia misiones.
+Mantén a la vista el progreso de tu grupo durante el combate.
 
-### Planea las siguientes misiones
+### Seguimiento de objetivos del grupo
 
-- Abre /qt pql y selecciona “Filtros”. Usa “Zona de la misión” para elegir tu zona actual o una zona conocida. Combínalo con “Misiones que no tengo” para ver cuáles de las misiones de tus amigos te faltan.
-- En “Nivel de misión” puedes mostrar misiones de tu nivel o menor, de nivel mayor o sin nivel conocido. “Ordenar misiones” permite ordenar por nivel de menor a mayor, de mayor a menor o por título. Los niveles desconocidos van al final del orden por nivel.
-- La selección se guarda en cada perfil. “Restablecer” recupera los valores predeterminados, incluidas las misiones faltantes primero. Los pasos de una cadena abierta mantienen el orden de sus relaciones.
-- La zona corresponde a datos conocidos de QuestieDB compatible en Forever o al próximo destino indicado por Blizzard. No incluye necesariamente todos los lugares de los objetivos. Cuando faltan datos, la zona sigue como desconocida.
-
-### No pases por alto el botín con misiones
-
-- QT puede anunciar un objeto que acabas de saquear si Blizzard lo reconoce como el inicio de una misión disponible. La misión no se acepta automáticamente.
-- “Anunciar objetos que inician misiones” viene activado en “Qué anunciar” y sigue tus preferencias de anuncios. Cambiar objetos de bolsa o entrar al juego con objetos que ya tenías no genera este aviso.
-
-### Ajustes y diagnóstico
-
-- Se corrigió el icono local de desarrollador del minimapa cuando la identidad llega tarde o se pierde visualmente después de una pantalla de carga.
-- El diagnóstico de agradecimientos automáticos ahora da más información sobre los intentos, sin guardar nombres de destinatarios. Sirve para investigar avisos que no aparecen; no garantiza que se muestre el gesto.
+- El seguimiento de objetivos del grupo ahora permanece visible al comenzar un combate y sigue mostrando las actualizaciones de progreso disponibles.
+- Durante el combate se detienen las acciones de arrastrar, cambiar el tamaño y editar el panel. Las otras ventanas de QT se siguen cerrando automáticamente.
 
 ## 10.1.6
 

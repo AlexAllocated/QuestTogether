@@ -370,7 +370,23 @@ QT:RegisterTest("focus HUD restriction disable and ignored roster changes cannot
 	a:UpdateQuestFocusWindow()
 	a:Drain()
 	local frame, reply = a.questFocusWindow, a.sent[1].receiver
+	function frame:EnableMouse(value) self.mouseEnabled = value end
+	a.questFocusEditing, frame.editSelected = true, true
+	a.questFocusState.editing = true
+	frame:EnableMouse(true)
+	frame.grip:Show()
+	local dialog = a:CreateOwnedWindowFrame("Frame", nil, a:GetOwnedUIParent())
+	a:ConfigureWindowController(dialog)
+	dialog:Show()
+	a:DismissManagedWindowsForCombat()
+	Equal(frame:IsShown(), true, "combat must preserve the passive POT")
+	Equal(dialog:IsShown(), false, "ordinary windows still close")
+	Equal(a.questFocusEditing, false)
+	Equal(frame.mouseEnabled, false)
+	Equal(frame.grip:IsShown(), false)
 	a.restricted = true
+	a:DismissManagedWindowsForCombat()
+	Equal(frame:IsShown(), true, "duplicate combat events must not dismiss POT")
 	a.count = 6
 	a:QueueQuestFocusRefresh(true)
 	a:Drain()
@@ -383,6 +399,7 @@ QT:RegisterTest("focus HUD restriction disable and ignored roster changes cannot
 	})
 	a:Drain()
 	assert(frame.rows[2].title.text:find("6/8", 1, true))
+	Equal(frame:IsShown(), true, "combat progress stays visible")
 	Equal(frame.rows[2].progressFill:GetWidth(), frame.rows[2].progressTrack:GetWidth() * 6 / 8)
 	frame.rows[2].progressFill.forbidden = true
 	a:QueueQuestFocusRefresh()

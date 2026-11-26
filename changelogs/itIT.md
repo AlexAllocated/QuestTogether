@@ -4,24 +4,12 @@
 
 ## 10.2.0
 
-Scegli più facilmente le missioni da affrontare insieme: il registro del gruppo ora offre filtri per zona e ordinamento per livello. QT può anche annunciare il bottino che avvia una missione.
+Tieni d’occhio i progressi del gruppo anche in combattimento.
 
-### Le missioni giuste al momento giusto
+### Tracciamento degli obiettivi del gruppo
 
-- Apri /qt pql e scegli “Filtri”. In “Zona della missione”, seleziona la zona attuale o una zona nota e abbina “Missioni che non ho” per trovare le missioni dei tuoi amici che ti mancano.
-- “Livello della missione” filtra le missioni del tuo livello o inferiore, quelle superiori oppure quelle con livello sconosciuto. In “Ordina missioni” scegli livello crescente, decrescente o titolo. Nel riordino per livello, quelli sconosciuti restano in fondo.
-- Le scelte vengono salvate per profilo. “Reimposta” ripristina le impostazioni iniziali, con le missioni mancanti per prime. I passaggi delle catene aperte mantengono l’ordine delle loro relazioni.
-- La zona deriva dai dati compatibili di QuestieDB su Forever oppure dalla prossima destinazione di Blizzard. Non comprende tutti i luoghi degli obiettivi; senza dati attendibili rimane sconosciuta.
-
-### Bottino che avvia missioni
-
-- QT può annunciare gli oggetti appena raccolti come bottino quando Blizzard li identifica come inizio di una missione disponibile. Non accetta la missione al posto tuo.
-- “Annuncia gli oggetti che avviano missioni” è attivo per impostazione predefinita in “Cosa annunciare” e rispetta le preferenze degli annunci. Spostare oggetti tra borse o accedere con oggetti già posseduti non genera annunci.
-
-### Correzioni e diagnostica
-
-- L’icona sviluppatore locale sulla minimappa torna ad aggiornarsi correttamente dopo i caricamenti o quando l’identità viene riconosciuta in ritardo.
-- La diagnostica dei ringraziamenti automatici descrive meglio gli esiti dei tentativi senza registrare i nomi dei destinatari. Aiuta a indagare sui ringraziamenti mancanti, ma non garantisce la visualizzazione dell’emote.
+- Il tracciamento degli obiettivi del gruppo ora rimane visibile quando inizia il combattimento e continua a mostrare gli aggiornamenti disponibili sui progressi.
+- Trascinamento, ridimensionamento e modifica vengono interrotti in combattimento. Le altre finestre di QT continuano a chiudersi automaticamente.
 
 ## 10.1.6
 

@@ -738,3 +738,5 @@ tooltips retains the configured Top/Bottom/Side placement, and manual POT placem
 remains respected. Offline coverage includes native Hide clearing owner/geometry,
 repeated updates, row movement, mixed scales, screen edges and stale-hover cleanup.
 Live mouse/controller placement confirmation is still required.
+
+The passive Party Objective Tracker remains visible when combat begins. Its drag, resize and Edit Mode controls stop, while ordinary QT windows still dismiss. Existing readable progress can update on its owned rows during combat; protected/native reads and new control creation retain their guards. This exception does not change Blizzard tracker visibility.

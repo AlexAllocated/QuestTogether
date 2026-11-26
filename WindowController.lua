@@ -33,7 +33,15 @@ function QT:DismissManagedWindowsForCombat()
 			if Lib.CanMutateOwnedRegion(frame) and frame:IsShown() then pending[#pending + 1] = frame end
 		end
 		for _, frame in ipairs(pending) do
-			if Lib.CanMutateOwnedRegion(frame) and frame:IsShown() then self:DismissManagedWindow(frame, "combat") end
+			if Lib.CanMutateOwnedRegion(frame) and frame:IsShown() then
+				local controller = self:GetWindowController(frame)
+				if controller and controller.hooks.combat then
+					self:StopWindowInteraction(frame)
+					Invoke(controller, "combat")
+				else
+					self:DismissManagedWindow(frame, "combat")
+				end
+			end
 		end
 	end)
 	self.closingWindowsForCombat = nil

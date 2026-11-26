@@ -442,6 +442,15 @@ function QT:CreateQuestFocusWindow()
 		self:QueueQuestFocusRefresh()
 	end
 	self:RegisterManagedWindow(frame, "questFocus", 240, 120, { x = 0.78, y = 0.6 })
+	self:ConfigureWindowController(frame, { combat = function()
+		-- Keep the passive HUD visible; only its editing interaction ends.
+		self.questFocusEditing = false
+		local state = rawget(self, "questFocusState")
+		if state then state.editing = false end
+		self:DeselectQuestFocusWindow()
+		self:HideOwnedUI(frame.grip)
+		frame:EnableMouse(false)
+	end })
 	frame:EnableKeyboard(false)
 	self.questFocusWindow = frame
 	return frame

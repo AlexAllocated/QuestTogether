@@ -4,24 +4,12 @@
 
 ## 10.2.0
 
-Ficou mais fácil escolher as próximas missões do grupo! Filtre por área, organize por nível e receba avisos de itens recém-saqueados que iniciam missões.
+Acompanhe o progresso do grupo mesmo durante o combate.
 
-### Encontre as missões que interessam
+### Rastreador de objetivos do grupo
 
-- Abra /qt pql e escolha “Filtros”. Em “Área da missão”, selecione a área atual ou uma área conhecida e combine com “Missões que não tenho” para encontrar missões dos seus amigos que ainda faltam para você.
-- “Nível da missão” mostra missões do seu nível ou abaixo, acima dele ou com nível desconhecido. “Ordenar missões” permite ordenar por nível crescente, decrescente ou título. Níveis desconhecidos ficam no fim ao ordenar por nível.
-- As escolhas são salvas por perfil. “Redefinir” restaura o padrão, incluindo as missões faltantes primeiro. As etapas de sequências abertas mantêm a ordem de suas relações.
-- A área vem dos dados compatíveis do QuestieDB no Forever ou do próximo destino informado pela Blizzard. Isso não cobre todos os locais dos objetivos; sem dados, a área continua desconhecida.
-
-### De olho nos itens que iniciam missões
-
-- QT pode anunciar itens recém-saqueados quando a Blizzard indica que iniciam uma missão disponível. A missão não é aceita automaticamente.
-- “Anunciar itens que iniciam missões” vem ativado em “O que Anunciar” e respeita suas preferências de anúncios. Mover itens entre bolsas ou entrar no jogo com itens que você já tinha não gera avisos.
-
-### Correções e diagnóstico
-
-- Corrigida a atualização do ícone local de desenvolvedor no minimapa após telas de carregamento ou quando a identidade fica disponível com atraso.
-- O diagnóstico de agradecimentos automáticos agora detalha melhor o resultado das tentativas, sem registrar nomes dos destinatários. Isso ajuda a investigar agradecimentos ausentes, sem garantir a exibição do gesto.
+- O rastreador de objetivos do grupo agora permanece visível quando o combate começa e continua mostrando as atualizações de progresso disponíveis.
+- Arrastar, redimensionar e editar o painel são ações interrompidas durante o combate. As outras janelas do QT continuam fechando automaticamente.
 
 ## 10.1.6
 

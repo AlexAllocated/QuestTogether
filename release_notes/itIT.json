@@ -1,30 +1,14 @@
 {
-  "source_sha256": "197e0844d973c6efd8a6f3e51324e28b5102524ee4f68ae6ffc5bc2739d1bcb2",
+  "source_sha256": "61d32cbd7316d4ab14a5c3a02a9b132072a353c5ad80607d52c01910eaf75de8",
   "notes": {
     "version": "10.2.0",
-    "welcome": "Scegli più facilmente le missioni da affrontare insieme: il registro del gruppo ora offre filtri per zona e ordinamento per livello. QT può anche annunciare il bottino che avvia una missione.",
+    "welcome": "Tieni d’occhio i progressi del gruppo anche in combattimento.",
     "sections": [
       {
-        "title": "Le missioni giuste al momento giusto",
+        "title": "Tracciamento degli obiettivi del gruppo",
         "items": [
-          "Apri /qt pql e scegli “Filtri”. In “Zona della missione”, seleziona la zona attuale o una zona nota e abbina “Missioni che non ho” per trovare le missioni dei tuoi amici che ti mancano.",
-          "“Livello della missione” filtra le missioni del tuo livello o inferiore, quelle superiori oppure quelle con livello sconosciuto. In “Ordina missioni” scegli livello crescente, decrescente o titolo. Nel riordino per livello, quelli sconosciuti restano in fondo.",
-          "Le scelte vengono salvate per profilo. “Reimposta” ripristina le impostazioni iniziali, con le missioni mancanti per prime. I passaggi delle catene aperte mantengono l’ordine delle loro relazioni.",
-          "La zona deriva dai dati compatibili di QuestieDB su Forever oppure dalla prossima destinazione di Blizzard. Non comprende tutti i luoghi degli obiettivi; senza dati attendibili rimane sconosciuta."
-        ]
-      },
-      {
-        "title": "Bottino che avvia missioni",
-        "items": [
-          "QT può annunciare gli oggetti appena raccolti come bottino quando Blizzard li identifica come inizio di una missione disponibile. Non accetta la missione al posto tuo.",
-          "“Annuncia gli oggetti che avviano missioni” è attivo per impostazione predefinita in “Cosa annunciare” e rispetta le preferenze degli annunci. Spostare oggetti tra borse o accedere con oggetti già posseduti non genera annunci."
-        ]
-      },
-      {
-        "title": "Correzioni e diagnostica",
-        "items": [
-          "L’icona sviluppatore locale sulla minimappa torna ad aggiornarsi correttamente dopo i caricamenti o quando l’identità viene riconosciuta in ritardo.",
-          "La diagnostica dei ringraziamenti automatici descrive meglio gli esiti dei tentativi senza registrare i nomi dei destinatari. Aiuta a indagare sui ringraziamenti mancanti, ma non garantisce la visualizzazione dell’emote."
+          "Il tracciamento degli obiettivi del gruppo ora rimane visibile quando inizia il combattimento e continua a mostrare gli aggiornamenti disponibili sui progressi.",
+          "Trascinamento, ridimensionamento e modifica vengono interrotti in combattimento. Le altre finestre di QT continuano a chiudersi automaticamente."
         ]
       }
     ]
